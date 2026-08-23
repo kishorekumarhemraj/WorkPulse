@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:uuid/uuid.dart';
 import 'package:workpulse/core/theme/app_theme.dart';
 import 'package:workpulse/core/theme/color_utils.dart';
 import 'package:workpulse/core/theme/icon_utils.dart';
+import 'package:workpulse/domain/models/attribute_model.dart';
 import 'package:workpulse/domain/models/work_item_model.dart';
+import 'package:workpulse/features/attributes/providers/attribute_definitions_provider.dart';
+import 'package:workpulse/features/attributes/widgets/dynamic_attribute_fields.dart';
 import 'package:workpulse/features/categories/providers/categories_provider.dart';
 import 'package:workpulse/features/categories/views/category_form_dialog.dart';
 import 'package:workpulse/features/people/providers/people_provider.dart';
@@ -14,6 +18,8 @@ import 'package:workpulse/features/projects/views/project_form_dialog.dart';
 import 'package:workpulse/features/tags/providers/tags_provider.dart';
 import 'package:workpulse/features/tags/views/tag_form_dialog.dart';
 import 'package:workpulse/features/tasks/providers/work_items_provider.dart';
+
+const _uuid = Uuid();
 
 class TaskFormDialog extends ConsumerStatefulWidget {
   final WorkItem? workItem;
@@ -57,6 +63,7 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
   String? _selectedCategoryId;
   late List<String> _selectedTagIds;
   late List<String> _selectedPeopleIds;
+  final Map<String, dynamic> _attributeValues = {};
   bool _isSubmitting = false;
 
   @override
@@ -97,8 +104,9 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
 
     setState(() => _isSubmitting = true);
     try {
+      WorkItem result;
       if (widget.workItem == null) {
-        final created = await ref.read(workItemsProvider.notifier).createWorkItem(
+        result = await ref.read(workItemsProvider.notifier).createWorkItem(
               name: _nameController.text.trim(),
               projectId: _selectedProjectId!,
               categoryId: _selectedCategoryId!,
@@ -106,9 +114,8 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
               tagIds: _selectedTagIds,
               peopleIds: _selectedPeopleIds,
             );
-        if (mounted) Navigator.of(context).pop(created);
       } else {
-        final updated = await ref.read(workItemsProvider.notifier).updateWorkItem(
+        result = await ref.read(workItemsProvider.notifier).updateWorkItem(
               widget.workItem!.copyWith(
                 name: _nameController.text.trim(),
                 projectId: _selectedProjectId!,
@@ -118,8 +125,66 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
                 peopleIds: _selectedPeopleIds,
               ),
             );
-        if (mounted) Navigator.of(context).pop(updated);
       }
+
+      // Save attribute values for the task
+      final definitions = ref.read(attributeDefinitionsProvider).value ?? [];
+      final taskDefs = definitions.where((d) => d.scope == AttributeScope.task && d.enabled && !d.isArchived).toList();
+      final valuesToSave = <WorkItemAttributeValue>[];
+      final now = DateTime.now().toUtc();
+
+      for (final entry in _attributeValues.entries) {
+        final def = taskDefs.where((d) => d.id == entry.key).firstOrNull;
+        if (def == null || entry.value == null) continue;
+
+        String? textVal;
+        double? numVal;
+        bool? boolVal;
+        DateTime? dateVal;
+        String? optId;
+
+        switch (def.type) {
+          case AttributeType.text:
+            textVal = entry.value.toString();
+            break;
+          case AttributeType.number:
+            numVal = entry.value is num ? (entry.value as num).toDouble() : double.tryParse(entry.value.toString());
+            break;
+          case AttributeType.boolean:
+            boolVal = entry.value == true;
+            break;
+          case AttributeType.singleSelect:
+            optId = entry.value.toString();
+            break;
+          case AttributeType.multiSelect:
+            textVal = (entry.value as List).join(',');
+            break;
+          case AttributeType.date:
+            dateVal = entry.value is DateTime ? entry.value as DateTime : DateTime.tryParse(entry.value.toString());
+            break;
+        }
+
+        valuesToSave.add(
+          WorkItemAttributeValue(
+            id: _uuid.v4(),
+            workItemId: result.id,
+            attributeDefinitionId: def.id,
+            textValue: textVal,
+            numberValue: numVal,
+            booleanValue: boolVal,
+            dateValue: dateVal,
+            optionId: optId,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+      }
+
+      if (valuesToSave.isNotEmpty) {
+        await ref.read(workItemAttributeValuesControllerProvider).saveValues(result.id, valuesToSave);
+      }
+
+      if (mounted) Navigator.of(context).pop(result);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -456,7 +521,27 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
                       );
                     },
                   ),
-                  const SizedBox(height: 16),
+                  // Custom Attribute Fields
+                  Builder(
+                    builder: (context) {
+                      final definitions = ref.watch(attributeDefinitionsProvider).value ?? [];
+                      final taskDefs = definitions.where((d) => d.scope == AttributeScope.task && d.enabled && !d.isArchived).toList();
+                      if (taskDefs.isEmpty) return const SizedBox.shrink();
+
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 16),
+                        child: DynamicAttributeFields(
+                          definitions: taskDefs,
+                          values: _attributeValues,
+                          onValueChanged: (defId, val) {
+                            setState(() {
+                              _attributeValues[defId] = val;
+                            });
+                          },
+                        ),
+                      );
+                    },
+                  ),
 
                   // Notes
                   const Text('Notes (Optional)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AppTheme.textSecondaryDark)),
