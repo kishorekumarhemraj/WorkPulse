@@ -91,20 +91,11 @@ class TasksView extends ConsumerWidget {
                   height: 36,
                   child: TextField(
                     onChanged: (val) => ref.read(workItemFilterProvider.notifier).setSearchQuery(val),
+                    style: TextStyle(fontSize: 13, color: AppTheme.getColors(context).textPrimary),
                     decoration: InputDecoration(
                       hintText: 'Search tasks...',
                       prefixIcon: Icon(Icons.search, size: 16, color: AppTheme.getColors(context).textSecondary),
-                      filled: true,
-                      fillColor: AppTheme.getColors(context).surface,
-                      contentPadding: EdgeInsets.symmetric(vertical: 0, horizontal: 10),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(color: AppTheme.getColors(context).divider),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(color: AppTheme.getColors(context).divider),
-                      ),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                     ),
                   ),
                 ),

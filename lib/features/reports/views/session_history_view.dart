@@ -26,17 +26,6 @@ class SessionHistoryView extends ConsumerWidget {
             start: now.subtract(const Duration(days: 7)),
             end: now,
           ),
-      builder: (context, child) {
-        return Theme(
-          data: ThemeData.dark().copyWith(
-            colorScheme: const ColorScheme.dark(
-              primary: AppTheme.primaryColor,
-              surface: AppTheme.surfaceDark,
-            ),
-          ),
-          child: child!,
-        );
-      },
     );
 
     if (picked != null) {

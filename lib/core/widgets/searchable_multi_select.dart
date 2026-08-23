@@ -156,7 +156,11 @@ class _SearchableMultiSelectState extends State<SearchableMultiSelect> {
             ),
           Container(
             decoration: BoxDecoration(
-              border: Border.all(color: colors.divider),
+              color: colors.card,
+              border: Border.all(
+                color: _focusNode.hasFocus ? AppTheme.primaryColor : colors.divider,
+                width: _focusNode.hasFocus ? 1.5 : 1.0,
+              ),
               borderRadius: BorderRadius.circular(8),
             ),
             child: TextField(
@@ -166,11 +170,14 @@ class _SearchableMultiSelectState extends State<SearchableMultiSelect> {
               style: TextStyle(fontSize: 13, color: colors.textPrimary),
               decoration: InputDecoration(
                 isDense: true,
+                filled: false,
                 hintText: widget.hintText,
                 hintStyle: TextStyle(fontSize: 12, color: colors.textSecondary),
                 prefixIcon:
                     Icon(Icons.search, size: 16, color: colors.textSecondary),
                 border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
                 contentPadding:
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
               ),

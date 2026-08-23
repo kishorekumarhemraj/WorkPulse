@@ -242,12 +242,10 @@ class _AttributeOptionsEditorDialogState extends ConsumerState<AttributeOptionsE
                       const Spacer(),
                       ElevatedButton.icon(
                         onPressed: _isAdding ? null : _addOption,
-                        icon: Icon(Icons.add, size: 14),
-                        label: Text('Add Option', style: TextStyle(fontSize: 12)),
+                        icon: const Icon(Icons.add, size: 14),
+                        label: const Text('Add Option', style: TextStyle(fontSize: 12)),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.primaryColor,
-                          foregroundColor: Colors.white,
-                          padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                         ),
                       ),
                     ],
@@ -261,12 +259,7 @@ class _AttributeOptionsEditorDialogState extends ConsumerState<AttributeOptionsE
       actions: [
         ElevatedButton(
           onPressed: () => Navigator.of(context).pop(),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppTheme.primaryColor,
-            foregroundColor: Colors.white,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-          ),
-          child: Text('Done'),
+          child: const Text('Done'),
         ),
       ],
     );
