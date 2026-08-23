@@ -7,6 +7,8 @@ import 'package:workpulse/domain/models/attribute_model.dart';
 import 'package:workpulse/domain/models/date_range.dart';
 import 'package:workpulse/domain/services/export_service.dart';
 import 'package:workpulse/features/attributes/providers/attribute_definitions_provider.dart';
+import 'package:workpulse/features/tasks/providers/task_sessions_provider.dart';
+import 'package:workpulse/features/tasks/providers/work_items_provider.dart';
 import 'package:workpulse/features/timer/providers/timer_provider.dart';
 import 'package:workpulse/features/workspace/providers/workspace_provider.dart';
 
@@ -90,6 +92,8 @@ class SessionEditorController {
     DateTime? startTime,
     DateTime? endTime,
     String? notes,
+    bool clearNotes = false,
+    List<String>? peopleIds,
     Map<String, dynamic> attributeValues = const {},
   }) async {
     final sessionRepo = _ref.read(sessionRepositoryProvider);
@@ -99,15 +103,32 @@ class SessionEditorController {
     final updated = session.copyWith(
       startTime: startTime ?? session.startTime,
       endTime: endTime ?? session.endTime,
+      peopleIds: peopleIds ?? session.peopleIds,
+      notes: notes,
+      clearNotes: clearNotes,
     );
 
     await sessionRepo.update(updated);
 
-    if (notes != null) {
+    // Additive merge: people newly tagged on this session that aren't
+    // already on the parent task get unioned into WorkItem.peopleIds.
+    // One-directional and permanent by design - deleting a session does
+    // NOT remove its people from the task. Not wrapped in the same DB
+    // transaction as the session write above; if the app crashes between
+    // the two writes, the merge is simply re-run (idempotent) on the
+    // next session edit for that person.
+    if (peopleIds != null && peopleIds.isNotEmpty) {
       final workItemRepo = _ref.read(workItemRepositoryProvider);
       final workItem = await workItemRepo.getById(session.workItemId);
       if (workItem != null) {
-        await workItemRepo.update(workItem.copyWith(notes: notes));
+        final missing =
+            peopleIds.where((id) => !workItem.peopleIds.contains(id)).toList();
+        if (missing.isNotEmpty) {
+          await workItemRepo.update(
+            workItem.copyWith(peopleIds: [...workItem.peopleIds, ...missing]),
+          );
+          _ref.invalidate(workItemsProvider);
+        }
       }
     }
 
@@ -174,11 +195,16 @@ class SessionEditorController {
     }
 
     _ref.invalidate(sessionHistoryProvider);
+    _ref.invalidate(sessionsForWorkItemProvider(session.workItemId));
   }
 
   Future<void> deleteSession(String sessionId) async {
     final sessionRepo = _ref.read(sessionRepositoryProvider);
+    final session = await sessionRepo.getById(sessionId);
     await sessionRepo.delete(sessionId);
     _ref.invalidate(sessionHistoryProvider);
+    if (session != null) {
+      _ref.invalidate(sessionsForWorkItemProvider(session.workItemId));
+    }
   }
 }

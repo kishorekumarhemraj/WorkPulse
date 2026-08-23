@@ -173,6 +173,7 @@ class SqliteSessionRepository implements SessionRepository {
       'work_item_id': session.workItemId,
       'start_time': session.startTime.toStorageString(),
       'end_time': session.endTime?.toStorageString(),
+      'notes': session.notes,
       'created_at': session.createdAt.toStorageString(),
     };
   }
@@ -186,6 +187,7 @@ class SqliteSessionRepository implements SessionRepository {
           ? DateTime.parse(map['end_time'] as String)
           : null,
       peopleIds: peopleIds,
+      notes: map['notes'] as String?,
       createdAt: DateTime.parse(map['created_at'] as String),
     );
   }
