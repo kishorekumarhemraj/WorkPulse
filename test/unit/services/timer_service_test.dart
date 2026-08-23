@@ -172,8 +172,8 @@ void main() {
     });
 
     test('formatDuration formats correctly in standard and compact modes', () {
-      expect(TimerService.formatDuration(const Duration(seconds: 45)), '00:45');
-      expect(TimerService.formatDuration(const Duration(minutes: 5, seconds: 12)), '05:12');
+      expect(TimerService.formatDuration(const Duration(seconds: 45)), '00:00:45');
+      expect(TimerService.formatDuration(const Duration(minutes: 5, seconds: 12)), '00:05:12');
       expect(TimerService.formatDuration(const Duration(hours: 1, minutes: 23, seconds: 45)), '01:23:45');
 
       expect(TimerService.formatDuration(const Duration(seconds: 45), compact: true), '45s');

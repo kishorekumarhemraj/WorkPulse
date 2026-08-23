@@ -37,11 +37,19 @@ class DashboardView extends ConsumerWidget {
             end: now,
           ),
       builder: (context, child) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
         return Theme(
-          data: ThemeData.dark().copyWith(
-            colorScheme: const ColorScheme.dark(
+          data: (isDark ? ThemeData.dark() : ThemeData.light()).copyWith(
+            colorScheme: ColorScheme(
+              brightness: isDark ? Brightness.dark : Brightness.light,
               primary: AppTheme.primaryColor,
-              surface: AppTheme.surfaceDark,
+              onPrimary: Colors.white,
+              secondary: AppTheme.primaryColor,
+              onSecondary: Colors.white,
+              error: AppTheme.accentRed,
+              onError: Colors.white,
+              surface: AppTheme.getColors(context).surface,
+              onSurface: AppTheme.getColors(context).textPrimary,
             ),
           ),
           child: child!,

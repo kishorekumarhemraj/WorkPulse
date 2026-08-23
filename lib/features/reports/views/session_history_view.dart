@@ -245,7 +245,7 @@ class SessionHistoryView extends ConsumerWidget {
                       final dateStr = dateFormat.format(s.startTime.toLocal());
                       final netDurationStr = TimerService.formatDuration(
                           record.netActiveDuration,
-                          includeSeconds: false);
+                          includeSeconds: true);
 
                       return Container(
                         padding: EdgeInsets.all(14),
@@ -368,7 +368,7 @@ class SessionHistoryView extends ConsumerWidget {
                                   borderRadius: BorderRadius.circular(4),
                                 ),
                                 child: Text(
-                                  '-${TimerService.formatDuration(record.idleDuration, includeSeconds: false)} idle',
+                                  '-${TimerService.formatDuration(record.idleDuration, includeSeconds: true)} idle',
                                   style: TextStyle(
                                       fontSize: 10,
                                       fontWeight: FontWeight.bold,

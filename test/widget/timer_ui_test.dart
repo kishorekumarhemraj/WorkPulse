@@ -173,7 +173,7 @@ void main() {
       expect(find.text('TRACKING'), findsOneWidget);
       expect(find.text('Build Timer Engine'), findsOneWidget);
       expect(find.text('WorkPulse App'), findsOneWidget);
-      expect(find.text('25:10'), findsOneWidget);
+      expect(find.text('00:25:10'), findsOneWidget);
       expect(find.text('Stop'), findsOneWidget);
 
       // Tap stop button

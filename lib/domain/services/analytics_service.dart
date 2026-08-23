@@ -346,19 +346,24 @@ class AnalyticsService {
       }
     }
 
-    // 11. Daily Activity Trend (with midnight session splitting)
+    // 11. Daily Activity Trend (with local midnight session splitting)
     final dailyMap = <DateTime, DailyActivityItem>{};
-    final dayCount = range.end.difference(range.start).inDays + 1;
+    final localStart = range.start.toLocal();
+    final localEnd = range.end.toLocal();
 
-    for (int i = 0; i < (dayCount > 31 ? 31 : dayCount); i++) {
-      final day = DateTime.utc(
-          range.start.year, range.start.month, range.start.day + i);
-      dailyMap[day] = DailyActivityItem(
-        date: day,
+    var dayCursor = DateTime(localStart.year, localStart.month, localStart.day);
+    final lastDay = DateTime(localEnd.year, localEnd.month, localEnd.day);
+
+    int count = 0;
+    while (!dayCursor.isAfter(lastDay) && count < 31) {
+      dailyMap[dayCursor] = DailyActivityItem(
+        date: dayCursor,
         activeDuration: Duration.zero,
         idleDuration: Duration.zero,
         sessionCount: 0,
       );
+      dayCursor = DateTime(dayCursor.year, dayCursor.month, dayCursor.day + 1);
+      count++;
     }
 
     for (final s in allSessions) {
@@ -375,7 +380,7 @@ class AnalyticsService {
       final grossDuration = sessionEnd.difference(s.startTime);
       if (grossDuration <= Duration.zero) continue;
 
-      // Split session across midnight boundaries
+      // Split session across local midnight boundaries
       final daySlices = _splitAcrossDays(s.startTime, sessionEnd);
 
       for (final slice in daySlices) {
@@ -388,8 +393,9 @@ class AnalyticsService {
         final sliceIdle = Duration(
             microseconds: (totalIdleDur.inMicroseconds * fraction).round());
 
+        final localSliceStart = slice.start.toLocal();
         final dayKey =
-            DateTime.utc(slice.start.year, slice.start.month, slice.start.day);
+            DateTime(localSliceStart.year, localSliceStart.month, localSliceStart.day);
         final existing = dailyMap[dayKey] ??
             DailyActivityItem(
               date: dayKey,
@@ -424,20 +430,16 @@ class AnalyticsService {
     );
   }
 
-  /// Splits a time range [start, end] into per-day slices at UTC midnight boundaries.
-  ///
-  /// For example, a session from 2026-01-15 23:00 to 2026-01-16 01:00 UTC
-  /// produces two slices:
-  ///   [2026-01-15 23:00, 2026-01-16 00:00) and [2026-01-16 00:00, 2026-01-16 01:00)
+  /// Splits a time range [start, end] into per-day slices at local midnight boundaries.
   static List<DateRange> _splitAcrossDays(DateTime start, DateTime end) {
     final slices = <DateRange>[];
-    var cursor = start.toUtc();
-    final utcEnd = end.toUtc();
+    var cursor = start.toLocal();
+    final localEnd = end.toLocal();
 
-    while (cursor.isBefore(utcEnd)) {
+    while (cursor.isBefore(localEnd)) {
       final nextMidnight =
-          DateTime.utc(cursor.year, cursor.month, cursor.day + 1);
-      final sliceEnd = nextMidnight.isBefore(utcEnd) ? nextMidnight : utcEnd;
+          DateTime(cursor.year, cursor.month, cursor.day + 1);
+      final sliceEnd = nextMidnight.isBefore(localEnd) ? nextMidnight : localEnd;
       slices.add(DateRange(start: cursor, end: sliceEnd));
       cursor = sliceEnd;
     }

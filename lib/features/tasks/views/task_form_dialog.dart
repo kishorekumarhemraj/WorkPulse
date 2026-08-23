@@ -845,7 +845,7 @@ class _SessionRow extends StatelessWidget {
     final start = session.startTime.toLocal();
     final end = session.endTime?.toLocal();
     final durationStr =
-        TimerService.formatDuration(session.duration, compact: true);
+        TimerService.formatDuration(session.duration, includeSeconds: true);
 
     return Material(
       color: Colors.transparent,
