@@ -1,5 +1,6 @@
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:workpulse/core/database/database_service.dart';
+import 'package:workpulse/core/errors/app_exceptions.dart';
 import 'package:workpulse/data/database/tables.dart';
 import 'package:workpulse/domain/models/person_model.dart';
 import 'package:workpulse/domain/repositories/person_repository.dart';
@@ -13,100 +14,87 @@ class SqlitePersonRepository implements PersonRepository {
   Database get _db => _dbService.database;
 
   @override
-  Future<List<Person>> getAllPeople() async {
-    final rows = await _db.query(Tables.people, orderBy: 'name COLLATE NOCASE ASC');
-    return rows.map(_fromRow).toList();
-  }
-
-  @override
-  Future<Person?> getPersonById(String id) async {
-    final rows = await _db.query(
+  Future<Person?> getById(String id) async {
+    final results = await _db.query(
       Tables.people,
       where: 'id = ?',
       whereArgs: [id],
-      limit: 1,
     );
-    if (rows.isEmpty) return null;
-    return _fromRow(rows.first);
+
+    if (results.isEmpty) return null;
+    return _fromMap(results.first);
   }
 
   @override
-  Future<Person?> getPersonByName(String name) async {
-    final rows = await _db.query(
+  Future<List<Person>> getAll({String? workspaceId}) async {
+    final results = await _db.query(
       Tables.people,
-      where: 'name = ? COLLATE NOCASE',
-      whereArgs: [name],
-      limit: 1,
+      where: workspaceId != null ? 'workspace_id = ?' : null,
+      whereArgs: workspaceId != null ? [workspaceId] : null,
+      orderBy: 'name ASC',
     );
-    if (rows.isEmpty) return null;
-    return _fromRow(rows.first);
+    return results.map(_fromMap).toList();
   }
 
   @override
-  Future<List<Person>> getPeopleForTask(String taskId) async {
-    final rows = await _db.rawQuery('''
-      SELECT p.* FROM ${Tables.people} p
-      INNER JOIN ${Tables.taskPeople} tp ON p.id = tp.person_id
-      WHERE tp.task_id = ?
-      ORDER BY p.name COLLATE NOCASE ASC
-    ''', [taskId]);
-    return rows.map(_fromRow).toList();
+  Future<Person> create(Person person) async {
+    try {
+      await _db.insert(
+        Tables.people,
+        _toMap(person),
+        conflictAlgorithm: ConflictAlgorithm.fail,
+      );
+      return person;
+    } catch (e) {
+      throw DatabaseException('Failed to create person: $e');
+    }
   }
 
   @override
-  Future<List<Person>> getPeopleForSession(String sessionId) async {
-    final rows = await _db.rawQuery('''
-      SELECT p.* FROM ${Tables.people} p
-      INNER JOIN ${Tables.sessionPeople} sp ON p.id = sp.person_id
-      WHERE sp.session_id = ?
-      ORDER BY p.name COLLATE NOCASE ASC
-    ''', [sessionId]);
-    return rows.map(_fromRow).toList();
-  }
-
-  @override
-  Future<void> createPerson(Person person) async {
-    await _db.insert(
-      Tables.people,
-      _toMap(person),
-      conflictAlgorithm: ConflictAlgorithm.fail,
-    );
-  }
-
-  @override
-  Future<void> updatePerson(Person person) async {
-    await _db.update(
+  Future<Person> update(Person person) async {
+    final count = await _db.update(
       Tables.people,
       _toMap(person),
       where: 'id = ?',
       whereArgs: [person.id],
     );
+
+    if (count == 0) {
+      throw NotFoundException('Person with id ${person.id} not found');
+    }
+    return person;
   }
 
   @override
-  Future<void> deletePerson(String id) async {
-    await _db.delete(
+  Future<void> delete(String id) async {
+    final count = await _db.delete(
       Tables.people,
       where: 'id = ?',
       whereArgs: [id],
     );
+
+    if (count == 0) {
+      throw NotFoundException('Person with id $id not found');
+    }
   }
 
-  Person _fromRow(Map<String, Object?> row) {
-    return Person(
-      id: row['id'] as String,
-      name: row['name'] as String,
-      email: row['email'] as String?,
-      createdAt: DateTime.parse(row['created_at'] as String),
-    );
-  }
-
-  Map<String, Object?> _toMap(Person person) {
+  Map<String, dynamic> _toMap(Person person) {
     return {
       'id': person.id,
+      'workspace_id': person.workspaceId,
       'name': person.name,
       'email': person.email,
       'created_at': person.createdAt.toIso8601String(),
     };
+  }
+
+  Person _fromMap(Map<String, dynamic> map) {
+    return Person(
+      id: map['id'] as String,
+      workspaceId: map['workspace_id'] as String,
+      name: map['name'] as String,
+      email: map['email'] as String?,
+      createdAt: DateTime.parse(map['created_at'] as String),
+    );
   }
 }
