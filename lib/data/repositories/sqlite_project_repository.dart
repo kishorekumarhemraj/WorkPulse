@@ -1,6 +1,7 @@
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:workpulse/core/database/database_service.dart';
 import 'package:workpulse/core/errors/app_exceptions.dart';
+import 'package:workpulse/core/extensions/datetime_extensions.dart';
 import 'package:workpulse/data/database/tables.dart';
 import 'package:workpulse/domain/models/project_model.dart';
 import 'package:workpulse/domain/repositories/project_repository.dart';
@@ -26,7 +27,8 @@ class SqliteProjectRepository implements ProjectRepository {
   }
 
   @override
-  Future<List<Project>> getAll({String? workspaceId, bool includeArchived = false}) async {
+  Future<List<Project>> getAll(
+      {String? workspaceId, bool includeArchived = false}) async {
     final whereClauses = <String>[];
     final whereArgs = <dynamic>[];
 
@@ -98,7 +100,10 @@ class SqliteProjectRepository implements ProjectRepository {
   Future<void> unarchive(String id) async {
     final count = await _db.update(
       Tables.projects,
-      {'archived_at': null, 'updated_at': DateTime.now().toUtc().toIso8601String()},
+      {
+        'archived_at': null,
+        'updated_at': DateTime.now().toUtc().toIso8601String()
+      },
       where: 'id = ?',
       whereArgs: [id],
     );
@@ -128,9 +133,9 @@ class SqliteProjectRepository implements ProjectRepository {
       'name': project.name,
       'description': project.description,
       'color_hex': project.colorHex,
-      'created_at': project.createdAt.toIso8601String(),
-      'updated_at': project.updatedAt.toIso8601String(),
-      'archived_at': project.archivedAt?.toIso8601String(),
+      'created_at': project.createdAt.toStorageString(),
+      'updated_at': project.updatedAt.toStorageString(),
+      'archived_at': project.archivedAt?.toStorageString(),
     };
   }
 

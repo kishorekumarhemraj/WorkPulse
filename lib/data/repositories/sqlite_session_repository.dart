@@ -1,6 +1,7 @@
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:workpulse/core/database/database_service.dart';
 import 'package:workpulse/core/errors/app_exceptions.dart';
+import 'package:workpulse/core/extensions/datetime_extensions.dart';
 import 'package:workpulse/data/database/tables.dart';
 import 'package:workpulse/domain/models/session_model.dart';
 import 'package:workpulse/domain/repositories/session_repository.dart';
@@ -167,9 +168,9 @@ class SqliteSessionRepository implements SessionRepository {
     return {
       'id': session.id,
       'work_item_id': session.workItemId,
-      'start_time': session.startTime.toIso8601String(),
-      'end_time': session.endTime?.toIso8601String(),
-      'created_at': session.createdAt.toIso8601String(),
+      'start_time': session.startTime.toStorageString(),
+      'end_time': session.endTime?.toStorageString(),
+      'created_at': session.createdAt.toStorageString(),
     };
   }
 
@@ -178,7 +179,9 @@ class SqliteSessionRepository implements SessionRepository {
       id: map['id'] as String,
       workItemId: map['work_item_id'] as String,
       startTime: DateTime.parse(map['start_time'] as String),
-      endTime: map['end_time'] != null ? DateTime.parse(map['end_time'] as String) : null,
+      endTime: map['end_time'] != null
+          ? DateTime.parse(map['end_time'] as String)
+          : null,
       peopleIds: peopleIds,
       createdAt: DateTime.parse(map['created_at'] as String),
     );

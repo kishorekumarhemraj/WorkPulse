@@ -1,6 +1,7 @@
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:workpulse/core/database/database_service.dart';
 import 'package:workpulse/core/errors/app_exceptions.dart';
+import 'package:workpulse/core/extensions/datetime_extensions.dart';
 import 'package:workpulse/data/database/tables.dart';
 import 'package:workpulse/domain/models/person_model.dart';
 import 'package:workpulse/domain/repositories/person_repository.dart';
@@ -84,7 +85,7 @@ class SqlitePersonRepository implements PersonRepository {
       'workspace_id': person.workspaceId,
       'name': person.name,
       'email': person.email,
-      'created_at': person.createdAt.toIso8601String(),
+      'created_at': person.createdAt.toStorageString(),
     };
   }
 

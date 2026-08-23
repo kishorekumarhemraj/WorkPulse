@@ -1,6 +1,7 @@
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:workpulse/core/database/database_service.dart';
 import 'package:workpulse/core/errors/app_exceptions.dart';
+import 'package:workpulse/core/extensions/datetime_extensions.dart';
 import 'package:workpulse/data/database/tables.dart';
 import 'package:workpulse/domain/models/tag_model.dart';
 import 'package:workpulse/domain/repositories/tag_repository.dart';
@@ -84,7 +85,7 @@ class SqliteTagRepository implements TagRepository {
       'workspace_id': tag.workspaceId,
       'name': tag.name,
       'color_hex': tag.colorHex,
-      'created_at': tag.createdAt.toIso8601String(),
+      'created_at': tag.createdAt.toStorageString(),
     };
   }
 

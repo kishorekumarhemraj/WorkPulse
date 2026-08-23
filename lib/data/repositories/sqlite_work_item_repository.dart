@@ -1,6 +1,7 @@
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:workpulse/core/database/database_service.dart';
 import 'package:workpulse/core/errors/app_exceptions.dart';
+import 'package:workpulse/core/extensions/datetime_extensions.dart';
 import 'package:workpulse/data/database/tables.dart';
 import 'package:workpulse/domain/models/work_item_model.dart';
 import 'package:workpulse/domain/repositories/work_item_repository.dart';
@@ -31,7 +32,8 @@ class SqliteWorkItemRepository implements WorkItemRepository {
   }
 
   @override
-  Future<List<WorkItem>> getAll({String? workspaceId, bool includeArchived = false}) async {
+  Future<List<WorkItem>> getAll(
+      {String? workspaceId, bool includeArchived = false}) async {
     final whereClauses = <String>[];
     final whereArgs = <dynamic>[];
 
@@ -63,8 +65,11 @@ class SqliteWorkItemRepository implements WorkItemRepository {
   }
 
   @override
-  Future<List<WorkItem>> getByProjectId(String projectId, {bool includeArchived = false}) async {
-    final where = includeArchived ? 'project_id = ?' : 'project_id = ? AND archived_at IS NULL';
+  Future<List<WorkItem>> getByProjectId(String projectId,
+      {bool includeArchived = false}) async {
+    final where = includeArchived
+        ? 'project_id = ?'
+        : 'project_id = ? AND archived_at IS NULL';
     final results = await _db.query(
       Tables.workItems,
       where: where,
@@ -83,8 +88,11 @@ class SqliteWorkItemRepository implements WorkItemRepository {
   }
 
   @override
-  Future<List<WorkItem>> getByCategoryId(String categoryId, {bool includeArchived = false}) async {
-    final where = includeArchived ? 'category_id = ?' : 'category_id = ? AND archived_at IS NULL';
+  Future<List<WorkItem>> getByCategoryId(String categoryId,
+      {bool includeArchived = false}) async {
+    final where = includeArchived
+        ? 'category_id = ?'
+        : 'category_id = ? AND archived_at IS NULL';
     final results = await _db.query(
       Tables.workItems,
       where: where,
@@ -103,7 +111,8 @@ class SqliteWorkItemRepository implements WorkItemRepository {
   }
 
   @override
-  Future<List<WorkItem>> search(String query, {String? workspaceId, int limit = 20}) async {
+  Future<List<WorkItem>> search(String query,
+      {String? workspaceId, int limit = 20}) async {
     final sanitizedQuery = '%${query.trim()}%';
     final whereClauses = ['name LIKE ?', 'archived_at IS NULL'];
     final whereArgs = <dynamic>[sanitizedQuery];
@@ -132,7 +141,8 @@ class SqliteWorkItemRepository implements WorkItemRepository {
   }
 
   @override
-  Future<List<WorkItem>> getRecent({String? workspaceId, int limit = 10}) async {
+  Future<List<WorkItem>> getRecent(
+      {String? workspaceId, int limit = 10}) async {
     final whereClauses = ['archived_at IS NULL'];
     final whereArgs = <dynamic>[];
 
@@ -245,7 +255,7 @@ class SqliteWorkItemRepository implements WorkItemRepository {
     final count = await _db.update(
       Tables.workItems,
       {
-        'last_worked_at': timestamp.toIso8601String(),
+        'last_worked_at': timestamp.toStorageString(),
         'updated_at': DateTime.now().toUtc().toIso8601String(),
       },
       where: 'id = ?',
@@ -276,7 +286,10 @@ class SqliteWorkItemRepository implements WorkItemRepository {
   Future<void> unarchive(String id) async {
     final count = await _db.update(
       Tables.workItems,
-      {'archived_at': null, 'updated_at': DateTime.now().toUtc().toIso8601String()},
+      {
+        'archived_at': null,
+        'updated_at': DateTime.now().toUtc().toIso8601String()
+      },
       where: 'id = ?',
       whereArgs: [id],
     );
@@ -327,14 +340,15 @@ class SqliteWorkItemRepository implements WorkItemRepository {
       'project_id': item.projectId,
       'category_id': item.categoryId,
       'notes': item.notes,
-      'created_at': item.createdAt.toIso8601String(),
-      'updated_at': item.updatedAt.toIso8601String(),
-      'last_worked_at': item.lastWorkedAt?.toIso8601String(),
-      'archived_at': item.archivedAt?.toIso8601String(),
+      'created_at': item.createdAt.toStorageString(),
+      'updated_at': item.updatedAt.toStorageString(),
+      'last_worked_at': item.lastWorkedAt?.toStorageString(),
+      'archived_at': item.archivedAt?.toStorageString(),
     };
   }
 
-  WorkItem _fromMap(Map<String, dynamic> map, List<String> tagIds, List<String> peopleIds) {
+  WorkItem _fromMap(
+      Map<String, dynamic> map, List<String> tagIds, List<String> peopleIds) {
     return WorkItem(
       id: map['id'] as String,
       workspaceId: map['workspace_id'] as String,
