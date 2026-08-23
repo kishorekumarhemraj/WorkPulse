@@ -6,6 +6,7 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:workpulse/core/database/database_service.dart';
 import 'package:workpulse/data/database/tables.dart';
 import 'package:workpulse/data/migrations/migration_v1.dart';
+import 'package:workpulse/data/migrations/migration_v2.dart';
 
 void main() {
   setUpAll(() {
@@ -166,6 +167,31 @@ void main() {
         expect(rows.first['notes'], isNull);
 
         await upgraded.close();
+      } finally {
+        await tempDir.delete(recursive: true);
+      }
+    });
+
+    test('MigrationV2 is idempotent when column already exists', () async {
+      final tempDir =
+          await Directory.systemTemp.createTemp('workpulse_idempotency_test');
+      final dbPath = p.join(tempDir.path, 'idempotent_test.db');
+
+      try {
+        final db = await databaseFactoryFfi.openDatabase(
+          dbPath,
+          options: OpenDatabaseOptions(
+            version: 1,
+            onCreate: (db, version) => MigrationV1.execute(db),
+          ),
+        );
+
+        // Run MigrationV2 once
+        await MigrationV2.execute(db);
+        // Run MigrationV2 a second time - should not throw duplicate column error
+        expect(() async => await MigrationV2.execute(db), returnsNormally);
+
+        await db.close();
       } finally {
         await tempDir.delete(recursive: true);
       }
