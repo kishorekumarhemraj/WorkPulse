@@ -163,7 +163,6 @@ class TimerNotifier extends AsyncNotifier<TimerState> {
         activeWorkItem: targetWorkItem,
         activeSession: newSession,
         elapsed: Duration.zero,
-        clearPendingSwitchWorkItem: true,
       ),
     );
 
