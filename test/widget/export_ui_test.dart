@@ -65,7 +65,9 @@ void main() {
   );
 
   group('Export UI Widget Tests', () {
-    testWidgets('ExportDialog renders title, range pills, formats, and handles copy', (tester) async {
+    testWidgets(
+        'ExportDialog renders title, range pills, formats, and handles copy',
+        (tester) async {
       tester.view.physicalSize = const Size(1280, 900);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(() {
@@ -94,7 +96,9 @@ void main() {
       expect(find.text('JSON (Structured Backup)'), findsOneWidget);
     });
 
-    testWidgets('SessionHistoryView renders header, export button, and session logs', (tester) async {
+    testWidgets(
+        'SessionHistoryView renders header, export button, and session logs',
+        (tester) async {
       tester.view.physicalSize = const Size(1280, 900);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(() {
@@ -105,7 +109,8 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            sessionHistoryProvider.overrideWith((ref) => Future.value([mockRecord])),
+            sessionHistoryProvider
+                .overrideWith((ref) => Future.value([mockRecord])),
           ],
           child: MaterialApp(
             theme: AppTheme.darkTheme,
@@ -116,15 +121,23 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      expect(find.text('Time Log & History'), findsOneWidget);
+      expect(find.text('Time Log'), findsOneWidget);
       expect(find.text('Export Data'), findsOneWidget);
       expect(find.text('Build Export & Hardening Feature'), findsOneWidget);
       expect(find.text('WorkPulse Core'), findsOneWidget);
       expect(find.text('Engineering'), findsOneWidget);
       expect(find.text('01:00:00'), findsOneWidget);
+
+      // Sessions are grouped under a day header carrying that day's total,
+      // and the range total is summarised above the list, so the date is no
+      // longer repeated on every row.
+      expect(find.text('Range total'), findsOneWidget);
+      expect(find.text('1 session across 1 day'), findsOneWidget);
     });
 
-    testWidgets('SessionEditDialog renders session details, time pickers, and notes field', (tester) async {
+    testWidgets(
+        'SessionEditDialog renders session details, time pickers, and notes field',
+        (tester) async {
       tester.view.physicalSize = const Size(1280, 900);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(() {

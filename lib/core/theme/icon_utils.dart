@@ -20,7 +20,8 @@ class IconUtils {
     'rocket': Icons.rocket_launch_outlined,
   };
 
-  static IconData getIcon(String? iconName, {IconData defaultIcon = Icons.folder_outlined}) {
+  static IconData getIcon(String? iconName,
+      {IconData defaultIcon = Icons.folder_outlined}) {
     if (iconName == null) return defaultIcon;
     return availableIcons[iconName.toLowerCase()] ?? defaultIcon;
   }

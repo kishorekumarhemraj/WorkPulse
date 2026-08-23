@@ -16,6 +16,8 @@ import 'package:workpulse/features/tags/providers/tags_provider.dart';
 import 'package:workpulse/features/tasks/providers/task_sessions_provider.dart';
 import 'package:workpulse/features/tasks/providers/work_items_provider.dart';
 import 'package:workpulse/features/tasks/views/tasks_view.dart';
+import 'package:workpulse/features/tasks/widgets/work_item_inspector.dart';
+import 'package:workpulse/features/tasks/widgets/work_item_row.dart';
 import 'package:workpulse/features/timer/models/timer_state.dart';
 import 'package:workpulse/features/timer/providers/timer_provider.dart';
 import 'package:workpulse/features/timer/views/active_timer_bar.dart';
@@ -142,7 +144,17 @@ void main() {
   );
 
   group('Timer UI Widget Tests', () {
-    testWidgets('ActiveTimerBar renders active task name and stop button when running', (tester) async {
+    testWidgets(
+        'ActiveTimerBar renders active task name and stop button when running',
+        (tester) async {
+      // The bar is a single fixed-height row that sheds optional content as
+      // it narrows, so give it a realistic desktop width. The app's own
+      // window is 1200x800.
+      tester.view.physicalSize = const Size(1280, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
       final fakeTimer = _FakeTimerNotifier(
         TimerState(
           status: TimerStatus.running,
@@ -155,9 +167,12 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            currentWorkspaceProvider.overrideWith(() => _FakeWorkspaceNotifier(testWorkspace)),
-            projectsProvider.overrideWith(() => _FakeProjectsNotifier([testProject])),
-            workItemsProvider.overrideWith(() => _FakeWorkItemsNotifier([testTaskA, testTaskB])),
+            currentWorkspaceProvider
+                .overrideWith(() => _FakeWorkspaceNotifier(testWorkspace)),
+            projectsProvider
+                .overrideWith(() => _FakeProjectsNotifier([testProject])),
+            workItemsProvider.overrideWith(
+                () => _FakeWorkItemsNotifier([testTaskA, testTaskB])),
             timerProvider.overrideWith(() => fakeTimer),
           ],
           child: const MaterialApp(
@@ -184,11 +199,65 @@ void main() {
       expect(fakeTimer.stopCalled, isTrue);
     });
 
+    testWidgets('ActiveTimerBar sheds optional content on a narrow window',
+        (tester) async {
+      // Narrow enough to drop the project chip and the Switch button, but the
+      // task name, elapsed time and Stop must always survive.
+      tester.view.physicalSize = const Size(600, 700);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final fakeTimer = _FakeTimerNotifier(
+        TimerState(
+          status: TimerStatus.running,
+          activeWorkItem: testTaskA,
+          activeSession: testActiveSession,
+          elapsed: const Duration(minutes: 25, seconds: 10),
+        ),
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            currentWorkspaceProvider
+                .overrideWith(() => _FakeWorkspaceNotifier(testWorkspace)),
+            projectsProvider
+                .overrideWith(() => _FakeProjectsNotifier([testProject])),
+            workItemsProvider.overrideWith(
+                () => _FakeWorkItemsNotifier([testTaskA, testTaskB])),
+            timerProvider.overrideWith(() => fakeTimer),
+          ],
+          child: const MaterialApp(
+            themeMode: ThemeMode.dark,
+            home: Scaffold(
+              bottomNavigationBar: ActiveTimerBar(),
+            ),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      // No overflow banner: the bar fits whatever width it is given.
+      expect(tester.takeException(), isNull);
+
+      // Essentials survive.
+      expect(find.text('Build Timer Engine'), findsOneWidget);
+      expect(find.text('00:25:10'), findsOneWidget);
+      expect(find.text('Stop'), findsOneWidget);
+
+      // Optional content is dropped rather than overflowing.
+      expect(find.text('WorkPulse App'), findsNothing);
+      expect(find.text('Switch'), findsNothing);
+    });
+
     testWidgets('ActiveTimerBar is hidden when timer is idle', (tester) async {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            timerProvider.overrideWith(() => _FakeTimerNotifier(const TimerState(status: TimerStatus.idle))),
+            timerProvider.overrideWith(() =>
+                _FakeTimerNotifier(const TimerState(status: TimerStatus.idle))),
           ],
           child: const MaterialApp(
             home: Scaffold(
@@ -204,7 +273,8 @@ void main() {
       expect(find.text('Stop'), findsNothing);
     });
 
-    testWidgets('TaskSwitchDialog renders comparison and confirms switch', (tester) async {
+    testWidgets('TaskSwitchDialog renders comparison and confirms switch',
+        (tester) async {
       final fakeTimer = _FakeTimerNotifier(
         TimerState(
           status: TimerStatus.switching,
@@ -246,7 +316,9 @@ void main() {
       expect(fakeTimer.confirmSwitchCalled, isTrue);
     });
 
-    testWidgets('TaskSwitchDialog captures optional session note and confirms switch', (tester) async {
+    testWidgets(
+        'TaskSwitchDialog captures optional session note and confirms switch',
+        (tester) async {
       final fakeTimer = _FakeTimerNotifier(
         TimerState(
           status: TimerStatus.switching,
@@ -278,7 +350,8 @@ void main() {
       await tester.pumpAndSettle();
 
       // Enter session note
-      await tester.enterText(find.byType(TextField), 'Finished timer foundation');
+      await tester.enterText(
+          find.byType(TextField), 'Finished timer foundation');
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Confirm Switch'));
@@ -288,7 +361,9 @@ void main() {
       expect(fakeTimer.switchNotes, 'Finished timer foundation');
     });
 
-    testWidgets('TasksView displays Play button and TRACKING status on active task card', (tester) async {
+    testWidgets(
+        'TasksView displays Play button and TRACKING status on active task card',
+        (tester) async {
       final fakeTimer = _FakeTimerNotifier(
         TimerState(
           status: TimerStatus.running,
@@ -301,12 +376,16 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            currentWorkspaceProvider.overrideWith(() => _FakeWorkspaceNotifier(testWorkspace)),
-            projectsProvider.overrideWith(() => _FakeProjectsNotifier([testProject])),
-            categoriesProvider.overrideWith(() => _FakeCategoriesNotifier([testCategory])),
+            currentWorkspaceProvider
+                .overrideWith(() => _FakeWorkspaceNotifier(testWorkspace)),
+            projectsProvider
+                .overrideWith(() => _FakeProjectsNotifier([testProject])),
+            categoriesProvider
+                .overrideWith(() => _FakeCategoriesNotifier([testCategory])),
             tagsProvider.overrideWith(() => _FakeTagsNotifier()),
             peopleProvider.overrideWith(() => _FakePeopleNotifier()),
-            workItemsProvider.overrideWith(() => _FakeWorkItemsNotifier([testTaskA, testTaskB])),
+            workItemsProvider.overrideWith(
+                () => _FakeWorkItemsNotifier([testTaskA, testTaskB])),
             timerProvider.overrideWith(() => fakeTimer),
           ],
           child: MaterialApp(
@@ -342,60 +421,118 @@ void main() {
       expect(fakeTimer.confirmSwitchCalled, isTrue);
     });
 
-    testWidgets('TasksView expands and collapses sessions when clicking Sessions badge', (tester) async {
-      final sampleSession = Session(
-        id: 'session-1',
-        workItemId: testTaskA.id,
-        startTime: DateTime(2026, 8, 24, 9, 0),
-        endTime: DateTime(2026, 8, 24, 10, 30),
-        notes: 'Working on core timer engine',
-        createdAt: DateTime(2026, 8, 24, 9, 0),
-      );
-
-      final fakeTimer = _FakeTimerNotifier(
-        const TimerState(status: TimerStatus.idle),
-      );
-
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            currentWorkspaceProvider.overrideWith(() => _FakeWorkspaceNotifier(testWorkspace)),
-            projectsProvider.overrideWith(() => _FakeProjectsNotifier([testProject])),
-            categoriesProvider.overrideWith(() => _FakeCategoriesNotifier([testCategory])),
-            tagsProvider.overrideWith(() => _FakeTagsNotifier()),
-            peopleProvider.overrideWith(() => _FakePeopleNotifier()),
-            workItemsProvider.overrideWith(() => _FakeWorkItemsNotifier([testTaskA])),
-            timerProvider.overrideWith(() => fakeTimer),
-            sessionsForWorkItemProvider(testTaskA.id).overrideWith((ref) async => [sampleSession]),
-          ],
-          child: MaterialApp(
-            theme: AppTheme.darkTheme,
-            home: const TasksView(),
-          ),
+    /// Builds a TasksView with one work item that has a single session.
+    Widget tasksViewWithSession(Session session, _FakeTimerNotifier fakeTimer) {
+      return ProviderScope(
+        overrides: [
+          currentWorkspaceProvider
+              .overrideWith(() => _FakeWorkspaceNotifier(testWorkspace)),
+          projectsProvider
+              .overrideWith(() => _FakeProjectsNotifier([testProject])),
+          categoriesProvider
+              .overrideWith(() => _FakeCategoriesNotifier([testCategory])),
+          tagsProvider.overrideWith(() => _FakeTagsNotifier()),
+          peopleProvider.overrideWith(() => _FakePeopleNotifier()),
+          workItemsProvider
+              .overrideWith(() => _FakeWorkItemsNotifier([testTaskA])),
+          timerProvider.overrideWith(() => fakeTimer),
+          sessionsForWorkItemProvider(testTaskA.id)
+              .overrideWith((ref) async => [session]),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.darkTheme,
+          home: const TasksView(),
         ),
       );
+    }
 
+    final sampleSession = Session(
+      id: 'session-1',
+      workItemId: testTaskA.id,
+      startTime: DateTime(2026, 8, 24, 9, 0),
+      endTime: DateTime(2026, 8, 24, 10, 30),
+      notes: 'Working on core timer engine',
+      createdAt: DateTime(2026, 8, 24, 9, 0),
+    );
+
+    testWidgets(
+        'TasksView shows a selected item\'s sessions in the inspector on a wide window',
+        (tester) async {
+      tester.view.physicalSize = const Size(1400, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(
+        tasksViewWithSession(
+          sampleSession,
+          _FakeTimerNotifier(const TimerState(status: TimerStatus.idle)),
+        ),
+      );
       await tester.pumpAndSettle();
 
-      // Sessions badge is visible with count
-      expect(find.text('Sessions (1)'), findsOneWidget);
-
-      // Session detail is initially collapsed
+      // Nothing selected yet: the inspector prompts instead of showing detail.
+      expect(find.text('Select a work item'), findsOneWidget);
       expect(find.text('Working on core timer engine'), findsNothing);
 
-      // Tap on Sessions badge to expand
-      await tester.tap(find.text('Sessions (1)'));
+      await tester.tap(find.text('Build Timer Engine'));
       await tester.pumpAndSettle();
 
-      // Now session row is visible with note and duration
+      // The inspector opens beside the list, without displacing it.
+      expect(find.byType(WorkItemInspector), findsOneWidget);
+      expect(find.text('SESSIONS (1)'), findsOneWidget);
       expect(find.text('Working on core timer engine'), findsOneWidget);
       expect(find.text('01:30:00'), findsOneWidget);
+      expect(find.text('Select a work item'), findsNothing);
 
-      // Tap Sessions badge again to collapse
-      await tester.tap(find.text('Sessions (1)'));
+      // Closing returns to the placeholder.
+      await tester.tap(find.byTooltip('Close inspector'));
+      await tester.pumpAndSettle();
+      expect(find.text('Working on core timer engine'), findsNothing);
+      expect(find.text('Select a work item'), findsOneWidget);
+    });
+
+    testWidgets(
+        'TasksView falls back to inline detail when too narrow for two panes',
+        (tester) async {
+      // Below the two-pane breakpoint the inspector has nowhere to go, so the
+      // same detail expands under the row instead. No interaction is lost.
+      tester.view.physicalSize = const Size(820, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(
+        tasksViewWithSession(
+          sampleSession,
+          _FakeTimerNotifier(const TimerState(status: TimerStatus.idle)),
+        ),
+      );
       await tester.pumpAndSettle();
 
-      // Session detail is collapsed again
+      // There is no standing inspector pane at this width.
+      expect(find.text('Select a work item'), findsNothing);
+      expect(find.byType(WorkItemInspector), findsNothing);
+      expect(find.text('Working on core timer engine'), findsNothing);
+
+      // Once expanded the name appears in both the row and the inspector
+      // header, so aim the taps at the row specifically.
+      final rowTitle = find.descendant(
+        of: find.byType(WorkItemRow),
+        matching: find.text('Build Timer Engine'),
+      );
+
+      await tester.tap(rowTitle);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(WorkItemInspector), findsOneWidget);
+      expect(find.text('SESSIONS (1)'), findsOneWidget);
+      expect(find.text('Working on core timer engine'), findsOneWidget);
+
+      // Tapping the row again collapses it.
+      await tester.tap(rowTitle);
+      await tester.pumpAndSettle();
+      expect(find.byType(WorkItemInspector), findsNothing);
       expect(find.text('Working on core timer engine'), findsNothing);
     });
   });
