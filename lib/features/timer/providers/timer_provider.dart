@@ -21,6 +21,7 @@ final taskSwitchServiceProvider = Provider<TaskSwitchService>((ref) {
   return TaskSwitchService(
     timerService: ref.watch(timerServiceProvider),
     sessionRepository: ref.watch(sessionRepositoryProvider),
+    workItemRepository: ref.watch(workItemRepositoryProvider),
   );
 });
 
