@@ -109,7 +109,7 @@ class _IdlePromptDialogState extends ConsumerState<IdlePromptDialog> {
       child: AlertDialog(
         backgroundColor: AppTheme.getColors(context).surface,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: AppTheme.dialogRadius,
           side:
               BorderSide(color: AppTheme.getColors(context).divider, width: 1),
         ),

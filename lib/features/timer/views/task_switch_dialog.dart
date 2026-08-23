@@ -224,24 +224,8 @@ class _TaskSwitchDialogState extends ConsumerState<TaskSwitchDialog> {
                 controller: _notesController,
                 maxLines: 2,
                 style: TextStyle(fontSize: 13, color: AppTheme.getColors(context).textPrimary),
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   hintText: 'Add closing summary or work log for previous task...',
-                  hintStyle: TextStyle(fontSize: 12, color: AppTheme.getColors(context).textSecondary),
-                  filled: true,
-                  fillColor: AppTheme.getColors(context).card,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: AppTheme.getColors(context).divider),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: AppTheme.getColors(context).divider),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: AppTheme.primaryColor),
-                  ),
-                  contentPadding: EdgeInsets.all(10),
                 ),
               ),
             ],
@@ -250,17 +234,11 @@ class _TaskSwitchDialogState extends ConsumerState<TaskSwitchDialog> {
         actions: [
           TextButton(
             onPressed: _handleCancel,
-            child: Text('Cancel', style: TextStyle(color: AppTheme.getColors(context).textSecondary)),
+            child: const Text('Cancel'),
           ),
           ElevatedButton(
             onPressed: _handleConfirm,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.primaryColor,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            ),
-            child: Text('Confirm Switch'),
+            child: const Text('Confirm Switch'),
           ),
         ],
       ),
