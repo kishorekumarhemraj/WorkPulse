@@ -16,7 +16,7 @@ WorkPulse is an intentional, privacy-first desktop utility for work awareness an
 2. **One and Only One Active Session**: Exactly one work session can run at any moment. Switching tasks cleanly stops and commits the previous session.
 3. **Wall-Clock Truth**: Durations are calculated as `end_time - start_time`. In-memory timers are visual representations only.
 4. **Soft-Archiving**: Referenced entities (projects, categories, attributes) are archived via `archived_at` to guarantee historical data integrity.
-5. **Fast Keyboard-First Quick Capture**: Floating command palette appearing in `<300ms` perceived response time.
+5. **Fast Keyboard-First Quick Capture with Focus Isolation**: Floating command palette appearing in `<300ms` perceived response time over any focused application without stealing or exposing full dashboard application focus.
 
 ---
 
@@ -38,7 +38,7 @@ WorkPulse strictly adheres to a 4-layer clean architecture:
                               │
 ┌─────────────────────────────▼─────────────────────────────┐
 │                         Data Layer                        │
-│    (SQLite Tables, Migration V1, Concrete Repositories)   │
+│   (SQLite Tables, Migrations V1-V2, Concrete Repositories)│
 └─────────────────────────────┬─────────────────────────────┘
                               │
 ┌─────────────────────────────▼─────────────────────────────┐
@@ -50,7 +50,7 @@ WorkPulse strictly adheres to a 4-layer clean architecture:
 ### Layer Details:
 - **`lib/core/`**: Platform adapters (`HotKeyService`, `TrayService`, `IdleDetectorService`, `WindowService`), database initialization, error types (`AppException`), and color/icon utilities.
 - **`lib/domain/`**: Pure Dart models (`WorkItem`, `Session`, `Project`, `Category`, `Tag`, `Person`, `AttributeDefinition`, `AttributeOption`, `IdlePeriod`), repository contracts, and business logic services (`TimerService`, `TaskSwitchService`, `IdleService`).
-- **`lib/data/`**: SQLite table schemas (`Tables`), versioned migrations (`MigrationV1`), DAOs, and repository implementations (`SqliteWorkItemRepository`, `SqliteSessionRepository`, etc.).
+- **`lib/data/`**: SQLite table schemas (`Tables`), versioned migrations (`MigrationV1`, `MigrationV2`), DAOs, and repository implementations (`SqliteWorkItemRepository`, `SqliteSessionRepository`, etc.).
 - **`lib/features/`**: Feature-specific UI, view models, and Riverpod providers (`quick_capture/`, `tasks/`, `timer/`, `idle/`, `attributes/`, `projects/`, `categories/`, `tags/`, `people/`, `dashboard/`, `reports/`, `settings/`, `shell/`).
 
 ---
@@ -93,6 +93,10 @@ The schema consists of 16 normalized tables configured with `PRAGMA foreign_keys
                                   └───────────────────────────┘
 ```
 
+### Migration History:
+- **`MigrationV1`**: Schema creation (16 tables), indices, and default workspace seeding.
+- **`MigrationV2`**: Adds `notes` column to `sessions` table, enabling granular session-level work notes and task switch handover descriptions.
+
 ### Key Performance Indices:
 - `idx_work_items_name` on `work_items(name)`
 - `idx_work_items_project_id` on `work_items(project_id)`
@@ -122,9 +126,9 @@ The schema consists of 16 normalized tables configured with `PRAGMA foreign_keys
        ├── Cancel ──> Resume Session A Active
        └── Confirm
               │
-              ├── Stop Session A (commit endTime in SQLite)
+              ├── Stop Session A (commit endTime and optional session notes in SQLite)
               ├── Start Session B (commit startTime in SQLite)
-              └── Update Menu Bar & Active Timer Bar
+              └── Update macOS Menu Bar & In-App Top Timer Bar
 ```
 
 ### 4.2. Inactivity & Idle Resolution Flow
@@ -140,10 +144,19 @@ The schema consists of 16 normalized tables configured with `PRAGMA foreign_keys
 
 ---
 
-## 5. macOS Native Integrations
+## 5. macOS Native Integrations & Window Modes
 
-All native OS bindings are abstracted behind clean interfaces to ensure testability:
+All native OS bindings are abstracted behind clean interfaces:
 - **`HotKeyService`**: Handles system-wide `⌥ + Space` (Option + Space) registration via `hotkey_manager`.
-- **`TrayService`**: Manages menu bar icon, dynamic title (`⏱ 01:23:42`), and context menu via `tray_manager`.
-- **`WindowService`**: Controls multi-window behaviors, centering Quick Capture on focused display screen via `screen_retriever` and `window_manager`.
+- **`TrayService`**: Manages menu bar icon, dynamic live status bar ticker (`⏱ 00:14:22  Task Name`), and context menu via `tray_manager`.
+- **`WindowService` & Window Modes**:
+  - **`WindowMode.quickCapture`**:
+    - Invoked via global shortcut `⌥ + Space` or Tray "Quick Capture".
+    - Transforms the Flutter window into a frameless, transparent (`#00000000`), `alwaysOnTop` floating HUD (`660x440`).
+    - Positioned in the upper third of the monitor containing the active mouse cursor via `screen_retriever`.
+    - Renders `QuickCaptureStandaloneView` without bringing the full dashboard window into focus.
+    - Features `onWindowBlur` auto-dismissal: clicking outside or switching apps hides the HUD and returns focus cleanly to the previous application.
+  - **`WindowMode.dashboard`**:
+    - Restores standard window decorations (`TitleBarStyle.normal`), disables `alwaysOnTop`, and expands to full dashboard dimensions (`1200x800` or saved bounds).
+    - Top header hosts `ActiveTimerBar` with pulsing status indicator, project badge, live monospace duration ticker, and quick Switch / Stop actions.
 - **`IdleDetectorService`**: Dispatches inactivity alerts based on user input thresholds.

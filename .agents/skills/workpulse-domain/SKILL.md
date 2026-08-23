@@ -88,6 +88,7 @@ Session
 ├── workItemId: UUID (String, Required)
 ├── startTime: DateTime (UTC, Required)
 ├── endTime: DateTime? (UTC, null if currently active)
+├── notes: String? (Optional session notes / task switch notes)
 ├── peopleIds: List<String> (Session-specific participants)
 └── createdAt: DateTime (UTC)
 ```

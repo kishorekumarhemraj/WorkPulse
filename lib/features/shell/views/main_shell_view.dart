@@ -16,7 +16,6 @@ import 'package:workpulse/features/people/providers/people_provider.dart';
 import 'package:workpulse/features/people/views/people_view.dart';
 import 'package:workpulse/features/projects/providers/projects_provider.dart';
 import 'package:workpulse/features/projects/views/projects_view.dart';
-import 'package:workpulse/features/quick_capture/views/quick_capture_dialog.dart';
 import 'package:workpulse/features/reports/providers/reports_provider.dart';
 import 'package:workpulse/features/reports/views/session_history_view.dart';
 import 'package:workpulse/features/settings/providers/app_settings_provider.dart';
