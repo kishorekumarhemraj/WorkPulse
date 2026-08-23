@@ -121,7 +121,7 @@ void main() {
       expect(find.text('Build Export & Hardening Feature'), findsOneWidget);
       expect(find.text('WorkPulse Core'), findsOneWidget);
       expect(find.text('Engineering'), findsOneWidget);
-      expect(find.text('01:00'), findsOneWidget);
+      expect(find.text('01:00:00'), findsOneWidget);
     });
 
     testWidgets('SessionEditDialog renders session details, time pickers, and notes field', (tester) async {

@@ -126,9 +126,9 @@ class TimerService {
     final minutesStr = minutes.toString().padLeft(2, '0');
     final secondsStr = seconds.toString().padLeft(2, '0');
 
-    if (hours > 0 || !includeSeconds) {
-      return includeSeconds ? '$hoursStr:$minutesStr:$secondsStr' : '$hoursStr:$minutesStr';
+    if (!includeSeconds) {
+      return '$hoursStr:$minutesStr';
     }
-    return '$minutesStr:$secondsStr';
+    return '$hoursStr:$minutesStr:$secondsStr';
   }
 }
