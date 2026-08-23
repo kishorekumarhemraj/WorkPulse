@@ -406,7 +406,8 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
                                               fontSize: 12,
                                               color: AppTheme.getColors(context)
                                                   .textSecondary)))),
-                              error: (_, __) => const Text('Error loading projects'),
+                              error: (_, __) =>
+                                  const Text('Error loading projects'),
                               data: (projects) {
                                 return DropdownButtonFormField<String>(
                                   isDense: true,
@@ -434,7 +435,8 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
                                           const SizedBox(width: 8),
                                           Expanded(
                                             child: Text(p.name,
-                                                overflow: TextOverflow.ellipsis),
+                                                overflow:
+                                                    TextOverflow.ellipsis),
                                           ),
                                         ],
                                       ),
@@ -520,7 +522,8 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
                                           const SizedBox(width: 8),
                                           Expanded(
                                             child: Text(c.name,
-                                                overflow: TextOverflow.ellipsis),
+                                                overflow:
+                                                    TextOverflow.ellipsis),
                                           ),
                                         ],
                                       ),

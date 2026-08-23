@@ -195,15 +195,17 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      // Tap Session Scope filter
-      await tester.tap(find.text('Session Scope'));
+      // The scope filter is now a segmented control reading "All" / "Task" /
+      // "Session", replacing the "Task Scope" / "Session Scope" chips. The
+      // scope badges on each row are uppercase (TASK / SESSION), so these
+      // finders match only the control.
+      await tester.tap(find.text('Session'));
       await tester.pumpAndSettle();
 
       expect(find.text('Meeting Type'), findsOneWidget);
       expect(find.text('Jira Key'), findsNothing);
 
-      // Tap Task Scope filter
-      await tester.tap(find.text('Task Scope'));
+      await tester.tap(find.text('Task'));
       await tester.pumpAndSettle();
 
       expect(find.text('Jira Key'), findsOneWidget);

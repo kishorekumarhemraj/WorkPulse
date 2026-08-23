@@ -65,7 +65,9 @@ class _PersonFormDialogState extends ConsumerState<PersonFormDialog> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to save person: $e'), backgroundColor: AppTheme.accentRed),
+          SnackBar(
+              content: Text('Failed to save person: $e'),
+              backgroundColor: AppTheme.accentRed),
         );
       }
     } finally {
@@ -80,7 +82,8 @@ class _PersonFormDialogState extends ConsumerState<PersonFormDialog> {
     return Focus(
       autofocus: true,
       onKeyEvent: (node, event) {
-        if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.escape) {
+        if (event is KeyDownEvent &&
+            event.logicalKey == LogicalKeyboardKey.escape) {
           Navigator.of(context).pop();
           return KeyEventResult.handled;
         }
@@ -90,7 +93,8 @@ class _PersonFormDialogState extends ConsumerState<PersonFormDialog> {
         backgroundColor: AppTheme.getColors(context).surface,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
-          side: BorderSide(color: AppTheme.getColors(context).divider, width: 1),
+          side:
+              BorderSide(color: AppTheme.getColors(context).divider, width: 1),
         ),
         titlePadding: const EdgeInsets.fromLTRB(24, 20, 24, 12),
         contentPadding: const EdgeInsets.fromLTRB(24, 0, 24, 20),
@@ -112,7 +116,10 @@ class _PersonFormDialogState extends ConsumerState<PersonFormDialog> {
             const SizedBox(width: 12),
             Text(
               isEditing ? 'Edit Person' : 'New Person',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: AppTheme.getColors(context).textPrimary),
+              style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.getColors(context).textPrimary),
             ),
           ],
         ),
@@ -125,15 +132,22 @@ class _PersonFormDialogState extends ConsumerState<PersonFormDialog> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Full Name', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AppTheme.getColors(context).textSecondary)),
+                  Text('Full Name',
+                      style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          color: AppTheme.getColors(context).textSecondary)),
                   const SizedBox(height: 6),
                   TextFormField(
                     controller: _nameController,
                     autofocus: true,
-                    style: TextStyle(color: AppTheme.getColors(context).textPrimary, fontSize: 14),
+                    style: TextStyle(
+                        color: AppTheme.getColors(context).textPrimary,
+                        fontSize: 14),
                     decoration: InputDecoration(
                       hintText: 'e.g. John Doe, Alice Smith',
-                      hintStyle: TextStyle(color: AppTheme.getColors(context).textSecondary),
+                      hintStyle: TextStyle(
+                          color: AppTheme.getColors(context).textSecondary),
                     ),
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
@@ -144,19 +158,27 @@ class _PersonFormDialogState extends ConsumerState<PersonFormDialog> {
                     onFieldSubmitted: (_) => _submit(),
                   ),
                   const SizedBox(height: 16),
-                  Text('Email Address (Optional)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AppTheme.getColors(context).textSecondary)),
+                  Text('Email Address (Optional)',
+                      style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          color: AppTheme.getColors(context).textSecondary)),
                   const SizedBox(height: 6),
                   TextFormField(
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
-                    style: TextStyle(color: AppTheme.getColors(context).textPrimary, fontSize: 14),
+                    style: TextStyle(
+                        color: AppTheme.getColors(context).textPrimary,
+                        fontSize: 14),
                     decoration: InputDecoration(
                       hintText: 'e.g. john@company.com',
-                      hintStyle: TextStyle(color: AppTheme.getColors(context).textSecondary),
+                      hintStyle: TextStyle(
+                          color: AppTheme.getColors(context).textSecondary),
                     ),
                     validator: (value) {
                       if (value != null && value.trim().isNotEmpty) {
-                        final emailRegExp = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+                        final emailRegExp =
+                            RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
                         if (!emailRegExp.hasMatch(value.trim())) {
                           return 'Please enter a valid email address';
                         }
@@ -178,7 +200,11 @@ class _PersonFormDialogState extends ConsumerState<PersonFormDialog> {
           ElevatedButton(
             onPressed: _isSubmitting ? null : _submit,
             child: _isSubmitting
-                ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2, color: Colors.white))
                 : Text(isEditing ? 'Save Changes' : 'Add Person'),
           ),
         ],

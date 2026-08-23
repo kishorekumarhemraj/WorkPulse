@@ -201,342 +201,339 @@ class _QuickCaptureStandaloneViewState
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-                // Search Input Header
-                Container(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-                  decoration: BoxDecoration(
-                    border: Border(
-                      bottom: BorderSide(
-                        color: AppTheme.getColors(context).divider,
-                        width: 1,
-                      ),
+              // Search Input Header
+              Container(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                decoration: BoxDecoration(
+                  border: Border(
+                    bottom: BorderSide(
+                      color: AppTheme.getColors(context).divider,
+                      width: 1,
                     ),
                   ),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.search,
-                        size: 22,
-                        color: AppTheme.primaryColor,
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: TextField(
-                          controller: _searchController,
-                          focusNode: _inputFocusNode,
-                          autofocus: true,
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: AppTheme.getColors(context).textPrimary,
-                            fontWeight: FontWeight.w500,
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.search,
+                      size: 22,
+                      color: AppTheme.primaryColor,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: TextField(
+                        controller: _searchController,
+                        focusNode: _inputFocusNode,
+                        autofocus: true,
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: AppTheme.getColors(context).textPrimary,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        decoration: InputDecoration(
+                          hintText: 'Search tasks or type new task name...',
+                          hintStyle: TextStyle(
+                            fontSize: 15,
+                            color: AppTheme.getColors(context).textSecondary,
                           ),
-                          decoration: InputDecoration(
-                            hintText: 'Search tasks or type new task name...',
-                            hintStyle: TextStyle(
-                              fontSize: 15,
+                          border: InputBorder.none,
+                          contentPadding: EdgeInsets.zero,
+                          isDense: true,
+                        ),
+                        onChanged: (val) => ref
+                            .read(quickCaptureProvider.notifier)
+                            .setQuery(val),
+                      ),
+                    ),
+                    if (qcState.query.isNotEmpty)
+                      IconButton(
+                        icon: Icon(
+                          Icons.close,
+                          size: 16,
+                          color: AppTheme.getColors(context).textSecondary,
+                        ),
+                        onPressed: () {
+                          _searchController.clear();
+                          ref.read(quickCaptureProvider.notifier).setQuery('');
+                        },
+                      ),
+                    // Shortcut Badges
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppTheme.getColors(context).card,
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(
+                          color: AppTheme.getColors(context).divider,
+                        ),
+                      ),
+                      child: Text(
+                        '↵ Track',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.getColors(context).textSecondary,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppTheme.getColors(context).card,
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(
+                          color: AppTheme.getColors(context).divider,
+                        ),
+                      ),
+                      child: Text(
+                        'esc',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.getColors(context).textSecondary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Results List
+              Flexible(
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  padding: const EdgeInsets.symmetric(vertical: 6),
+                  itemCount: totalItems == 0 ? 1 : totalItems,
+                  itemBuilder: (context, index) {
+                    if (totalItems == 0) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 24,
+                          horizontal: 16,
+                        ),
+                        child: Center(
+                          child: Text(
+                            'Type a task name to track',
+                            style: TextStyle(
+                              fontSize: 13,
                               color: AppTheme.getColors(context).textSecondary,
                             ),
-                            border: InputBorder.none,
-                            contentPadding: EdgeInsets.zero,
-                            isDense: true,
-                          ),
-                          onChanged: (val) => ref
-                              .read(quickCaptureProvider.notifier)
-                              .setQuery(val),
-                        ),
-                      ),
-                      if (qcState.query.isNotEmpty)
-                        IconButton(
-                          icon: Icon(
-                            Icons.close,
-                            size: 16,
-                            color: AppTheme.getColors(context).textSecondary,
-                          ),
-                          onPressed: () {
-                            _searchController.clear();
-                            ref
-                                .read(quickCaptureProvider.notifier)
-                                .setQuery('');
-                          },
-                        ),
-                      // Shortcut Badges
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 3,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppTheme.getColors(context).card,
-                          borderRadius: BorderRadius.circular(4),
-                          border: Border.all(
-                            color: AppTheme.getColors(context).divider,
                           ),
                         ),
-                        child: Text(
-                          '↵ Track',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                            color: AppTheme.getColors(context).textSecondary,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 3,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppTheme.getColors(context).card,
-                          borderRadius: BorderRadius.circular(4),
-                          border: Border.all(
-                            color: AppTheme.getColors(context).divider,
-                          ),
-                        ),
-                        child: Text(
-                          'esc',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                            color: AppTheme.getColors(context).textSecondary,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // Results List
-                Flexible(
-                  child: ListView.builder(
-                    shrinkWrap: true,
-                    padding: const EdgeInsets.symmetric(vertical: 6),
-                    itemCount: totalItems == 0 ? 1 : totalItems,
-                    itemBuilder: (context, index) {
-                      if (totalItems == 0) {
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 24,
-                            horizontal: 16,
-                          ),
-                          child: Center(
-                            child: Text(
-                              'Type a task name to track',
-                              style: TextStyle(
-                                fontSize: 13,
-                                color:
-                                    AppTheme.getColors(context).textSecondary,
-                              ),
-                            ),
-                          ),
-                        );
-                      }
-
-                      final isCreateOption =
-                          showCreateOption && index == matchingTasks.length;
-                      final isSelected = qcState.selectedIndex == index;
-
-                      if (isCreateOption) {
-                        return _buildCreateOption(qcState.query, isSelected);
-                      }
-
-                      final task = matchingTasks[index];
-                      final project = projectMap[task.projectId];
-                      final category = categoryMap[task.categoryId];
-
-                      return _buildTaskResultItem(
-                        task,
-                        project,
-                        category,
-                        isSelected,
-                        index,
                       );
-                    },
+                    }
+
+                    final isCreateOption =
+                        showCreateOption && index == matchingTasks.length;
+                    final isSelected = qcState.selectedIndex == index;
+
+                    if (isCreateOption) {
+                      return _buildCreateOption(qcState.query, isSelected);
+                    }
+
+                    final task = matchingTasks[index];
+                    final project = projectMap[task.projectId];
+                    final category = categoryMap[task.categoryId];
+
+                    return _buildTaskResultItem(
+                      task,
+                      project,
+                      category,
+                      isSelected,
+                      index,
+                    );
+                  },
+                ),
+              ),
+
+              // Bottom Configuration Bar
+              Container(
+                padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+                decoration: BoxDecoration(
+                  color: AppTheme.getColors(context).card,
+                  borderRadius: const BorderRadius.vertical(
+                    bottom: Radius.circular(14),
+                  ),
+                  border: Border(
+                    top: BorderSide(
+                      color: AppTheme.getColors(context).divider,
+                      width: 1,
+                    ),
                   ),
                 ),
-
-                // Bottom Configuration Bar
-                Container(
-                  padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
-                  decoration: BoxDecoration(
-                    color: AppTheme.getColors(context).card,
-                    borderRadius: const BorderRadius.vertical(
-                      bottom: Radius.circular(14),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        if (projects.isNotEmpty) ...[
+                          Icon(
+                            Icons.folder_outlined,
+                            size: 14,
+                            color: AppTheme.getColors(context).textSecondary,
+                          ),
+                          const SizedBox(width: 6),
+                          DropdownButton<String>(
+                            value: projects.any(
+                              (p) => p.id == qcState.selectedProjectId,
+                            )
+                                ? qcState.selectedProjectId
+                                : projects.first.id,
+                            dropdownColor: AppTheme.getColors(context).surface,
+                            underline: const SizedBox.shrink(),
+                            isDense: true,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppTheme.getColors(context).textPrimary,
+                            ),
+                            items: projects.map((p) {
+                              final col = ColorUtils.parseHex(p.colorHex);
+                              return DropdownMenuItem(
+                                value: p.id,
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Container(
+                                      width: 6,
+                                      height: 6,
+                                      decoration: BoxDecoration(
+                                        color: col,
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      p.name,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: AppTheme.getColors(context)
+                                            .textPrimary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }).toList(),
+                            onChanged: (val) => ref
+                                .read(quickCaptureProvider.notifier)
+                                .setProject(val),
+                          ),
+                          const SizedBox(width: 14),
+                        ],
+                        if (categories.isNotEmpty) ...[
+                          Icon(
+                            Icons.category_outlined,
+                            size: 14,
+                            color: AppTheme.getColors(context).textSecondary,
+                          ),
+                          const SizedBox(width: 6),
+                          DropdownButton<String>(
+                            value: categories.any(
+                              (c) => c.id == qcState.selectedCategoryId,
+                            )
+                                ? qcState.selectedCategoryId
+                                : categories.first.id,
+                            dropdownColor: AppTheme.getColors(context).surface,
+                            underline: const SizedBox.shrink(),
+                            isDense: true,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppTheme.getColors(context).textPrimary,
+                            ),
+                            items: categories.map((c) {
+                              return DropdownMenuItem(
+                                value: c.id,
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      IconUtils.getIcon(c.iconName),
+                                      size: 12,
+                                      color: AppTheme.primaryColor,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      c.name,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: AppTheme.getColors(context)
+                                            .textPrimary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }).toList(),
+                            onChanged: (val) => ref
+                                .read(quickCaptureProvider.notifier)
+                                .setCategory(val),
+                          ),
+                        ],
+                      ],
                     ),
-                    border: Border(
-                      top: BorderSide(
-                        color: AppTheme.getColors(context).divider,
-                        width: 1,
-                      ),
-                    ),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
+                    if (tags.isNotEmpty || people.isNotEmpty) ...[
+                      const SizedBox(height: 10),
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 6,
                         children: [
-                          if (projects.isNotEmpty) ...[
-                            Icon(
-                              Icons.folder_outlined,
-                              size: 14,
-                              color: AppTheme.getColors(context).textSecondary,
-                            ),
-                            const SizedBox(width: 6),
-                            DropdownButton<String>(
-                              value: projects.any(
-                                (p) => p.id == qcState.selectedProjectId,
-                              )
-                                  ? qcState.selectedProjectId
-                                  : projects.first.id,
-                              dropdownColor: AppTheme.getColors(context).surface,
-                              underline: const SizedBox.shrink(),
-                              isDense: true,
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: AppTheme.getColors(context).textPrimary,
-                              ),
-                              items: projects.map((p) {
-                                final col = ColorUtils.parseHex(p.colorHex);
-                                return DropdownMenuItem(
-                                  value: p.id,
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Container(
-                                        width: 6,
-                                        height: 6,
-                                        decoration: BoxDecoration(
-                                          color: col,
-                                          shape: BoxShape.circle,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 6),
-                                      Text(
-                                        p.name,
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: AppTheme.getColors(context)
-                                              .textPrimary,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                              }).toList(),
-                              onChanged: (val) => ref
+                          ...tags.map((t) {
+                            final isTagSelected =
+                                qcState.selectedTagIds.contains(t.id);
+                            final tagColor = ColorUtils.parseHex(t.colorHex);
+                            return _StandaloneQuickChip(
+                              label: '#${t.name}',
+                              icon: Icons.label_outline,
+                              selected: isTagSelected,
+                              color: tagColor,
+                              onTap: () => ref
                                   .read(quickCaptureProvider.notifier)
-                                  .setProject(val),
-                            ),
-                            const SizedBox(width: 14),
-                          ],
-                          if (categories.isNotEmpty) ...[
-                            Icon(
-                              Icons.category_outlined,
-                              size: 14,
-                              color: AppTheme.getColors(context).textSecondary,
-                            ),
-                            const SizedBox(width: 6),
-                            DropdownButton<String>(
-                              value: categories.any(
-                                (c) => c.id == qcState.selectedCategoryId,
-                              )
-                                  ? qcState.selectedCategoryId
-                                  : categories.first.id,
-                              dropdownColor: AppTheme.getColors(context).surface,
-                              underline: const SizedBox.shrink(),
-                              isDense: true,
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: AppTheme.getColors(context).textPrimary,
-                              ),
-                              items: categories.map((c) {
-                                return DropdownMenuItem(
-                                  value: c.id,
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        IconUtils.getIcon(c.iconName),
-                                        size: 12,
-                                        color: AppTheme.primaryColor,
-                                      ),
-                                      const SizedBox(width: 6),
-                                      Text(
-                                        c.name,
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: AppTheme.getColors(context)
-                                              .textPrimary,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                              }).toList(),
-                              onChanged: (val) => ref
+                                  .toggleTag(t.id),
+                            );
+                          }),
+                          ...people.map((person) {
+                            final isPersonSelected =
+                                qcState.selectedPeopleIds.contains(person.id);
+                            return _StandaloneQuickChip(
+                              label: person.name,
+                              icon: Icons.person_outline,
+                              selected: isPersonSelected,
+                              color: AppTheme.primaryColor,
+                              onTap: () => ref
                                   .read(quickCaptureProvider.notifier)
-                                  .setCategory(val),
-                            ),
-                          ],
+                                  .togglePerson(person.id),
+                            );
+                          }),
                         ],
                       ),
-                      if (tags.isNotEmpty || people.isNotEmpty) ...[
-                        const SizedBox(height: 10),
-                        Wrap(
-                          spacing: 6,
-                          runSpacing: 6,
-                          children: [
-                            ...tags.map((t) {
-                              final isTagSelected =
-                                  qcState.selectedTagIds.contains(t.id);
-                              final tagColor = ColorUtils.parseHex(t.colorHex);
-                              return _StandaloneQuickChip(
-                                label: '#${t.name}',
-                                icon: Icons.label_outline,
-                                selected: isTagSelected,
-                                color: tagColor,
-                                onTap: () => ref
-                                    .read(quickCaptureProvider.notifier)
-                                    .toggleTag(t.id),
-                              );
-                            }),
-                            ...people.map((person) {
-                              final isPersonSelected =
-                                  qcState.selectedPeopleIds.contains(person.id);
-                              return _StandaloneQuickChip(
-                                label: person.name,
-                                icon: Icons.person_outline,
-                                selected: isPersonSelected,
-                                color: AppTheme.primaryColor,
-                                onTap: () => ref
-                                    .read(quickCaptureProvider.notifier)
-                                    .togglePerson(person.id),
-                              );
-                            }),
-                          ],
-                        ),
-                      ],
-                      if (quickCaptureAttributes.isNotEmpty) ...[
-                        const SizedBox(height: 12),
-                        DynamicAttributeFields(
-                          definitions: quickCaptureAttributes,
-                          values: _attributeValues,
-                          onValueChanged: (defId, val) {
-                            setState(() {
-                              _attributeValues[defId] = val;
-                            });
-                          },
-                        ),
-                      ],
                     ],
-                  ),
+                    if (quickCaptureAttributes.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      DynamicAttributeFields(
+                        definitions: quickCaptureAttributes,
+                        values: _attributeValues,
+                        onValueChanged: (defId, val) {
+                          setState(() {
+                            _attributeValues[defId] = val;
+                          });
+                        },
+                      ),
+                    ],
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
-      );
+      ),
+    );
   }
 
   Widget _buildTaskResultItem(
@@ -551,7 +548,8 @@ class _QuickCaptureStandaloneViewState
     return Container(
       decoration: BoxDecoration(
         border: isSelected
-            ? const Border(left: BorderSide(color: AppTheme.primaryColor, width: 3))
+            ? const Border(
+                left: BorderSide(color: AppTheme.primaryColor, width: 3))
             : null,
       ),
       child: Material(
@@ -619,7 +617,8 @@ class _QuickCaptureStandaloneViewState
                               category.name,
                               style: TextStyle(
                                 fontSize: 11,
-                                color: AppTheme.getColors(context).textSecondary,
+                                color:
+                                    AppTheme.getColors(context).textSecondary,
                               ),
                             ),
                           ],
@@ -649,7 +648,8 @@ class _QuickCaptureStandaloneViewState
     return Container(
       decoration: BoxDecoration(
         border: isSelected
-            ? const Border(left: BorderSide(color: AppTheme.accentGreen, width: 3))
+            ? const Border(
+                left: BorderSide(color: AppTheme.accentGreen, width: 3))
             : null,
       ),
       child: Material(

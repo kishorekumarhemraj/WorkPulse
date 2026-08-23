@@ -65,7 +65,8 @@ class WorkItemFilter extends Equatable {
       ];
 }
 
-final workItemFilterProvider = NotifierProvider<WorkItemFilterNotifier, WorkItemFilter>(
+final workItemFilterProvider =
+    NotifierProvider<WorkItemFilterNotifier, WorkItemFilter>(
   WorkItemFilterNotifier.new,
 );
 
@@ -118,7 +119,8 @@ class WorkItemFilterNotifier extends Notifier<WorkItemFilter> {
   }
 }
 
-final workItemsProvider = AsyncNotifierProvider<WorkItemsNotifier, List<WorkItem>>(
+final workItemsProvider =
+    AsyncNotifierProvider<WorkItemsNotifier, List<WorkItem>>(
   WorkItemsNotifier.new,
 );
 
@@ -157,7 +159,8 @@ class WorkItemsNotifier extends AsyncNotifier<List<WorkItem>> {
       if (filter.tagId != null && !item.tagIds.contains(filter.tagId)) {
         return false;
       }
-      if (filter.personId != null && !item.peopleIds.contains(filter.personId)) {
+      if (filter.personId != null &&
+          !item.peopleIds.contains(filter.personId)) {
         return false;
       }
       return true;

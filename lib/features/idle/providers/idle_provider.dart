@@ -50,7 +50,8 @@ class IdleState extends Equatable {
   }
 
   @override
-  List<Object?> get props => [isPromptVisible, currentEvent, activeWorkItem, activeSession];
+  List<Object?> get props =>
+      [isPromptVisible, currentEvent, activeWorkItem, activeSession];
 }
 
 final idleNotifierProvider = NotifierProvider<IdleNotifier, IdleState>(
@@ -61,7 +62,8 @@ class IdleNotifier extends Notifier<IdleState> {
   StreamSubscription<IdleDetectionEvent>? _subscription;
 
   IdleService get _idleService => ref.read(idleServiceProvider);
-  IdleDetectorService get _detectorService => ref.read(idleDetectorServiceProvider);
+  IdleDetectorService get _detectorService =>
+      ref.read(idleDetectorServiceProvider);
 
   @override
   IdleState build() {
@@ -77,7 +79,10 @@ class IdleNotifier extends Notifier<IdleState> {
 
   void _handleIdleDetected(IdleDetectionEvent event) {
     final timerState = ref.read(timerProvider).value;
-    if (timerState == null || !timerState.isRunning || timerState.activeSession == null || timerState.activeWorkItem == null) {
+    if (timerState == null ||
+        !timerState.isRunning ||
+        timerState.activeSession == null ||
+        timerState.activeWorkItem == null) {
       return;
     }
 
@@ -95,7 +100,10 @@ class IdleNotifier extends Notifier<IdleState> {
     DateTime? startTime,
   }) {
     final timerState = ref.read(timerProvider).value;
-    if (timerState == null || !timerState.isRunning || timerState.activeSession == null || timerState.activeWorkItem == null) {
+    if (timerState == null ||
+        !timerState.isRunning ||
+        timerState.activeSession == null ||
+        timerState.activeWorkItem == null) {
       return;
     }
 
@@ -134,7 +142,9 @@ class IdleNotifier extends Notifier<IdleState> {
   /// Option 2: Discard idle time & resume active task
   Future<void> markIdle() async {
     final current = state;
-    if (current.currentEvent == null || current.activeSession == null || current.activeWorkItem == null) {
+    if (current.currentEvent == null ||
+        current.activeSession == null ||
+        current.activeWorkItem == null) {
       dismiss();
       return;
     }

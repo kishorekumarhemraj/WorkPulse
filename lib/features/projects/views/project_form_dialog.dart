@@ -34,7 +34,8 @@ class _ProjectFormDialogState extends ConsumerState<ProjectFormDialog> {
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.project?.name ?? '');
-    _descController = TextEditingController(text: widget.project?.description ?? '');
+    _descController =
+        TextEditingController(text: widget.project?.description ?? '');
     _selectedColorHex = widget.project?.colorHex ?? ColorUtils.paletteHex.first;
   }
 
@@ -70,7 +71,9 @@ class _ProjectFormDialogState extends ConsumerState<ProjectFormDialog> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to save project: $e'), backgroundColor: AppTheme.accentRed),
+          SnackBar(
+              content: Text('Failed to save project: $e'),
+              backgroundColor: AppTheme.accentRed),
         );
       }
     } finally {
@@ -85,7 +88,8 @@ class _ProjectFormDialogState extends ConsumerState<ProjectFormDialog> {
     return Focus(
       autofocus: true,
       onKeyEvent: (node, event) {
-        if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.escape) {
+        if (event is KeyDownEvent &&
+            event.logicalKey == LogicalKeyboardKey.escape) {
           Navigator.of(context).pop();
           return KeyEventResult.handled;
         }
@@ -95,7 +99,8 @@ class _ProjectFormDialogState extends ConsumerState<ProjectFormDialog> {
         backgroundColor: AppTheme.getColors(context).surface,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
-          side: BorderSide(color: AppTheme.getColors(context).divider, width: 1),
+          side:
+              BorderSide(color: AppTheme.getColors(context).divider, width: 1),
         ),
         titlePadding: const EdgeInsets.fromLTRB(24, 20, 24, 12),
         contentPadding: const EdgeInsets.fromLTRB(24, 0, 24, 20),
@@ -105,7 +110,8 @@ class _ProjectFormDialogState extends ConsumerState<ProjectFormDialog> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: ColorUtils.parseHex(_selectedColorHex).withValues(alpha: 0.2),
+                color: ColorUtils.parseHex(_selectedColorHex)
+                    .withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(
@@ -117,7 +123,10 @@ class _ProjectFormDialogState extends ConsumerState<ProjectFormDialog> {
             const SizedBox(width: 12),
             Text(
               isEditing ? 'Edit Project' : 'New Project',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: AppTheme.getColors(context).textPrimary),
+              style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.getColors(context).textPrimary),
             ),
           ],
         ),
@@ -130,15 +139,22 @@ class _ProjectFormDialogState extends ConsumerState<ProjectFormDialog> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Project Name', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AppTheme.getColors(context).textSecondary)),
+                  Text('Project Name',
+                      style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          color: AppTheme.getColors(context).textSecondary)),
                   const SizedBox(height: 6),
                   TextFormField(
                     controller: _nameController,
                     autofocus: true,
-                    style: TextStyle(color: AppTheme.getColors(context).textPrimary, fontSize: 14),
+                    style: TextStyle(
+                        color: AppTheme.getColors(context).textPrimary,
+                        fontSize: 14),
                     decoration: InputDecoration(
                       hintText: 'e.g. WorkPulse App, Client Portal',
-                      hintStyle: TextStyle(color: AppTheme.getColors(context).textSecondary),
+                      hintStyle: TextStyle(
+                          color: AppTheme.getColors(context).textSecondary),
                     ),
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
@@ -149,25 +165,37 @@ class _ProjectFormDialogState extends ConsumerState<ProjectFormDialog> {
                     onFieldSubmitted: (_) => _submit(),
                   ),
                   const SizedBox(height: 16),
-                  Text('Description (Optional)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AppTheme.getColors(context).textSecondary)),
+                  Text('Description (Optional)',
+                      style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          color: AppTheme.getColors(context).textSecondary)),
                   const SizedBox(height: 6),
                   TextFormField(
                     controller: _descController,
                     maxLines: 2,
-                    style: TextStyle(color: AppTheme.getColors(context).textPrimary, fontSize: 14),
+                    style: TextStyle(
+                        color: AppTheme.getColors(context).textPrimary,
+                        fontSize: 14),
                     decoration: InputDecoration(
                       hintText: 'Brief description of the project...',
-                      hintStyle: TextStyle(color: AppTheme.getColors(context).textSecondary),
+                      hintStyle: TextStyle(
+                          color: AppTheme.getColors(context).textSecondary),
                     ),
                   ),
                   const SizedBox(height: 16),
-                  Text('Color Badge', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AppTheme.getColors(context).textSecondary)),
+                  Text('Color Badge',
+                      style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          color: AppTheme.getColors(context).textSecondary)),
                   const SizedBox(height: 8),
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
                     children: ColorUtils.paletteHex.map((hex) {
-                      final isSelected = hex.toUpperCase() == _selectedColorHex.toUpperCase();
+                      final isSelected =
+                          hex.toUpperCase() == _selectedColorHex.toUpperCase();
                       final color = ColorUtils.parseHex(hex);
                       return InkWell(
                         onTap: () => setState(() => _selectedColorHex = hex),
@@ -179,12 +207,15 @@ class _ProjectFormDialogState extends ConsumerState<ProjectFormDialog> {
                             color: color,
                             shape: BoxShape.circle,
                             border: Border.all(
-                              color: isSelected ? Colors.white : Colors.transparent,
+                              color: isSelected
+                                  ? Colors.white
+                                  : Colors.transparent,
                               width: 2,
                             ),
                           ),
                           child: isSelected
-                              ? const Icon(Icons.check, size: 16, color: Colors.white)
+                              ? const Icon(Icons.check,
+                                  size: 16, color: Colors.white)
                               : null,
                         ),
                       );
@@ -203,7 +234,11 @@ class _ProjectFormDialogState extends ConsumerState<ProjectFormDialog> {
           ElevatedButton(
             onPressed: _isSubmitting ? null : _submit,
             child: _isSubmitting
-                ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2, color: Colors.white))
                 : Text(isEditing ? 'Save Changes' : 'Create Project'),
           ),
         ],
