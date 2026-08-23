@@ -96,15 +96,8 @@ class _AttributeDefinitionsViewState
                 SizedBox(width: 16),
                 ElevatedButton.icon(
                   onPressed: () => AttributeDefinitionFormDialog.show(context),
-                  icon: Icon(Icons.add, size: 16),
-                  label: Text('New Attribute'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryColor,
-                    foregroundColor: Colors.white,
-                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8)),
-                  ),
+                  icon: const Icon(Icons.add, size: 16),
+                  label: const Text('New Attribute'),
                 ),
               ],
             ),
@@ -114,28 +107,18 @@ class _AttributeDefinitionsViewState
             Row(
               children: [
                 Expanded(
-                  child: Container(
+                  child: SizedBox(
                     height: 38,
-                    decoration: BoxDecoration(
-                      color: AppTheme.getColors(context).surface,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                          color: AppTheme.getColors(context).divider),
-                    ),
                     child: TextField(
                       style: TextStyle(
                           fontSize: 13,
                           color: AppTheme.getColors(context).textPrimary),
                       decoration: InputDecoration(
                         hintText: 'Search attributes by name or key...',
-                        hintStyle: TextStyle(
-                            fontSize: 13,
-                            color: AppTheme.getColors(context).textSecondary),
                         prefixIcon: Icon(Icons.search,
                             size: 18,
                             color: AppTheme.getColors(context).textSecondary),
-                        border: InputBorder.none,
-                        contentPadding: EdgeInsets.symmetric(vertical: 8),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                       ),
                       onChanged: (val) => setState(
                           () => _searchQuery = val.trim().toLowerCase()),
