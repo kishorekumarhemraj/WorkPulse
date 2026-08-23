@@ -12,8 +12,26 @@ import 'package:workpulse/features/shell/views/main_shell_view.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Global error handlers for uncaught exceptions
+  FlutterError.onError = (FlutterErrorDetails details) {
+    FlutterError.presentError(details);
+    debugPrint('[WorkPulse] Flutter error: ${details.exception}');
+  };
+  PlatformDispatcher.instance.onError = (Object error, StackTrace stack) {
+    debugPrint('[WorkPulse] Uncaught error: $error\n$stack');
+    return true;
+  };
+
   // Initialize SQLite database and execute migrations
-  await DatabaseService().initialize();
+  final dbService = DatabaseService();
+  await dbService.initialize();
+
+  // Check for dangling sessions from crashes/unexpected termination
+  final danglingSession = await dbService.findDanglingSession();
+  if (danglingSession != null) {
+    debugPrint(
+        '[WorkPulse] Recovered dangling session: ${danglingSession['id']}');
+  }
 
   // Initialize desktop window manager and system tray
   if (!kIsWeb && (Platform.isMacOS || Platform.isWindows || Platform.isLinux)) {

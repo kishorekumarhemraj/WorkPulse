@@ -24,7 +24,8 @@ class DatabaseService {
 
   Database get database {
     if (_db == null) {
-      throw const AppDatabaseException('Database has not been initialized. Call initialize() first.');
+      throw const AppDatabaseException(
+          'Database has not been initialized. Call initialize() first.');
     }
     return _db!;
   }
@@ -32,7 +33,8 @@ class DatabaseService {
   bool get isInitialized => _db != null;
 
   /// Initialize SQLite database on macOS / Desktop
-  Future<Database> initialize({String? customPath, bool inMemory = false}) async {
+  Future<Database> initialize(
+      {String? customPath, bool inMemory = false}) async {
     if (_db != null) {
       return _db!;
     }
@@ -90,6 +92,18 @@ class DatabaseService {
       await dbDir.create(recursive: true);
     }
     return p.join(dbDir.path, AppConstants.dbName);
+  }
+
+  /// Checks for sessions that were left open due to crash/unexpected termination.
+  /// Returns the session ID if a dangling session is found, null otherwise.
+  Future<Map<String, dynamic>?> findDanglingSession() async {
+    final results = await database.query(
+      'sessions',
+      where: 'end_time IS NULL',
+      orderBy: 'start_time DESC',
+      limit: 1,
+    );
+    return results.isNotEmpty ? results.first : null;
   }
 
   Future<void> close() async {

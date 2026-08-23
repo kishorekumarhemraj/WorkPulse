@@ -1,6 +1,7 @@
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:workpulse/core/database/database_service.dart';
 import 'package:workpulse/core/errors/app_exceptions.dart';
+import 'package:workpulse/core/extensions/datetime_extensions.dart';
 import 'package:workpulse/data/database/tables.dart';
 import 'package:workpulse/domain/models/category_model.dart';
 import 'package:workpulse/domain/repositories/category_repository.dart';
@@ -26,7 +27,8 @@ class SqliteCategoryRepository implements CategoryRepository {
   }
 
   @override
-  Future<List<Category>> getAll({String? workspaceId, bool includeArchived = false}) async {
+  Future<List<Category>> getAll(
+      {String? workspaceId, bool includeArchived = false}) async {
     final whereClauses = <String>[];
     final whereArgs = <dynamic>[];
 
@@ -98,7 +100,10 @@ class SqliteCategoryRepository implements CategoryRepository {
   Future<void> unarchive(String id) async {
     final count = await _db.update(
       Tables.categories,
-      {'archived_at': null, 'updated_at': DateTime.now().toUtc().toIso8601String()},
+      {
+        'archived_at': null,
+        'updated_at': DateTime.now().toUtc().toIso8601String()
+      },
       where: 'id = ?',
       whereArgs: [id],
     );
@@ -128,9 +133,9 @@ class SqliteCategoryRepository implements CategoryRepository {
       'name': category.name,
       'description': category.description,
       'icon_name': category.iconName,
-      'created_at': category.createdAt.toIso8601String(),
-      'updated_at': category.updatedAt.toIso8601String(),
-      'archived_at': category.archivedAt?.toIso8601String(),
+      'created_at': category.createdAt.toStorageString(),
+      'updated_at': category.updatedAt.toStorageString(),
+      'archived_at': category.archivedAt?.toStorageString(),
     };
   }
 

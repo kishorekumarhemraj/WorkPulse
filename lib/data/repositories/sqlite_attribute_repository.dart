@@ -1,6 +1,7 @@
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:workpulse/core/database/database_service.dart';
 import 'package:workpulse/core/errors/app_exceptions.dart';
+import 'package:workpulse/core/extensions/datetime_extensions.dart';
 import 'package:workpulse/data/database/tables.dart';
 import 'package:workpulse/domain/models/attribute_model.dart';
 import 'package:workpulse/domain/repositories/attribute_repository.dart';
@@ -28,7 +29,8 @@ class SqliteAttributeRepository implements AttributeRepository {
   }
 
   @override
-  Future<AttributeDefinition?> getDefinitionByKey(String workspaceId, String key) async {
+  Future<AttributeDefinition?> getDefinitionByKey(
+      String workspaceId, String key) async {
     final results = await _db.query(
       Tables.attributeDefinitions,
       where: 'workspace_id = ? AND key = ?',
@@ -72,7 +74,8 @@ class SqliteAttributeRepository implements AttributeRepository {
   }
 
   @override
-  Future<AttributeDefinition> createDefinition(AttributeDefinition definition) async {
+  Future<AttributeDefinition> createDefinition(
+      AttributeDefinition definition) async {
     try {
       await _db.insert(
         Tables.attributeDefinitions,
@@ -86,7 +89,8 @@ class SqliteAttributeRepository implements AttributeRepository {
   }
 
   @override
-  Future<AttributeDefinition> updateDefinition(AttributeDefinition definition) async {
+  Future<AttributeDefinition> updateDefinition(
+      AttributeDefinition definition) async {
     final updated = definition.copyWith(updatedAt: DateTime.now().toUtc());
     final count = await _db.update(
       Tables.attributeDefinitions,
@@ -96,7 +100,8 @@ class SqliteAttributeRepository implements AttributeRepository {
     );
 
     if (count == 0) {
-      throw NotFoundException('Attribute definition with id ${definition.id} not found');
+      throw NotFoundException(
+          'Attribute definition with id ${definition.id} not found');
     }
     return updated;
   }
@@ -132,7 +137,8 @@ class SqliteAttributeRepository implements AttributeRepository {
   // --- Attribute Options ---
 
   @override
-  Future<List<AttributeOption>> getOptions(String definitionId, {bool includeArchived = false}) async {
+  Future<List<AttributeOption>> getOptions(String definitionId,
+      {bool includeArchived = false}) async {
     final where = includeArchived
         ? 'attribute_definition_id = ?'
         : 'attribute_definition_id = ? AND archived_at IS NULL';
@@ -169,7 +175,8 @@ class SqliteAttributeRepository implements AttributeRepository {
     );
 
     if (count == 0) {
-      throw NotFoundException('Attribute option with id ${option.id} not found');
+      throw NotFoundException(
+          'Attribute option with id ${option.id} not found');
     }
     return option;
   }
@@ -205,7 +212,8 @@ class SqliteAttributeRepository implements AttributeRepository {
   // --- WorkItem Attribute Values ---
 
   @override
-  Future<List<WorkItemAttributeValue>> getWorkItemValues(String workItemId) async {
+  Future<List<WorkItemAttributeValue>> getWorkItemValues(
+      String workItemId) async {
     final results = await _db.query(
       Tables.workItemAttributeValues,
       where: 'work_item_id = ?',
@@ -236,7 +244,8 @@ class SqliteAttributeRepository implements AttributeRepository {
     );
 
     if (count == 0) {
-      throw NotFoundException('WorkItem attribute value with id $valueId not found');
+      throw NotFoundException(
+          'WorkItem attribute value with id $valueId not found');
     }
   }
 
@@ -283,7 +292,8 @@ class SqliteAttributeRepository implements AttributeRepository {
     );
 
     if (count == 0) {
-      throw NotFoundException('Session attribute value with id $valueId not found');
+      throw NotFoundException(
+          'Session attribute value with id $valueId not found');
     }
   }
 
@@ -314,9 +324,9 @@ class SqliteAttributeRepository implements AttributeRepository {
       'show_in_quick_capture': def.showInQuickCapture ? 1 : 0,
       'show_in_task_details': def.showInTaskDetails ? 1 : 0,
       'display_order': def.displayOrder,
-      'created_at': def.createdAt.toIso8601String(),
-      'updated_at': def.updatedAt.toIso8601String(),
-      'archived_at': def.archivedAt?.toIso8601String(),
+      'created_at': def.createdAt.toStorageString(),
+      'updated_at': def.updatedAt.toStorageString(),
+      'archived_at': def.archivedAt?.toStorageString(),
     };
   }
 
@@ -353,8 +363,8 @@ class SqliteAttributeRepository implements AttributeRepository {
       'color_hex': opt.colorHex,
       'display_order': opt.displayOrder,
       'is_default': opt.isDefault ? 1 : 0,
-      'created_at': opt.createdAt.toIso8601String(),
-      'archived_at': opt.archivedAt?.toIso8601String(),
+      'created_at': opt.createdAt.toStorageString(),
+      'archived_at': opt.archivedAt?.toStorageString(),
     };
   }
 
@@ -381,11 +391,12 @@ class SqliteAttributeRepository implements AttributeRepository {
       'attribute_definition_id': val.attributeDefinitionId,
       'text_value': val.textValue,
       'number_value': val.numberValue,
-      'boolean_value': val.booleanValue != null ? (val.booleanValue! ? 1 : 0) : null,
-      'date_value': val.dateValue?.toIso8601String(),
+      'boolean_value':
+          val.booleanValue != null ? (val.booleanValue! ? 1 : 0) : null,
+      'date_value': val.dateValue?.toStorageString(),
       'option_id': val.optionId,
-      'created_at': val.createdAt.toIso8601String(),
-      'updated_at': val.updatedAt.toIso8601String(),
+      'created_at': val.createdAt.toStorageString(),
+      'updated_at': val.updatedAt.toStorageString(),
     };
   }
 
@@ -396,8 +407,12 @@ class SqliteAttributeRepository implements AttributeRepository {
       attributeDefinitionId: map['attribute_definition_id'] as String,
       textValue: map['text_value'] as String?,
       numberValue: (map['number_value'] as num?)?.toDouble(),
-      booleanValue: map['boolean_value'] != null ? (map['boolean_value'] as int) == 1 : null,
-      dateValue: map['date_value'] != null ? DateTime.parse(map['date_value'] as String) : null,
+      booleanValue: map['boolean_value'] != null
+          ? (map['boolean_value'] as int) == 1
+          : null,
+      dateValue: map['date_value'] != null
+          ? DateTime.parse(map['date_value'] as String)
+          : null,
       optionId: map['option_id'] as String?,
       createdAt: DateTime.parse(map['created_at'] as String),
       updatedAt: DateTime.parse(map['updated_at'] as String),
@@ -411,11 +426,12 @@ class SqliteAttributeRepository implements AttributeRepository {
       'attribute_definition_id': val.attributeDefinitionId,
       'text_value': val.textValue,
       'number_value': val.numberValue,
-      'boolean_value': val.booleanValue != null ? (val.booleanValue! ? 1 : 0) : null,
-      'date_value': val.dateValue?.toIso8601String(),
+      'boolean_value':
+          val.booleanValue != null ? (val.booleanValue! ? 1 : 0) : null,
+      'date_value': val.dateValue?.toStorageString(),
       'option_id': val.optionId,
-      'created_at': val.createdAt.toIso8601String(),
-      'updated_at': val.updatedAt.toIso8601String(),
+      'created_at': val.createdAt.toStorageString(),
+      'updated_at': val.updatedAt.toStorageString(),
     };
   }
 
@@ -426,8 +442,12 @@ class SqliteAttributeRepository implements AttributeRepository {
       attributeDefinitionId: map['attribute_definition_id'] as String,
       textValue: map['text_value'] as String?,
       numberValue: (map['number_value'] as num?)?.toDouble(),
-      booleanValue: map['boolean_value'] != null ? (map['boolean_value'] as int) == 1 : null,
-      dateValue: map['date_value'] != null ? DateTime.parse(map['date_value'] as String) : null,
+      booleanValue: map['boolean_value'] != null
+          ? (map['boolean_value'] as int) == 1
+          : null,
+      dateValue: map['date_value'] != null
+          ? DateTime.parse(map['date_value'] as String)
+          : null,
       optionId: map['option_id'] as String?,
       createdAt: DateTime.parse(map['created_at'] as String),
       updatedAt: DateTime.parse(map['updated_at'] as String),

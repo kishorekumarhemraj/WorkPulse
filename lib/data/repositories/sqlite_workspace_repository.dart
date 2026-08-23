@@ -1,6 +1,7 @@
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:workpulse/core/database/database_service.dart';
 import 'package:workpulse/core/errors/app_exceptions.dart';
+import 'package:workpulse/core/extensions/datetime_extensions.dart';
 import 'package:workpulse/data/database/tables.dart';
 import 'package:workpulse/domain/models/workspace_model.dart';
 import 'package:workpulse/domain/repositories/workspace_repository.dart';
@@ -81,8 +82,8 @@ class SqliteWorkspaceRepository implements WorkspaceRepository {
     return {
       'id': workspace.id,
       'name': workspace.name,
-      'created_at': workspace.createdAt.toIso8601String(),
-      'updated_at': workspace.updatedAt.toIso8601String(),
+      'created_at': workspace.createdAt.toStorageString(),
+      'updated_at': workspace.updatedAt.toStorageString(),
     };
   }
 
