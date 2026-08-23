@@ -52,8 +52,10 @@ Icon
 macos/Flutter/ephemeral/
 macos/Pods/
 macos/.symlinks/
-macos/Podfile.lock
-*.xcworkspace
+# Note: macos/Runner.xcworkspace is NOT ignored - unlike iOS, Flutter's
+# macOS template ships it as a static, checked-in file that CocoaPods
+# updates in place; it isn't regenerated from nothing by `pod install`.
+macos/Runner.xcodeproj/project.xcworkspace/
 *.xcuserdata
 DerivedData/
 
