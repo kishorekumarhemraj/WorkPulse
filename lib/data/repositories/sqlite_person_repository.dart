@@ -46,7 +46,7 @@ class SqlitePersonRepository implements PersonRepository {
       );
       return person;
     } catch (e) {
-      throw DatabaseException('Failed to create person: $e');
+      throw AppDatabaseException('Failed to create person: $e');
     }
   }
 

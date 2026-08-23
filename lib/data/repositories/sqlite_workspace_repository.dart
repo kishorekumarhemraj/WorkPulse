@@ -44,7 +44,7 @@ class SqliteWorkspaceRepository implements WorkspaceRepository {
       );
       return workspace;
     } catch (e) {
-      throw DatabaseException('Failed to create workspace: $e');
+      throw AppDatabaseException('Failed to create workspace: $e');
     }
   }
 

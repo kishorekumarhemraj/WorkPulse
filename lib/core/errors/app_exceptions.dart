@@ -9,8 +9,8 @@ abstract class AppException implements Exception {
   String toString() => '$runtimeType: $message${details != null ? ' ($details)' : ''}';
 }
 
-class DatabaseException extends AppException {
-  const DatabaseException(super.message, [super.details]);
+class AppDatabaseException extends AppException {
+  const AppDatabaseException(super.message, [super.details]);
 }
 
 class ValidationException extends AppException {

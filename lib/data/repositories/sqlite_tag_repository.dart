@@ -46,7 +46,7 @@ class SqliteTagRepository implements TagRepository {
       );
       return tag;
     } catch (e) {
-      throw DatabaseException('Failed to create tag: $e');
+      throw AppDatabaseException('Failed to create tag: $e');
     }
   }
 
