@@ -8,12 +8,16 @@ import 'package:workpulse/domain/models/person_model.dart';
 import 'package:workpulse/domain/models/project_model.dart';
 import 'package:workpulse/domain/models/tag_model.dart';
 import 'package:workpulse/domain/models/work_item_model.dart';
+import 'package:workpulse/domain/services/timer_service.dart';
 import 'package:workpulse/features/categories/providers/categories_provider.dart';
 import 'package:workpulse/features/people/providers/people_provider.dart';
 import 'package:workpulse/features/projects/providers/projects_provider.dart';
 import 'package:workpulse/features/tags/providers/tags_provider.dart';
 import 'package:workpulse/features/tasks/providers/work_items_provider.dart';
 import 'package:workpulse/features/tasks/views/task_form_dialog.dart';
+import 'package:workpulse/features/timer/providers/task_duration_provider.dart';
+import 'package:workpulse/features/timer/providers/timer_provider.dart';
+import 'package:workpulse/features/timer/views/task_switch_dialog.dart';
 
 class TasksView extends ConsumerWidget {
   const TasksView({super.key});
@@ -369,15 +373,29 @@ class _WorkItemCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final projectColor = ColorUtils.parseHex(project?.colorHex);
+    final timerState = ref.watch(timerProvider).value;
+    final totalDurationAsync = ref.watch(taskTotalDurationProvider(item.id));
+    final isItemActive = timerState != null && timerState.isRunning && timerState.activeWorkItem?.id == item.id;
 
     return Container(
       decoration: BoxDecoration(
         color: AppTheme.surfaceDark,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
-          color: item.isArchived ? AppTheme.dividerDark.withValues(alpha: 0.5) : AppTheme.dividerDark,
-          width: 1,
+          color: isItemActive
+              ? AppTheme.accentGreen.withValues(alpha: 0.8)
+              : (item.isArchived ? AppTheme.dividerDark.withValues(alpha: 0.5) : AppTheme.dividerDark),
+          width: isItemActive ? 1.5 : 1,
         ),
+        boxShadow: isItemActive
+            ? [
+                BoxShadow(
+                  color: AppTheme.accentGreen.withValues(alpha: 0.12),
+                  blurRadius: 10,
+                  spreadRadius: 1,
+                ),
+              ]
+            : null,
       ),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       child: Row(
@@ -388,7 +406,7 @@ class _WorkItemCard extends ConsumerWidget {
             width: 4,
             height: 48,
             decoration: BoxDecoration(
-              color: projectColor,
+              color: isItemActive ? AppTheme.accentGreen : projectColor,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -412,6 +430,27 @@ class _WorkItemCard extends ConsumerWidget {
                         ),
                       ),
                     ),
+                    if (isItemActive)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        margin: const EdgeInsets.only(right: 8),
+                        decoration: BoxDecoration(
+                          color: AppTheme.accentGreen.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(color: AppTheme.accentGreen.withValues(alpha: 0.5)),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.timer, size: 11, color: AppTheme.accentGreen),
+                            SizedBox(width: 3),
+                            Text(
+                              'TRACKING',
+                              style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.accentGreen),
+                            ),
+                          ],
+                        ),
+                      ),
                     if (item.isArchived)
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -531,11 +570,76 @@ class _WorkItemCard extends ConsumerWidget {
                         ),
                       );
                     }),
+
+                    // Total Duration Badge
+                    totalDurationAsync.when(
+                      data: (dur) {
+                        if (dur == Duration.zero && !isItemActive) return const SizedBox.shrink();
+                        final formatted = isItemActive
+                            ? TimerService.formatDuration(timerState.elapsed, includeSeconds: true)
+                            : TimerService.formatDuration(dur, compact: true);
+                        return Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: isItemActive ? AppTheme.accentGreen.withValues(alpha: 0.15) : AppTheme.cardDark,
+                            borderRadius: BorderRadius.circular(4),
+                            border: isItemActive ? Border.all(color: AppTheme.accentGreen.withValues(alpha: 0.4)) : null,
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.schedule, size: 11, color: isItemActive ? AppTheme.accentGreen : AppTheme.textSecondaryDark),
+                              const SizedBox(width: 4),
+                              Text(
+                                formatted,
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: isItemActive ? FontWeight.bold : FontWeight.normal,
+                                  color: isItemActive ? AppTheme.accentGreen : AppTheme.textSecondaryDark,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                      loading: () => const SizedBox.shrink(),
+                      error: (_, __) => const SizedBox.shrink(),
+                    ),
                   ],
                 ),
               ],
             ),
           ),
+
+          // Play / Stop Action Button
+          if (!item.isArchived) ...[
+            IconButton(
+              icon: Icon(
+                isItemActive ? Icons.stop_circle : Icons.play_circle_fill,
+                size: 26,
+                color: isItemActive ? AppTheme.accentRed : AppTheme.primaryColor,
+              ),
+              tooltip: isItemActive ? 'Stop timer' : 'Start timer',
+              onPressed: () async {
+                if (isItemActive) {
+                  await ref.read(timerProvider.notifier).stopTimer();
+                } else {
+                  final running = timerState != null && timerState.isRunning && timerState.activeWorkItem != null;
+                  if (running) {
+                    await TaskSwitchDialog.show(
+                      context,
+                      currentItem: timerState.activeWorkItem!,
+                      currentElapsed: timerState.elapsed,
+                      targetItem: item,
+                    );
+                  } else {
+                    await ref.read(timerProvider.notifier).startTimer(item);
+                  }
+                }
+              },
+            ),
+            const SizedBox(width: 4),
+          ],
 
           // Actions Popup Menu
           PopupMenuButton<String>(
