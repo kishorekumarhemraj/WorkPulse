@@ -525,7 +525,7 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
                             backgroundColor: AppTheme.getColors(context).card,
                             labelStyle: TextStyle(
                               fontSize: 12,
-                              color: isSelected ? Colors.white : AppTheme.getColors(context).textSecondary,
+                              color: isSelected ? AppTheme.primaryColor : AppTheme.getColors(context).textSecondary,
                             ),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(6),

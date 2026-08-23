@@ -616,8 +616,9 @@ class _SidebarNavItem extends ConsumerWidget {
                     fontSize: 13,
                     fontWeight:
                         isSelected ? FontWeight.w600 : FontWeight.normal,
-                    color:
-                        isSelected ? Colors.white : AppTheme.getColors(context).textSecondary,
+                    color: isSelected
+                        ? AppTheme.primaryColor
+                        : AppTheme.getColors(context).textSecondary,
                   ),
                 ),
               ),

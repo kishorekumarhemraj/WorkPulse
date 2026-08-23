@@ -527,8 +527,9 @@ class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
                       fontSize: 14,
                       fontWeight:
                           isSelected ? FontWeight.w600 : FontWeight.w500,
-                      color:
-                          isSelected ? Colors.white : AppTheme.getColors(context).textPrimary,
+                      color: isSelected
+                          ? AppTheme.primaryColor
+                          : AppTheme.getColors(context).textPrimary,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
