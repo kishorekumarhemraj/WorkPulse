@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workpulse/core/constants/app_constants.dart';
+import 'package:workpulse/core/platform/hotkey_service.dart';
 import 'package:workpulse/core/theme/app_theme.dart';
 import 'package:workpulse/features/categories/providers/categories_provider.dart';
 import 'package:workpulse/features/categories/views/categories_view.dart';
@@ -8,6 +9,7 @@ import 'package:workpulse/features/people/providers/people_provider.dart';
 import 'package:workpulse/features/people/views/people_view.dart';
 import 'package:workpulse/features/projects/providers/projects_provider.dart';
 import 'package:workpulse/features/projects/views/projects_view.dart';
+import 'package:workpulse/features/quick_capture/views/quick_capture_dialog.dart';
 import 'package:workpulse/features/tags/providers/tags_provider.dart';
 import 'package:workpulse/features/tags/views/tags_view.dart';
 import 'package:workpulse/features/tasks/providers/work_items_provider.dart';
@@ -34,11 +36,37 @@ class ActiveNavTabNotifier extends Notifier<ShellNavTab> {
   void setTab(ShellNavTab tab) => state = tab;
 }
 
-class MainShellView extends ConsumerWidget {
+class MainShellView extends ConsumerStatefulWidget {
   const MainShellView({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MainShellView> createState() => _MainShellViewState();
+}
+
+class _MainShellViewState extends ConsumerState<MainShellView> {
+  late final HotKeyService _hotKeyService;
+
+  @override
+  void initState() {
+    super.initState();
+    _hotKeyService = DesktopHotKeyService();
+    _hotKeyService.initialize().then((_) {
+      _hotKeyService.registerQuickCaptureHotKey(() {
+        if (mounted) {
+          QuickCaptureDialog.show(context);
+        }
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _hotKeyService.unregisterAll();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final activeTab = ref.watch(activeNavTabProvider);
     final workspaceAsync = ref.watch(currentWorkspaceProvider);
 
@@ -129,6 +157,42 @@ class MainShellView extends ConsumerWidget {
                                   ),
                                 ),
                               ],
+                            ),
+                          const SizedBox(height: 12),
+                          // Quick Capture Shortcut Button
+                          InkWell(
+                            onTap: () => QuickCaptureDialog.show(context),
+                            borderRadius: BorderRadius.circular(8),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                              decoration: BoxDecoration(
+                                color: AppTheme.primaryColor.withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: AppTheme.primaryColor.withValues(alpha: 0.3)),
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.flash_on, size: 15, color: AppTheme.primaryColor),
+                                  const SizedBox(width: 8),
+                                  const Expanded(
+                                    child: Text(
+                                      'Quick Capture',
+                                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppTheme.textPrimaryDark),
+                                    ),
+                                  ),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: AppTheme.surfaceDark,
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: const Text(
+                                      '⌥ Space',
+                                      style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.textSecondaryDark),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ],
