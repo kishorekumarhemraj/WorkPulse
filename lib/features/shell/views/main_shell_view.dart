@@ -15,6 +15,8 @@ import 'package:workpulse/features/people/views/people_view.dart';
 import 'package:workpulse/features/projects/providers/projects_provider.dart';
 import 'package:workpulse/features/projects/views/projects_view.dart';
 import 'package:workpulse/features/quick_capture/views/quick_capture_dialog.dart';
+import 'package:workpulse/features/reports/providers/reports_provider.dart';
+import 'package:workpulse/features/reports/views/session_history_view.dart';
 import 'package:workpulse/features/tags/providers/tags_provider.dart';
 import 'package:workpulse/features/tags/views/tags_view.dart';
 import 'package:workpulse/features/tasks/providers/work_items_provider.dart';
@@ -27,6 +29,7 @@ import 'package:workpulse/features/workspace/providers/workspace_provider.dart';
 
 enum ShellNavTab {
   dashboard,
+  history,
   tasks,
   projects,
   categories,
@@ -246,6 +249,13 @@ class _MainShellViewState extends ConsumerState<MainShellView> {
                             onTap: () => ref.read(activeNavTabProvider.notifier).setTab(ShellNavTab.dashboard),
                           ),
                           _SidebarNavItem(
+                            icon: Icons.history,
+                            label: 'Time Log',
+                            isSelected: activeTab == ShellNavTab.history,
+                            countProvider: Provider((r) => r.watch(sessionHistoryProvider).value?.length),
+                            onTap: () => ref.read(activeNavTabProvider.notifier).setTab(ShellNavTab.history),
+                          ),
+                          _SidebarNavItem(
                             icon: Icons.check_circle_outline,
                             label: 'Work Items',
                             isSelected: activeTab == ShellNavTab.tasks,
@@ -307,6 +317,7 @@ class _MainShellViewState extends ConsumerState<MainShellView> {
               Expanded(
                 child: switch (activeTab) {
                   ShellNavTab.dashboard => const DashboardView(),
+                  ShellNavTab.history => const SessionHistoryView(),
                   ShellNavTab.tasks => const TasksView(),
                   ShellNavTab.projects => const ProjectsView(),
                   ShellNavTab.categories => const CategoriesView(),
