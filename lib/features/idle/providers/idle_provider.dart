@@ -148,7 +148,7 @@ class IdleNotifier extends Notifier<IdleState> {
 
     // Refresh timer provider with the newly started session
     if (result.newSession != null) {
-      ref.read(timerProvider.notifier).recoverActiveSession();
+      await ref.read(timerProvider.notifier).recoverActiveSession();
     }
 
     dismiss();
@@ -169,7 +169,7 @@ class IdleNotifier extends Notifier<IdleState> {
     );
 
     // Update timer state to idle
-    ref.read(timerProvider.notifier).recoverActiveSession();
+    await ref.read(timerProvider.notifier).recoverActiveSession();
 
     dismiss();
   }

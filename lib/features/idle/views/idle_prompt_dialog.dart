@@ -141,10 +141,11 @@ class _IdlePromptDialogState extends ConsumerState<IdlePromptDialog> {
         ),
         content: SizedBox(
           width: 480,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
               // Idle Duration Box
               Container(
                 width: double.infinity,
@@ -243,7 +244,8 @@ class _IdlePromptDialogState extends ConsumerState<IdlePromptDialog> {
           ),
         ),
       ),
-    );
+    ),
+  );
   }
 
   Widget _buildOptionTile({

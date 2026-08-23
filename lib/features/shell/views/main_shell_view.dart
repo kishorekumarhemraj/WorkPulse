@@ -18,6 +18,7 @@ import 'package:workpulse/features/tags/providers/tags_provider.dart';
 import 'package:workpulse/features/tags/views/tags_view.dart';
 import 'package:workpulse/features/tasks/providers/work_items_provider.dart';
 import 'package:workpulse/features/tasks/views/tasks_view.dart';
+import 'package:workpulse/features/timer/models/timer_state.dart';
 import 'package:workpulse/features/timer/providers/timer_provider.dart';
 import 'package:workpulse/features/timer/views/active_timer_bar.dart';
 import 'package:workpulse/features/workspace/providers/workspace_provider.dart';
