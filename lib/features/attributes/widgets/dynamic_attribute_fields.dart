@@ -147,6 +147,7 @@ class DynamicAttributeFields extends ConsumerWidget {
           error: (_, __) => const SizedBox.shrink(),
           data: (options) {
             return DropdownButtonFormField<String>(
+              isExpanded: true,
               initialValue: options.any((o) => o.id == currentValue)
                   ? currentValue as String?
                   : null,
@@ -165,7 +166,6 @@ class DynamicAttributeFields extends ConsumerWidget {
                 return DropdownMenuItem(
                   value: opt.id,
                   child: Row(
-                    mainAxisSize: MainAxisSize.min,
                     children: [
                       Container(
                           width: 8,
@@ -173,10 +173,13 @@ class DynamicAttributeFields extends ConsumerWidget {
                           decoration: BoxDecoration(
                               color: col, shape: BoxShape.circle)),
                       SizedBox(width: 8),
-                      Text(opt.label,
-                          style: TextStyle(
-                              fontSize: 13,
-                              color: AppTheme.getColors(context).textPrimary)),
+                      Expanded(
+                        child: Text(opt.label,
+                            style: TextStyle(
+                                fontSize: 13,
+                                color: AppTheme.getColors(context).textPrimary),
+                            overflow: TextOverflow.ellipsis),
+                      ),
                     ],
                   ),
                 );

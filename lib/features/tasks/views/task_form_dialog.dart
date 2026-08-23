@@ -403,6 +403,7 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
                               error: (_, __) => Text('Error loading projects'),
                               data: (projects) {
                                 return DropdownButtonFormField<String>(
+                                  isExpanded: true,
                                   initialValue: projects.any(
                                           (p) => p.id == _selectedProjectId)
                                       ? _selectedProjectId
@@ -424,8 +425,10 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
                                             ),
                                           ),
                                           SizedBox(width: 8),
-                                          Text(p.name,
-                                              overflow: TextOverflow.ellipsis),
+                                          Expanded(
+                                            child: Text(p.name,
+                                                overflow: TextOverflow.ellipsis),
+                                          ),
                                         ],
                                       ),
                                     );
@@ -490,6 +493,7 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
                                   Text('Error loading categories'),
                               data: (categories) {
                                 return DropdownButtonFormField<String>(
+                                  isExpanded: true,
                                   initialValue: categories.any(
                                           (c) => c.id == _selectedCategoryId)
                                       ? _selectedCategoryId
@@ -505,8 +509,10 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
                                               size: 14,
                                               color: AppTheme.primaryColor),
                                           SizedBox(width: 8),
-                                          Text(c.name,
-                                              overflow: TextOverflow.ellipsis),
+                                          Expanded(
+                                            child: Text(c.name,
+                                                overflow: TextOverflow.ellipsis),
+                                          ),
                                         ],
                                       ),
                                     );
