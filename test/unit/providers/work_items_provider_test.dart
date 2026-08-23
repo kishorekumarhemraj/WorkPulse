@@ -35,8 +35,7 @@ void main() {
       dbService = DatabaseService();
       await dbService.initialize(inMemory: true);
 
-      testWorkspace = Workspace(
-          id: uuid.v4(), name: 'Test WS', createdAt: now, updatedAt: now);
+      testWorkspace = Workspace(id: uuid.v4(), name: 'Test WS', createdAt: now, updatedAt: now);
       await dbService.database.insert('workspaces', {
         'id': testWorkspace.id,
         'name': testWorkspace.name,
@@ -44,18 +43,8 @@ void main() {
         'updated_at': testWorkspace.updatedAt.toIso8601String(),
       });
 
-      testProjectA = Project(
-          id: uuid.v4(),
-          workspaceId: testWorkspace.id,
-          name: 'Project A',
-          createdAt: now,
-          updatedAt: now);
-      testProjectB = Project(
-          id: uuid.v4(),
-          workspaceId: testWorkspace.id,
-          name: 'Project B',
-          createdAt: now,
-          updatedAt: now);
+      testProjectA = Project(id: uuid.v4(), workspaceId: testWorkspace.id, name: 'Project A', createdAt: now, updatedAt: now);
+      testProjectB = Project(id: uuid.v4(), workspaceId: testWorkspace.id, name: 'Project B', createdAt: now, updatedAt: now);
       await dbService.database.insert('projects', {
         'id': testProjectA.id,
         'workspace_id': testProjectA.workspaceId,
@@ -71,12 +60,7 @@ void main() {
         'updated_at': testProjectB.updatedAt.toIso8601String(),
       });
 
-      testCategoryA = Category(
-          id: uuid.v4(),
-          workspaceId: testWorkspace.id,
-          name: 'Dev',
-          createdAt: now,
-          updatedAt: now);
+      testCategoryA = Category(id: uuid.v4(), workspaceId: testWorkspace.id, name: 'Dev', createdAt: now, updatedAt: now);
       await dbService.database.insert('categories', {
         'id': testCategoryA.id,
         'workspace_id': testCategoryA.workspaceId,
@@ -85,11 +69,7 @@ void main() {
         'updated_at': testCategoryA.updatedAt.toIso8601String(),
       });
 
-      testTag = Tag(
-          id: uuid.v4(),
-          workspaceId: testWorkspace.id,
-          name: 'Urgent',
-          createdAt: now);
+      testTag = Tag(id: uuid.v4(), workspaceId: testWorkspace.id, name: 'Urgent', createdAt: now);
       await dbService.database.insert('tags', {
         'id': testTag.id,
         'workspace_id': testTag.workspaceId,
@@ -97,11 +77,7 @@ void main() {
         'created_at': testTag.createdAt.toIso8601String(),
       });
 
-      testPerson = Person(
-          id: uuid.v4(),
-          workspaceId: testWorkspace.id,
-          name: 'Alice',
-          createdAt: now);
+      testPerson = Person(id: uuid.v4(), workspaceId: testWorkspace.id, name: 'Alice', createdAt: now);
       await dbService.database.insert('people', {
         'id': testPerson.id,
         'workspace_id': testPerson.workspaceId,
@@ -112,8 +88,7 @@ void main() {
       container = ProviderContainer(
         overrides: [
           databaseServiceProvider.overrideWithValue(dbService),
-          currentWorkspaceProvider
-              .overrideWith(() => _MockWorkspaceNotifier(testWorkspace)),
+          currentWorkspaceProvider.overrideWith(() => _MockWorkspaceNotifier(testWorkspace)),
         ],
       );
     });
@@ -136,8 +111,7 @@ void main() {
       expect(container.read(workItemFilterProvider).projectId, testProjectA.id);
 
       filterNotifier.setCategory(testCategoryA.id);
-      expect(
-          container.read(workItemFilterProvider).categoryId, testCategoryA.id);
+      expect(container.read(workItemFilterProvider).categoryId, testCategoryA.id);
 
       filterNotifier.setTag(testTag.id);
       expect(container.read(workItemFilterProvider).tagId, testTag.id);
@@ -182,9 +156,7 @@ void main() {
       expect(items.length, 2);
 
       // 3. Filter by project
-      container
-          .read(workItemFilterProvider.notifier)
-          .setProject(testProjectA.id);
+      container.read(workItemFilterProvider.notifier).setProject(testProjectA.id);
       items = await container.read(workItemsProvider.future);
       expect(items.length, 1);
       expect(items.first.id, item1.id);
@@ -198,8 +170,7 @@ void main() {
 
       // 5. Update item
       container.read(workItemFilterProvider.notifier).reset();
-      final updated = await notifier
-          .updateWorkItem(item1.copyWith(name: 'Task Alpha Updated'));
+      final updated = await notifier.updateWorkItem(item1.copyWith(name: 'Task Alpha Updated'));
       expect(updated.name, 'Task Alpha Updated');
 
       // 6. Archive item

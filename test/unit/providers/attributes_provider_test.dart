@@ -45,21 +45,11 @@ void main() {
       final now = DateTime.now().toUtc();
 
       defaultProject = await projectRepo.create(
-        Project(
-            id: 'proj-1',
-            workspaceId: wsId,
-            name: 'Core',
-            createdAt: now,
-            updatedAt: now),
+        Project(id: 'proj-1', workspaceId: wsId, name: 'Core', createdAt: now, updatedAt: now),
       );
 
       defaultCategory = await categoryRepo.create(
-        Category(
-            id: 'cat-1',
-            workspaceId: wsId,
-            name: 'Dev',
-            createdAt: now,
-            updatedAt: now),
+        Category(id: 'cat-1', workspaceId: wsId, name: 'Dev', createdAt: now, updatedAt: now),
       );
 
       defaultWorkItem = await workItemRepo.create(
@@ -133,9 +123,7 @@ void main() {
       expect(list.isEmpty, isTrue); // Excluded from active list
     });
 
-    test(
-        'AttributeOptionsController creates, updates, and archives select options',
-        () async {
+    test('AttributeOptionsController creates, updates, and archives select options', () async {
       final container = createContainer();
       await container.read(currentWorkspaceProvider.future);
 
@@ -163,42 +151,32 @@ void main() {
         colorHex: '#34C759',
       );
 
-      var options = await container
-          .read(attributeOptionsFamilyProvider(selectDef.id).future);
+      var options = await container.read(attributeOptionsFamilyProvider(selectDef.id).future);
       expect(options.length, 2);
       expect(options.first.label, 'High');
       expect(options.first.isDefault, isTrue);
 
       // Update option
-      final updatedOpt = await optController
-          .updateOption(opt1.copyWith(label: 'Critical / High'));
+      final updatedOpt = await optController.updateOption(opt1.copyWith(label: 'Critical / High'));
       expect(updatedOpt.label, 'Critical / High');
 
       // Archive option
       await optController.archiveOption(selectDef.id, opt2.id);
-      options = await container
-          .read(attributeOptionsFamilyProvider(selectDef.id).future);
+      options = await container.read(attributeOptionsFamilyProvider(selectDef.id).future);
       expect(options.length, 1);
       expect(options.first.id, opt1.id);
     });
 
-    test('WorkItemAttributeValuesController sets and persists typed values',
-        () async {
+    test('WorkItemAttributeValuesController sets and persists typed values', () async {
       final container = createContainer();
       await container.read(currentWorkspaceProvider.future);
 
       final defNotifier = container.read(attributeDefinitionsProvider.notifier);
-      final textDef = await defNotifier.createDefinition(
-          key: 'client_code', name: 'Client Code', type: AttributeType.text);
-      final numDef = await defNotifier.createDefinition(
-          key: 'story_points',
-          name: 'Story Points',
-          type: AttributeType.number);
-      final boolDef = await defNotifier.createDefinition(
-          key: 'is_billable', name: 'Billable', type: AttributeType.boolean);
+      final textDef = await defNotifier.createDefinition(key: 'client_code', name: 'Client Code', type: AttributeType.text);
+      final numDef = await defNotifier.createDefinition(key: 'story_points', name: 'Story Points', type: AttributeType.number);
+      final boolDef = await defNotifier.createDefinition(key: 'is_billable', name: 'Billable', type: AttributeType.boolean);
 
-      final valuesController =
-          container.read(workItemAttributeValuesControllerProvider);
+      final valuesController = container.read(workItemAttributeValuesControllerProvider);
 
       final now = DateTime.now().toUtc();
       await valuesController.saveValues(defaultWorkItem.id, [
@@ -228,20 +206,16 @@ void main() {
         ),
       ]);
 
-      final values = await container.read(
-          workItemAttributeValuesFamilyProvider(defaultWorkItem.id).future);
+      final values = await container.read(workItemAttributeValuesFamilyProvider(defaultWorkItem.id).future);
       expect(values.length, 3);
 
-      final textVal =
-          values.firstWhere((v) => v.attributeDefinitionId == textDef.id);
+      final textVal = values.firstWhere((v) => v.attributeDefinitionId == textDef.id);
       expect(textVal.textValue, 'ACME_CORP');
 
-      final numVal =
-          values.firstWhere((v) => v.attributeDefinitionId == numDef.id);
+      final numVal = values.firstWhere((v) => v.attributeDefinitionId == numDef.id);
       expect(numVal.numberValue, 8.0);
 
-      final boolVal =
-          values.firstWhere((v) => v.attributeDefinitionId == boolDef.id);
+      final boolVal = values.firstWhere((v) => v.attributeDefinitionId == boolDef.id);
       expect(boolVal.booleanValue, isTrue);
     });
   });

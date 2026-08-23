@@ -15,8 +15,7 @@ class ProjectsNotifier extends AsyncNotifier<List<Project>> {
   Future<List<Project>> build() async {
     final workspace = await ref.watch(currentWorkspaceProvider.future);
     final projectRepo = ref.watch(projectRepositoryProvider);
-    return projectRepo.getAll(
-        workspaceId: workspace.id, includeArchived: false);
+    return projectRepo.getAll(workspaceId: workspace.id, includeArchived: false);
   }
 
   Future<Project> createProject({
@@ -32,8 +31,7 @@ class ProjectsNotifier extends AsyncNotifier<List<Project>> {
       id: _uuid.v4(),
       workspaceId: workspace.id,
       name: name.trim(),
-      description:
-          description?.trim().isEmpty == true ? null : description?.trim(),
+      description: description?.trim().isEmpty == true ? null : description?.trim(),
       colorHex: colorHex ?? '#0A84FF',
       createdAt: now,
       updatedAt: now,
