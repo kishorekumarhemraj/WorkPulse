@@ -36,15 +36,19 @@ class BreakdownCard extends StatelessWidget {
             children: [
               Icon(icon, size: 16, color: AppTheme.primaryColor),
               const SizedBox(width: 8),
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: AppTheme.textPrimaryDark,
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.textPrimaryDark,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
-              const Spacer(),
+              const SizedBox(width: 8),
               Text(
                 '${items.length} ${items.length == 1 ? 'item' : 'items'}',
                 style: const TextStyle(fontSize: 11, color: AppTheme.textSecondaryDark),

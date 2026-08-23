@@ -331,20 +331,20 @@ class _SidebarNavItem extends ConsumerWidget {
   final IconData icon;
   final String label;
   final bool isSelected;
-  final Provider<int?> countProvider;
+  final Provider<int?>? countProvider;
   final VoidCallback onTap;
 
   const _SidebarNavItem({
     required this.icon,
     required this.label,
     required this.isSelected,
-    required this.countProvider,
+    this.countProvider,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final count = ref.watch(countProvider);
+    final count = countProvider != null ? ref.watch(countProvider!) : null;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2.0),
