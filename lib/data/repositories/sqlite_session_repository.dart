@@ -100,7 +100,7 @@ class SqliteSessionRepository implements SessionRepository {
       });
       return session;
     } catch (e) {
-      throw DatabaseException('Failed to create session: $e');
+      throw AppDatabaseException('Failed to create session: $e');
     }
   }
 
@@ -136,7 +136,7 @@ class SqliteSessionRepository implements SessionRepository {
     } on NotFoundException {
       rethrow;
     } catch (e) {
-      throw DatabaseException('Failed to update session: $e');
+      throw AppDatabaseException('Failed to update session: $e');
     }
   }
 
