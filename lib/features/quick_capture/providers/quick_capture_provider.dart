@@ -1,12 +1,17 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:uuid/uuid.dart';
+import 'package:workpulse/domain/models/attribute_model.dart';
 import 'package:workpulse/domain/models/category_model.dart';
 import 'package:workpulse/domain/models/project_model.dart';
 import 'package:workpulse/domain/models/work_item_model.dart';
+import 'package:workpulse/features/attributes/providers/attribute_definitions_provider.dart';
 import 'package:workpulse/features/categories/providers/categories_provider.dart';
 import 'package:workpulse/features/projects/providers/projects_provider.dart';
 import 'package:workpulse/features/quick_capture/models/quick_capture_state.dart';
 import 'package:workpulse/features/tasks/providers/work_items_provider.dart';
 import 'package:workpulse/features/timer/providers/timer_provider.dart';
+
+const _uuid = Uuid();
 
 final quickCaptureProvider = NotifierProvider<QuickCaptureNotifier, QuickCaptureState>(
   QuickCaptureNotifier.new,
@@ -94,6 +99,7 @@ class QuickCaptureNotifier extends Notifier<QuickCaptureState> {
   /// Creates a new work item and immediately begins time tracking.
   Future<WorkItem?> createAndStartTask({
     required String name,
+    Map<String, dynamic> attributeValues = const {},
   }) async {
     if (name.trim().isEmpty) return null;
 
@@ -125,6 +131,65 @@ class QuickCaptureNotifier extends Notifier<QuickCaptureState> {
           tagIds: state.selectedTagIds,
           peopleIds: state.selectedPeopleIds,
         );
+
+    // Save custom attribute values if provided
+    if (attributeValues.isNotEmpty) {
+      final definitions = ref.read(attributeDefinitionsProvider).value ?? [];
+      final taskDefs = definitions.where((d) => d.scope == AttributeScope.task && d.enabled && !d.isArchived).toList();
+      final valuesToSave = <WorkItemAttributeValue>[];
+      final now = DateTime.now().toUtc();
+
+      for (final entry in attributeValues.entries) {
+        final def = taskDefs.where((d) => d.id == entry.key).firstOrNull;
+        if (def == null || entry.value == null) continue;
+
+        String? textVal;
+        double? numVal;
+        bool? boolVal;
+        DateTime? dateVal;
+        String? optId;
+
+        switch (def.type) {
+          case AttributeType.text:
+            textVal = entry.value.toString();
+            break;
+          case AttributeType.number:
+            numVal = entry.value is num ? (entry.value as num).toDouble() : double.tryParse(entry.value.toString());
+            break;
+          case AttributeType.boolean:
+            boolVal = entry.value == true;
+            break;
+          case AttributeType.singleSelect:
+            optId = entry.value.toString();
+            break;
+          case AttributeType.multiSelect:
+            textVal = (entry.value as List).join(',');
+            break;
+          case AttributeType.date:
+            dateVal = entry.value is DateTime ? entry.value as DateTime : DateTime.tryParse(entry.value.toString());
+            break;
+        }
+
+        valuesToSave.add(
+          WorkItemAttributeValue(
+            id: _uuid.v4(),
+            workItemId: created.id,
+            attributeDefinitionId: def.id,
+            optionId: optId,
+            textValue: textVal,
+            numberValue: numVal,
+            booleanValue: boolVal,
+            dateValue: dateVal,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+      }
+
+      if (valuesToSave.isNotEmpty) {
+        await ref.read(workItemAttributeValuesControllerProvider).saveValues(created.id, valuesToSave);
+      }
+    }
 
     await ref.read(timerProvider.notifier).startTimer(created);
     reset();
