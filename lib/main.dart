@@ -25,28 +25,63 @@ void main() async {
     return true;
   };
 
-  // Initialize SQLite database and execute migrations
-  final dbService = DatabaseService();
-  await dbService.initialize();
+  try {
+    // Initialize SQLite database and execute migrations
+    final dbService = DatabaseService();
+    await dbService.initialize();
 
-  // Check for dangling sessions from crashes/unexpected termination
-  final danglingSession = await dbService.findDanglingSession();
-  if (danglingSession != null) {
-    debugPrint(
-        '[WorkPulse] Recovered dangling session: ${danglingSession['id']}');
+    // Check for dangling sessions from crashes/unexpected termination
+    final danglingSession = await dbService.findDanglingSession();
+    if (danglingSession != null) {
+      debugPrint(
+          '[WorkPulse] Recovered dangling session: ${danglingSession['id']}');
+    }
+
+    // Initialize desktop window manager and system tray
+    if (!kIsWeb && (Platform.isMacOS || Platform.isWindows || Platform.isLinux)) {
+      await DesktopWindowService().initialize();
+      await DesktopTrayService().initialize();
+    }
+
+    runApp(
+      const ProviderScope(
+        child: WorkPulseApp(),
+      ),
+    );
+  } catch (e, stack) {
+    debugPrint('[WorkPulse] Fatal initialization error: $e\n$stack');
+    runApp(
+      MaterialApp(
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.darkTheme,
+        home: Scaffold(
+          backgroundColor: AppTheme.backgroundDark,
+          body: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.error_outline, color: AppTheme.accentRed, size: 48),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'WorkPulse failed to start',
+                    style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '$e',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: AppTheme.textSecondaryDark, fontSize: 13),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
-
-  // Initialize desktop window manager and system tray
-  if (!kIsWeb && (Platform.isMacOS || Platform.isWindows || Platform.isLinux)) {
-    await DesktopWindowService().initialize();
-    await DesktopTrayService().initialize();
-  }
-
-  runApp(
-    const ProviderScope(
-      child: WorkPulseApp(),
-    ),
-  );
 }
 
 class WorkPulseApp extends ConsumerStatefulWidget {
