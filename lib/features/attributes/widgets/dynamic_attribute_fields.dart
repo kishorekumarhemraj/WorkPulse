@@ -147,6 +147,7 @@ class DynamicAttributeFields extends ConsumerWidget {
           error: (_, __) => const SizedBox.shrink(),
           data: (options) {
             return DropdownButtonFormField<String>(
+              isDense: true,
               isExpanded: true,
               initialValue: options.any((o) => o.id == currentValue)
                   ? currentValue as String?

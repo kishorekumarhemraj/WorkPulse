@@ -52,25 +52,6 @@ class _ExportDialogState extends ConsumerState<ExportDialog> {
             start: now.subtract(const Duration(days: 7)),
             end: now,
           ),
-      builder: (context, child) {
-        final isDark = Theme.of(context).brightness == Brightness.dark;
-        return Theme(
-          data: (isDark ? ThemeData.dark() : ThemeData.light()).copyWith(
-            colorScheme: ColorScheme(
-              brightness: isDark ? Brightness.dark : Brightness.light,
-              primary: AppTheme.primaryColor,
-              onPrimary: Colors.white,
-              secondary: AppTheme.primaryColor,
-              onSecondary: Colors.white,
-              error: AppTheme.accentRed,
-              onError: Colors.white,
-              surface: AppTheme.getColors(context).surface,
-              onSurface: AppTheme.getColors(context).textPrimary,
-            ),
-          ),
-          child: child!,
-        );
-      },
     );
 
     if (picked != null) {
@@ -143,7 +124,7 @@ class _ExportDialogState extends ConsumerState<ExportDialog> {
     return Dialog(
       backgroundColor: AppTheme.getColors(context).surface,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: AppTheme.dialogRadius,
         side: BorderSide(color: AppTheme.getColors(context).divider),
       ),
       child: ConstrainedBox(

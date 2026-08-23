@@ -26,6 +26,10 @@ class AppTheme {
   static const Color textSecondaryLight = Color(0xFF666666);
   static const Color dividerLight = Color(0xFFE0E0E0);
 
+  // Common Border Radii
+  static final BorderRadius controlRadius = BorderRadius.circular(8);
+  static final BorderRadius dialogRadius = BorderRadius.circular(12);
+
   // Get theme colors based on current brightness
   static _ThemeColors getColors(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -61,25 +65,105 @@ class AppTheme {
         surface: surfaceDark,
         error: accentRed,
       ),
-      cardTheme: const CardThemeData(
+      cardTheme: CardThemeData(
         color: cardDark,
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(8)),
+          borderRadius: controlRadius,
+        ),
+      ),
+      dialogTheme: DialogThemeData(
+        backgroundColor: surfaceDark,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: dialogRadius,
+          side: const BorderSide(color: dividerDark),
+        ),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: primaryColor,
+          foregroundColor: Colors.white,
+          elevation: 0,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          shape: RoundedRectangleBorder(borderRadius: controlRadius),
+          textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: textSecondaryDark,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          shape: RoundedRectangleBorder(borderRadius: controlRadius),
+          textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: textPrimaryDark,
+          side: const BorderSide(color: dividerDark),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          shape: RoundedRectangleBorder(borderRadius: controlRadius),
+          textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
+        isDense: true,
         filled: true,
         fillColor: cardDark,
+        hintStyle: const TextStyle(fontSize: 13, color: textSecondaryDark),
+        labelStyle: const TextStyle(fontSize: 13, color: textSecondaryDark),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(6),
-          borderSide: BorderSide.none,
+          borderRadius: controlRadius,
+          borderSide: const BorderSide(color: dividerDark, width: 1.0),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: controlRadius,
+          borderSide: const BorderSide(color: dividerDark, width: 1.0),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(6),
+          borderRadius: controlRadius,
           borderSide: const BorderSide(color: primaryColor, width: 1.5),
         ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: controlRadius,
+          borderSide: const BorderSide(color: accentRed, width: 1.0),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: controlRadius,
+          borderSide: const BorderSide(color: accentRed, width: 1.5),
+        ),
+        disabledBorder: OutlineInputBorder(
+          borderRadius: controlRadius,
+          borderSide: BorderSide(color: dividerDark.withValues(alpha: 0.5), width: 1.0),
+        ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      ),
+      datePickerTheme: DatePickerThemeData(
+        backgroundColor: surfaceDark,
+        surfaceTintColor: Colors.transparent,
+        headerBackgroundColor: cardDark,
+        headerForegroundColor: textPrimaryDark,
+        headerHeadlineStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        dayBackgroundColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return primaryColor;
+          return null;
+        }),
+        dayForegroundColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return Colors.white;
+          if (states.contains(WidgetState.disabled)) return textSecondaryDark.withValues(alpha: 0.4);
+          return textPrimaryDark;
+        }),
+        todayBorder: const BorderSide(color: primaryColor, width: 1.0),
+        todayForegroundColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return Colors.white;
+          return primaryColor;
+        }),
+        shape: RoundedRectangleBorder(
+          borderRadius: dialogRadius,
+          side: const BorderSide(color: dividerDark),
+        ),
+        dividerColor: dividerDark,
       ),
     );
   }
@@ -95,25 +179,105 @@ class AppTheme {
         surface: surfaceLight,
         error: accentRed,
       ),
-      cardTheme: const CardThemeData(
+      cardTheme: CardThemeData(
         color: cardLight,
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(8)),
+          borderRadius: controlRadius,
+        ),
+      ),
+      dialogTheme: DialogThemeData(
+        backgroundColor: surfaceLight,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: dialogRadius,
+          side: const BorderSide(color: dividerLight),
+        ),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: primaryColor,
+          foregroundColor: Colors.white,
+          elevation: 0,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          shape: RoundedRectangleBorder(borderRadius: controlRadius),
+          textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: textSecondaryLight,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          shape: RoundedRectangleBorder(borderRadius: controlRadius),
+          textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: textPrimaryLight,
+          side: const BorderSide(color: dividerLight),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          shape: RoundedRectangleBorder(borderRadius: controlRadius),
+          textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
+        isDense: true,
         filled: true,
         fillColor: cardLight,
+        hintStyle: const TextStyle(fontSize: 13, color: textSecondaryLight),
+        labelStyle: const TextStyle(fontSize: 13, color: textSecondaryLight),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(6),
-          borderSide: const BorderSide(color: dividerLight),
+          borderRadius: controlRadius,
+          borderSide: const BorderSide(color: dividerLight, width: 1.0),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: controlRadius,
+          borderSide: const BorderSide(color: dividerLight, width: 1.0),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(6),
+          borderRadius: controlRadius,
           borderSide: const BorderSide(color: primaryColor, width: 1.5),
         ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: controlRadius,
+          borderSide: const BorderSide(color: accentRed, width: 1.0),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: controlRadius,
+          borderSide: const BorderSide(color: accentRed, width: 1.5),
+        ),
+        disabledBorder: OutlineInputBorder(
+          borderRadius: controlRadius,
+          borderSide: BorderSide(color: dividerLight.withValues(alpha: 0.5), width: 1.0),
+        ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      ),
+      datePickerTheme: DatePickerThemeData(
+        backgroundColor: surfaceLight,
+        surfaceTintColor: Colors.transparent,
+        headerBackgroundColor: cardLight,
+        headerForegroundColor: textPrimaryLight,
+        headerHeadlineStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        dayBackgroundColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return primaryColor;
+          return null;
+        }),
+        dayForegroundColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return Colors.white;
+          if (states.contains(WidgetState.disabled)) return textSecondaryLight.withValues(alpha: 0.4);
+          return textPrimaryLight;
+        }),
+        todayBorder: const BorderSide(color: primaryColor, width: 1.0),
+        todayForegroundColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return Colors.white;
+          return primaryColor;
+        }),
+        shape: RoundedRectangleBorder(
+          borderRadius: dialogRadius,
+          side: const BorderSide(color: dividerLight),
+        ),
+        dividerColor: dividerLight,
       ),
     );
   }
