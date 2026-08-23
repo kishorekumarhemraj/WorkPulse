@@ -1,72 +1,79 @@
 import 'package:equatable/equatable.dart';
 
-class Task extends Equatable {
+class WorkItem extends Equatable {
   final String id;
+  final String workspaceId;
   final String name;
   final String projectId;
   final String categoryId;
+  final String? notes;
   final List<String> tagIds;
   final List<String> peopleIds;
-  final String? jiraId;
-  final String? notes;
   final DateTime createdAt;
   final DateTime updatedAt;
   final DateTime? lastWorkedAt;
+  final DateTime? archivedAt;
 
-  const Task({
+  const WorkItem({
     required this.id,
+    required this.workspaceId,
     required this.name,
     required this.projectId,
     required this.categoryId,
+    this.notes,
     this.tagIds = const [],
     this.peopleIds = const [],
-    this.jiraId,
-    this.notes,
     required this.createdAt,
     required this.updatedAt,
     this.lastWorkedAt,
+    this.archivedAt,
   });
 
-  Task copyWith({
+  bool get isArchived => archivedAt != null;
+
+  WorkItem copyWith({
     String? id,
+    String? workspaceId,
     String? name,
     String? projectId,
     String? categoryId,
+    String? notes,
     List<String>? tagIds,
     List<String>? peopleIds,
-    String? jiraId,
-    String? notes,
     DateTime? createdAt,
     DateTime? updatedAt,
     DateTime? lastWorkedAt,
+    DateTime? archivedAt,
   }) {
-    return Task(
+    return WorkItem(
       id: id ?? this.id,
+      workspaceId: workspaceId ?? this.workspaceId,
       name: name ?? this.name,
       projectId: projectId ?? this.projectId,
       categoryId: categoryId ?? this.categoryId,
+      notes: notes ?? this.notes,
       tagIds: tagIds ?? this.tagIds,
       peopleIds: peopleIds ?? this.peopleIds,
-      jiraId: jiraId ?? this.jiraId,
-      notes: notes ?? this.notes,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       lastWorkedAt: lastWorkedAt ?? this.lastWorkedAt,
+      archivedAt: archivedAt ?? this.archivedAt,
     );
   }
 
   @override
   List<Object?> get props => [
         id,
+        workspaceId,
         name,
         projectId,
         categoryId,
+        notes,
         tagIds,
         peopleIds,
-        jiraId,
-        notes,
         createdAt,
         updatedAt,
         lastWorkedAt,
+        archivedAt,
       ];
 }

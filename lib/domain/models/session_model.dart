@@ -2,7 +2,7 @@ import 'package:equatable/equatable.dart';
 
 class Session extends Equatable {
   final String id;
-  final String taskId;
+  final String workItemId;
   final DateTime startTime;
   final DateTime? endTime;
   final List<String> peopleIds;
@@ -10,7 +10,7 @@ class Session extends Equatable {
 
   const Session({
     required this.id,
-    required this.taskId,
+    required this.workItemId,
     required this.startTime,
     this.endTime,
     this.peopleIds = const [],
@@ -27,7 +27,7 @@ class Session extends Equatable {
 
   Session copyWith({
     String? id,
-    String? taskId,
+    String? workItemId,
     DateTime? startTime,
     DateTime? endTime,
     List<String>? peopleIds,
@@ -35,7 +35,7 @@ class Session extends Equatable {
   }) {
     return Session(
       id: id ?? this.id,
-      taskId: taskId ?? this.taskId,
+      workItemId: workItemId ?? this.workItemId,
       startTime: startTime ?? this.startTime,
       endTime: endTime ?? this.endTime,
       peopleIds: peopleIds ?? this.peopleIds,
@@ -44,5 +44,5 @@ class Session extends Equatable {
   }
 
   @override
-  List<Object?> get props => [id, taskId, startTime, endTime, peopleIds, createdAt];
+  List<Object?> get props => [id, workItemId, startTime, endTime, peopleIds, createdAt];
 }

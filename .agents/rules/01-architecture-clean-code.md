@@ -13,9 +13,9 @@ lib/
 ## Rules & Constraints:
 1. **Domain Independence**:
    - Files in `lib/domain/` MUST NEVER import Flutter UI packages (`package:flutter/material.dart`) or SQLite drivers.
-   - Domain models must use value equality (`Equatable` or `freezed`) and immutable fields (`final`).
+   - Domain models (`WorkItem`, `Workspace`, `AttributeDefinition`, `Session`, `Project`, `Category`, etc.) must use value equality (`Equatable`) and immutable fields (`final`).
 2. **Repository Pattern**:
-   - `lib/domain/repositories/` defines abstract interfaces (e.g. `TaskRepository`, `SessionRepository`, `ProjectRepository`).
+   - `lib/domain/repositories/` defines abstract interfaces (e.g. `WorkItemRepository`, `SessionRepository`, `ProjectRepository`, `CategoryRepository`, `TagRepository`, `PersonRepository`, `AttributeRepository`, `WorkspaceRepository`).
    - `lib/data/repositories/` provides the concrete SQLite implementations.
 3. **Feature Encapsulation**:
    - Each feature under `lib/features/<feature_name>/` must contain its own presentation layer:
