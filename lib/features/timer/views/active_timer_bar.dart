@@ -28,11 +28,11 @@ class ActiveTimerBar extends ConsumerWidget {
 
     return Container(
       height: 48,
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      padding: EdgeInsets.symmetric(horizontal: 20),
       decoration: BoxDecoration(
-        color: AppTheme.surfaceDark,
-        border: const Border(
-          top: BorderSide(color: AppTheme.dividerDark, width: 1),
+        color: AppTheme.getColors(context).surface,
+        border: Border(
+          top: BorderSide(color: AppTheme.getColors(context).divider, width: 1),
         ),
         boxShadow: [
           BoxShadow(
@@ -60,10 +60,10 @@ class ActiveTimerBar extends ConsumerWidget {
               ],
             ),
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: 12),
 
           // Active label
-          const Text(
+          Text(
             'TRACKING',
             style: TextStyle(
               fontSize: 10,
@@ -72,12 +72,12 @@ class ActiveTimerBar extends ConsumerWidget {
               color: AppTheme.accentGreen,
             ),
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: 12),
 
           // Project indicator
           if (project != null) ...[
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(
                 color: projectColor.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(4),
@@ -90,7 +90,7 @@ class ActiveTimerBar extends ConsumerWidget {
                     height: 6,
                     decoration: BoxDecoration(color: projectColor, shape: BoxShape.circle),
                   ),
-                  const SizedBox(width: 4),
+                  SizedBox(width: 4),
                   Text(
                     project.name,
                     style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: projectColor),
@@ -98,17 +98,17 @@ class ActiveTimerBar extends ConsumerWidget {
                 ],
               ),
             ),
-            const SizedBox(width: 10),
+            SizedBox(width: 10),
           ],
 
           // Active task title
           Expanded(
             child: Text(
               activeItem.name,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
-                color: AppTheme.textPrimaryDark,
+                color: AppTheme.getColors(context).textPrimary,
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -117,61 +117,61 @@ class ActiveTimerBar extends ConsumerWidget {
 
           // Live Duration Ticker
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
             decoration: BoxDecoration(
-              color: AppTheme.cardDark,
+              color: AppTheme.getColors(context).card,
               borderRadius: BorderRadius.circular(6),
-              border: Border.all(color: AppTheme.dividerDark),
+              border: Border.all(color: AppTheme.getColors(context).divider),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.timer_outlined, size: 14, color: AppTheme.primaryColor),
-                const SizedBox(width: 6),
+                Icon(Icons.timer_outlined, size: 14, color: AppTheme.primaryColor),
+                SizedBox(width: 6),
                 Text(
                   formattedTime,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: 'Courier',
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
-                    color: AppTheme.textPrimaryDark,
+                    color: AppTheme.getColors(context).textPrimary,
                     letterSpacing: 0.5,
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(width: 16),
+          SizedBox(width: 16),
 
           // Switch Task Button
           OutlinedButton.icon(
             onPressed: () => QuickCaptureDialog.show(context),
-            icon: const Icon(Icons.swap_horiz, size: 15),
-            label: const Text('Switch'),
+            icon: Icon(Icons.swap_horiz, size: 15),
+            label: Text('Switch'),
             style: OutlinedButton.styleFrom(
-              foregroundColor: AppTheme.textPrimaryDark,
-              side: const BorderSide(color: AppTheme.dividerDark),
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              foregroundColor: AppTheme.getColors(context).textPrimary,
+              side: BorderSide(color: AppTheme.getColors(context).divider),
+              padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(6),
               ),
             ),
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: 8),
 
           // Stop Button
           ElevatedButton.icon(
             onPressed: () => ref.read(timerProvider.notifier).stopTimer(),
-            icon: const Icon(Icons.stop, size: 16),
-            label: const Text('Stop'),
+            icon: Icon(Icons.stop, size: 16),
+            label: Text('Stop'),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.accentRed.withValues(alpha: 0.15),
               foregroundColor: AppTheme.accentRed,
               elevation: 0,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(6),
-                side: const BorderSide(color: AppTheme.accentRed, width: 1),
+                side: BorderSide(color: AppTheme.accentRed, width: 1),
               ),
             ),
           ),

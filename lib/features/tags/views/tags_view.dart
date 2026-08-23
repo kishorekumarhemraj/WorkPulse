@@ -24,7 +24,7 @@ class _TagsViewState extends ConsumerState<TagsView> {
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: Padding(
-        padding: const EdgeInsets.all(24.0),
+        padding: EdgeInsets.all(24.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -32,37 +32,37 @@ class _TagsViewState extends ConsumerState<TagsView> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Expanded(
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         'Tags',
-                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppTheme.textPrimaryDark),
+                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppTheme.getColors(context).textPrimary),
                       ),
                       SizedBox(height: 4),
                       Text(
                         'Flexible labels to categorize and filter your work items',
-                        style: TextStyle(fontSize: 13, color: AppTheme.textSecondaryDark),
+                        style: TextStyle(fontSize: 13, color: AppTheme.getColors(context).textSecondary),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(width: 16),
+                SizedBox(width: 16),
                 ElevatedButton.icon(
                   onPressed: () => TagFormDialog.show(context),
-                  icon: const Icon(Icons.add, size: 18),
-                  label: const Text('New Tag'),
+                  icon: Icon(Icons.add, size: 18),
+                  label: Text('New Tag'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.primaryColor,
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: 20),
 
             // Search bar
             SizedBox(
@@ -71,29 +71,29 @@ class _TagsViewState extends ConsumerState<TagsView> {
                 onChanged: (value) => setState(() => _searchQuery = value.trim().toLowerCase()),
                 decoration: InputDecoration(
                   hintText: 'Search tags...',
-                  prefixIcon: const Icon(Icons.search, size: 18, color: AppTheme.textSecondaryDark),
+                  prefixIcon: Icon(Icons.search, size: 18, color: AppTheme.getColors(context).textSecondary),
                   filled: true,
-                  fillColor: AppTheme.surfaceDark,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 12),
+                  fillColor: AppTheme.getColors(context).surface,
+                  contentPadding: EdgeInsets.symmetric(vertical: 0, horizontal: 12),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(color: AppTheme.dividerDark),
+                    borderSide: BorderSide(color: AppTheme.getColors(context).divider),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(color: AppTheme.dividerDark),
+                    borderSide: BorderSide(color: AppTheme.getColors(context).divider),
                   ),
                 ),
               ),
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: 20),
 
             // Tags List
             Expanded(
               child: tagsAsync.when(
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (error, _) => Center(
-                  child: Text('Error loading tags: $error', style: const TextStyle(color: AppTheme.accentRed)),
+                  child: Text('Error loading tags: $error', style: TextStyle(color: AppTheme.accentRed)),
                 ),
                 data: (tags) {
                   final filtered = tags.where((t) {
@@ -106,18 +106,18 @@ class _TagsViewState extends ConsumerState<TagsView> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.label_off_outlined, size: 48, color: AppTheme.textSecondaryDark.withValues(alpha: 0.5)),
-                          const SizedBox(height: 12),
+                          Icon(Icons.label_off_outlined, size: 48, color: AppTheme.getColors(context).textSecondary.withValues(alpha: 0.5)),
+                          SizedBox(height: 12),
                           Text(
                             _searchQuery.isEmpty ? 'No tags created yet' : 'No matching tags',
-                            style: const TextStyle(fontSize: 16, color: AppTheme.textSecondaryDark),
+                            style: TextStyle(fontSize: 16, color: AppTheme.getColors(context).textSecondary),
                           ),
                           if (_searchQuery.isEmpty) ...[
-                            const SizedBox(height: 12),
+                            SizedBox(height: 12),
                             OutlinedButton.icon(
                               onPressed: () => TagFormDialog.show(context),
-                              icon: const Icon(Icons.add, size: 16),
-                              label: const Text('Create First Tag'),
+                              icon: Icon(Icons.add, size: 16),
+                              label: Text('Create First Tag'),
                               style: OutlinedButton.styleFrom(foregroundColor: AppTheme.primaryColor),
                             ),
                           ],
@@ -135,11 +135,11 @@ class _TagsViewState extends ConsumerState<TagsView> {
 
                       return Container(
                         decoration: BoxDecoration(
-                          color: AppTheme.surfaceDark,
+                          color: AppTheme.getColors(context).surface,
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: AppTheme.dividerDark),
+                          border: Border.all(color: AppTheme.getColors(context).divider),
                         ),
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        padding: EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
@@ -148,47 +148,47 @@ class _TagsViewState extends ConsumerState<TagsView> {
                               height: 10,
                               decoration: BoxDecoration(color: color, shape: BoxShape.circle),
                             ),
-                            const SizedBox(width: 8),
+                            SizedBox(width: 8),
                             Text(
                               tag.name,
-                              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: AppTheme.textPrimaryDark),
+                              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: AppTheme.getColors(context).textPrimary),
                             ),
-                            const SizedBox(width: 10),
+                            SizedBox(width: 10),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                               decoration: BoxDecoration(
-                                color: AppTheme.cardDark,
+                                color: AppTheme.getColors(context).card,
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: Text(
                                 '$taskCount',
-                                style: const TextStyle(fontSize: 11, color: AppTheme.textSecondaryDark),
+                                style: TextStyle(fontSize: 11, color: AppTheme.getColors(context).textSecondary),
                               ),
                             ),
-                            const SizedBox(width: 8),
+                            SizedBox(width: 8),
                             InkWell(
                               onTap: () => TagFormDialog.show(context, tag: tag),
                               borderRadius: BorderRadius.circular(4),
-                              child: const Padding(
+                              child: Padding(
                                 padding: EdgeInsets.all(2.0),
-                                child: Icon(Icons.edit_outlined, size: 15, color: AppTheme.textSecondaryDark),
+                                child: Icon(Icons.edit_outlined, size: 15, color: AppTheme.getColors(context).textSecondary),
                               ),
                             ),
-                            const SizedBox(width: 4),
+                            SizedBox(width: 4),
                             InkWell(
                               onTap: () async {
                                 final confirm = await showDialog<bool>(
                                   context: context,
                                   builder: (ctx) => AlertDialog(
-                                    backgroundColor: AppTheme.surfaceDark,
-                                    title: const Text('Delete Tag', style: TextStyle(color: AppTheme.textPrimaryDark)),
+                                    backgroundColor: AppTheme.getColors(context).surface,
+                                    title: Text('Delete Tag', style: TextStyle(color: AppTheme.getColors(context).textPrimary)),
                                     content: Text('Are you sure you want to delete tag "${tag.name}"?'),
                                     actions: [
-                                      TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+                                      TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('Cancel')),
                                       ElevatedButton(
                                         onPressed: () => Navigator.pop(ctx, true),
                                         style: ElevatedButton.styleFrom(backgroundColor: AppTheme.accentRed, foregroundColor: Colors.white),
-                                        child: const Text('Delete'),
+                                        child: Text('Delete'),
                                       ),
                                     ],
                                   ),
@@ -198,7 +198,7 @@ class _TagsViewState extends ConsumerState<TagsView> {
                                 }
                               },
                               borderRadius: BorderRadius.circular(4),
-                              child: const Padding(
+                              child: Padding(
                                 padding: EdgeInsets.all(2.0),
                                 child: Icon(Icons.close, size: 15, color: AppTheme.accentRed),
                               ),

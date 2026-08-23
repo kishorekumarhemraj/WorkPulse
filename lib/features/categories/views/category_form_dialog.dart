@@ -92,18 +92,18 @@ class _CategoryFormDialogState extends ConsumerState<CategoryFormDialog> {
         return KeyEventResult.ignored;
       },
       child: AlertDialog(
-        backgroundColor: AppTheme.surfaceDark,
+        backgroundColor: AppTheme.getColors(context).surface,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
-          side: const BorderSide(color: AppTheme.dividerDark, width: 1),
+          side: BorderSide(color: AppTheme.getColors(context).divider, width: 1),
         ),
-        titlePadding: const EdgeInsets.fromLTRB(24, 20, 24, 12),
-        contentPadding: const EdgeInsets.fromLTRB(24, 0, 24, 20),
-        actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 20),
+        titlePadding: EdgeInsets.fromLTRB(24, 20, 24, 12),
+        contentPadding: EdgeInsets.fromLTRB(24, 0, 24, 20),
+        actionsPadding: EdgeInsets.fromLTRB(24, 0, 24, 20),
         title: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(8),
+              padding: EdgeInsets.all(8),
               decoration: BoxDecoration(
                 color: AppTheme.primaryColor.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(8),
@@ -114,10 +114,10 @@ class _CategoryFormDialogState extends ConsumerState<CategoryFormDialog> {
                 size: 20,
               ),
             ),
-            const SizedBox(width: 12),
+            SizedBox(width: 12),
             Text(
               isEditing ? 'Edit Category' : 'New Category',
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: AppTheme.textPrimaryDark),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: AppTheme.getColors(context).textPrimary),
             ),
           ],
         ),
@@ -130,15 +130,15 @@ class _CategoryFormDialogState extends ConsumerState<CategoryFormDialog> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Category Name', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AppTheme.textSecondaryDark)),
-                  const SizedBox(height: 6),
+                  Text('Category Name', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AppTheme.getColors(context).textSecondary)),
+                  SizedBox(height: 6),
                   TextFormField(
                     controller: _nameController,
                     autofocus: true,
-                    style: const TextStyle(color: AppTheme.textPrimaryDark, fontSize: 14),
-                    decoration: const InputDecoration(
+                    style: TextStyle(color: AppTheme.getColors(context).textPrimary, fontSize: 14),
+                    decoration: InputDecoration(
                       hintText: 'e.g. Engineering, Architecture, Meetings',
-                      hintStyle: TextStyle(color: AppTheme.textSecondaryDark),
+                      hintStyle: TextStyle(color: AppTheme.getColors(context).textSecondary),
                     ),
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
@@ -148,21 +148,21 @@ class _CategoryFormDialogState extends ConsumerState<CategoryFormDialog> {
                     },
                     onFieldSubmitted: (_) => _submit(),
                   ),
-                  const SizedBox(height: 16),
-                  const Text('Description (Optional)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AppTheme.textSecondaryDark)),
-                  const SizedBox(height: 6),
+                  SizedBox(height: 16),
+                  Text('Description (Optional)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AppTheme.getColors(context).textSecondary)),
+                  SizedBox(height: 6),
                   TextFormField(
                     controller: _descController,
                     maxLines: 2,
-                    style: const TextStyle(color: AppTheme.textPrimaryDark, fontSize: 14),
-                    decoration: const InputDecoration(
+                    style: TextStyle(color: AppTheme.getColors(context).textPrimary, fontSize: 14),
+                    decoration: InputDecoration(
                       hintText: 'Brief summary of what belongs to this category...',
-                      hintStyle: TextStyle(color: AppTheme.textSecondaryDark),
+                      hintStyle: TextStyle(color: AppTheme.getColors(context).textSecondary),
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  const Text('Select Icon', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AppTheme.textSecondaryDark)),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 16),
+                  Text('Select Icon', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AppTheme.getColors(context).textSecondary)),
+                  SizedBox(height: 8),
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
@@ -175,17 +175,17 @@ class _CategoryFormDialogState extends ConsumerState<CategoryFormDialog> {
                           width: 36,
                           height: 36,
                           decoration: BoxDecoration(
-                            color: isSelected ? AppTheme.primaryColor.withValues(alpha: 0.2) : AppTheme.cardDark,
+                            color: isSelected ? AppTheme.primaryColor.withValues(alpha: 0.2) : AppTheme.getColors(context).card,
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(
-                              color: isSelected ? AppTheme.primaryColor : AppTheme.dividerDark,
+                              color: isSelected ? AppTheme.primaryColor : AppTheme.getColors(context).divider,
                               width: 1.5,
                             ),
                           ),
                           child: Icon(
                             entry.value,
                             size: 18,
-                            color: isSelected ? AppTheme.primaryColor : AppTheme.textSecondaryDark,
+                            color: isSelected ? AppTheme.primaryColor : AppTheme.getColors(context).textSecondary,
                           ),
                         ),
                       );
@@ -199,7 +199,7 @@ class _CategoryFormDialogState extends ConsumerState<CategoryFormDialog> {
         actions: [
           TextButton(
             onPressed: _isSubmitting ? null : () => Navigator.of(context).pop(),
-            child: const Text('Cancel', style: TextStyle(color: AppTheme.textSecondaryDark)),
+            child: Text('Cancel', style: TextStyle(color: AppTheme.getColors(context).textSecondary)),
           ),
           ElevatedButton(
             onPressed: _isSubmitting ? null : _submit,
@@ -207,10 +207,10 @@ class _CategoryFormDialogState extends ConsumerState<CategoryFormDialog> {
               backgroundColor: AppTheme.primaryColor,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             ),
             child: _isSubmitting
-                ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                ? SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                 : Text(isEditing ? 'Save Changes' : 'Create Category'),
           ),
         ],

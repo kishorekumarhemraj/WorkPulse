@@ -128,28 +128,28 @@ class _AttributeDefinitionFormDialogState extends ConsumerState<AttributeDefinit
     final isEditing = widget.definition != null;
 
     return AlertDialog(
-      backgroundColor: AppTheme.surfaceDark,
+      backgroundColor: AppTheme.getColors(context).surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: const BorderSide(color: AppTheme.dividerDark, width: 1),
+        side: BorderSide(color: AppTheme.getColors(context).divider, width: 1),
       ),
-      titlePadding: const EdgeInsets.fromLTRB(24, 20, 24, 12),
-      contentPadding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
-      actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 20),
+      titlePadding: EdgeInsets.fromLTRB(24, 20, 24, 12),
+      contentPadding: EdgeInsets.fromLTRB(24, 0, 24, 16),
+      actionsPadding: EdgeInsets.fromLTRB(24, 0, 24, 20),
       title: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(8),
+            padding: EdgeInsets.all(8),
             decoration: BoxDecoration(
               color: AppTheme.primaryColor.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: const Icon(Icons.tune, color: AppTheme.primaryColor, size: 20),
+            child: Icon(Icons.tune, color: AppTheme.primaryColor, size: 20),
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: 12),
           Text(
             isEditing ? 'Edit Custom Attribute' : 'New Custom Attribute',
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: AppTheme.textPrimaryDark),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: AppTheme.getColors(context).textPrimary),
           ),
         ],
       ),
@@ -166,7 +166,7 @@ class _AttributeDefinitionFormDialogState extends ConsumerState<AttributeDefinit
                 TextFormField(
                   controller: _nameController,
                   autofocus: !isEditing,
-                  style: const TextStyle(fontSize: 14, color: AppTheme.textPrimaryDark),
+                  style: TextStyle(fontSize: 14, color: AppTheme.getColors(context).textPrimary),
                   decoration: const InputDecoration(
                     labelText: 'Display Name *',
                     hintText: 'e.g. Jira Issue Key, Cost Centre, Client',
@@ -178,12 +178,12 @@ class _AttributeDefinitionFormDialogState extends ConsumerState<AttributeDefinit
                     }
                   },
                 ),
-                const SizedBox(height: 14),
+                SizedBox(height: 14),
 
                 // Key Identifier
                 TextFormField(
                   controller: _keyController,
-                  style: const TextStyle(fontSize: 13, fontFamily: 'Courier', color: AppTheme.textPrimaryDark),
+                  style: TextStyle(fontSize: 13, fontFamily: 'Courier', color: AppTheme.getColors(context).textPrimary),
                   decoration: const InputDecoration(
                     labelText: 'Internal Key *',
                     hintText: 'e.g. jira_key, cost_centre',
@@ -197,7 +197,7 @@ class _AttributeDefinitionFormDialogState extends ConsumerState<AttributeDefinit
                     return null;
                   },
                 ),
-                const SizedBox(height: 14),
+                SizedBox(height: 14),
 
                 // Type and Scope Row
                 Row(
@@ -207,8 +207,8 @@ class _AttributeDefinitionFormDialogState extends ConsumerState<AttributeDefinit
                       child: DropdownButtonFormField<AttributeType>(
                         initialValue: _selectedType,
                         isExpanded: true,
-                        dropdownColor: AppTheme.surfaceDark,
-                        style: const TextStyle(fontSize: 13, color: AppTheme.textPrimaryDark),
+                        dropdownColor: AppTheme.getColors(context).surface,
+                        style: TextStyle(fontSize: 13, color: AppTheme.getColors(context).textPrimary),
                         decoration: const InputDecoration(labelText: 'Data Type'),
                         items: AttributeType.values.map((t) {
                           return DropdownMenuItem(value: t, child: Text(_formatType(t)));
@@ -220,15 +220,15 @@ class _AttributeDefinitionFormDialogState extends ConsumerState<AttributeDefinit
                               },
                       ),
                     ),
-                    const SizedBox(width: 14),
+                    SizedBox(width: 14),
 
                     // Scope Dropdown
                     Expanded(
                       child: DropdownButtonFormField<AttributeScope>(
                         initialValue: _selectedScope,
                         isExpanded: true,
-                        dropdownColor: AppTheme.surfaceDark,
-                        style: const TextStyle(fontSize: 13, color: AppTheme.textPrimaryDark),
+                        dropdownColor: AppTheme.getColors(context).surface,
+                        style: TextStyle(fontSize: 13, color: AppTheme.getColors(context).textPrimary),
                         decoration: const InputDecoration(labelText: 'Scope'),
                         items: const [
                           DropdownMenuItem(value: AttributeScope.task, child: Text('Task Scope')),
@@ -243,22 +243,22 @@ class _AttributeDefinitionFormDialogState extends ConsumerState<AttributeDefinit
                     ),
                   ],
                 ),
-                const SizedBox(height: 14),
+                SizedBox(height: 14),
 
                 // Description
                 TextFormField(
                   controller: _descriptionController,
                   maxLines: 2,
-                  style: const TextStyle(fontSize: 13, color: AppTheme.textPrimaryDark),
+                  style: TextStyle(fontSize: 13, color: AppTheme.getColors(context).textPrimary),
                   decoration: const InputDecoration(
                     labelText: 'Description (optional)',
                     hintText: 'Describe how this metadata field should be used',
                   ),
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
 
-                const Divider(color: AppTheme.dividerDark),
-                const SizedBox(height: 8),
+                Divider(color: AppTheme.getColors(context).divider),
+                SizedBox(height: 8),
 
                 // Options Switches
                 _buildSwitchRow(
@@ -267,14 +267,14 @@ class _AttributeDefinitionFormDialogState extends ConsumerState<AttributeDefinit
                   value: _required,
                   onChanged: (v) => setState(() => _required = v),
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: 8),
                 _buildSwitchRow(
                   title: 'Show in Quick Capture',
                   subtitle: 'Display in the floating Quick Capture dialog',
                   value: _showInQuickCapture,
                   onChanged: (v) => setState(() => _showInQuickCapture = v),
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: 8),
                 _buildSwitchRow(
                   title: 'Searchable',
                   subtitle: 'Include attribute value in global search filtering',
@@ -289,7 +289,7 @@ class _AttributeDefinitionFormDialogState extends ConsumerState<AttributeDefinit
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel', style: TextStyle(color: AppTheme.textSecondaryDark)),
+          child: Text('Cancel', style: TextStyle(color: AppTheme.getColors(context).textSecondary)),
         ),
         ElevatedButton(
           onPressed: _isSaving ? null : _save,
@@ -297,10 +297,10 @@ class _AttributeDefinitionFormDialogState extends ConsumerState<AttributeDefinit
             backgroundColor: AppTheme.primaryColor,
             foregroundColor: Colors.white,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           ),
           child: _isSaving
-              ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+              ? SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
               : Text(isEditing ? 'Save Changes' : 'Create Attribute'),
         ),
       ],
@@ -319,9 +319,9 @@ class _AttributeDefinitionFormDialogState extends ConsumerState<AttributeDefinit
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title, style: const TextStyle(fontSize: 13, color: AppTheme.textPrimaryDark)),
-              const SizedBox(height: 2),
-              Text(subtitle, style: const TextStyle(fontSize: 11, color: AppTheme.textSecondaryDark)),
+              Text(title, style: TextStyle(fontSize: 13, color: AppTheme.getColors(context).textPrimary)),
+              SizedBox(height: 2),
+              Text(subtitle, style: TextStyle(fontSize: 11, color: AppTheme.getColors(context).textSecondary)),
             ],
           ),
         ),

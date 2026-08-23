@@ -7,6 +7,7 @@ import 'package:workpulse/core/database/database_service.dart';
 import 'package:workpulse/core/platform/tray_service.dart';
 import 'package:workpulse/core/platform/window_service.dart';
 import 'package:workpulse/core/theme/app_theme.dart';
+import 'package:workpulse/features/settings/providers/app_settings_provider.dart';
 import 'package:workpulse/features/shell/views/main_shell_view.dart';
 
 void main() async {
@@ -46,17 +47,19 @@ void main() async {
   );
 }
 
-class WorkPulseApp extends StatelessWidget {
+class WorkPulseApp extends ConsumerWidget {
   const WorkPulseApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final settings = ref.watch(appSettingsProvider).value;
+
     return MaterialApp(
       title: AppConstants.appName,
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.dark, // Default to dark for native Mac utility feel
+      themeMode: settings?.themeMode ?? ThemeMode.dark,
       home: const MainShellView(),
     );
   }

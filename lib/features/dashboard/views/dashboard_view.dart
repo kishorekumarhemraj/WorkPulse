@@ -63,14 +63,14 @@ class DashboardView extends ConsumerWidget {
     final dashboardAsync = ref.watch(dashboardDataProvider);
 
     return Scaffold(
-      backgroundColor: AppTheme.backgroundDark,
+      backgroundColor: AppTheme.getColors(context).background,
       body: dashboardAsync.when(
         loading: () => const Center(
           child: CircularProgressIndicator(),
         ),
         error: (err, stack) => Center(
           child: Text('Error loading dashboard: $err',
-              style: const TextStyle(color: AppTheme.accentRed)),
+              style: TextStyle(color: AppTheme.accentRed)),
         ),
         data: (data) {
           final summary = data.summary;
@@ -94,19 +94,19 @@ class DashboardView extends ConsumerWidget {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
+                        Text(
                           'Dashboard & Insights',
                           style: TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.bold,
-                            color: AppTheme.textPrimaryDark,
+                            color: AppTheme.getColors(context).textPrimary,
                           ),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           _formatRangeSubtitle(data.range),
-                          style: const TextStyle(
-                              fontSize: 12, color: AppTheme.textSecondaryDark),
+                          style: TextStyle(
+                              fontSize: 12, color: AppTheme.getColors(context).textSecondary),
                         ),
                       ],
                     ),
@@ -116,9 +116,9 @@ class DashboardView extends ConsumerWidget {
                     Container(
                       padding: const EdgeInsets.all(4),
                       decoration: BoxDecoration(
-                        color: AppTheme.surfaceDark,
+                        color: AppTheme.getColors(context).surface,
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: AppTheme.dividerDark),
+                        border: Border.all(color: AppTheme.getColors(context).divider),
                       ),
                       child: Row(
                         children: DashboardTimeRange.values.map((r) {
@@ -152,7 +152,7 @@ class DashboardView extends ConsumerWidget {
                                       : FontWeight.w500,
                                   color: isSelected
                                       ? Colors.white
-                                      : AppTheme.textSecondaryDark,
+                                      : AppTheme.getColors(context).textSecondary,
                                 ),
                               ),
                             ),
@@ -165,8 +165,8 @@ class DashboardView extends ConsumerWidget {
                     // Refresh Button
                     IconButton(
                       onPressed: () => ref.invalidate(dashboardDataProvider),
-                      icon: const Icon(Icons.refresh,
-                          size: 18, color: AppTheme.textSecondaryDark),
+                      icon: Icon(Icons.refresh,
+                          size: 18, color: AppTheme.getColors(context).textSecondary),
                       tooltip: 'Refresh analytics',
                     ),
                   ],

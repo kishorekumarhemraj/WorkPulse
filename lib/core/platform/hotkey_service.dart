@@ -1,10 +1,14 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:hotkey_manager/hotkey_manager.dart';
+import 'package:workpulse/features/settings/providers/app_settings_provider.dart';
 
 abstract class HotKeyService {
   Future<void> initialize();
-  Future<void> registerQuickCaptureHotKey(VoidCallback onTrigger);
+  Future<void> registerQuickCaptureHotKey(
+    VoidCallback onTrigger, {
+    HotKey? hotKey,
+  });
   Future<void> unregisterAll();
 }
 
@@ -15,7 +19,10 @@ class DesktopHotKeyService implements HotKeyService {
   Future<void> initialize() async {
     try {
       // HotKeyManager is only available on desktop platforms
-      if (!kIsWeb && (defaultTargetPlatform == TargetPlatform.macOS || defaultTargetPlatform == TargetPlatform.windows || defaultTargetPlatform == TargetPlatform.linux)) {
+      if (!kIsWeb &&
+          (defaultTargetPlatform == TargetPlatform.macOS ||
+              defaultTargetPlatform == TargetPlatform.windows ||
+              defaultTargetPlatform == TargetPlatform.linux)) {
         await hotKeyManager.unregisterAll();
       }
     } catch (e) {
@@ -24,18 +31,23 @@ class DesktopHotKeyService implements HotKeyService {
   }
 
   @override
-  Future<void> registerQuickCaptureHotKey(VoidCallback onTrigger) async {
+  Future<void> registerQuickCaptureHotKey(
+    VoidCallback onTrigger, {
+    HotKey? hotKey,
+  }) async {
     try {
-      if (kIsWeb || (defaultTargetPlatform != TargetPlatform.macOS && defaultTargetPlatform != TargetPlatform.windows && defaultTargetPlatform != TargetPlatform.linux)) {
+      if (kIsWeb ||
+          (defaultTargetPlatform != TargetPlatform.macOS &&
+              defaultTargetPlatform != TargetPlatform.windows &&
+              defaultTargetPlatform != TargetPlatform.linux)) {
         return;
       }
 
-      // Default: Option + Space (⌥ + Space)
-      _quickCaptureHotKey = HotKey(
-        key: PhysicalKeyboardKey.space,
-        modifiers: [HotKeyModifier.alt],
-        scope: HotKeyScope.system,
-      );
+      if (_quickCaptureHotKey != null) {
+        await hotKeyManager.unregister(_quickCaptureHotKey!);
+      }
+
+      _quickCaptureHotKey = hotKey ?? defaultQuickCaptureHotKey();
 
       await hotKeyManager.register(
         _quickCaptureHotKey!,
@@ -49,7 +61,10 @@ class DesktopHotKeyService implements HotKeyService {
   @override
   Future<void> unregisterAll() async {
     try {
-      if (!kIsWeb && (defaultTargetPlatform == TargetPlatform.macOS || defaultTargetPlatform == TargetPlatform.windows || defaultTargetPlatform == TargetPlatform.linux)) {
+      if (!kIsWeb &&
+          (defaultTargetPlatform == TargetPlatform.macOS ||
+              defaultTargetPlatform == TargetPlatform.windows ||
+              defaultTargetPlatform == TargetPlatform.linux)) {
         await hotKeyManager.unregisterAll();
       }
     } catch (e) {
