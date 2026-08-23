@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 
 /// Design tokens for WorkPulse.
 ///
-/// These are the only sanctioned sources for spacing, radii, motion and
-/// elevation values. Widgets should never hardcode a raw double for these
-/// properties — reach for the nearest token instead so the whole app scales
-/// and re-skins from one place.
+/// The only sanctioned sources for spacing, radii, motion, icon sizes,
+/// control heights and layout breakpoints. Widgets should never hardcode a
+/// raw double for these properties — reach for the nearest token instead, so
+/// the whole app rescales and re-skins from one place.
 
 /// Spacing scale (4pt grid).
 abstract class Spacing {
@@ -29,9 +29,6 @@ abstract class Spacing {
 
   /// 24 — page padding, major section separation.
   static const double xxl = 24;
-
-  /// 32 — hero separation, empty-state breathing room.
-  static const double xxxl = 32;
 }
 
 /// Corner radius scale.
@@ -114,15 +111,12 @@ abstract class IconSizes {
   /// 22 — card headers.
   static const double xl = 22;
 
-  /// 48 — empty-state illustrations.
-  static const double hero = 48;
+  /// 28 — empty-state and error-state glyphs.
+  static const double xxl = 28;
 }
 
 /// Standard control heights, so toolbars line up across screens.
 abstract class ControlSizes {
-  /// 28 — compact segmented control segments.
-  static const double compact = 28;
-
   /// 32 — toolbar controls (search, dropdowns, filter chips).
   static const double toolbar = 32;
 
@@ -139,14 +133,14 @@ abstract class ControlSizes {
   static const double sidebarCollapsed = 56;
 }
 
-/// Layout breakpoints for the main window (min size is roughly 700x500).
+/// Layout breakpoints for the main window.
+///
+/// The app enforces no minimum window size, so every screen has to stay
+/// usable well below its default 1200x800 — see responsive_layout_test.dart.
 abstract class Breakpoints {
   /// Below this, drop to single-column layouts.
   static const double compact = 760;
 
   /// Below this, drop the Work Items inspector and 4-up metric grids.
   static const double medium = 1000;
-
-  /// At or above this, full multi-pane layouts.
-  static const double wide = 1280;
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:workpulse/core/theme/design_tokens.dart';
 import 'package:workpulse/core/theme/app_colors.dart';
 import 'package:workpulse/core/theme/color_utils.dart';
 import 'package:workpulse/domain/models/attribute_model.dart';
@@ -100,7 +101,7 @@ class DynamicAttributeFields extends ConsumerWidget {
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
             color: context.colors.card,
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: Radii.mdAll,
             border: Border.all(color: context.colors.divider),
           ),
           child: Row(
@@ -252,12 +253,12 @@ class DynamicAttributeFields extends ConsumerWidget {
 
         return Container(
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: Radii.mdAll,
             border: Border.all(color: context.colors.divider),
           ),
           child: Material(
             color: context.colors.card,
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: Radii.mdAll,
             child: InkWell(
               onTap: () async {
                 final picked = await showDatePicker(
@@ -270,7 +271,7 @@ class DynamicAttributeFields extends ConsumerWidget {
                   onValueChanged(def.id, picked);
                 }
               },
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: Radii.mdAll,
               child: Padding(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 14),

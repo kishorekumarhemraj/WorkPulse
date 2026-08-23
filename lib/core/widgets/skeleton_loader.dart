@@ -162,17 +162,35 @@ class SkeletonGrid extends StatelessWidget {
             borderRadius: Radii.xlAll,
             border: Border.all(color: colors.divider),
           ),
-          child: const Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Skeleton(width: 150, height: 14),
-              SizedBox(height: Spacing.md),
-              Skeleton(height: 11),
-              SizedBox(height: Spacing.sm),
-              Skeleton(width: 200, height: 11),
-              Spacer(),
-              Skeleton(width: 90, height: 11),
-            ],
+          // Callers ask for tile heights from ~100 (tags) to ~160 (projects),
+          // so the placeholder includes only the rows that actually fit
+          // rather than assuming a height and overflowing the short ones.
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              const titleHeight = 14.0;
+              const lineHeight = 11.0;
+              const gap = Spacing.sm;
+
+              final available = constraints.maxHeight;
+              final rows = <Widget>[
+                const Skeleton(width: 150, height: titleHeight),
+              ];
+              var used = titleHeight;
+
+              for (final width in <double?>[null, 200, 90]) {
+                if (used + gap + lineHeight > available) break;
+                rows
+                  ..add(const SizedBox(height: gap))
+                  ..add(Skeleton(width: width, height: lineHeight));
+                used += gap + lineHeight;
+              }
+
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: rows,
+              );
+            },
           ),
         );
       },

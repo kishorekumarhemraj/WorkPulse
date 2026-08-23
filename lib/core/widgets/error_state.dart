@@ -76,7 +76,7 @@ class ErrorState extends StatelessWidget {
               ),
               child: Icon(
                 Icons.error_outline,
-                size: IconSizes.xl + 6,
+                size: IconSizes.xxl,
                 color: colors.danger,
               ),
             ),

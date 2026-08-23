@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:workpulse/core/theme/design_tokens.dart';
 import 'package:workpulse/core/theme/app_colors.dart';
 import 'package:workpulse/core/widgets/keycap.dart';
 import 'package:workpulse/core/theme/color_utils.dart';
@@ -193,7 +194,7 @@ class _QuickCaptureStandaloneViewState
           height: double.infinity,
           decoration: BoxDecoration(
             color: context.colors.surface,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: Radii.xlAll,
             border: Border.all(
               color: context.colors.divider,
               width: 1.2,
@@ -688,13 +689,13 @@ class _StandaloneQuickChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(5),
+      borderRadius: Radii.smAll,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
         decoration: BoxDecoration(
           color:
               selected ? color.withValues(alpha: 0.28) : context.colors.surface,
-          borderRadius: BorderRadius.circular(5),
+          borderRadius: Radii.smAll,
           border: Border.all(
             color: selected ? color : context.colors.divider,
           ),
