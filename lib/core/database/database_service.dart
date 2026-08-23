@@ -5,6 +5,7 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:workpulse/core/constants/app_constants.dart';
 import 'package:workpulse/core/errors/app_exceptions.dart';
 import 'package:workpulse/data/migrations/migration_v1.dart';
+import 'package:workpulse/data/migrations/migration_v2.dart';
 
 class DatabaseService {
   static DatabaseService? _instance;
@@ -77,12 +78,18 @@ class DatabaseService {
     await db.execute('PRAGMA foreign_keys = ON;');
   }
 
+  // sqflite only calls onCreate for a brand-new database file - onUpgrade
+  // never fires for it. So onCreate must run the full migration chain
+  // itself (guarded by target version), not just the initial schema, or
+  // fresh installs would end up on the latest PRAGMA user_version with a
+  // schema stuck at v1.
   Future<void> _onCreate(Database db, int version) async {
     await MigrationV1.execute(db);
+    if (version >= 2) await MigrationV2.execute(db);
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    // Future migrations will be dispatched here incrementally
+    if (oldVersion < 2) await MigrationV2.execute(db);
   }
 
   Future<String> _getDefaultDatabasePath() async {

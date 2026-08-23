@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
+import 'package:path/path.dart' as p;
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:workpulse/core/database/database_service.dart';
 import 'package:workpulse/data/database/tables.dart';
@@ -81,6 +84,91 @@ void main() {
         }),
         throwsA(isA<DatabaseException>()),
       );
+    });
+
+    test('sessions table has a notes column on a fresh database', () async {
+      final db = dbService.database;
+      final columns =
+          await db.rawQuery('PRAGMA table_info(${Tables.sessions});');
+      final columnNames = columns.map((c) => c['name'] as String).toSet();
+      expect(columnNames, contains('notes'));
+    });
+  });
+
+  group('Migration v1 -> v2 upgrade path', () {
+    test('adds sessions.notes and preserves existing rows on a real upgrade',
+        () async {
+      final tempDir =
+          await Directory.systemTemp.createTemp('workpulse_migration_test');
+      final dbPath = p.join(tempDir.path, 'upgrade_test.db');
+
+      try {
+        // 1. Create a v1-only database, as if from a pre-2.0 shipped install.
+        final v1Db = await databaseFactoryFfi.openDatabase(
+          dbPath,
+          options: OpenDatabaseOptions(
+            version: 1,
+            onConfigure: (db) => db.execute('PRAGMA foreign_keys = ON;'),
+            onCreate: (db, version) => MigrationV1.execute(db),
+          ),
+        );
+        final now = DateTime.now().toUtc().toIso8601String();
+        await v1Db.insert(Tables.projects, {
+          'id': 'proj-pre-upgrade',
+          'workspace_id': MigrationV1.defaultWorkspaceId,
+          'name': 'Pre-upgrade Project',
+          'created_at': now,
+          'updated_at': now,
+        });
+        await v1Db.insert(Tables.categories, {
+          'id': 'cat-pre-upgrade',
+          'workspace_id': MigrationV1.defaultWorkspaceId,
+          'name': 'Pre-upgrade Category',
+          'created_at': now,
+          'updated_at': now,
+        });
+        await v1Db.insert(Tables.workItems, {
+          'id': 'wi-pre-upgrade',
+          'workspace_id': MigrationV1.defaultWorkspaceId,
+          'name': 'Pre-upgrade Task',
+          'project_id': 'proj-pre-upgrade',
+          'category_id': 'cat-pre-upgrade',
+          'created_at': now,
+          'updated_at': now,
+        });
+        await v1Db.insert(Tables.sessions, {
+          'id': 'session-pre-upgrade',
+          'work_item_id': 'wi-pre-upgrade',
+          'start_time': now,
+          'end_time': now,
+          'created_at': now,
+        });
+        await v1Db.close();
+
+        // 2. Re-open the same file through DatabaseService, which now
+        // targets AppConstants.dbVersion (2) - this exercises the real
+        // onUpgrade(db, 1, 2) path, not onCreate.
+        final upgraded = DatabaseService();
+        await upgraded.initialize(customPath: dbPath);
+        final db = upgraded.database;
+
+        final columns =
+            await db.rawQuery('PRAGMA table_info(${Tables.sessions});');
+        final columnNames = columns.map((c) => c['name'] as String).toSet();
+        expect(columnNames, contains('notes'));
+
+        final rows = await db.query(
+          Tables.sessions,
+          where: 'id = ?',
+          whereArgs: ['session-pre-upgrade'],
+        );
+        expect(rows, hasLength(1));
+        expect(rows.first['notes'], isNull);
+
+        await upgraded.close();
+      } finally {
+        await tempDir.delete(recursive: true);
+      }
     });
   });
 }
