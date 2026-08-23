@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workpulse/data/providers/repository_providers.dart';
 import 'package:workpulse/domain/models/session_model.dart';
 import 'package:workpulse/domain/models/work_item_model.dart';
+import 'package:workpulse/domain/services/task_switch_service.dart';
 import 'package:workpulse/domain/services/timer_service.dart';
 import 'package:workpulse/features/tasks/providers/work_items_provider.dart';
 import 'package:workpulse/features/timer/models/timer_state.dart';
@@ -13,6 +14,14 @@ final timerServiceProvider = Provider<TimerService>((ref) {
   return TimerService(
     sessionRepository: sessionRepo,
     workItemRepository: workItemRepo,
+  );
+});
+
+final taskSwitchServiceProvider = Provider<TaskSwitchService>((ref) {
+  return TaskSwitchService(
+    timerService: ref.watch(timerServiceProvider),
+    sessionRepository: ref.watch(sessionRepositoryProvider),
+    workItemRepository: ref.watch(workItemRepositoryProvider),
   );
 });
 
@@ -135,36 +144,51 @@ class TimerNotifier extends AsyncNotifier<TimerState> {
     );
   }
 
-  /// Confirms and executes switching from active task to pending task.
-  Future<void> confirmSwitch() async {
+  /// Confirms and executes switching from active task to pending task with optional session note.
+  Future<void> confirmSwitch({String? notes}) async {
     final current = state.value;
     if (current == null || current.pendingSwitchWorkItem == null) return;
 
     final targetWorkItem = current.pendingSwitchWorkItem!;
-    final timerService = ref.read(timerServiceProvider);
     final now = DateTime.now().toUtc();
 
-    // 1. Stop active session if present
-    if (current.activeSession != null) {
-      await timerService.stopSession(current.activeSession!.id, endTime: now);
+    if (current.activeWorkItem != null && current.activeSession != null) {
+      final switchService = ref.read(taskSwitchServiceProvider);
+      final result = await switchService.switchTask(
+        currentWorkItem: current.activeWorkItem!,
+        targetWorkItem: targetWorkItem,
+        currentSessionNotes: notes,
+        switchTime: now,
+      );
+
+      _startTicker(result.startedSession.startTime);
+
+      state = AsyncData(
+        TimerState(
+          status: TimerStatus.running,
+          activeWorkItem: targetWorkItem,
+          activeSession: result.startedSession,
+          elapsed: Duration.zero,
+        ),
+      );
+    } else {
+      final timerService = ref.read(timerServiceProvider);
+      final newSession = await timerService.startSession(
+        targetWorkItem.id,
+        startTime: now,
+      );
+
+      _startTicker(newSession.startTime);
+
+      state = AsyncData(
+        TimerState(
+          status: TimerStatus.running,
+          activeWorkItem: targetWorkItem,
+          activeSession: newSession,
+          elapsed: Duration.zero,
+        ),
+      );
     }
-
-    // 2. Start new session for target task
-    final newSession = await timerService.startSession(
-      targetWorkItem.id,
-      startTime: now,
-    );
-
-    _startTicker(newSession.startTime);
-
-    state = AsyncData(
-      TimerState(
-        status: TimerStatus.running,
-        activeWorkItem: targetWorkItem,
-        activeSession: newSession,
-        elapsed: Duration.zero,
-      ),
-    );
 
     ref.invalidate(workItemsProvider);
   }

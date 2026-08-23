@@ -6,7 +6,7 @@ import 'package:workpulse/domain/models/work_item_model.dart';
 import 'package:workpulse/domain/services/timer_service.dart';
 import 'package:workpulse/features/timer/providers/timer_provider.dart';
 
-class TaskSwitchDialog extends ConsumerWidget {
+class TaskSwitchDialog extends ConsumerStatefulWidget {
   final WorkItem currentItem;
   final Duration currentElapsed;
   final WorkItem targetItem;
@@ -36,20 +36,53 @@ class TaskSwitchDialog extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final formattedElapsed = TimerService.formatDuration(currentElapsed, compact: true);
+  ConsumerState<TaskSwitchDialog> createState() => _TaskSwitchDialogState();
+}
+
+class _TaskSwitchDialogState extends ConsumerState<TaskSwitchDialog> {
+  late final TextEditingController _notesController;
+
+  @override
+  void initState() {
+    super.initState();
+    _notesController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _notesController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleConfirm() async {
+    final note = _notesController.text.trim();
+    await ref.read(timerProvider.notifier).confirmSwitch(
+          notes: note.isEmpty ? null : note,
+        );
+    if (mounted) {
+      Navigator.of(context).pop(true);
+    }
+  }
+
+  void _handleCancel() {
+    ref.read(timerProvider.notifier).cancelSwitch();
+    Navigator.of(context).pop(false);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final formattedElapsed = TimerService.formatDuration(widget.currentElapsed, compact: true);
 
     return Focus(
       autofocus: true,
       onKeyEvent: (node, event) {
         if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.escape) {
-          ref.read(timerProvider.notifier).cancelSwitch();
-          Navigator.of(context).pop(false);
+          _handleCancel();
           return KeyEventResult.handled;
         }
         if (event is KeyDownEvent && (event.logicalKey == LogicalKeyboardKey.enter || event.logicalKey == LogicalKeyboardKey.numpadEnter)) {
-          ref.read(timerProvider.notifier).confirmSwitch();
-          Navigator.of(context).pop(true);
+          // If in textfield and pressing enter, submit
+          _handleConfirm();
           return KeyEventResult.handled;
         }
         return KeyEventResult.ignored;
@@ -85,7 +118,7 @@ class TaskSwitchDialog extends ConsumerWidget {
           ],
         ),
         content: SizedBox(
-          width: 440,
+          width: 460,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -115,7 +148,7 @@ class TaskSwitchDialog extends ConsumerWidget {
                           const Text('Current Active Task', style: TextStyle(fontSize: 11, color: AppTheme.textSecondaryDark)),
                           const SizedBox(height: 2),
                           Text(
-                            currentItem.name,
+                            widget.currentItem.name,
                             style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.textPrimaryDark),
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -163,7 +196,7 @@ class TaskSwitchDialog extends ConsumerWidget {
                           const Text('Switching To', style: TextStyle(fontSize: 11, color: AppTheme.primaryColor)),
                           const SizedBox(height: 2),
                           Text(
-                            targetItem.name,
+                            widget.targetItem.name,
                             style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.textPrimaryDark),
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -173,22 +206,48 @@ class TaskSwitchDialog extends ConsumerWidget {
                   ],
                 ),
               ),
+              const SizedBox(height: 14),
+
+              // Optional Session Note Field
+              const Text(
+                'Session Note (optional)',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: AppTheme.textSecondaryDark),
+              ),
+              const SizedBox(height: 6),
+              TextField(
+                controller: _notesController,
+                maxLines: 2,
+                style: const TextStyle(fontSize: 13, color: AppTheme.textPrimaryDark),
+                decoration: InputDecoration(
+                  hintText: 'Add closing summary or work log for previous task...',
+                  hintStyle: const TextStyle(fontSize: 12, color: AppTheme.textSecondaryDark),
+                  filled: true,
+                  fillColor: AppTheme.cardDark,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(color: AppTheme.dividerDark),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(color: AppTheme.dividerDark),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(color: AppTheme.primaryColor),
+                  ),
+                  contentPadding: const EdgeInsets.all(10),
+                ),
+              ),
             ],
           ),
         ),
         actions: [
           TextButton(
-            onPressed: () {
-              ref.read(timerProvider.notifier).cancelSwitch();
-              Navigator.of(context).pop(false);
-            },
+            onPressed: _handleCancel,
             child: const Text('Cancel', style: TextStyle(color: AppTheme.textSecondaryDark)),
           ),
           ElevatedButton(
-            onPressed: () async {
-              await ref.read(timerProvider.notifier).confirmSwitch();
-              if (context.mounted) Navigator.of(context).pop(true);
-            },
+            onPressed: _handleConfirm,
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.primaryColor,
               foregroundColor: Colors.white,
