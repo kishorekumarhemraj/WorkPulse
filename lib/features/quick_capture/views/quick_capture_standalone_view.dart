@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workpulse/core/theme/app_theme.dart';
 import 'package:workpulse/core/theme/color_utils.dart';
 import 'package:workpulse/core/theme/icon_utils.dart';
-import 'package:workpulse/core/widgets/searchable_multi_select.dart';
 import 'package:workpulse/domain/models/attribute_model.dart';
 import 'package:workpulse/domain/models/category_model.dart';
 import 'package:workpulse/domain/models/project_model.dart';
@@ -20,23 +19,21 @@ import 'package:workpulse/features/tasks/providers/work_items_provider.dart';
 import 'package:workpulse/features/timer/providers/timer_provider.dart';
 import 'package:workpulse/features/timer/views/task_switch_dialog.dart';
 
-class QuickCaptureDialog extends ConsumerStatefulWidget {
-  const QuickCaptureDialog({super.key});
+class QuickCaptureStandaloneView extends ConsumerStatefulWidget {
+  final VoidCallback? onClose;
 
-  static Future<void> show(BuildContext context) {
-    return showDialog(
-      context: context,
-      barrierColor: Colors.black.withValues(alpha: 0.6),
-      barrierDismissible: true,
-      builder: (context) => const QuickCaptureDialog(),
-    );
-  }
+  const QuickCaptureStandaloneView({
+    super.key,
+    this.onClose,
+  });
 
   @override
-  ConsumerState<QuickCaptureDialog> createState() => _QuickCaptureDialogState();
+  ConsumerState<QuickCaptureStandaloneView> createState() =>
+      _QuickCaptureStandaloneViewState();
 }
 
-class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
+class _QuickCaptureStandaloneViewState
+    extends ConsumerState<QuickCaptureStandaloneView> {
   late final TextEditingController _searchController;
   late final FocusNode _inputFocusNode;
   final Map<String, dynamic> _attributeValues = {};
@@ -46,6 +43,9 @@ class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
     super.initState();
     _searchController = TextEditingController();
     _inputFocusNode = FocusNode();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _inputFocusNode.requestFocus();
+    });
   }
 
   @override
@@ -75,7 +75,7 @@ class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
                 attributeValues: _attributeValues,
               );
       if (mounted && created != null) {
-        Navigator.of(context).pop();
+        widget.onClose?.call();
       }
     } else if (qcState.selectedIndex < matchingTasks.length) {
       // Select existing task
@@ -87,24 +87,31 @@ class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
           timerState.activeWorkItem != null &&
           timerState.activeWorkItem!.id != targetTask.id) {
         ref.read(timerProvider.notifier).requestSwitch(targetTask);
-        final switched = await TaskSwitchDialog.show(
-          context,
-          currentItem: timerState.activeWorkItem!,
-          currentElapsed: timerState.elapsed,
-          targetItem: targetTask,
-        );
-        if (switched == true && mounted) {
-          Navigator.of(context).pop();
+        if (mounted) {
+          final switched = await TaskSwitchDialog.show(
+            context,
+            currentItem: timerState.activeWorkItem!,
+            currentElapsed: timerState.elapsed,
+            targetItem: targetTask,
+          );
+          if (switched == true && mounted) {
+            widget.onClose?.call();
+          }
         }
       } else {
         await ref
             .read(quickCaptureProvider.notifier)
             .startExistingTask(targetTask);
         if (mounted) {
-          Navigator.of(context).pop();
+          widget.onClose?.call();
         }
       }
     }
+  }
+
+  void _handleCancel() {
+    ref.read(quickCaptureProvider.notifier).reset();
+    widget.onClose?.call();
   }
 
   @override
@@ -146,76 +153,72 @@ class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
     final showCreateOption = query.isNotEmpty && !hasExactMatch;
     final totalItems = matchingTasks.length + (showCreateOption ? 1 : 0);
 
-    return Focus(
-      autofocus: true,
-      onKeyEvent: (node, event) {
-        if (event is KeyDownEvent) {
-          if (event.logicalKey == LogicalKeyboardKey.escape) {
-            ref.read(quickCaptureProvider.notifier).reset();
-            Navigator.of(context).pop();
-            return KeyEventResult.handled;
-          }
-          if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
-            ref.read(quickCaptureProvider.notifier).selectNext(totalItems);
-            return KeyEventResult.handled;
-          }
-          if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
-            ref.read(quickCaptureProvider.notifier).selectPrevious();
-            return KeyEventResult.handled;
-          }
-          if (event.logicalKey == LogicalKeyboardKey.tab) {
-            if (HardwareKeyboard.instance.isShiftPressed) {
-              FocusScope.of(context).previousFocus();
-            } else {
-              FocusScope.of(context).nextFocus();
+    return Scaffold(
+      backgroundColor: AppTheme.getColors(context).surface,
+      body: Focus(
+        autofocus: true,
+        onKeyEvent: (node, event) {
+          if (event is KeyDownEvent) {
+            if (event.logicalKey == LogicalKeyboardKey.escape) {
+              _handleCancel();
+              return KeyEventResult.handled;
             }
-            return KeyEventResult.handled;
+            if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+              ref.read(quickCaptureProvider.notifier).selectNext(totalItems);
+              return KeyEventResult.handled;
+            }
+            if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+              ref.read(quickCaptureProvider.notifier).selectPrevious();
+              return KeyEventResult.handled;
+            }
+            if (event.logicalKey == LogicalKeyboardKey.tab) {
+              if (HardwareKeyboard.instance.isShiftPressed) {
+                FocusScope.of(context).previousFocus();
+              } else {
+                FocusScope.of(context).nextFocus();
+              }
+              return KeyEventResult.handled;
+            }
+            if (event.logicalKey == LogicalKeyboardKey.enter ||
+                event.logicalKey == LogicalKeyboardKey.numpadEnter) {
+              _handleConfirm(matchingTasks, showCreateOption, qcState.query);
+              return KeyEventResult.handled;
+            }
           }
-          if (event.logicalKey == LogicalKeyboardKey.enter ||
-              event.logicalKey == LogicalKeyboardKey.numpadEnter) {
-            _handleConfirm(matchingTasks, showCreateOption, qcState.query);
-            return KeyEventResult.handled;
-          }
-        }
-        return KeyEventResult.ignored;
-      },
-      child: Center(
-        child: Material(
-          color: Colors.transparent,
-          child: Container(
-            width: 620,
-            constraints: const BoxConstraints(maxHeight: 520),
-            decoration: BoxDecoration(
-              color: AppTheme.getColors(context).surface,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                  color: AppTheme.getColors(context).divider, width: 1.2),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.5),
-                  offset: const Offset(0, 12),
-                  blurRadius: 36,
-                  spreadRadius: 4,
-                ),
-              ],
+          return KeyEventResult.ignored;
+        },
+        child: Container(
+          width: double.infinity,
+          height: double.infinity,
+          decoration: BoxDecoration(
+            color: AppTheme.getColors(context).surface,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: AppTheme.getColors(context).divider,
+              width: 1.2,
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
                 // Search Input Header
                 Container(
                   padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
                   decoration: BoxDecoration(
                     border: Border(
-                        bottom: BorderSide(
-                            color: AppTheme.getColors(context).divider,
-                            width: 1)),
+                      bottom: BorderSide(
+                        color: AppTheme.getColors(context).divider,
+                        width: 1,
+                      ),
+                    ),
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.search,
-                          size: 22, color: AppTheme.primaryColor),
+                      Icon(
+                        Icons.search,
+                        size: 22,
+                        color: AppTheme.primaryColor,
+                      ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: TextField(
@@ -223,15 +226,16 @@ class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
                           focusNode: _inputFocusNode,
                           autofocus: true,
                           style: TextStyle(
-                              fontSize: 16,
-                              color: AppTheme.getColors(context).textPrimary,
-                              fontWeight: FontWeight.w500),
+                            fontSize: 16,
+                            color: AppTheme.getColors(context).textPrimary,
+                            fontWeight: FontWeight.w500,
+                          ),
                           decoration: InputDecoration(
                             hintText: 'Search tasks or type new task name...',
                             hintStyle: TextStyle(
-                                fontSize: 15,
-                                color:
-                                    AppTheme.getColors(context).textSecondary),
+                              fontSize: 15,
+                              color: AppTheme.getColors(context).textSecondary,
+                            ),
                             border: InputBorder.none,
                             contentPadding: EdgeInsets.zero,
                             isDense: true,
@@ -243,9 +247,11 @@ class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
                       ),
                       if (qcState.query.isNotEmpty)
                         IconButton(
-                          icon: Icon(Icons.close,
-                              size: 16,
-                              color: AppTheme.getColors(context).textSecondary),
+                          icon: Icon(
+                            Icons.close,
+                            size: 16,
+                            color: AppTheme.getColors(context).textSecondary,
+                          ),
                           onPressed: () {
                             _searchController.clear();
                             ref
@@ -253,40 +259,48 @@ class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
                                 .setQuery('');
                           },
                         ),
-                      // Shortcut Pill Badges
+                      // Shortcut Badges
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 6, vertical: 3),
+                          horizontal: 6,
+                          vertical: 3,
+                        ),
                         decoration: BoxDecoration(
                           color: AppTheme.getColors(context).card,
                           borderRadius: BorderRadius.circular(4),
                           border: Border.all(
-                              color: AppTheme.getColors(context).divider),
+                            color: AppTheme.getColors(context).divider,
+                          ),
                         ),
                         child: Text(
                           '↵ Track',
                           style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                              color: AppTheme.getColors(context).textSecondary),
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.getColors(context).textSecondary,
+                          ),
                         ),
                       ),
                       const SizedBox(width: 6),
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 6, vertical: 3),
+                          horizontal: 6,
+                          vertical: 3,
+                        ),
                         decoration: BoxDecoration(
                           color: AppTheme.getColors(context).card,
                           borderRadius: BorderRadius.circular(4),
                           border: Border.all(
-                              color: AppTheme.getColors(context).divider),
+                            color: AppTheme.getColors(context).divider,
+                          ),
                         ),
                         child: Text(
                           'esc',
                           style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                              color: AppTheme.getColors(context).textSecondary),
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.getColors(context).textSecondary,
+                          ),
                         ),
                       ),
                     ],
@@ -302,15 +316,18 @@ class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
                     itemBuilder: (context, index) {
                       if (totalItems == 0) {
                         return Padding(
-                          padding: EdgeInsets.symmetric(
-                              vertical: 24, horizontal: 16),
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 24,
+                            horizontal: 16,
+                          ),
                           child: Center(
                             child: Text(
                               'Type a task name to track',
                               style: TextStyle(
-                                  fontSize: 13,
-                                  color: AppTheme.getColors(context)
-                                      .textSecondary),
+                                fontSize: 13,
+                                color:
+                                    AppTheme.getColors(context).textSecondary,
+                              ),
                             ),
                           ),
                         );
@@ -329,7 +346,12 @@ class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
                       final category = categoryMap[task.categoryId];
 
                       return _buildTaskResultItem(
-                          task, project, category, isSelected, index);
+                        task,
+                        project,
+                        category,
+                        isSelected,
+                        index,
+                      );
                     },
                   ),
                 ),
@@ -339,12 +361,15 @@ class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
                   padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
                   decoration: BoxDecoration(
                     color: AppTheme.getColors(context).card,
-                    borderRadius:
-                        BorderRadius.vertical(bottom: Radius.circular(14)),
+                    borderRadius: const BorderRadius.vertical(
+                      bottom: Radius.circular(14),
+                    ),
                     border: Border(
-                        top: BorderSide(
-                            color: AppTheme.getColors(context).divider,
-                            width: 1)),
+                      top: BorderSide(
+                        color: AppTheme.getColors(context).divider,
+                        width: 1,
+                      ),
+                    ),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -352,24 +377,25 @@ class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
                       Row(
                         children: [
                           if (projects.isNotEmpty) ...[
-                            Icon(Icons.folder_outlined,
-                                size: 14,
-                                color:
-                                    AppTheme.getColors(context).textSecondary),
+                            Icon(
+                              Icons.folder_outlined,
+                              size: 14,
+                              color: AppTheme.getColors(context).textSecondary,
+                            ),
                             const SizedBox(width: 6),
                             DropdownButton<String>(
                               value: projects.any(
-                                      (p) => p.id == qcState.selectedProjectId)
+                                (p) => p.id == qcState.selectedProjectId,
+                              )
                                   ? qcState.selectedProjectId
                                   : projects.first.id,
-                              dropdownColor:
-                                  AppTheme.getColors(context).surface,
+                              dropdownColor: AppTheme.getColors(context).surface,
                               underline: const SizedBox.shrink(),
                               isDense: true,
                               style: TextStyle(
-                                  fontSize: 12,
-                                  color:
-                                      AppTheme.getColors(context).textPrimary),
+                                fontSize: 12,
+                                color: AppTheme.getColors(context).textPrimary,
+                              ),
                               items: projects.map((p) {
                                 final col = ColorUtils.parseHex(p.colorHex);
                                 return DropdownMenuItem(
@@ -378,17 +404,22 @@ class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       Container(
-                                          width: 6,
-                                          height: 6,
-                                          decoration: BoxDecoration(
-                                              color: col,
-                                              shape: BoxShape.circle)),
+                                        width: 6,
+                                        height: 6,
+                                        decoration: BoxDecoration(
+                                          color: col,
+                                          shape: BoxShape.circle,
+                                        ),
+                                      ),
                                       const SizedBox(width: 6),
-                                      Text(p.name,
-                                          style: TextStyle(
-                                              fontSize: 12,
-                                              color: AppTheme.getColors(context)
-                                                  .textPrimary)),
+                                      Text(
+                                        p.name,
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: AppTheme.getColors(context)
+                                              .textPrimary,
+                                        ),
+                                      ),
                                     ],
                                   ),
                                 );
@@ -400,39 +431,45 @@ class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
                             const SizedBox(width: 14),
                           ],
                           if (categories.isNotEmpty) ...[
-                            Icon(Icons.category_outlined,
-                                size: 14,
-                                color:
-                                    AppTheme.getColors(context).textSecondary),
+                            Icon(
+                              Icons.category_outlined,
+                              size: 14,
+                              color: AppTheme.getColors(context).textSecondary,
+                            ),
                             const SizedBox(width: 6),
                             DropdownButton<String>(
                               value: categories.any(
-                                      (c) => c.id == qcState.selectedCategoryId)
+                                (c) => c.id == qcState.selectedCategoryId,
+                              )
                                   ? qcState.selectedCategoryId
                                   : categories.first.id,
-                              dropdownColor:
-                                  AppTheme.getColors(context).surface,
+                              dropdownColor: AppTheme.getColors(context).surface,
                               underline: const SizedBox.shrink(),
                               isDense: true,
                               style: TextStyle(
-                                  fontSize: 12,
-                                  color:
-                                      AppTheme.getColors(context).textPrimary),
+                                fontSize: 12,
+                                color: AppTheme.getColors(context).textPrimary,
+                              ),
                               items: categories.map((c) {
                                 return DropdownMenuItem(
                                   value: c.id,
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      Icon(IconUtils.getIcon(c.iconName),
-                                          size: 12,
-                                          color: AppTheme.primaryColor),
+                                      Icon(
+                                        IconUtils.getIcon(c.iconName),
+                                        size: 12,
+                                        color: AppTheme.primaryColor,
+                                      ),
                                       const SizedBox(width: 6),
-                                      Text(c.name,
-                                          style: TextStyle(
-                                              fontSize: 12,
-                                              color: AppTheme.getColors(context)
-                                                  .textPrimary)),
+                                      Text(
+                                        c.name,
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: AppTheme.getColors(context)
+                                              .textPrimary,
+                                        ),
+                                      ),
                                     ],
                                   ),
                                 );
@@ -444,40 +481,40 @@ class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
                           ],
                         ],
                       ),
-                      if (tags.isNotEmpty) ...[
+                      if (tags.isNotEmpty || people.isNotEmpty) ...[
                         const SizedBox(height: 10),
-                        SearchableMultiSelect(
-                          allItems: tags
-                              .map((t) => SearchableMultiSelectItem(
-                                    id: t.id,
-                                    label: t.name,
-                                    color: ColorUtils.parseHex(t.colorHex),
-                                  ))
-                              .toList(),
-                          selectedIds: qcState.selectedTagIds,
-                          onChanged: (ids) => ref
-                              .read(quickCaptureProvider.notifier)
-                              .setTagIds(ids),
-                          hintText: 'Search tags...',
-                          emptyStateText: 'No tags created yet',
-                        ),
-                      ],
-                      if (people.isNotEmpty) ...[
-                        const SizedBox(height: 10),
-                        SearchableMultiSelect(
-                          allItems: people
-                              .map((person) => SearchableMultiSelectItem(
-                                    id: person.id,
-                                    label: person.name,
-                                    icon: Icons.person_outline,
-                                  ))
-                              .toList(),
-                          selectedIds: qcState.selectedPeopleIds,
-                          onChanged: (ids) => ref
-                              .read(quickCaptureProvider.notifier)
-                              .setPeopleIds(ids),
-                          hintText: 'Search people...',
-                          emptyStateText: 'No people added yet',
+                        Wrap(
+                          spacing: 6,
+                          runSpacing: 6,
+                          children: [
+                            ...tags.map((t) {
+                              final isTagSelected =
+                                  qcState.selectedTagIds.contains(t.id);
+                              final tagColor = ColorUtils.parseHex(t.colorHex);
+                              return _StandaloneQuickChip(
+                                label: '#${t.name}',
+                                icon: Icons.label_outline,
+                                selected: isTagSelected,
+                                color: tagColor,
+                                onTap: () => ref
+                                    .read(quickCaptureProvider.notifier)
+                                    .toggleTag(t.id),
+                              );
+                            }),
+                            ...people.map((person) {
+                              final isPersonSelected =
+                                  qcState.selectedPeopleIds.contains(person.id);
+                              return _StandaloneQuickChip(
+                                label: person.name,
+                                icon: Icons.person_outline,
+                                selected: isPersonSelected,
+                                color: AppTheme.primaryColor,
+                                onTap: () => ref
+                                    .read(quickCaptureProvider.notifier)
+                                    .togglePerson(person.id),
+                              );
+                            }),
+                          ],
                         ),
                       ],
                       if (quickCaptureAttributes.isNotEmpty) ...[
@@ -499,8 +536,7 @@ class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
             ),
           ),
         ),
-      ),
-    );
+      );
   }
 
   Widget _buildTaskResultItem(
@@ -561,23 +597,31 @@ class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
                         children: [
                           if (project != null) ...[
                             Container(
-                                width: 6,
-                                height: 6,
-                                decoration: BoxDecoration(
-                                    color: projectColor,
-                                    shape: BoxShape.circle)),
+                              width: 6,
+                              height: 6,
+                              decoration: BoxDecoration(
+                                color: projectColor,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
                             const SizedBox(width: 4),
-                            Text(project.name,
-                                style: TextStyle(
-                                    fontSize: 11, color: projectColor)),
+                            Text(
+                              project.name,
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: projectColor,
+                              ),
+                            ),
                             const SizedBox(width: 8),
                           ],
                           if (category != null) ...[
-                            Text(category.name,
-                                style: TextStyle(
-                                    fontSize: 11,
-                                    color: AppTheme.getColors(context)
-                                        .textSecondary)),
+                            Text(
+                              category.name,
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: AppTheme.getColors(context).textSecondary,
+                              ),
+                            ),
                           ],
                         ],
                       ),
@@ -588,9 +632,10 @@ class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
                   Text(
                     '↵ to track',
                     style: TextStyle(
-                        fontSize: 11,
-                        color: AppTheme.primaryColor,
-                        fontWeight: FontWeight.bold),
+                      fontSize: 11,
+                      color: AppTheme.primaryColor,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
               ],
             ),
@@ -632,15 +677,17 @@ class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
                     text: TextSpan(
                       text: 'Create and track new task: ',
                       style: TextStyle(
-                          fontSize: 13,
-                          color: AppTheme.getColors(context).textSecondary),
+                        fontSize: 13,
+                        color: AppTheme.getColors(context).textSecondary,
+                      ),
                       children: [
                         TextSpan(
                           text: '"$query"',
                           style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
-                              color: AppTheme.getColors(context).textPrimary),
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.getColors(context).textPrimary,
+                          ),
                         ),
                       ],
                     ),
@@ -651,13 +698,72 @@ class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
                 Text(
                   '↵ to create',
                   style: TextStyle(
-                      fontSize: 11,
-                      color: AppTheme.accentGreen,
-                      fontWeight: FontWeight.bold),
+                    fontSize: 11,
+                    color: AppTheme.accentGreen,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _StandaloneQuickChip extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final bool selected;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _StandaloneQuickChip({
+    required this.label,
+    required this.icon,
+    required this.selected,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(5),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+        decoration: BoxDecoration(
+          color: selected
+              ? color.withValues(alpha: 0.28)
+              : AppTheme.getColors(context).surface,
+          borderRadius: BorderRadius.circular(5),
+          border: Border.all(
+            color: selected ? color : AppTheme.getColors(context).divider,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 11,
+              color:
+                  selected ? color : AppTheme.getColors(context).textSecondary,
+            ),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 10,
+                color: selected
+                    ? color
+                    : AppTheme.getColors(context).textSecondary,
+                fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+              ),
+            ),
+          ],
         ),
       ),
     );

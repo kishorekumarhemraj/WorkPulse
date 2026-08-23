@@ -199,18 +199,12 @@ class _CategoryFormDialogState extends ConsumerState<CategoryFormDialog> {
         actions: [
           TextButton(
             onPressed: _isSubmitting ? null : () => Navigator.of(context).pop(),
-            child: Text('Cancel', style: TextStyle(color: AppTheme.getColors(context).textSecondary)),
+            child: const Text('Cancel'),
           ),
           ElevatedButton(
             onPressed: _isSubmitting ? null : _submit,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.primaryColor,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            ),
             child: _isSubmitting
-                ? SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                 : Text(isEditing ? 'Save Changes' : 'Create Category'),
           ),
         ],
