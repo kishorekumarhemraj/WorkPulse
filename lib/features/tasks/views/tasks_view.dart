@@ -626,6 +626,7 @@ class _WorkItemCard extends ConsumerWidget {
                 } else {
                   final running = timerState != null && timerState.isRunning && timerState.activeWorkItem != null;
                   if (running) {
+                    ref.read(timerProvider.notifier).requestSwitch(item);
                     await TaskSwitchDialog.show(
                       context,
                       currentItem: timerState.activeWorkItem!,

@@ -46,6 +46,11 @@ class _TaskSwitchDialogState extends ConsumerState<TaskSwitchDialog> {
   void initState() {
     super.initState();
     _notesController = TextEditingController();
+    Future.microtask(() {
+      if (mounted) {
+        ref.read(timerProvider.notifier).requestSwitch(widget.targetItem);
+      }
+    });
   }
 
   @override
@@ -57,6 +62,7 @@ class _TaskSwitchDialogState extends ConsumerState<TaskSwitchDialog> {
   Future<void> _handleConfirm() async {
     final note = _notesController.text.trim();
     await ref.read(timerProvider.notifier).confirmSwitch(
+          targetItem: widget.targetItem,
           notes: note.isEmpty ? null : note,
         );
     if (mounted) {
