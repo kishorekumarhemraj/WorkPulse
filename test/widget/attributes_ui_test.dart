@@ -141,12 +141,17 @@ void main() {
   );
 
   group('Attributes UI Widget Tests', () {
-    testWidgets('AttributeDefinitionsView renders title, search, filter chips, and cards', (tester) async {
+    testWidgets(
+        'AttributeDefinitionsView renders title, search, filter chips, and cards',
+        (tester) async {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            currentWorkspaceProvider.overrideWith(() => _FakeWorkspaceNotifier(testWorkspace)),
-            attributeDefinitionsProvider.overrideWith(() => _FakeAttributeDefinitionsNotifier([testTaskDef, testSessionDef])),
+            currentWorkspaceProvider
+                .overrideWith(() => _FakeWorkspaceNotifier(testWorkspace)),
+            attributeDefinitionsProvider.overrideWith(() =>
+                _FakeAttributeDefinitionsNotifier(
+                    [testTaskDef, testSessionDef])),
           ],
           child: MaterialApp(
             theme: AppTheme.darkTheme,
@@ -173,8 +178,11 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            currentWorkspaceProvider.overrideWith(() => _FakeWorkspaceNotifier(testWorkspace)),
-            attributeDefinitionsProvider.overrideWith(() => _FakeAttributeDefinitionsNotifier([testTaskDef, testSessionDef])),
+            currentWorkspaceProvider
+                .overrideWith(() => _FakeWorkspaceNotifier(testWorkspace)),
+            attributeDefinitionsProvider.overrideWith(() =>
+                _FakeAttributeDefinitionsNotifier(
+                    [testTaskDef, testSessionDef])),
           ],
           child: MaterialApp(
             theme: AppTheme.darkTheme,
@@ -202,13 +210,16 @@ void main() {
       expect(find.text('Meeting Type'), findsNothing);
     });
 
-    testWidgets('AttributeDefinitionFormDialog validates required name and creates attribute', (tester) async {
+    testWidgets(
+        'AttributeDefinitionFormDialog validates required name and creates attribute',
+        (tester) async {
       final fakeNotifier = _FakeAttributeDefinitionsNotifier([]);
 
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            currentWorkspaceProvider.overrideWith(() => _FakeWorkspaceNotifier(testWorkspace)),
+            currentWorkspaceProvider
+                .overrideWith(() => _FakeWorkspaceNotifier(testWorkspace)),
             attributeDefinitionsProvider.overrideWith(() => fakeNotifier),
           ],
           child: MaterialApp(
@@ -225,7 +236,8 @@ void main() {
       expect(find.text('New Custom Attribute'), findsOneWidget);
 
       // Fill name
-      await tester.enterText(find.widgetWithText(TextFormField, 'Display Name *'), 'Client Code');
+      await tester.enterText(
+          find.widgetWithText(TextFormField, 'Display Name *'), 'Client Code');
       await tester.pumpAndSettle();
 
       // Tap create
@@ -237,15 +249,18 @@ void main() {
       expect(fakeNotifier._list.first.key, 'client_code');
     });
 
-    testWidgets('AttributeOptionsEditorDialog renders and adds select options', (tester) async {
+    testWidgets('AttributeOptionsEditorDialog renders and adds select options',
+        (tester) async {
       final optionsList = <AttributeOption>[testOption1];
       final fakeOptController = _FakeAttributeOptionsController(optionsList);
 
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            attributeOptionsFamilyProvider(testSessionDef.id).overrideWith((ref) => Future.value(optionsList)),
-            attributeOptionsControllerProvider.overrideWithValue(fakeOptController),
+            attributeOptionsFamilyProvider(testSessionDef.id)
+                .overrideWith((ref) => Future.value(optionsList)),
+            attributeOptionsControllerProvider
+                .overrideWithValue(fakeOptController),
           ],
           child: MaterialApp(
             theme: AppTheme.darkTheme,
@@ -262,7 +277,9 @@ void main() {
       expect(find.text('Daily Standup'), findsOneWidget);
 
       // Add a new option
-      await tester.enterText(find.widgetWithText(TextField, 'Option Label (e.g. High)'), 'Architecture Review');
+      await tester.enterText(
+          find.widgetWithText(TextField, 'Option Label (e.g. High)'),
+          'Architecture Review');
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Add Option'));
@@ -271,7 +288,9 @@ void main() {
       expect(fakeOptController._list.length, 2);
     });
 
-    testWidgets('DynamicAttributeFields dynamically renders text and boolean input controls', (tester) async {
+    testWidgets(
+        'DynamicAttributeFields dynamically renders text and boolean input controls',
+        (tester) async {
       final boolDef = AttributeDefinition(
         id: 'def-bool',
         workspaceId: testWorkspace.id,

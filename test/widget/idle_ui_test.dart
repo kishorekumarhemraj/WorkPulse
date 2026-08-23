@@ -73,7 +73,9 @@ void main() {
   );
 
   group('IdlePromptDialog UI Widget Tests', () {
-    testWidgets('renders duration, active task name, and all 3 resolution choices', (tester) async {
+    testWidgets(
+        'renders duration, active task name, and all 3 resolution choices',
+        (tester) async {
       final fakeNotifier = _FakeIdleNotifier(testIdleState);
 
       await tester.pumpWidget(
@@ -104,7 +106,8 @@ void main() {
       expect(find.text('Stop Timer at Inactivity'), findsOneWidget);
     });
 
-    testWidgets('tapping Keep Tracking triggers keepTracking on notifier', (tester) async {
+    testWidgets('tapping Keep Tracking triggers keepTracking on notifier',
+        (tester) async {
       final fakeNotifier = _FakeIdleNotifier(testIdleState);
 
       await tester.pumpWidget(
@@ -133,7 +136,8 @@ void main() {
       expect(fakeNotifier.keepTrackingCalled, isTrue);
     });
 
-    testWidgets('tapping Mark as Idle & Resume triggers markIdle on notifier', (tester) async {
+    testWidgets('tapping Mark as Idle & Resume triggers markIdle on notifier',
+        (tester) async {
       final fakeNotifier = _FakeIdleNotifier(testIdleState);
 
       await tester.pumpWidget(
@@ -162,7 +166,9 @@ void main() {
       expect(fakeNotifier.markIdleCalled, isTrue);
     });
 
-    testWidgets('tapping Stop Timer at Inactivity triggers stopSession on notifier', (tester) async {
+    testWidgets(
+        'tapping Stop Timer at Inactivity triggers stopSession on notifier',
+        (tester) async {
       final fakeNotifier = _FakeIdleNotifier(testIdleState);
 
       await tester.pumpWidget(
