@@ -38,20 +38,23 @@ class TasksView extends ConsumerWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Work Items',
-                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppTheme.textPrimaryDark),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Tracked tasks, issues, and activities across all projects',
-                      style: TextStyle(fontSize: 13, color: AppTheme.textSecondaryDark),
-                    ),
-                  ],
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Work Items',
+                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppTheme.textPrimaryDark),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        'Tracked tasks, issues, and activities across all projects',
+                        style: TextStyle(fontSize: 13, color: AppTheme.textSecondaryDark),
+                      ),
+                    ],
+                  ),
                 ),
+                const SizedBox(width: 16),
                 ElevatedButton.icon(
                   onPressed: () => TaskFormDialog.show(context),
                   icon: const Icon(Icons.add, size: 18),
@@ -540,7 +543,7 @@ class _WorkItemCard extends ConsumerWidget {
             color: AppTheme.surfaceDark,
             onSelected: (value) async {
               if (value == 'edit') {
-                TaskFormDialog.show(context, workItem: item);
+                await TaskFormDialog.show(context, workItem: item);
               } else if (value == 'archive') {
                 await ref.read(workItemsProvider.notifier).archiveWorkItem(item.id);
               } else if (value == 'unarchive') {

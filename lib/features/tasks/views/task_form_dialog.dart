@@ -244,11 +244,11 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
                             ),
                             const SizedBox(height: 6),
                             projectsAsync.when(
-                              loading: () => const LinearProgressIndicator(),
+                              loading: () => const SizedBox(height: 38, child: Align(alignment: Alignment.centerLeft, child: Text('Loading projects...', style: TextStyle(fontSize: 12, color: AppTheme.textSecondaryDark)))),
                               error: (_, __) => const Text('Error loading projects'),
                               data: (projects) {
                                 return DropdownButtonFormField<String>(
-                                  value: projects.any((p) => p.id == _selectedProjectId) ? _selectedProjectId : (projects.isNotEmpty ? projects.first.id : null),
+                                  initialValue: projects.any((p) => p.id == _selectedProjectId) ? _selectedProjectId : (projects.isNotEmpty ? projects.first.id : null),
                                   items: projects.map((p) {
                                     return DropdownMenuItem(
                                       value: p.id,
@@ -299,11 +299,11 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
                             ),
                             const SizedBox(height: 6),
                             categoriesAsync.when(
-                              loading: () => const LinearProgressIndicator(),
+                              loading: () => const SizedBox(height: 38, child: Align(alignment: Alignment.centerLeft, child: Text('Loading categories...', style: TextStyle(fontSize: 12, color: AppTheme.textSecondaryDark)))),
                               error: (_, __) => const Text('Error loading categories'),
                               data: (categories) {
                                 return DropdownButtonFormField<String>(
-                                  value: categories.any((c) => c.id == _selectedCategoryId) ? _selectedCategoryId : (categories.isNotEmpty ? categories.first.id : null),
+                                  initialValue: categories.any((c) => c.id == _selectedCategoryId) ? _selectedCategoryId : (categories.isNotEmpty ? categories.first.id : null),
                                   items: categories.map((c) {
                                     return DropdownMenuItem(
                                       value: c.id,
@@ -399,7 +399,9 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Assigned People / Collaborators', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AppTheme.textSecondaryDark)),
+                      const Flexible(
+                        child: Text('Assigned People', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AppTheme.textSecondaryDark), overflow: TextOverflow.ellipsis),
+                      ),
                       InkWell(
                         onTap: () async {
                           final p = await PersonFormDialog.show(context);

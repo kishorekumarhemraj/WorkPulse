@@ -22,7 +22,16 @@ enum ShellNavTab {
   people,
 }
 
-final activeNavTabProvider = StateProvider<ShellNavTab>((ref) => ShellNavTab.tasks);
+final activeNavTabProvider = NotifierProvider<ActiveNavTabNotifier, ShellNavTab>(
+  ActiveNavTabNotifier.new,
+);
+
+class ActiveNavTabNotifier extends Notifier<ShellNavTab> {
+  @override
+  ShellNavTab build() => ShellNavTab.tasks;
+
+  void setTab(ShellNavTab tab) => state = tab;
+}
 
 class MainShellView extends ConsumerWidget {
   const MainShellView({super.key});
@@ -80,13 +89,16 @@ class MainShellView extends ConsumerWidget {
                                 child: const Icon(Icons.timer_outlined, color: AppTheme.primaryColor, size: 20),
                               ),
                               const SizedBox(width: 10),
-                              const Text(
-                                AppConstants.appName,
-                                style: TextStyle(
-                                  fontSize: 17,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppTheme.textPrimaryDark,
-                                  letterSpacing: -0.3,
+                              const Expanded(
+                                child: Text(
+                                  AppConstants.appName,
+                                  style: TextStyle(
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppTheme.textPrimaryDark,
+                                    letterSpacing: -0.3,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ),
                             ],
@@ -131,35 +143,35 @@ class MainShellView extends ConsumerWidget {
                             label: 'Work Items',
                             isSelected: activeTab == ShellNavTab.tasks,
                             countProvider: Provider((r) => r.watch(workItemsProvider).value?.length),
-                            onTap: () => ref.read(activeNavTabProvider.notifier).state = ShellNavTab.tasks,
+                            onTap: () => ref.read(activeNavTabProvider.notifier).setTab(ShellNavTab.tasks),
                           ),
                           _SidebarNavItem(
                             icon: Icons.folder_outlined,
                             label: 'Projects',
                             isSelected: activeTab == ShellNavTab.projects,
                             countProvider: Provider((r) => r.watch(projectsProvider).value?.length),
-                            onTap: () => ref.read(activeNavTabProvider.notifier).state = ShellNavTab.projects,
+                            onTap: () => ref.read(activeNavTabProvider.notifier).setTab(ShellNavTab.projects),
                           ),
                           _SidebarNavItem(
                             icon: Icons.category_outlined,
                             label: 'Categories',
                             isSelected: activeTab == ShellNavTab.categories,
                             countProvider: Provider((r) => r.watch(categoriesProvider).value?.length),
-                            onTap: () => ref.read(activeNavTabProvider.notifier).state = ShellNavTab.categories,
+                            onTap: () => ref.read(activeNavTabProvider.notifier).setTab(ShellNavTab.categories),
                           ),
                           _SidebarNavItem(
                             icon: Icons.label_outline,
                             label: 'Tags',
                             isSelected: activeTab == ShellNavTab.tags,
                             countProvider: Provider((r) => r.watch(tagsProvider).value?.length),
-                            onTap: () => ref.read(activeNavTabProvider.notifier).state = ShellNavTab.tags,
+                            onTap: () => ref.read(activeNavTabProvider.notifier).setTab(ShellNavTab.tags),
                           ),
                           _SidebarNavItem(
                             icon: Icons.people_outline,
                             label: 'People',
                             isSelected: activeTab == ShellNavTab.people,
                             countProvider: Provider((r) => r.watch(peopleProvider).value?.length),
-                            onTap: () => ref.read(activeNavTabProvider.notifier).state = ShellNavTab.people,
+                            onTap: () => ref.read(activeNavTabProvider.notifier).setTab(ShellNavTab.people),
                           ),
                         ],
                       ),

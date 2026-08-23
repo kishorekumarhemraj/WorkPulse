@@ -32,20 +32,23 @@ class _PeopleViewState extends ConsumerState<PeopleView> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'People',
-                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppTheme.textPrimaryDark),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Team members, clients, and collaborators you work with',
-                      style: TextStyle(fontSize: 13, color: AppTheme.textSecondaryDark),
-                    ),
-                  ],
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'People',
+                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppTheme.textPrimaryDark),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        'Team members, clients, and collaborators you work with',
+                        style: TextStyle(fontSize: 13, color: AppTheme.textSecondaryDark),
+                      ),
+                    ],
+                  ),
                 ),
+                const SizedBox(width: 16),
                 ElevatedButton.icon(
                   onPressed: () => PersonFormDialog.show(context),
                   icon: const Icon(Icons.add, size: 18),
@@ -218,7 +221,7 @@ class _PersonCard extends ConsumerWidget {
                 color: AppTheme.surfaceDark,
                 onSelected: (value) async {
                   if (value == 'edit') {
-                    PersonFormDialog.show(context, person: person);
+                    await PersonFormDialog.show(context, person: person);
                   } else if (value == 'delete') {
                     final confirm = await showDialog<bool>(
                       context: context,

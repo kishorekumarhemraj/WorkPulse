@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workpulse/core/theme/app_theme.dart';
 import 'package:workpulse/core/theme/color_utils.dart';
-import 'package:workpulse/domain/models/tag_model.dart';
 import 'package:workpulse/features/tags/providers/tags_provider.dart';
 import 'package:workpulse/features/tags/views/tag_form_dialog.dart';
 import 'package:workpulse/features/tasks/providers/work_items_provider.dart';
@@ -33,20 +32,23 @@ class _TagsViewState extends ConsumerState<TagsView> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Tags',
-                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppTheme.textPrimaryDark),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Flexible labels to categorize and filter your work items',
-                      style: TextStyle(fontSize: 13, color: AppTheme.textSecondaryDark),
-                    ),
-                  ],
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Tags',
+                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppTheme.textPrimaryDark),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        'Flexible labels to categorize and filter your work items',
+                        style: TextStyle(fontSize: 13, color: AppTheme.textSecondaryDark),
+                      ),
+                    ],
+                  ),
                 ),
+                const SizedBox(width: 16),
                 ElevatedButton.icon(
                   onPressed: () => TagFormDialog.show(context),
                   icon: const Icon(Icons.add, size: 18),

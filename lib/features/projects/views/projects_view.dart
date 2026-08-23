@@ -33,20 +33,23 @@ class _ProjectsViewState extends ConsumerState<ProjectsView> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Projects',
-                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppTheme.textPrimaryDark),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Manage and organize your client projects and workspaces',
-                      style: TextStyle(fontSize: 13, color: AppTheme.textSecondaryDark),
-                    ),
-                  ],
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Projects',
+                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppTheme.textPrimaryDark),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        'Manage and organize your client projects and workspaces',
+                        style: TextStyle(fontSize: 13, color: AppTheme.textSecondaryDark),
+                      ),
+                    ],
+                  ),
                 ),
+                const SizedBox(width: 16),
                 ElevatedButton.icon(
                   onPressed: () => ProjectFormDialog.show(context),
                   icon: const Icon(Icons.add, size: 18),
@@ -190,7 +193,7 @@ class _ProjectCard extends ConsumerWidget {
                 color: AppTheme.surfaceDark,
                 onSelected: (value) async {
                   if (value == 'edit') {
-                    ProjectFormDialog.show(context, project: project);
+                    await ProjectFormDialog.show(context, project: project);
                   } else if (value == 'archive') {
                     await ref.read(projectsProvider.notifier).archiveProject(project.id);
                   } else if (value == 'delete') {
@@ -277,9 +280,13 @@ class _ProjectCard extends ConsumerWidget {
                   style: const TextStyle(fontSize: 11, color: AppTheme.textSecondaryDark, fontWeight: FontWeight.w500),
                 ),
               ),
-              Text(
-                'Updated ${_formatDate(project.updatedAt)}',
-                style: const TextStyle(fontSize: 11, color: AppTheme.textSecondaryDark),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  'Updated ${_formatDate(project.updatedAt)}',
+                  style: const TextStyle(fontSize: 11, color: AppTheme.textSecondaryDark),
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ],
           ),
