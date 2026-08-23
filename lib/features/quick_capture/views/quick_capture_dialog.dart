@@ -58,13 +58,15 @@ class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
     final totalCount = matchingTasks.length + (showCreateOption ? 1 : 0);
     if (totalCount == 0) return;
 
-    final isNewTaskSelected = showCreateOption && qcState.selectedIndex == matchingTasks.length;
+    final isNewTaskSelected =
+        showCreateOption && qcState.selectedIndex == matchingTasks.length;
 
     if (isNewTaskSelected) {
       // Create and start new task
-      final created = await ref.read(quickCaptureProvider.notifier).createAndStartTask(
-            name: query,
-          );
+      final created =
+          await ref.read(quickCaptureProvider.notifier).createAndStartTask(
+                name: query,
+              );
       if (mounted && created != null) {
         Navigator.of(context).pop();
       }
@@ -77,7 +79,10 @@ class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
         Navigator.of(context).pop();
       }
 
-      if (timerState != null && timerState.isRunning && timerState.activeWorkItem != null && timerState.activeWorkItem!.id != targetTask.id) {
+      if (timerState != null &&
+          timerState.isRunning &&
+          timerState.activeWorkItem != null &&
+          timerState.activeWorkItem!.id != targetTask.id) {
         if (mounted) {
           await TaskSwitchDialog.show(
             context,
@@ -87,7 +92,9 @@ class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
           );
         }
       } else {
-        await ref.read(quickCaptureProvider.notifier).startExistingTask(targetTask);
+        await ref
+            .read(quickCaptureProvider.notifier)
+            .startExistingTask(targetTask);
       }
     }
   }
@@ -104,13 +111,17 @@ class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
     final categoryMap = {for (final c in categories) c.id: c};
 
     final query = qcState.query.trim().toLowerCase();
-    final matchingTasks = workItems.where((item) {
-      if (item.isArchived) return false;
-      if (query.isEmpty) return true;
-      return item.name.toLowerCase().contains(query);
-    }).take(5).toList();
+    final matchingTasks = workItems
+        .where((item) {
+          if (item.isArchived) return false;
+          if (query.isEmpty) return true;
+          return item.name.toLowerCase().contains(query);
+        })
+        .take(5)
+        .toList();
 
-    final hasExactMatch = matchingTasks.any((t) => t.name.toLowerCase() == query);
+    final hasExactMatch =
+        matchingTasks.any((t) => t.name.toLowerCase() == query);
     final showCreateOption = query.isNotEmpty && !hasExactMatch;
     final totalItems = matchingTasks.length + (showCreateOption ? 1 : 0);
 
@@ -131,7 +142,16 @@ class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
             ref.read(quickCaptureProvider.notifier).selectPrevious();
             return KeyEventResult.handled;
           }
-          if (event.logicalKey == LogicalKeyboardKey.enter || event.logicalKey == LogicalKeyboardKey.numpadEnter) {
+          if (event.logicalKey == LogicalKeyboardKey.tab) {
+            if (HardwareKeyboard.instance.isShiftPressed) {
+              FocusScope.of(context).previousFocus();
+            } else {
+              FocusScope.of(context).nextFocus();
+            }
+            return KeyEventResult.handled;
+          }
+          if (event.logicalKey == LogicalKeyboardKey.enter ||
+              event.logicalKey == LogicalKeyboardKey.numpadEnter) {
             _handleConfirm(matchingTasks, showCreateOption, qcState.query);
             return KeyEventResult.handled;
           }
@@ -165,39 +185,53 @@ class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
                 Container(
                   padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
                   decoration: const BoxDecoration(
-                    border: Border(bottom: BorderSide(color: AppTheme.dividerDark, width: 1)),
+                    border: Border(
+                        bottom:
+                            BorderSide(color: AppTheme.dividerDark, width: 1)),
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.search, size: 22, color: AppTheme.primaryColor),
+                      const Icon(Icons.search,
+                          size: 22, color: AppTheme.primaryColor),
                       const SizedBox(width: 12),
                       Expanded(
                         child: TextField(
                           controller: _searchController,
                           focusNode: _inputFocusNode,
                           autofocus: true,
-                          style: const TextStyle(fontSize: 16, color: AppTheme.textPrimaryDark, fontWeight: FontWeight.w500),
+                          style: const TextStyle(
+                              fontSize: 16,
+                              color: AppTheme.textPrimaryDark,
+                              fontWeight: FontWeight.w500),
                           decoration: const InputDecoration(
                             hintText: 'Search tasks or type new task name...',
-                            hintStyle: TextStyle(fontSize: 15, color: AppTheme.textSecondaryDark),
+                            hintStyle: TextStyle(
+                                fontSize: 15,
+                                color: AppTheme.textSecondaryDark),
                             border: InputBorder.none,
                             contentPadding: EdgeInsets.zero,
                             isDense: true,
                           ),
-                          onChanged: (val) => ref.read(quickCaptureProvider.notifier).setQuery(val),
+                          onChanged: (val) => ref
+                              .read(quickCaptureProvider.notifier)
+                              .setQuery(val),
                         ),
                       ),
                       if (qcState.query.isNotEmpty)
                         IconButton(
-                          icon: const Icon(Icons.close, size: 16, color: AppTheme.textSecondaryDark),
+                          icon: const Icon(Icons.close,
+                              size: 16, color: AppTheme.textSecondaryDark),
                           onPressed: () {
                             _searchController.clear();
-                            ref.read(quickCaptureProvider.notifier).setQuery('');
+                            ref
+                                .read(quickCaptureProvider.notifier)
+                                .setQuery('');
                           },
                         ),
                       // Shortcut Pill Badges
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 3),
                         decoration: BoxDecoration(
                           color: AppTheme.cardDark,
                           borderRadius: BorderRadius.circular(4),
@@ -205,12 +239,16 @@ class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
                         ),
                         child: const Text(
                           '↵ Track',
-                          style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.textSecondaryDark),
+                          style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.textSecondaryDark),
                         ),
                       ),
                       const SizedBox(width: 6),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 3),
                         decoration: BoxDecoration(
                           color: AppTheme.cardDark,
                           borderRadius: BorderRadius.circular(4),
@@ -218,7 +256,10 @@ class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
                         ),
                         child: const Text(
                           'esc',
-                          style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.textSecondaryDark),
+                          style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.textSecondaryDark),
                         ),
                       ),
                     ],
@@ -234,17 +275,21 @@ class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
                     itemBuilder: (context, index) {
                       if (totalItems == 0) {
                         return const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+                          padding: EdgeInsets.symmetric(
+                              vertical: 24, horizontal: 16),
                           child: Center(
                             child: Text(
                               'Type a task name to track',
-                              style: TextStyle(fontSize: 13, color: AppTheme.textSecondaryDark),
+                              style: TextStyle(
+                                  fontSize: 13,
+                                  color: AppTheme.textSecondaryDark),
                             ),
                           ),
                         );
                       }
 
-                      final isCreateOption = showCreateOption && index == matchingTasks.length;
+                      final isCreateOption =
+                          showCreateOption && index == matchingTasks.length;
                       final isSelected = qcState.selectedIndex == index;
 
                       if (isCreateOption) {
@@ -255,7 +300,8 @@ class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
                       final project = projectMap[task.projectId];
                       final category = categoryMap[task.categoryId];
 
-                      return _buildTaskResultItem(task, project, category, isSelected, index);
+                      return _buildTaskResultItem(
+                          task, project, category, isSelected, index);
                     },
                   ),
                 ),
@@ -265,21 +311,28 @@ class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
                   padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
                   decoration: const BoxDecoration(
                     color: AppTheme.cardDark,
-                    borderRadius: BorderRadius.vertical(bottom: Radius.circular(14)),
-                    border: Border(top: BorderSide(color: AppTheme.dividerDark, width: 1)),
+                    borderRadius:
+                        BorderRadius.vertical(bottom: Radius.circular(14)),
+                    border: Border(
+                        top: BorderSide(color: AppTheme.dividerDark, width: 1)),
                   ),
                   child: Row(
                     children: [
                       // Project Selector Dropdown
                       if (projects.isNotEmpty) ...[
-                        const Icon(Icons.folder_outlined, size: 14, color: AppTheme.textSecondaryDark),
+                        const Icon(Icons.folder_outlined,
+                            size: 14, color: AppTheme.textSecondaryDark),
                         const SizedBox(width: 6),
                         DropdownButton<String>(
-                          value: projects.any((p) => p.id == qcState.selectedProjectId) ? qcState.selectedProjectId : projects.first.id,
+                          value: projects
+                                  .any((p) => p.id == qcState.selectedProjectId)
+                              ? qcState.selectedProjectId
+                              : projects.first.id,
                           dropdownColor: AppTheme.surfaceDark,
                           underline: const SizedBox.shrink(),
                           isDense: true,
-                          style: const TextStyle(fontSize: 12, color: AppTheme.textPrimaryDark),
+                          style: const TextStyle(
+                              fontSize: 12, color: AppTheme.textPrimaryDark),
                           items: projects.map((p) {
                             final col = ColorUtils.parseHex(p.colorHex);
                             return DropdownMenuItem(
@@ -287,42 +340,62 @@ class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Container(width: 6, height: 6, decoration: BoxDecoration(color: col, shape: BoxShape.circle)),
+                                  Container(
+                                      width: 6,
+                                      height: 6,
+                                      decoration: BoxDecoration(
+                                          color: col, shape: BoxShape.circle)),
                                   const SizedBox(width: 6),
-                                  Text(p.name, style: const TextStyle(fontSize: 12, color: AppTheme.textPrimaryDark)),
+                                  Text(p.name,
+                                      style: const TextStyle(
+                                          fontSize: 12,
+                                          color: AppTheme.textPrimaryDark)),
                                 ],
                               ),
                             );
                           }).toList(),
-                          onChanged: (val) => ref.read(quickCaptureProvider.notifier).setProject(val),
+                          onChanged: (val) => ref
+                              .read(quickCaptureProvider.notifier)
+                              .setProject(val),
                         ),
                         const SizedBox(width: 14),
                       ],
 
                       // Category Selector Dropdown
                       if (categories.isNotEmpty) ...[
-                        const Icon(Icons.category_outlined, size: 14, color: AppTheme.textSecondaryDark),
+                        const Icon(Icons.category_outlined,
+                            size: 14, color: AppTheme.textSecondaryDark),
                         const SizedBox(width: 6),
                         DropdownButton<String>(
-                          value: categories.any((c) => c.id == qcState.selectedCategoryId) ? qcState.selectedCategoryId : categories.first.id,
+                          value: categories.any(
+                                  (c) => c.id == qcState.selectedCategoryId)
+                              ? qcState.selectedCategoryId
+                              : categories.first.id,
                           dropdownColor: AppTheme.surfaceDark,
                           underline: const SizedBox.shrink(),
                           isDense: true,
-                          style: const TextStyle(fontSize: 12, color: AppTheme.textPrimaryDark),
+                          style: const TextStyle(
+                              fontSize: 12, color: AppTheme.textPrimaryDark),
                           items: categories.map((c) {
                             return DropdownMenuItem(
                               value: c.id,
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(IconUtils.getIcon(c.iconName), size: 12, color: AppTheme.primaryColor),
+                                  Icon(IconUtils.getIcon(c.iconName),
+                                      size: 12, color: AppTheme.primaryColor),
                                   const SizedBox(width: 6),
-                                  Text(c.name, style: const TextStyle(fontSize: 12, color: AppTheme.textPrimaryDark)),
+                                  Text(c.name,
+                                      style: const TextStyle(
+                                          fontSize: 12,
+                                          color: AppTheme.textPrimaryDark)),
                                 ],
                               ),
                             );
                           }).toList(),
-                          onChanged: (val) => ref.read(quickCaptureProvider.notifier).setCategory(val),
+                          onChanged: (val) => ref
+                              .read(quickCaptureProvider.notifier)
+                              .setCategory(val),
                         ),
                       ],
 
@@ -333,24 +406,37 @@ class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
                         Wrap(
                           spacing: 4,
                           children: tags.take(3).map((t) {
-                            final isTagSelected = qcState.selectedTagIds.contains(t.id);
+                            final isTagSelected =
+                                qcState.selectedTagIds.contains(t.id);
                             final tagColor = ColorUtils.parseHex(t.colorHex);
                             return InkWell(
-                              onTap: () => ref.read(quickCaptureProvider.notifier).toggleTag(t.id),
+                              onTap: () => ref
+                                  .read(quickCaptureProvider.notifier)
+                                  .toggleTag(t.id),
                               borderRadius: BorderRadius.circular(4),
                               child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 6, vertical: 2),
                                 decoration: BoxDecoration(
-                                  color: isTagSelected ? tagColor.withValues(alpha: 0.3) : AppTheme.surfaceDark,
+                                  color: isTagSelected
+                                      ? tagColor.withValues(alpha: 0.3)
+                                      : AppTheme.surfaceDark,
                                   borderRadius: BorderRadius.circular(4),
-                                  border: Border.all(color: isTagSelected ? tagColor : AppTheme.dividerDark),
+                                  border: Border.all(
+                                      color: isTagSelected
+                                          ? tagColor
+                                          : AppTheme.dividerDark),
                                 ),
                                 child: Text(
                                   '#${t.name}',
                                   style: TextStyle(
                                     fontSize: 10,
-                                    color: isTagSelected ? tagColor : AppTheme.textSecondaryDark,
-                                    fontWeight: isTagSelected ? FontWeight.bold : FontWeight.normal,
+                                    color: isTagSelected
+                                        ? tagColor
+                                        : AppTheme.textSecondaryDark,
+                                    fontWeight: isTagSelected
+                                        ? FontWeight.bold
+                                        : FontWeight.normal,
                                   ),
                                 ),
                               ),
@@ -385,15 +471,22 @@ class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
-          color: isSelected ? AppTheme.primaryColor.withValues(alpha: 0.15) : Colors.transparent,
-          border: isSelected ? const Border(left: BorderSide(color: AppTheme.primaryColor, width: 3)) : null,
+          color: isSelected
+              ? AppTheme.primaryColor.withValues(alpha: 0.15)
+              : Colors.transparent,
+          border: isSelected
+              ? const Border(
+                  left: BorderSide(color: AppTheme.primaryColor, width: 3))
+              : null,
         ),
         child: Row(
           children: [
             Icon(
               Icons.play_circle_outline,
               size: 18,
-              color: isSelected ? AppTheme.primaryColor : AppTheme.textSecondaryDark,
+              color: isSelected
+                  ? AppTheme.primaryColor
+                  : AppTheme.textSecondaryDark,
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -404,8 +497,10 @@ class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
                     task.name,
                     style: TextStyle(
                       fontSize: 14,
-                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                      color: isSelected ? Colors.white : AppTheme.textPrimaryDark,
+                      fontWeight:
+                          isSelected ? FontWeight.w600 : FontWeight.w500,
+                      color:
+                          isSelected ? Colors.white : AppTheme.textPrimaryDark,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -414,13 +509,22 @@ class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
                   Row(
                     children: [
                       if (project != null) ...[
-                        Container(width: 6, height: 6, decoration: BoxDecoration(color: projectColor, shape: BoxShape.circle)),
+                        Container(
+                            width: 6,
+                            height: 6,
+                            decoration: BoxDecoration(
+                                color: projectColor, shape: BoxShape.circle)),
                         const SizedBox(width: 4),
-                        Text(project.name, style: TextStyle(fontSize: 11, color: projectColor)),
+                        Text(project.name,
+                            style:
+                                TextStyle(fontSize: 11, color: projectColor)),
                         const SizedBox(width: 8),
                       ],
                       if (category != null) ...[
-                        Text(category.name, style: const TextStyle(fontSize: 11, color: AppTheme.textSecondaryDark)),
+                        Text(category.name,
+                            style: const TextStyle(
+                                fontSize: 11,
+                                color: AppTheme.textSecondaryDark)),
                       ],
                     ],
                   ),
@@ -430,7 +534,10 @@ class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
             if (isSelected)
               const Text(
                 '↵ to track',
-                style: TextStyle(fontSize: 11, color: AppTheme.primaryColor, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                    fontSize: 11,
+                    color: AppTheme.primaryColor,
+                    fontWeight: FontWeight.bold),
               ),
           ],
         ),
@@ -446,26 +553,37 @@ class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color: isSelected ? AppTheme.accentGreen.withValues(alpha: 0.15) : Colors.transparent,
-          border: isSelected ? const Border(left: BorderSide(color: AppTheme.accentGreen, width: 3)) : null,
+          color: isSelected
+              ? AppTheme.accentGreen.withValues(alpha: 0.15)
+              : Colors.transparent,
+          border: isSelected
+              ? const Border(
+                  left: BorderSide(color: AppTheme.accentGreen, width: 3))
+              : null,
         ),
         child: Row(
           children: [
             Icon(
               Icons.add_circle_outline,
               size: 18,
-              color: isSelected ? AppTheme.accentGreen : AppTheme.accentGreen.withValues(alpha: 0.7),
+              color: isSelected
+                  ? AppTheme.accentGreen
+                  : AppTheme.accentGreen.withValues(alpha: 0.7),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: RichText(
                 text: TextSpan(
                   text: 'Create and track new task: ',
-                  style: const TextStyle(fontSize: 13, color: AppTheme.textSecondaryDark),
+                  style: const TextStyle(
+                      fontSize: 13, color: AppTheme.textSecondaryDark),
                   children: [
                     TextSpan(
                       text: '"$query"',
-                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.textPrimaryDark),
+                      style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.textPrimaryDark),
                     ),
                   ],
                 ),
@@ -475,7 +593,10 @@ class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
             ),
             const Text(
               '↵ to create',
-              style: TextStyle(fontSize: 11, color: AppTheme.accentGreen, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                  fontSize: 11,
+                  color: AppTheme.accentGreen,
+                  fontWeight: FontWeight.bold),
             ),
           ],
         ),

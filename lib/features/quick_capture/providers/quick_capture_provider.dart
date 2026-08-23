@@ -13,7 +13,8 @@ import 'package:workpulse/features/timer/providers/timer_provider.dart';
 
 const _uuid = Uuid();
 
-final quickCaptureProvider = NotifierProvider<QuickCaptureNotifier, QuickCaptureState>(
+final quickCaptureProvider =
+    NotifierProvider.autoDispose<QuickCaptureNotifier, QuickCaptureState>(
   QuickCaptureNotifier.new,
 );
 
@@ -119,8 +120,10 @@ class QuickCaptureNotifier extends Notifier<QuickCaptureState> {
       categories = await ref.read(categoriesProvider.future);
     }
 
-    final projectId = state.selectedProjectId ?? (projects.isNotEmpty ? projects.first.id : null);
-    final categoryId = state.selectedCategoryId ?? (categories.isNotEmpty ? categories.first.id : null);
+    final projectId = state.selectedProjectId ??
+        (projects.isNotEmpty ? projects.first.id : null);
+    final categoryId = state.selectedCategoryId ??
+        (categories.isNotEmpty ? categories.first.id : null);
 
     if (projectId == null || categoryId == null) return null;
 
@@ -135,7 +138,10 @@ class QuickCaptureNotifier extends Notifier<QuickCaptureState> {
     // Save custom attribute values if provided
     if (attributeValues.isNotEmpty) {
       final definitions = ref.read(attributeDefinitionsProvider).value ?? [];
-      final taskDefs = definitions.where((d) => d.scope == AttributeScope.task && d.enabled && !d.isArchived).toList();
+      final taskDefs = definitions
+          .where((d) =>
+              d.scope == AttributeScope.task && d.enabled && !d.isArchived)
+          .toList();
       final valuesToSave = <WorkItemAttributeValue>[];
       final now = DateTime.now().toUtc();
 
@@ -143,56 +149,114 @@ class QuickCaptureNotifier extends Notifier<QuickCaptureState> {
         final def = taskDefs.where((d) => d.id == entry.key).firstOrNull;
         if (def == null || entry.value == null) continue;
 
-        String? textVal;
-        double? numVal;
-        bool? boolVal;
-        DateTime? dateVal;
-        String? optId;
-
         switch (def.type) {
           case AttributeType.text:
-            textVal = entry.value.toString();
+            valuesToSave.add(
+              _attributeValue(
+                workItemId: created.id,
+                definitionId: def.id,
+                textValue: entry.value.toString(),
+                now: now,
+              ),
+            );
             break;
           case AttributeType.number:
-            numVal = entry.value is num ? (entry.value as num).toDouble() : double.tryParse(entry.value.toString());
+            valuesToSave.add(
+              _attributeValue(
+                workItemId: created.id,
+                definitionId: def.id,
+                numberValue: entry.value is num
+                    ? (entry.value as num).toDouble()
+                    : double.tryParse(entry.value.toString()),
+                now: now,
+              ),
+            );
             break;
           case AttributeType.boolean:
-            boolVal = entry.value == true;
+            valuesToSave.add(
+              _attributeValue(
+                workItemId: created.id,
+                definitionId: def.id,
+                booleanValue: entry.value == true,
+                now: now,
+              ),
+            );
             break;
           case AttributeType.singleSelect:
-            optId = entry.value.toString();
+            valuesToSave.add(
+              _attributeValue(
+                workItemId: created.id,
+                definitionId: def.id,
+                optionId: entry.value.toString(),
+                now: now,
+              ),
+            );
             break;
           case AttributeType.multiSelect:
-            textVal = (entry.value as List).join(',');
+            final selectedOptionIds = entry.value is Iterable
+                ? (entry.value as Iterable)
+                    .where((v) => v != null)
+                    .map((v) => v.toString())
+                : [entry.value.toString()];
+            for (final optionId in selectedOptionIds) {
+              valuesToSave.add(
+                _attributeValue(
+                  workItemId: created.id,
+                  definitionId: def.id,
+                  optionId: optionId,
+                  now: now,
+                ),
+              );
+            }
             break;
           case AttributeType.date:
-            dateVal = entry.value is DateTime ? entry.value as DateTime : DateTime.tryParse(entry.value.toString());
+            valuesToSave.add(
+              _attributeValue(
+                workItemId: created.id,
+                definitionId: def.id,
+                dateValue: entry.value is DateTime
+                    ? entry.value as DateTime
+                    : DateTime.tryParse(entry.value.toString()),
+                now: now,
+              ),
+            );
             break;
         }
-
-        valuesToSave.add(
-          WorkItemAttributeValue(
-            id: _uuid.v4(),
-            workItemId: created.id,
-            attributeDefinitionId: def.id,
-            optionId: optId,
-            textValue: textVal,
-            numberValue: numVal,
-            booleanValue: boolVal,
-            dateValue: dateVal,
-            createdAt: now,
-            updatedAt: now,
-          ),
-        );
       }
 
       if (valuesToSave.isNotEmpty) {
-        await ref.read(workItemAttributeValuesControllerProvider).saveValues(created.id, valuesToSave);
+        await ref
+            .read(workItemAttributeValuesControllerProvider)
+            .saveValues(created.id, valuesToSave);
       }
     }
 
     await ref.read(timerProvider.notifier).startTimer(created);
     reset();
     return created;
+  }
+
+  WorkItemAttributeValue _attributeValue({
+    required String workItemId,
+    required String definitionId,
+    required DateTime now,
+    String? textValue,
+    double? numberValue,
+    bool? booleanValue,
+    DateTime? dateValue,
+    String? optionId,
+  }) {
+    return WorkItemAttributeValue(
+      id: _uuid.v4(),
+      workItemId: workItemId,
+      attributeDefinitionId: definitionId,
+      optionId: optionId,
+      textValue: textValue,
+      numberValue: numberValue,
+      booleanValue: booleanValue,
+      dateValue: dateValue,
+      createdAt: now,
+      updatedAt: now,
+    );
   }
 }
