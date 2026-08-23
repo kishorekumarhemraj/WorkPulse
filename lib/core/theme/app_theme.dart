@@ -161,7 +161,8 @@ class AppTheme {
       // --- Controls -----------------------------------------------------
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: c.accent,
+          // accentFill, not accent: this carries white text.
+          backgroundColor: c.accentFill,
           foregroundColor: c.onAccent,
           disabledBackgroundColor: c.card,
           disabledForegroundColor: c.textTertiary,
@@ -174,7 +175,7 @@ class AppTheme {
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          backgroundColor: c.accent,
+          backgroundColor: c.accentFill,
           foregroundColor: c.onAccent,
           minimumSize: const Size(0, ControlSizes.standard),
           padding: const EdgeInsets.symmetric(horizontal: Spacing.lg),

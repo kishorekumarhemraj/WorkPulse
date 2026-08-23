@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -55,6 +57,73 @@ void main() {
       );
       expect(
           AppTypography.ticker(color: Colors.white).fontFeatures, isNotEmpty);
+    });
+
+    test('every text colour clears WCAG AA on every surface', () {
+      // Contrast is easy to lose when a palette is hand-tuned, and the
+      // failure is invisible to anyone not looking for it. This pins it.
+      double relativeLuminance(Color c) {
+        double channel(double v) => v <= 0.03928
+            ? v / 12.92
+            : math.pow((v + 0.055) / 1.055, 2.4) as double;
+        return 0.2126 * channel(c.r) +
+            0.7152 * channel(c.g) +
+            0.0722 * channel(c.b);
+      }
+
+      double contrast(Color a, Color b) {
+        final la = relativeLuminance(a);
+        final lb = relativeLuminance(b);
+        final hi = la > lb ? la : lb;
+        final lo = la > lb ? lb : la;
+        return (hi + 0.05) / (lo + 0.05);
+      }
+
+      for (final entry in {
+        'dark': WorkPulseColors.dark,
+        'light': WorkPulseColors.light,
+      }.entries) {
+        final c = entry.value;
+        final foregrounds = {
+          'textPrimary': c.textPrimary,
+          'textSecondary': c.textSecondary,
+          'textTertiary': c.textTertiary,
+          'accent': c.accent,
+          'success': c.success,
+          'warning': c.warning,
+          'danger': c.danger,
+          'info': c.info,
+        };
+        final backgrounds = {
+          'background': c.background,
+          'surface': c.surface,
+          'card': c.card,
+        };
+
+        for (final fg in foregrounds.entries) {
+          for (final bg in backgrounds.entries) {
+            expect(
+              contrast(fg.value, bg.value),
+              greaterThanOrEqualTo(4.5),
+              reason: '${entry.key}: ${fg.key} on ${bg.key} is below WCAG AA',
+            );
+          }
+        }
+
+        // White label on a filled button. accentFill/dangerFill exist
+        // precisely because accent/danger are tuned to be read as text
+        // against dark surfaces and are too light to sit under white text.
+        expect(
+          contrast(c.onAccent, c.accentFill),
+          greaterThanOrEqualTo(4.5),
+          reason: '${entry.key}: onAccent on accentFill is below WCAG AA',
+        );
+        expect(
+          contrast(Colors.white, c.dangerFill),
+          greaterThanOrEqualTo(4.5),
+          reason: '${entry.key}: white on dangerFill is below WCAG AA',
+        );
+      }
     });
 
     test('body text never drops below 12pt', () {

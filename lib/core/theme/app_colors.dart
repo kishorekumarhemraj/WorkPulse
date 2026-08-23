@@ -73,6 +73,14 @@ class WorkPulseColors extends ThemeExtension<WorkPulseColors> {
   /// Low-opacity [accent] fill for tinted containers.
   final Color accentSubtle;
 
+  /// The background of a *filled* accent button.
+  ///
+  /// Distinct from [accent] because the two have opposing contrast needs:
+  /// [accent] is read as text against dark surfaces, so it must be light,
+  /// while a filled button carries white text and so must be dark enough for
+  /// that text to clear AA. One colour cannot do both.
+  final Color accentFill;
+
   /// Running timers, completed work, positive deltas.
   final Color success;
   final Color successSubtle;
@@ -84,6 +92,9 @@ class WorkPulseColors extends ThemeExtension<WorkPulseColors> {
   /// Destructive actions and errors.
   final Color danger;
   final Color dangerSubtle;
+
+  /// The background of a *filled* destructive button — see [accentFill].
+  final Color dangerFill;
 
   /// Neutral informational highlights.
   final Color info;
@@ -109,17 +120,22 @@ class WorkPulseColors extends ThemeExtension<WorkPulseColors> {
     required this.accent,
     required this.accentHover,
     required this.accentSubtle,
+    required this.accentFill,
     required this.success,
     required this.successSubtle,
     required this.warning,
     required this.warningSubtle,
     required this.danger,
     required this.dangerSubtle,
+    required this.dangerFill,
     required this.info,
     required this.infoSubtle,
   });
 
   /// Dark appearance — the app's default.
+  ///
+  /// Every text and semantic colour here clears WCAG AA (4.5:1) against
+  /// [background], [surface] and [card]; design_system_test.dart enforces it.
   static const WorkPulseColors dark = WorkPulseColors(
     background: Color(0xFF1A1A1C),
     surface: Color(0xFF232326),
@@ -128,24 +144,26 @@ class WorkPulseColors extends ThemeExtension<WorkPulseColors> {
     surfaceSunken: Color(0xFF151517),
     textPrimary: Color(0xFFF5F5F7),
     textSecondary: Color(0xFFA1A1A8),
-    textTertiary: Color(0xFF6E6E76),
+    textTertiary: Color(0xFF97979F),
     onAccent: Color(0xFFFFFFFF),
     divider: Color(0xFF3A3A3F),
     borderStrong: Color(0xFF4A4A50),
     hover: Color(0x14FFFFFF),
     pressed: Color(0x24FFFFFF),
-    focusRing: Color(0xFF0A84FF),
+    focusRing: Color(0xFF1C96FF),
     overlay: Color(0x99000000),
-    selected: Color(0x260A84FF),
-    accent: Color(0xFF0A84FF),
-    accentHover: Color(0xFF3D9DFF),
-    accentSubtle: Color(0x1F0A84FF),
+    selected: Color(0x261C96FF),
+    accent: Color(0xFF1C96FF),
+    accentHover: Color(0xFF52ABFF),
+    accentSubtle: Color(0x1F1C96FF),
+    accentFill: Color(0xFF0076DF),
     success: Color(0xFF30D158),
     successSubtle: Color(0x2630D158),
     warning: Color(0xFFFF9F0A),
     warningSubtle: Color(0x26FF9F0A),
-    danger: Color(0xFFFF453A),
+    danger: Color(0xFFFF5A4F),
     dangerSubtle: Color(0x26FF453A),
+    dangerFill: Color(0xFFDC372C),
     info: Color(0xFF64D2FF),
     infoSubtle: Color(0x2664D2FF),
   );
@@ -159,26 +177,29 @@ class WorkPulseColors extends ThemeExtension<WorkPulseColors> {
     surfaceSunken: Color(0xFFEDEDF0),
     textPrimary: Color(0xFF1C1C1E),
     textSecondary: Color(0xFF60606A),
-    textTertiary: Color(0xFF8E8E96),
+    textTertiary: Color(0xFF6B6B73),
     onAccent: Color(0xFFFFFFFF),
     divider: Color(0xFFE2E2E7),
     borderStrong: Color(0xFFC9C9D0),
     hover: Color(0x0A000000),
     pressed: Color(0x14000000),
-    focusRing: Color(0xFF0A84FF),
+    focusRing: Color(0xFF0067EC),
     overlay: Color(0x40000000),
-    selected: Color(0x1A007AFF),
-    accent: Color(0xFF007AFF),
-    accentHover: Color(0xFF0063D1),
-    accentSubtle: Color(0x14007AFF),
-    // Slightly darkened from the dark-mode values so they stay legible
-    // against white surfaces.
-    success: Color(0xFF248A3D),
+    selected: Color(0x1A0067EC),
+    accent: Color(0xFF0067EC),
+    accentHover: Color(0xFF0052BE),
+    accentSubtle: Color(0x140067EC),
+    accentFill: Color(0xFF0067EC),
+    // Darkened from the dark-mode values so every one of them clears WCAG
+    // AA (4.5:1) as text on background, surface and card. Enforced by
+    // design_system_test.dart.
+    success: Color(0xFF197F32),
     successSubtle: Color(0x1F30D158),
     warning: Color(0xFFB25000),
     warningSubtle: Color(0x1FFF9F0A),
     danger: Color(0xFFD70015),
     dangerSubtle: Color(0x1FFF453A),
+    dangerFill: Color(0xFFD70015),
     info: Color(0xFF0071A4),
     infoSubtle: Color(0x1F64D2FF),
   );
@@ -204,12 +225,14 @@ class WorkPulseColors extends ThemeExtension<WorkPulseColors> {
     Color? accent,
     Color? accentHover,
     Color? accentSubtle,
+    Color? accentFill,
     Color? success,
     Color? successSubtle,
     Color? warning,
     Color? warningSubtle,
     Color? danger,
     Color? dangerSubtle,
+    Color? dangerFill,
     Color? info,
     Color? infoSubtle,
   }) {
@@ -233,12 +256,14 @@ class WorkPulseColors extends ThemeExtension<WorkPulseColors> {
       accent: accent ?? this.accent,
       accentHover: accentHover ?? this.accentHover,
       accentSubtle: accentSubtle ?? this.accentSubtle,
+      accentFill: accentFill ?? this.accentFill,
       success: success ?? this.success,
       successSubtle: successSubtle ?? this.successSubtle,
       warning: warning ?? this.warning,
       warningSubtle: warningSubtle ?? this.warningSubtle,
       danger: danger ?? this.danger,
       dangerSubtle: dangerSubtle ?? this.dangerSubtle,
+      dangerFill: dangerFill ?? this.dangerFill,
       info: info ?? this.info,
       infoSubtle: infoSubtle ?? this.infoSubtle,
     );
@@ -268,12 +293,14 @@ class WorkPulseColors extends ThemeExtension<WorkPulseColors> {
       accent: c(accent, other.accent),
       accentHover: c(accentHover, other.accentHover),
       accentSubtle: c(accentSubtle, other.accentSubtle),
+      accentFill: c(accentFill, other.accentFill),
       success: c(success, other.success),
       successSubtle: c(successSubtle, other.successSubtle),
       warning: c(warning, other.warning),
       warningSubtle: c(warningSubtle, other.warningSubtle),
       danger: c(danger, other.danger),
       dangerSubtle: c(dangerSubtle, other.dangerSubtle),
+      dangerFill: c(dangerFill, other.dangerFill),
       info: c(info, other.info),
       infoSubtle: c(infoSubtle, other.infoSubtle),
     );

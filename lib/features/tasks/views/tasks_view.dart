@@ -86,7 +86,7 @@ class _TasksViewState extends ConsumerState<TasksView> {
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: ElevatedButton.styleFrom(
-              backgroundColor: ctx.colors.danger,
+              backgroundColor: ctx.colors.dangerFill,
               foregroundColor: Colors.white,
             ),
             child: const Text('Delete'),

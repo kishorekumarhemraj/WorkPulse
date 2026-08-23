@@ -64,7 +64,7 @@ class SessionHistoryView extends ConsumerWidget {
           ElevatedButton(
             onPressed: () => Navigator.of(ctx).pop(true),
             style: ElevatedButton.styleFrom(
-              backgroundColor: context.colors.danger,
+              backgroundColor: context.colors.dangerFill,
               foregroundColor: Colors.white,
             ),
             child: const Text('Delete'),
