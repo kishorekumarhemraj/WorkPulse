@@ -24,7 +24,7 @@ class DatabaseService {
 
   Database get database {
     if (_db == null) {
-      throw const DatabaseException('Database has not been initialized. Call initialize() first.');
+      throw const AppDatabaseException('Database has not been initialized. Call initialize() first.');
     }
     return _db!;
   }

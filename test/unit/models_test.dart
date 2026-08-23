@@ -12,7 +12,7 @@ import 'package:workpulse/domain/models/workspace_model.dart';
 void main() {
   group('Domain Models Unit Tests', () {
     test('Workspace model equality and copyWith', () {
-      const w1 = Workspace(
+      final w1 = Workspace(
         id: 'ws-1',
         name: 'Default',
         createdAt: DateTime.utc(2026, 8, 23, 10, 0),
@@ -26,7 +26,7 @@ void main() {
     });
 
     test('Project model equality and copyWith', () {
-      const p1 = Project(
+      final p1 = Project(
         id: 'p-1',
         workspaceId: 'ws-1',
         name: 'WorkPulse Core',
@@ -44,7 +44,7 @@ void main() {
     });
 
     test('Category model equality and copyWith', () {
-      const c1 = Category(
+      final c1 = Category(
         id: 'c-1',
         workspaceId: 'ws-1',
         name: 'Engineering',
@@ -59,14 +59,14 @@ void main() {
     });
 
     test('Tag & Person model properties', () {
-      const tag = Tag(
+      final tag = Tag(
         id: 't-1',
         workspaceId: 'ws-1',
         name: 'Deep Work',
         colorHex: '#30D158',
         createdAt: DateTime.utc(2026, 8, 23, 10, 0),
       );
-      const person = Person(
+      final person = Person(
         id: 'per-1',
         workspaceId: 'ws-1',
         name: 'Richard',
@@ -81,15 +81,15 @@ void main() {
     });
 
     test('WorkItem model properties and relations (no hardcoded Jira)', () {
-      const workItem = WorkItem(
+      final workItem = WorkItem(
         id: 'wi-1',
         workspaceId: 'ws-1',
         name: 'Architecture proposal',
         projectId: 'p-1',
         categoryId: 'c-1',
         notes: 'Refactor spec alignment',
-        tagIds: ['t-1', 't-2'],
-        peopleIds: ['per-1'],
+        tagIds: const ['t-1', 't-2'],
+        peopleIds: const ['per-1'],
         createdAt: DateTime.utc(2026, 8, 23, 10, 0),
         updatedAt: DateTime.utc(2026, 8, 23, 10, 0),
       );
@@ -144,7 +144,7 @@ void main() {
     });
 
     test('Configurable Attributes models (Definition, Option, Values)', () {
-      const def = AttributeDefinition(
+      final def = AttributeDefinition(
         id: 'ad-1',
         workspaceId: 'ws-1',
         key: 'jira_id',
@@ -157,7 +157,7 @@ void main() {
         updatedAt: DateTime.utc(2026, 8, 23, 10, 0),
       );
 
-      const opt = AttributeOption(
+      final opt = AttributeOption(
         id: 'ao-1',
         attributeDefinitionId: 'ad-2',
         value: 'prod',
@@ -168,7 +168,7 @@ void main() {
         createdAt: DateTime.utc(2026, 8, 23, 10, 0),
       );
 
-      const wiVal = WorkItemAttributeValue(
+      final wiVal = WorkItemAttributeValue(
         id: 'wiav-1',
         workItemId: 'wi-1',
         attributeDefinitionId: 'ad-1',
@@ -177,7 +177,7 @@ void main() {
         updatedAt: DateTime.utc(2026, 8, 23, 10, 0),
       );
 
-      const sessVal = SessionAttributeValue(
+      final sessVal = SessionAttributeValue(
         id: 'sav-1',
         sessionId: 's-1',
         attributeDefinitionId: 'ad-3',

@@ -59,7 +59,7 @@ class SqliteCategoryRepository implements CategoryRepository {
       );
       return category;
     } catch (e) {
-      throw DatabaseException('Failed to create category: $e');
+      throw AppDatabaseException('Failed to create category: $e');
     }
   }
 

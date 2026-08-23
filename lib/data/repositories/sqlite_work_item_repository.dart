@@ -185,7 +185,7 @@ class SqliteWorkItemRepository implements WorkItemRepository {
       });
       return workItem;
     } catch (e) {
-      throw DatabaseException('Failed to create work item: $e');
+      throw AppDatabaseException('Failed to create work item: $e');
     }
   }
 
@@ -236,7 +236,7 @@ class SqliteWorkItemRepository implements WorkItemRepository {
     } on NotFoundException {
       rethrow;
     } catch (e) {
-      throw DatabaseException('Failed to update work item: $e');
+      throw AppDatabaseException('Failed to update work item: $e');
     }
   }
 

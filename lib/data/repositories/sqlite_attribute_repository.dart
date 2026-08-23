@@ -81,7 +81,7 @@ class SqliteAttributeRepository implements AttributeRepository {
       );
       return definition;
     } catch (e) {
-      throw DatabaseException('Failed to create attribute definition: $e');
+      throw AppDatabaseException('Failed to create attribute definition: $e');
     }
   }
 
@@ -155,7 +155,7 @@ class SqliteAttributeRepository implements AttributeRepository {
       );
       return option;
     } catch (e) {
-      throw DatabaseException('Failed to create attribute option: $e');
+      throw AppDatabaseException('Failed to create attribute option: $e');
     }
   }
 
@@ -223,7 +223,7 @@ class SqliteAttributeRepository implements AttributeRepository {
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
     } catch (e) {
-      throw DatabaseException('Failed to set work item attribute value: $e');
+      throw AppDatabaseException('Failed to set work item attribute value: $e');
     }
   }
 
@@ -270,7 +270,7 @@ class SqliteAttributeRepository implements AttributeRepository {
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
     } catch (e) {
-      throw DatabaseException('Failed to set session attribute value: $e');
+      throw AppDatabaseException('Failed to set session attribute value: $e');
     }
   }
 
