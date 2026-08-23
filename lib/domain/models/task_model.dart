@@ -11,6 +11,7 @@ class Task extends Equatable {
   final String? notes;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final DateTime? lastWorkedAt;
 
   const Task({
     required this.id,
@@ -23,6 +24,7 @@ class Task extends Equatable {
     this.notes,
     required this.createdAt,
     required this.updatedAt,
+    this.lastWorkedAt,
   });
 
   Task copyWith({
@@ -36,6 +38,7 @@ class Task extends Equatable {
     String? notes,
     DateTime? createdAt,
     DateTime? updatedAt,
+    DateTime? lastWorkedAt,
   }) {
     return Task(
       id: id ?? this.id,
@@ -48,6 +51,7 @@ class Task extends Equatable {
       notes: notes ?? this.notes,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      lastWorkedAt: lastWorkedAt ?? this.lastWorkedAt,
     );
   }
 
@@ -63,5 +67,6 @@ class Task extends Equatable {
         notes,
         createdAt,
         updatedAt,
+        lastWorkedAt,
       ];
 }
