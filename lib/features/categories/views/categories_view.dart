@@ -52,14 +52,8 @@ class _CategoriesViewState extends ConsumerState<CategoriesView> {
                 SizedBox(width: 16),
                 ElevatedButton.icon(
                   onPressed: () => CategoryFormDialog.show(context),
-                  icon: Icon(Icons.add, size: 18),
-                  label: Text('New Category'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryColor,
-                    foregroundColor: Colors.white,
-                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  ),
+                  icon: const Icon(Icons.add, size: 18),
+                  label: const Text('New Category'),
                 ),
               ],
             ),
@@ -68,22 +62,14 @@ class _CategoriesViewState extends ConsumerState<CategoriesView> {
             // Search bar
             SizedBox(
               width: 320,
+              height: 38,
               child: TextField(
                 onChanged: (value) => setState(() => _searchQuery = value.trim().toLowerCase()),
+                style: TextStyle(fontSize: 13, color: AppTheme.getColors(context).textPrimary),
                 decoration: InputDecoration(
                   hintText: 'Search categories...',
                   prefixIcon: Icon(Icons.search, size: 18, color: AppTheme.getColors(context).textSecondary),
-                  filled: true,
-                  fillColor: AppTheme.getColors(context).surface,
-                  contentPadding: EdgeInsets.symmetric(vertical: 0, horizontal: 12),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: AppTheme.getColors(context).divider),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: AppTheme.getColors(context).divider),
-                  ),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 ),
               ),
             ),
