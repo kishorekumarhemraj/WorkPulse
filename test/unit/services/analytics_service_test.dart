@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:workpulse/core/database/database_service.dart';
@@ -13,6 +12,7 @@ import 'package:workpulse/data/repositories/sqlite_tag_repository.dart';
 import 'package:workpulse/data/repositories/sqlite_work_item_repository.dart';
 import 'package:workpulse/domain/models/attribute_model.dart';
 import 'package:workpulse/domain/models/category_model.dart';
+import 'package:workpulse/domain/models/date_range.dart';
 import 'package:workpulse/domain/models/idle_period_model.dart';
 import 'package:workpulse/domain/models/person_model.dart';
 import 'package:workpulse/domain/models/project_model.dart';
@@ -70,30 +70,65 @@ void main() {
       await dbService.close();
     });
 
-    test('getDashboardData aggregates multi-dimensional time tracking with idle deductions', () async {
+    test(
+        'getDashboardData aggregates multi-dimensional time tracking with idle deductions',
+        () async {
       final now = DateTime.utc(2026, 8, 23, 12, 0, 0);
 
       // 1. Seed Projects & Categories
       final projAlpha = await projectRepo.create(
-        Project(id: 'proj-alpha', workspaceId: wsId, name: 'Alpha Project', colorHex: '#0A84FF', createdAt: now, updatedAt: now),
+        Project(
+            id: 'proj-alpha',
+            workspaceId: wsId,
+            name: 'Alpha Project',
+            colorHex: '#0A84FF',
+            createdAt: now,
+            updatedAt: now),
       );
       final projBeta = await projectRepo.create(
-        Project(id: 'proj-beta', workspaceId: wsId, name: 'Beta Project', colorHex: '#30D158', createdAt: now, updatedAt: now),
+        Project(
+            id: 'proj-beta',
+            workspaceId: wsId,
+            name: 'Beta Project',
+            colorHex: '#30D158',
+            createdAt: now,
+            updatedAt: now),
       );
 
       final catDev = await categoryRepo.create(
-        Category(id: 'cat-dev', workspaceId: wsId, name: 'Development', iconName: 'code', createdAt: now, updatedAt: now),
+        Category(
+            id: 'cat-dev',
+            workspaceId: wsId,
+            name: 'Development',
+            iconName: 'code',
+            createdAt: now,
+            updatedAt: now),
       );
       final catDesign = await categoryRepo.create(
-        Category(id: 'cat-design', workspaceId: wsId, name: 'Design', iconName: 'brush', createdAt: now, updatedAt: now),
+        Category(
+            id: 'cat-design',
+            workspaceId: wsId,
+            name: 'Design',
+            iconName: 'brush',
+            createdAt: now,
+            updatedAt: now),
       );
 
       // 2. Seed Tag & Person
       final tagUrgent = await tagRepo.create(
-        Tag(id: 'tag-urgent', workspaceId: wsId, name: 'Urgent', colorHex: '#FF453A', createdAt: now),
+        Tag(
+            id: 'tag-urgent',
+            workspaceId: wsId,
+            name: 'Urgent',
+            colorHex: '#FF453A',
+            createdAt: now),
       );
       final personAlice = await personRepo.create(
-        Person(id: 'person-alice', workspaceId: wsId, name: 'Alice Smith', createdAt: now),
+        Person(
+            id: 'person-alice',
+            workspaceId: wsId,
+            name: 'Alice Smith',
+            createdAt: now),
       );
 
       // 3. Seed Work Items
@@ -191,7 +226,7 @@ void main() {
       );
 
       // 6. Query Dashboard Data
-      final range = DateTimeRange(
+      final range = DateRange(
         start: DateTime.utc(2026, 8, 23, 0, 0, 0),
         end: DateTime.utc(2026, 8, 23, 23, 59, 59),
       );
@@ -204,23 +239,27 @@ void main() {
       // Summary assertions
       expect(data.summary.totalTrackedDuration, const Duration(minutes: 90));
       expect(data.summary.totalIdleDuration, const Duration(minutes: 15));
-      expect(data.summary.totalActiveDuration, const Duration(minutes: 75)); // 45 + 30
+      expect(data.summary.totalActiveDuration,
+          const Duration(minutes: 75)); // 45 + 30
       expect(data.summary.sessionCount, 2);
       expect(data.summary.taskCount, 2);
 
       // Project Breakdown assertions
       expect(data.projectBreakdown.length, 2);
-      final alphaProj = data.projectBreakdown.firstWhere((p) => p.id == projAlpha.id);
+      final alphaProj =
+          data.projectBreakdown.firstWhere((p) => p.id == projAlpha.id);
       expect(alphaProj.duration, const Duration(minutes: 45));
       expect(alphaProj.percentage, closeTo(60.0, 0.1)); // 45/75 = 60%
 
-      final betaProj = data.projectBreakdown.firstWhere((p) => p.id == projBeta.id);
+      final betaProj =
+          data.projectBreakdown.firstWhere((p) => p.id == projBeta.id);
       expect(betaProj.duration, const Duration(minutes: 30));
       expect(betaProj.percentage, closeTo(40.0, 0.1)); // 30/75 = 40%
 
       // Category Breakdown assertions
       expect(data.categoryBreakdown.length, 2);
-      final devCat = data.categoryBreakdown.firstWhere((c) => c.id == catDev.id);
+      final devCat =
+          data.categoryBreakdown.firstWhere((c) => c.id == catDev.id);
       expect(devCat.duration, const Duration(minutes: 45));
 
       // Tag Breakdown assertions

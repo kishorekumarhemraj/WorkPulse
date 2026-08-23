@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:flutter/material.dart';
+import 'package:workpulse/domain/models/date_range.dart';
 import 'package:intl/intl.dart';
 import 'package:workpulse/domain/models/attribute_model.dart';
 import 'package:workpulse/domain/models/category_model.dart';
@@ -82,15 +82,20 @@ class ExportService {
   /// Retrieves structured export records within a date range.
   Future<List<SessionExportRecord>> getExportRecords({
     required String workspaceId,
-    required DateTimeRange range,
+    required DateRange range,
   }) async {
-    final allSessions = await _sessionRepository.getByDateRange(range.start, range.end);
-    final allWorkItems = await _workItemRepository.getAll(workspaceId: workspaceId);
-    final allProjects = await _projectRepository.getAll(workspaceId: workspaceId);
-    final allCategories = await _categoryRepository.getAll(workspaceId: workspaceId);
+    final allSessions =
+        await _sessionRepository.getByDateRange(range.start, range.end);
+    final allWorkItems =
+        await _workItemRepository.getAll(workspaceId: workspaceId);
+    final allProjects =
+        await _projectRepository.getAll(workspaceId: workspaceId);
+    final allCategories =
+        await _categoryRepository.getAll(workspaceId: workspaceId);
     final allTags = await _tagRepository.getAll(workspaceId: workspaceId);
     final allPeople = await _personRepository.getAll(workspaceId: workspaceId);
-    final allDefinitions = await _attributeRepository.getDefinitions(workspaceId: workspaceId);
+    final allDefinitions =
+        await _attributeRepository.getDefinitions(workspaceId: workspaceId);
 
     final workItemMap = {for (final w in allWorkItems) w.id: w};
     final projectMap = {for (final p in allProjects) p.id: p};
@@ -100,7 +105,8 @@ class ExportService {
 
     final optionCache = <String, Map<String, AttributeOption>>{};
     for (final def in allDefinitions) {
-      if (def.type == AttributeType.singleSelect || def.type == AttributeType.multiSelect) {
+      if (def.type == AttributeType.singleSelect ||
+          def.type == AttributeType.multiSelect) {
         final opts = await _attributeRepository.getOptions(def.id);
         optionCache[def.id] = {for (final o in opts) o.id: o};
       }
@@ -116,11 +122,14 @@ class ExportService {
       final category = categoryMap[workItem.categoryId];
 
       // Tags
-      final itemTags = workItem.tagIds.map((tid) => tagMap[tid]).whereType<Tag>().toList();
+      final itemTags =
+          workItem.tagIds.map((tid) => tagMap[tid]).whereType<Tag>().toList();
 
       // People
-      final peopleIds = s.peopleIds.isNotEmpty ? s.peopleIds : workItem.peopleIds;
-      final itemPeople = peopleIds.map((pid) => personMap[pid]).whereType<Person>().toList();
+      final peopleIds =
+          s.peopleIds.isNotEmpty ? s.peopleIds : workItem.peopleIds;
+      final itemPeople =
+          peopleIds.map((pid) => personMap[pid]).whereType<Person>().toList();
 
       // Idle Periods
       final idles = await _idlePeriodRepository.getIdlePeriodsForSession(s.id);
@@ -135,7 +144,8 @@ class ExportService {
       final net = gross > totalIdle ? gross - totalIdle : Duration.zero;
 
       // Custom Attributes (Task + Session values)
-      final taskValues = await _attributeRepository.getWorkItemValues(workItem.id);
+      final taskValues =
+          await _attributeRepository.getWorkItemValues(workItem.id);
       final sessionValues = await _attributeRepository.getSessionValues(s.id);
 
       final attrMap = <String, String>{};
@@ -145,14 +155,32 @@ class ExportService {
 
         String? formatted;
         if (def.scope == AttributeScope.session) {
-          final sVal = sessionValues.where((v) => v.attributeDefinitionId == def.id).firstOrNull;
+          final sVal = sessionValues
+              .where((v) => v.attributeDefinitionId == def.id)
+              .firstOrNull;
           if (sVal != null) {
-            formatted = _formatAttributeValue(def, sVal.textValue, sVal.numberValue, sVal.booleanValue, sVal.dateValue, sVal.optionId, optionCache[def.id]);
+            formatted = _formatAttributeValue(
+                def,
+                sVal.textValue,
+                sVal.numberValue,
+                sVal.booleanValue,
+                sVal.dateValue,
+                sVal.optionId,
+                optionCache[def.id]);
           }
         } else {
-          final tVal = taskValues.where((v) => v.attributeDefinitionId == def.id).firstOrNull;
+          final tVal = taskValues
+              .where((v) => v.attributeDefinitionId == def.id)
+              .firstOrNull;
           if (tVal != null) {
-            formatted = _formatAttributeValue(def, tVal.textValue, tVal.numberValue, tVal.booleanValue, tVal.dateValue, tVal.optionId, optionCache[def.id]);
+            formatted = _formatAttributeValue(
+                def,
+                tVal.textValue,
+                tVal.numberValue,
+                tVal.booleanValue,
+                tVal.dateValue,
+                tVal.optionId,
+                optionCache[def.id]);
           }
         }
 
@@ -185,12 +213,14 @@ class ExportService {
   /// Generates RFC 4180 standard CSV string.
   Future<String> generateCsv({
     required String workspaceId,
-    required DateTimeRange range,
+    required DateRange range,
   }) async {
-    final records = await getExportRecords(workspaceId: workspaceId, range: range);
-    final definitions = (await _attributeRepository.getDefinitions(workspaceId: workspaceId))
-        .where((d) => d.enabled && !d.isArchived)
-        .toList();
+    final records =
+        await getExportRecords(workspaceId: workspaceId, range: range);
+    final definitions =
+        (await _attributeRepository.getDefinitions(workspaceId: workspaceId))
+            .where((d) => d.enabled && !d.isArchived)
+            .toList();
 
     final buffer = StringBuffer();
 
@@ -223,7 +253,8 @@ class ExportService {
       final s = r.session;
       final dateStr = dateFormat.format(s.startTime.toLocal());
       final startStr = timeFormat.format(s.startTime);
-      final endStr = s.endTime != null ? timeFormat.format(s.endTime!) : 'In Progress';
+      final endStr =
+          s.endTime != null ? timeFormat.format(s.endTime!) : 'In Progress';
       final projStr = r.project?.name ?? '';
       final catStr = r.category?.name ?? '';
       final taskStr = r.workItem.name;
@@ -236,7 +267,8 @@ class ExportService {
       final grossSec = r.grossDuration.inSeconds.toString();
       final netSec = r.netActiveDuration.inSeconds.toString();
 
-      final customFields = definitions.map((def) => r.attributeValues[def.id] ?? '').toList();
+      final customFields =
+          definitions.map((def) => r.attributeValues[def.id] ?? '').toList();
 
       final row = [
         dateStr,
@@ -265,13 +297,15 @@ class ExportService {
   /// Generates full structured JSON export.
   Future<String> generateJson({
     required String workspaceId,
-    required DateTimeRange range,
+    required DateRange range,
   }) async {
     final workspace = await _workspaceRepository.getById(workspaceId);
-    final records = await getExportRecords(workspaceId: workspaceId, range: range);
-    final definitions = (await _attributeRepository.getDefinitions(workspaceId: workspaceId))
-        .where((d) => d.enabled && !d.isArchived)
-        .toList();
+    final records =
+        await getExportRecords(workspaceId: workspaceId, range: range);
+    final definitions =
+        (await _attributeRepository.getDefinitions(workspaceId: workspaceId))
+            .where((d) => d.enabled && !d.isArchived)
+            .toList();
 
     Duration totalGross = Duration.zero;
     Duration totalIdle = Duration.zero;
@@ -299,8 +333,10 @@ class ExportService {
         'totalGrossDurationSeconds': totalGross.inSeconds,
         'totalIdleDurationSeconds': totalIdle.inSeconds,
         'totalNetDurationSeconds': totalNet.inSeconds,
-        'totalGrossDurationFormatted': TimerService.formatDuration(totalGross, includeSeconds: true),
-        'totalNetDurationFormatted': TimerService.formatDuration(totalNet, includeSeconds: true),
+        'totalGrossDurationFormatted':
+            TimerService.formatDuration(totalGross, includeSeconds: true),
+        'totalNetDurationFormatted':
+            TimerService.formatDuration(totalNet, includeSeconds: true),
       },
       'attributeDefinitions': definitions
           .map<Map<String, dynamic>>((d) => {
@@ -339,7 +375,9 @@ class ExportService {
                   'iconName': r.category!.iconName,
                 }
               : null,
-          'tags': r.tags.map((t) => {'id': t.id, 'name': t.name, 'colorHex': t.colorHex}).toList(),
+          'tags': r.tags
+              .map((t) => {'id': t.id, 'name': t.name, 'colorHex': t.colorHex})
+              .toList(),
           'people': r.people.map((p) => {'id': p.id, 'name': p.name}).toList(),
           'idlePeriods': r.idlePeriods
               .map((i) => {
@@ -371,11 +409,15 @@ class ExportService {
       case AttributeType.text:
         return text ?? '';
       case AttributeType.number:
-        return number != null ? (number % 1 == 0 ? number.toInt().toString() : number.toString()) : '';
+        return number != null
+            ? (number % 1 == 0 ? number.toInt().toString() : number.toString())
+            : '';
       case AttributeType.boolean:
         return boolean != null ? (boolean ? 'Yes' : 'No') : '';
       case AttributeType.date:
-        return date != null ? DateFormat('yyyy-MM-dd').format(date.toLocal()) : '';
+        return date != null
+            ? DateFormat('yyyy-MM-dd').format(date.toLocal())
+            : '';
       case AttributeType.singleSelect:
         if (optionId != null && options != null) {
           return options[optionId]?.label ?? optionId;
@@ -400,7 +442,10 @@ class ExportService {
   }
 
   static String _escapeCsv(String value) {
-    if (value.contains(',') || value.contains('"') || value.contains('\n') || value.contains('\r')) {
+    if (value.contains(',') ||
+        value.contains('"') ||
+        value.contains('\n') ||
+        value.contains('\r')) {
       final escaped = value.replaceAll('"', '""');
       return '"$escaped"';
     }

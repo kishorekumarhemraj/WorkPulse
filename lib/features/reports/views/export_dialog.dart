@@ -4,12 +4,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:workpulse/core/theme/app_theme.dart';
 import 'package:workpulse/domain/models/analytics_model.dart';
+import 'package:workpulse/domain/models/date_range.dart';
 import 'package:workpulse/features/reports/providers/reports_provider.dart';
 import 'package:workpulse/features/workspace/providers/workspace_provider.dart';
 
 enum ExportFormat {
-  csv('CSV (Spreadsheet / Excel)', 'Exports tabular data compatible with Excel, Google Sheets, Numbers'),
-  json('JSON (Structured Backup)', 'Exports complete hierarchical data with full metadata');
+  csv('CSV (Spreadsheet / Excel)',
+      'Exports tabular data compatible with Excel, Google Sheets, Numbers'),
+  json('JSON (Structured Backup)',
+      'Exports complete hierarchical data with full metadata');
 
   final String title;
   final String description;
@@ -44,10 +47,11 @@ class _ExportDialogState extends ConsumerState<ExportDialog> {
       context: context,
       firstDate: DateTime(now.year - 2),
       lastDate: DateTime(now.year + 1),
-      initialDateRange: _customRange ?? DateTimeRange(
-        start: now.subtract(const Duration(days: 7)),
-        end: now,
-      ),
+      initialDateRange: _customRange ??
+          DateTimeRange(
+            start: now.subtract(const Duration(days: 7)),
+            end: now,
+          ),
       builder: (context, child) {
         return Theme(
           data: ThemeData.dark().copyWith(
@@ -73,14 +77,19 @@ class _ExportDialogState extends ConsumerState<ExportDialog> {
     setState(() => _isExporting = true);
     try {
       final workspace = await ref.read(currentWorkspaceProvider.future);
-      final range = _selectedRange.toDateTimeRange(customRange: _customRange);
+      final domainCustom = _customRange != null
+          ? DateRange(start: _customRange!.start, end: _customRange!.end)
+          : null;
+      final range = _selectedRange.toDateRange(customRange: domainCustom);
       final exportService = ref.read(exportServiceProvider);
 
       String content;
       if (_format == ExportFormat.csv) {
-        content = await exportService.generateCsv(workspaceId: workspace.id, range: range);
+        content = await exportService.generateCsv(
+            workspaceId: workspace.id, range: range);
       } else {
-        content = await exportService.generateJson(workspaceId: workspace.id, range: range);
+        content = await exportService.generateJson(
+            workspaceId: workspace.id, range: range);
       }
 
       await Clipboard.setData(ClipboardData(text: content));
@@ -93,7 +102,8 @@ class _ExportDialogState extends ConsumerState<ExportDialog> {
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${_format == ExportFormat.csv ? 'CSV' : 'JSON'} exported and copied to clipboard!'),
+            content: Text(
+                '${_format == ExportFormat.csv ? 'CSV' : 'JSON'} exported and copied to clipboard!'),
             backgroundColor: AppTheme.accentGreen,
           ),
         );
@@ -102,7 +112,9 @@ class _ExportDialogState extends ConsumerState<ExportDialog> {
       if (mounted) {
         setState(() => _isExporting = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Export failed: $e'), backgroundColor: AppTheme.accentRed),
+          SnackBar(
+              content: Text('Export failed: $e'),
+              backgroundColor: AppTheme.accentRed),
         );
       }
     }
@@ -110,8 +122,12 @@ class _ExportDialogState extends ConsumerState<ExportDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final range = _selectedRange.toDateTimeRange(customRange: _customRange);
-    final rangeLabel = '${DateFormat.yMMMd().format(range.start.toLocal())} – ${DateFormat.yMMMd().format(range.end.toLocal())}';
+    final domainCustomBuild = _customRange != null
+        ? DateRange(start: _customRange!.start, end: _customRange!.end)
+        : null;
+    final range = _selectedRange.toDateRange(customRange: domainCustomBuild);
+    final rangeLabel =
+        '${DateFormat.yMMMd().format(range.start.toLocal())} – ${DateFormat.yMMMd().format(range.end.toLocal())}';
 
     return Dialog(
       backgroundColor: AppTheme.surfaceDark,
@@ -136,7 +152,8 @@ class _ExportDialogState extends ConsumerState<ExportDialog> {
                       color: AppTheme.primaryColor.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Icon(Icons.file_download_outlined, size: 20, color: AppTheme.primaryColor),
+                    child: const Icon(Icons.file_download_outlined,
+                        size: 20, color: AppTheme.primaryColor),
                   ),
                   const SizedBox(width: 12),
                   const Expanded(
@@ -145,17 +162,22 @@ class _ExportDialogState extends ConsumerState<ExportDialog> {
                       children: [
                         Text(
                           'Export Work Data',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.textPrimaryDark),
+                          style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.textPrimaryDark),
                         ),
                         Text(
                           'Generate clean reports and structured data backups',
-                          style: TextStyle(fontSize: 12, color: AppTheme.textSecondaryDark),
+                          style: TextStyle(
+                              fontSize: 12, color: AppTheme.textSecondaryDark),
                         ),
                       ],
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.close, size: 18, color: AppTheme.textSecondaryDark),
+                    icon: const Icon(Icons.close,
+                        size: 18, color: AppTheme.textSecondaryDark),
                     onPressed: () => Navigator.of(context).pop(),
                   ),
                 ],
@@ -163,7 +185,11 @@ class _ExportDialogState extends ConsumerState<ExportDialog> {
               const SizedBox(height: 20),
 
               // Date Range Selection
-              const Text('Date Range', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppTheme.textSecondaryDark)),
+              const Text('Date Range',
+                  style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.textSecondaryDark)),
               const SizedBox(height: 8),
               Container(
                 padding: const EdgeInsets.all(4),
@@ -188,7 +214,9 @@ class _ExportDialogState extends ConsumerState<ExportDialog> {
                         child: Container(
                           padding: const EdgeInsets.symmetric(vertical: 8),
                           decoration: BoxDecoration(
-                            color: isSelected ? AppTheme.primaryColor : Colors.transparent,
+                            color: isSelected
+                                ? AppTheme.primaryColor
+                                : Colors.transparent,
                             borderRadius: BorderRadius.circular(6),
                           ),
                           alignment: Alignment.center,
@@ -196,8 +224,12 @@ class _ExportDialogState extends ConsumerState<ExportDialog> {
                             r.label,
                             style: TextStyle(
                               fontSize: 12,
-                              fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                              color: isSelected ? Colors.white : AppTheme.textSecondaryDark,
+                              fontWeight: isSelected
+                                  ? FontWeight.bold
+                                  : FontWeight.w500,
+                              color: isSelected
+                                  ? Colors.white
+                                  : AppTheme.textSecondaryDark,
                             ),
                           ),
                         ),
@@ -209,12 +241,17 @@ class _ExportDialogState extends ConsumerState<ExportDialog> {
               const SizedBox(height: 6),
               Text(
                 'Selected: $rangeLabel',
-                style: const TextStyle(fontSize: 11, color: AppTheme.textSecondaryDark),
+                style: const TextStyle(
+                    fontSize: 11, color: AppTheme.textSecondaryDark),
               ),
               const SizedBox(height: 20),
 
               // Format Selection
-              const Text('Export Format', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppTheme.textSecondaryDark)),
+              const Text('Export Format',
+                  style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.textSecondaryDark)),
               const SizedBox(height: 8),
               ...ExportFormat.values.map((fmt) {
                 final isSelected = _format == fmt;
@@ -226,19 +263,27 @@ class _ExportDialogState extends ConsumerState<ExportDialog> {
                     child: Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: isSelected ? AppTheme.primaryColor.withValues(alpha: 0.1) : AppTheme.cardDark,
+                        color: isSelected
+                            ? AppTheme.primaryColor.withValues(alpha: 0.1)
+                            : AppTheme.cardDark,
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(
-                          color: isSelected ? AppTheme.primaryColor : AppTheme.dividerDark,
+                          color: isSelected
+                              ? AppTheme.primaryColor
+                              : AppTheme.dividerDark,
                           width: isSelected ? 1.5 : 1,
                         ),
                       ),
                       child: Row(
                         children: [
                           Icon(
-                            fmt == ExportFormat.csv ? Icons.table_chart_outlined : Icons.code,
+                            fmt == ExportFormat.csv
+                                ? Icons.table_chart_outlined
+                                : Icons.code,
                             size: 20,
-                            color: isSelected ? AppTheme.primaryColor : AppTheme.textSecondaryDark,
+                            color: isSelected
+                                ? AppTheme.primaryColor
+                                : AppTheme.textSecondaryDark,
                           ),
                           const SizedBox(width: 12),
                           Expanded(
@@ -249,19 +294,26 @@ class _ExportDialogState extends ConsumerState<ExportDialog> {
                                   fmt.title,
                                   style: TextStyle(
                                     fontSize: 13,
-                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                                    color: isSelected ? Colors.white : AppTheme.textPrimaryDark,
+                                    fontWeight: isSelected
+                                        ? FontWeight.bold
+                                        : FontWeight.w500,
+                                    color: isSelected
+                                        ? Colors.white
+                                        : AppTheme.textPrimaryDark,
                                   ),
                                 ),
                                 Text(
                                   fmt.description,
-                                  style: const TextStyle(fontSize: 11, color: AppTheme.textSecondaryDark),
+                                  style: const TextStyle(
+                                      fontSize: 11,
+                                      color: AppTheme.textSecondaryDark),
                                 ),
                               ],
                             ),
                           ),
                           if (isSelected)
-                            const Icon(Icons.check_circle, size: 18, color: AppTheme.primaryColor),
+                            const Icon(Icons.check_circle,
+                                size: 18, color: AppTheme.primaryColor),
                         ],
                       ),
                     ),
@@ -276,20 +328,29 @@ class _ExportDialogState extends ConsumerState<ExportDialog> {
                 children: [
                   TextButton(
                     onPressed: () => Navigator.of(context).pop(),
-                    child: const Text('Cancel', style: TextStyle(color: AppTheme.textSecondaryDark)),
+                    child: const Text('Cancel',
+                        style: TextStyle(color: AppTheme.textSecondaryDark)),
                   ),
                   const SizedBox(width: 12),
                   ElevatedButton.icon(
                     onPressed: _isExporting ? null : _exportData,
                     icon: _isExporting
-                        ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                        ? const SizedBox(
+                            width: 14,
+                            height: 14,
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2, color: Colors.white))
                         : const Icon(Icons.copy, size: 16),
-                    label: Text(_exportedContent != null ? 'Copied to Clipboard!' : 'Copy to Clipboard'),
+                    label: Text(_exportedContent != null
+                        ? 'Copied to Clipboard!'
+                        : 'Copy to Clipboard'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppTheme.primaryColor,
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 18, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8)),
                     ),
                   ),
                 ],

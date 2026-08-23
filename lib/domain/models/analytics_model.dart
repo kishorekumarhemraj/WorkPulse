@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
-import 'package:flutter/material.dart';
 import 'package:workpulse/domain/models/attribute_model.dart';
+import 'package:workpulse/domain/models/date_range.dart';
 
 enum DashboardTimeRange {
   today('Today'),
@@ -11,31 +11,35 @@ enum DashboardTimeRange {
   final String label;
   const DashboardTimeRange(this.label);
 
-  DateTimeRange toDateTimeRange({DateTimeRange? customRange, DateTime? referenceTime}) {
+  DateRange toDateRange({DateRange? customRange, DateTime? referenceTime}) {
     final now = referenceTime ?? DateTime.now().toUtc();
 
     switch (this) {
       case DashboardTimeRange.today:
         final start = DateTime.utc(now.year, now.month, now.day);
         final end = DateTime.utc(now.year, now.month, now.day, 23, 59, 59, 999);
-        return DateTimeRange(start: start, end: end);
+        return DateRange(start: start, end: end);
 
       case DashboardTimeRange.thisWeek:
         // Monday as first day of week
         final daysToSubtract = (now.weekday - DateTime.monday) % 7;
-        final startOfWeek = DateTime.utc(now.year, now.month, now.day - daysToSubtract);
-        final endOfWeek = DateTime.utc(now.year, now.month, now.day - daysToSubtract + 6, 23, 59, 59, 999);
-        return DateTimeRange(start: startOfWeek, end: endOfWeek);
+        final startOfWeek =
+            DateTime.utc(now.year, now.month, now.day - daysToSubtract);
+        final endOfWeek = DateTime.utc(
+            now.year, now.month, now.day - daysToSubtract + 6, 23, 59, 59, 999);
+        return DateRange(start: startOfWeek, end: endOfWeek);
 
       case DashboardTimeRange.thisMonth:
         final startOfMonth = DateTime.utc(now.year, now.month, 1);
-        final nextMonth = now.month == 12 ? DateTime.utc(now.year + 1, 1, 1) : DateTime.utc(now.year, now.month + 1, 1);
+        final nextMonth = now.month == 12
+            ? DateTime.utc(now.year + 1, 1, 1)
+            : DateTime.utc(now.year, now.month + 1, 1);
         final endOfMonth = nextMonth.subtract(const Duration(milliseconds: 1));
-        return DateTimeRange(start: startOfMonth, end: endOfMonth);
+        return DateRange(start: startOfMonth, end: endOfMonth);
 
       case DashboardTimeRange.custom:
         return customRange ??
-            DateTimeRange(
+            DateRange(
               start: DateTime.utc(now.year, now.month, now.day),
               end: DateTime.utc(now.year, now.month, now.day, 23, 59, 59, 999),
             );
@@ -88,7 +92,8 @@ class BreakdownItem extends Equatable {
   });
 
   @override
-  List<Object?> get props => [id, name, colorHex, iconName, duration, percentage, sessionCount];
+  List<Object?> get props =>
+      [id, name, colorHex, iconName, duration, percentage, sessionCount];
 }
 
 class DailyActivityItem extends Equatable {
@@ -124,7 +129,7 @@ class AttributeBreakdownGroup extends Equatable {
 }
 
 class DashboardData extends Equatable {
-  final DateTimeRange range;
+  final DateRange range;
   final AnalyticsSummary summary;
   final List<BreakdownItem> projectBreakdown;
   final List<BreakdownItem> categoryBreakdown;

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:workpulse/core/theme/app_theme.dart';
 import 'package:workpulse/domain/models/analytics_model.dart';
+import 'package:workpulse/domain/models/date_range.dart';
 import 'package:workpulse/domain/services/timer_service.dart';
 import 'package:workpulse/features/dashboard/providers/dashboard_provider.dart';
 import 'package:workpulse/features/dashboard/widgets/breakdown_card.dart';
@@ -12,7 +13,7 @@ import 'package:workpulse/features/dashboard/widgets/metric_card.dart';
 class DashboardView extends ConsumerWidget {
   const DashboardView({super.key});
 
-  String _formatRangeSubtitle(DateTimeRange range) {
+  String _formatRangeSubtitle(DateRange range) {
     final startStr = DateFormat.yMMMd().format(range.start.toLocal());
     final endStr = DateFormat.yMMMd().format(range.end.toLocal());
 
@@ -30,10 +31,11 @@ class DashboardView extends ConsumerWidget {
       context: context,
       firstDate: DateTime(now.year - 2),
       lastDate: DateTime(now.year + 1),
-      initialDateRange: currentCustom ?? DateTimeRange(
-        start: now.subtract(const Duration(days: 7)),
-        end: now,
-      ),
+      initialDateRange: currentCustom ??
+          DateTimeRange(
+            start: now.subtract(const Duration(days: 7)),
+            end: now,
+          ),
       builder: (context, child) {
         return Theme(
           data: ThemeData.dark().copyWith(
@@ -49,7 +51,9 @@ class DashboardView extends ConsumerWidget {
 
     if (picked != null) {
       ref.read(customDateRangeProvider.notifier).setCustomRange(picked);
-      ref.read(selectedTimeRangeProvider.notifier).setRange(DashboardTimeRange.custom);
+      ref
+          .read(selectedTimeRangeProvider.notifier)
+          .setRange(DashboardTimeRange.custom);
     }
   }
 
@@ -65,13 +69,19 @@ class DashboardView extends ConsumerWidget {
           child: CircularProgressIndicator(),
         ),
         error: (err, stack) => Center(
-          child: Text('Error loading dashboard: $err', style: const TextStyle(color: AppTheme.accentRed)),
+          child: Text('Error loading dashboard: $err',
+              style: const TextStyle(color: AppTheme.accentRed)),
         ),
         data: (data) {
           final summary = data.summary;
-          final totalTrackedStr = TimerService.formatDuration(summary.totalTrackedDuration, includeSeconds: false);
-          final netActiveStr = TimerService.formatDuration(summary.totalActiveDuration, includeSeconds: false);
-          final idleStr = TimerService.formatDuration(summary.totalIdleDuration, includeSeconds: false);
+          final totalTrackedStr = TimerService.formatDuration(
+              summary.totalTrackedDuration,
+              includeSeconds: false);
+          final netActiveStr = TimerService.formatDuration(
+              summary.totalActiveDuration,
+              includeSeconds: false);
+          final idleStr = TimerService.formatDuration(summary.totalIdleDuration,
+              includeSeconds: false);
 
           return SingleChildScrollView(
             padding: const EdgeInsets.all(24),
@@ -95,7 +105,8 @@ class DashboardView extends ConsumerWidget {
                         const SizedBox(height: 4),
                         Text(
                           _formatRangeSubtitle(data.range),
-                          style: const TextStyle(fontSize: 12, color: AppTheme.textSecondaryDark),
+                          style: const TextStyle(
+                              fontSize: 12, color: AppTheme.textSecondaryDark),
                         ),
                       ],
                     ),
@@ -117,22 +128,31 @@ class DashboardView extends ConsumerWidget {
                               if (r == DashboardTimeRange.custom) {
                                 _pickCustomRange(context, ref);
                               } else {
-                                ref.read(selectedTimeRangeProvider.notifier).setRange(r);
+                                ref
+                                    .read(selectedTimeRangeProvider.notifier)
+                                    .setRange(r);
                               }
                             },
                             borderRadius: BorderRadius.circular(6),
                             child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 6),
                               decoration: BoxDecoration(
-                                color: isSelected ? AppTheme.primaryColor : Colors.transparent,
+                                color: isSelected
+                                    ? AppTheme.primaryColor
+                                    : Colors.transparent,
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: Text(
                                 r.label,
                                 style: TextStyle(
                                   fontSize: 12,
-                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                                  color: isSelected ? Colors.white : AppTheme.textSecondaryDark,
+                                  fontWeight: isSelected
+                                      ? FontWeight.bold
+                                      : FontWeight.w500,
+                                  color: isSelected
+                                      ? Colors.white
+                                      : AppTheme.textSecondaryDark,
                                 ),
                               ),
                             ),
@@ -145,7 +165,8 @@ class DashboardView extends ConsumerWidget {
                     // Refresh Button
                     IconButton(
                       onPressed: () => ref.invalidate(dashboardDataProvider),
-                      icon: const Icon(Icons.refresh, size: 18, color: AppTheme.textSecondaryDark),
+                      icon: const Icon(Icons.refresh,
+                          size: 18, color: AppTheme.textSecondaryDark),
                       tooltip: 'Refresh analytics',
                     ),
                   ],
@@ -210,14 +231,16 @@ class DashboardView extends ConsumerWidget {
                             title: 'Time by Project',
                             icon: Icons.folder_outlined,
                             items: data.projectBreakdown,
-                            emptyMessage: 'No project activity recorded in this period',
+                            emptyMessage:
+                                'No project activity recorded in this period',
                           ),
                           const SizedBox(height: 20),
                           BreakdownCard(
                             title: 'Time by Category',
                             icon: Icons.category_outlined,
                             items: data.categoryBreakdown,
-                            emptyMessage: 'No category activity recorded in this period',
+                            emptyMessage:
+                                'No category activity recorded in this period',
                           ),
                           if (data.tagBreakdown.isNotEmpty) ...[
                             const SizedBox(height: 20),
@@ -240,7 +263,8 @@ class DashboardView extends ConsumerWidget {
                             title: 'Top Tasks Tracked',
                             icon: Icons.checklist,
                             items: data.workItemBreakdown,
-                            emptyMessage: 'No task activity recorded in this period',
+                            emptyMessage:
+                                'No task activity recorded in this period',
                           ),
                           if (data.personBreakdown.isNotEmpty) ...[
                             const SizedBox(height: 20),

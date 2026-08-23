@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:workpulse/domain/models/date_range.dart';
 import 'package:workpulse/domain/models/analytics_model.dart';
 import 'package:workpulse/domain/models/attribute_model.dart';
 import 'package:workpulse/domain/models/idle_period_model.dart';
@@ -42,7 +42,7 @@ class AnalyticsService {
 
   Future<DashboardData> getDashboardData({
     required String workspaceId,
-    required DateTimeRange range,
+    required DateRange range,
   }) async {
     // 1. Fetch sessions in date range
     final allSessions = await _sessionRepository.getByDateRange(
@@ -51,12 +51,16 @@ class AnalyticsService {
     );
 
     // 2. Fetch context entities
-    final allWorkItems = await _workItemRepository.getAll(workspaceId: workspaceId);
-    final allProjects = await _projectRepository.getAll(workspaceId: workspaceId);
-    final allCategories = await _categoryRepository.getAll(workspaceId: workspaceId);
+    final allWorkItems =
+        await _workItemRepository.getAll(workspaceId: workspaceId);
+    final allProjects =
+        await _projectRepository.getAll(workspaceId: workspaceId);
+    final allCategories =
+        await _categoryRepository.getAll(workspaceId: workspaceId);
     final allTags = await _tagRepository.getAll(workspaceId: workspaceId);
     final allPeople = await _personRepository.getAll(workspaceId: workspaceId);
-    final allDefinitions = await _attributeRepository.getDefinitions(workspaceId: workspaceId);
+    final allDefinitions =
+        await _attributeRepository.getDefinitions(workspaceId: workspaceId);
 
     final workItemMap = {for (final w in allWorkItems) w.id: w};
     final projectMap = {for (final p in allProjects) p.id: p};
@@ -91,12 +95,15 @@ class AnalyticsService {
       }
       totalIdle += sessionIdle;
 
-      final netActive = grossDuration > sessionIdle ? grossDuration - sessionIdle : Duration.zero;
+      final netActive = grossDuration > sessionIdle
+          ? grossDuration - sessionIdle
+          : Duration.zero;
       sessionActiveDurations[s.id] = netActive;
       totalActive += netActive;
     }
 
-    final uniqueWorkItemIds = allSessions.map((Session s) => s.workItemId).toSet();
+    final uniqueWorkItemIds =
+        allSessions.map((Session s) => s.workItemId).toSet();
 
     final summary = AnalyticsSummary(
       totalTrackedDuration: totalTracked,
@@ -106,7 +113,8 @@ class AnalyticsService {
       taskCount: uniqueWorkItemIds.length,
     );
 
-    final baseActiveSeconds = totalActive.inSeconds > 0 ? totalActive.inSeconds : 1;
+    final baseActiveSeconds =
+        totalActive.inSeconds > 0 ? totalActive.inSeconds : 1;
 
     // 5. Project Breakdown
     final projectDurations = <String, Duration>{};
@@ -117,7 +125,8 @@ class AnalyticsService {
       if (workItem != null) {
         final projId = workItem.projectId;
         final dur = sessionActiveDurations[s.id] ?? Duration.zero;
-        projectDurations[projId] = (projectDurations[projId] ?? Duration.zero) + dur;
+        projectDurations[projId] =
+            (projectDurations[projId] ?? Duration.zero) + dur;
         projectSessionCounts[projId] = (projectSessionCounts[projId] ?? 0) + 1;
       }
     }
@@ -146,7 +155,8 @@ class AnalyticsService {
       if (workItem != null) {
         final catId = workItem.categoryId;
         final dur = sessionActiveDurations[s.id] ?? Duration.zero;
-        categoryDurations[catId] = (categoryDurations[catId] ?? Duration.zero) + dur;
+        categoryDurations[catId] =
+            (categoryDurations[catId] ?? Duration.zero) + dur;
         categorySessionCounts[catId] = (categorySessionCounts[catId] ?? 0) + 1;
       }
     }
@@ -173,8 +183,10 @@ class AnalyticsService {
 
     for (final s in allSessions) {
       final dur = sessionActiveDurations[s.id] ?? Duration.zero;
-      taskDurations[s.workItemId] = (taskDurations[s.workItemId] ?? Duration.zero) + dur;
-      taskSessionCounts[s.workItemId] = (taskSessionCounts[s.workItemId] ?? 0) + 1;
+      taskDurations[s.workItemId] =
+          (taskDurations[s.workItemId] ?? Duration.zero) + dur;
+      taskSessionCounts[s.workItemId] =
+          (taskSessionCounts[s.workItemId] ?? 0) + 1;
     }
 
     final workItemBreakdown = taskDurations.entries.map((entry) {
@@ -229,10 +241,14 @@ class AnalyticsService {
 
     for (final s in allSessions) {
       final dur = sessionActiveDurations[s.id] ?? Duration.zero;
-      final peopleIds = s.peopleIds.isNotEmpty ? s.peopleIds : (workItemMap[s.workItemId]?.peopleIds ?? []);
+      final peopleIds = s.peopleIds.isNotEmpty
+          ? s.peopleIds
+          : (workItemMap[s.workItemId]?.peopleIds ?? []);
       for (final personId in peopleIds) {
-        personDurations[personId] = (personDurations[personId] ?? Duration.zero) + dur;
-        personSessionCounts[personId] = (personSessionCounts[personId] ?? 0) + 1;
+        personDurations[personId] =
+            (personDurations[personId] ?? Duration.zero) + dur;
+        personSessionCounts[personId] =
+            (personSessionCounts[personId] ?? 0) + 1;
       }
     }
 
@@ -253,7 +269,9 @@ class AnalyticsService {
 
     // 10. Configurable Attributes Breakdown
     final attributeBreakdowns = <AttributeBreakdownGroup>[];
-    final reportableDefs = allDefinitions.where((d) => d.reportable && d.enabled && !d.isArchived).toList();
+    final reportableDefs = allDefinitions
+        .where((d) => d.reportable && d.enabled && !d.isArchived)
+        .toList();
 
     for (final def in reportableDefs) {
       final groupDurations = <String, Duration>{};
@@ -266,8 +284,12 @@ class AnalyticsService {
 
       for (final s in allSessions) {
         final dur = sessionActiveDurations[s.id] ?? Duration.zero;
-        final itemValues = await _attributeRepository.getWorkItemValues(s.workItemId);
-        final attrVal = itemValues.where((WorkItemAttributeValue v) => v.attributeDefinitionId == def.id).firstOrNull;
+        final itemValues =
+            await _attributeRepository.getWorkItemValues(s.workItemId);
+        final attrVal = itemValues
+            .where(
+                (WorkItemAttributeValue v) => v.attributeDefinitionId == def.id)
+            .firstOrNull;
 
         if (attrVal != null) {
           String key;
@@ -279,12 +301,14 @@ class AnalyticsService {
             key = isTrue ? 'yes' : 'no';
             label = isTrue ? 'Yes' : 'No';
             col = isTrue ? '#30D158' : '#8E8E93';
-          } else if (def.type == AttributeType.singleSelect && attrVal.optionId != null) {
+          } else if (def.type == AttributeType.singleSelect &&
+              attrVal.optionId != null) {
             final opt = optionMap[attrVal.optionId];
             key = attrVal.optionId!;
             label = opt?.label ?? 'Option';
             col = opt?.colorHex;
-          } else if (attrVal.textValue != null && attrVal.textValue!.isNotEmpty) {
+          } else if (attrVal.textValue != null &&
+              attrVal.textValue!.isNotEmpty) {
             key = attrVal.textValue!;
             label = attrVal.textValue!;
           } else {
@@ -315,16 +339,18 @@ class AnalyticsService {
         }).toList()
           ..sort((a, b) => b.duration.compareTo(a.duration));
 
-        attributeBreakdowns.add(AttributeBreakdownGroup(definition: def, items: items));
+        attributeBreakdowns
+            .add(AttributeBreakdownGroup(definition: def, items: items));
       }
     }
 
-    // 11. Daily Activity Trend
+    // 11. Daily Activity Trend (with midnight session splitting)
     final dailyMap = <DateTime, DailyActivityItem>{};
     final dayCount = range.end.difference(range.start).inDays + 1;
 
     for (int i = 0; i < (dayCount > 31 ? 31 : dayCount); i++) {
-      final day = DateTime.utc(range.start.year, range.start.month, range.start.day + i);
+      final day = DateTime.utc(
+          range.start.year, range.start.month, range.start.day + i);
       dailyMap[day] = DailyActivityItem(
         date: day,
         activeDuration: Duration.zero,
@@ -334,33 +360,54 @@ class AnalyticsService {
     }
 
     for (final s in allSessions) {
-      final dayKey = DateTime.utc(s.startTime.year, s.startTime.month, s.startTime.day);
-      final existing = dailyMap[dayKey] ??
-          DailyActivityItem(
-            date: dayKey,
-            activeDuration: Duration.zero,
-            idleDuration: Duration.zero,
-            sessionCount: 0,
-          );
-
+      final sessionEnd = s.endTime ?? DateTime.now().toUtc();
       final active = sessionActiveDurations[s.id] ?? Duration.zero;
       final idles = sessionIdleMap[s.id] ?? [];
-      Duration idleDur = Duration.zero;
+      Duration totalIdleDur = Duration.zero;
       for (final idl in idles) {
         if (idl.resolution == IdleResolution.markIdle) {
-          idleDur += idl.duration;
+          totalIdleDur += idl.duration;
         }
       }
 
-      dailyMap[dayKey] = DailyActivityItem(
-        date: dayKey,
-        activeDuration: existing.activeDuration + active,
-        idleDuration: existing.idleDuration + idleDur,
-        sessionCount: existing.sessionCount + 1,
-      );
+      final grossDuration = sessionEnd.difference(s.startTime);
+      if (grossDuration <= Duration.zero) continue;
+
+      // Split session across midnight boundaries
+      final daySlices = _splitAcrossDays(s.startTime, sessionEnd);
+
+      for (final slice in daySlices) {
+        final sliceDuration = slice.end.difference(slice.start);
+        final fraction =
+            sliceDuration.inMicroseconds / grossDuration.inMicroseconds;
+
+        final sliceActive =
+            Duration(microseconds: (active.inMicroseconds * fraction).round());
+        final sliceIdle = Duration(
+            microseconds: (totalIdleDur.inMicroseconds * fraction).round());
+
+        final dayKey =
+            DateTime.utc(slice.start.year, slice.start.month, slice.start.day);
+        final existing = dailyMap[dayKey] ??
+            DailyActivityItem(
+              date: dayKey,
+              activeDuration: Duration.zero,
+              idleDuration: Duration.zero,
+              sessionCount: 0,
+            );
+
+        dailyMap[dayKey] = DailyActivityItem(
+          date: dayKey,
+          activeDuration: existing.activeDuration + sliceActive,
+          idleDuration: existing.idleDuration + sliceIdle,
+          sessionCount:
+              existing.sessionCount + (slice.start == s.startTime ? 1 : 0),
+        );
+      }
     }
 
-    final dailyActivity = dailyMap.values.toList()..sort((a, b) => a.date.compareTo(b.date));
+    final dailyActivity = dailyMap.values.toList()
+      ..sort((a, b) => a.date.compareTo(b.date));
 
     return DashboardData(
       range: range,
@@ -373,5 +420,26 @@ class AnalyticsService {
       attributeBreakdowns: attributeBreakdowns,
       dailyActivity: dailyActivity,
     );
+  }
+
+  /// Splits a time range [start, end] into per-day slices at UTC midnight boundaries.
+  ///
+  /// For example, a session from 2026-01-15 23:00 to 2026-01-16 01:00 UTC
+  /// produces two slices:
+  ///   [2026-01-15 23:00, 2026-01-16 00:00) and [2026-01-16 00:00, 2026-01-16 01:00)
+  static List<DateRange> _splitAcrossDays(DateTime start, DateTime end) {
+    final slices = <DateRange>[];
+    var cursor = start.toUtc();
+    final utcEnd = end.toUtc();
+
+    while (cursor.isBefore(utcEnd)) {
+      final nextMidnight =
+          DateTime.utc(cursor.year, cursor.month, cursor.day + 1);
+      final sliceEnd = nextMidnight.isBefore(utcEnd) ? nextMidnight : utcEnd;
+      slices.add(DateRange(start: cursor, end: sliceEnd));
+      cursor = sliceEnd;
+    }
+
+    return slices;
   }
 }

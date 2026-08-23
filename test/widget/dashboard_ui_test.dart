@@ -3,13 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:workpulse/core/theme/app_theme.dart';
 import 'package:workpulse/domain/models/analytics_model.dart';
+import 'package:workpulse/domain/models/date_range.dart';
 import 'package:workpulse/features/dashboard/providers/dashboard_provider.dart';
 import 'package:workpulse/features/dashboard/views/dashboard_view.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  final mockRange = DateTimeRange(
+  final mockRange = DateRange(
     start: DateTime.utc(2026, 8, 23, 0, 0),
     end: DateTime.utc(2026, 8, 23, 23, 59),
   );
@@ -83,7 +84,9 @@ void main() {
   );
 
   group('DashboardView UI Widget Tests', () {
-    testWidgets('renders header, metric cards, range filters, and breakdown lists', (tester) async {
+    testWidgets(
+        'renders header, metric cards, range filters, and breakdown lists',
+        (tester) async {
       tester.view.physicalSize = const Size(1280, 900);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(() {
@@ -94,7 +97,8 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            dashboardDataProvider.overrideWith((ref) => Future.value(mockDashboardData)),
+            dashboardDataProvider
+                .overrideWith((ref) => Future.value(mockDashboardData)),
           ],
           child: MaterialApp(
             theme: AppTheme.darkTheme,
@@ -116,7 +120,8 @@ void main() {
       expect(find.text('Total Tracked'), findsOneWidget);
       expect(find.text('04:30'), findsOneWidget);
       expect(find.text('Net Focus Time'), findsOneWidget);
-      expect(find.text('04:00'), findsNWidgets(2)); // In metric card and category card
+      expect(find.text('04:00'),
+          findsNWidgets(2)); // In metric card and category card
       expect(find.text('Idle Time'), findsOneWidget);
       expect(find.text('00:30'), findsOneWidget);
       expect(find.text('Active Tasks'), findsOneWidget);
@@ -134,7 +139,8 @@ void main() {
       expect(find.text('Implement OAuth 2.0 PKCE'), findsOneWidget);
     });
 
-    testWidgets('tapping range pills updates selectedTimeRangeProvider', (tester) async {
+    testWidgets('tapping range pills updates selectedTimeRangeProvider',
+        (tester) async {
       tester.view.physicalSize = const Size(1280, 900);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(() {
@@ -144,7 +150,8 @@ void main() {
 
       final container = ProviderContainer(
         overrides: [
-          dashboardDataProvider.overrideWith((ref) => Future.value(mockDashboardData)),
+          dashboardDataProvider
+              .overrideWith((ref) => Future.value(mockDashboardData)),
         ],
       );
       addTearDown(container.dispose);
@@ -164,12 +171,14 @@ void main() {
       await tester.tap(find.text('This Week'));
       await tester.pumpAndSettle();
 
-      expect(container.read(selectedTimeRangeProvider), DashboardTimeRange.thisWeek);
+      expect(container.read(selectedTimeRangeProvider),
+          DashboardTimeRange.thisWeek);
 
       await tester.tap(find.text('This Month'));
       await tester.pumpAndSettle();
 
-      expect(container.read(selectedTimeRangeProvider), DashboardTimeRange.thisMonth);
+      expect(container.read(selectedTimeRangeProvider),
+          DashboardTimeRange.thisMonth);
     });
   });
 }
