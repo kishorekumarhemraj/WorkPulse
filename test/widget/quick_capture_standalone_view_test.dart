@@ -88,10 +88,12 @@ class _FakeTimerNotifier extends TimerNotifier {
   WorkItem? startedTask;
 
   @override
-  Future<TimerState> build() async => const TimerState(status: TimerStatus.idle);
+  Future<TimerState> build() async =>
+      const TimerState(status: TimerStatus.idle);
 
   @override
-  Future<void> startTimer(WorkItem workItem, {List<String> peopleIds = const []}) async {
+  Future<void> startTimer(WorkItem workItem,
+      {List<String> peopleIds = const []}) async {
     startedTask = workItem;
     state = AsyncData(
       TimerState(
@@ -163,12 +165,16 @@ void main() {
   }) {
     return ProviderScope(
       overrides: [
-        currentWorkspaceProvider.overrideWith(() => _FakeWorkspaceNotifier(testWorkspace)),
-        projectsProvider.overrideWith(() => _FakeProjectsNotifier([testProject])),
-        categoriesProvider.overrideWith(() => _FakeCategoriesNotifier([testCategory])),
+        currentWorkspaceProvider
+            .overrideWith(() => _FakeWorkspaceNotifier(testWorkspace)),
+        projectsProvider
+            .overrideWith(() => _FakeProjectsNotifier([testProject])),
+        categoriesProvider
+            .overrideWith(() => _FakeCategoriesNotifier([testCategory])),
         tagsProvider.overrideWith(() => _FakeTagsNotifier()),
         peopleProvider.overrideWith(() => _FakePeopleNotifier()),
-        workItemsProvider.overrideWith(() => _FakeWorkItemsNotifier([testTask1, testTask2])),
+        workItemsProvider
+            .overrideWith(() => _FakeWorkItemsNotifier([testTask1, testTask2])),
         timerProvider.overrideWith(() => timerNotifier),
       ],
       child: MaterialApp(
@@ -181,9 +187,12 @@ void main() {
   }
 
   group('QuickCaptureStandaloneView Widget Tests', () {
-    testWidgets('renders search input, shortcut badges, and matching tasks list', (tester) async {
+    testWidgets(
+        'renders search input, shortcut badges, and matching tasks list',
+        (tester) async {
       final timerNotifier = _FakeTimerNotifier();
-      await tester.pumpWidget(createStandaloneApp(timerNotifier: timerNotifier));
+      await tester
+          .pumpWidget(createStandaloneApp(timerNotifier: timerNotifier));
       await tester.pumpAndSettle();
 
       expect(find.byType(TextField), findsOneWidget);
@@ -211,7 +220,9 @@ void main() {
       expect(closed, isTrue);
     });
 
-    testWidgets('selecting existing task and pressing Enter starts timer and closes', (tester) async {
+    testWidgets(
+        'selecting existing task and pressing Enter starts timer and closes',
+        (tester) async {
       bool closed = false;
       final timerNotifier = _FakeTimerNotifier();
       await tester.pumpWidget(
@@ -230,7 +241,9 @@ void main() {
       expect(closed, isTrue);
     });
 
-    testWidgets('typing query and pressing Enter creates new task and starts timer', (tester) async {
+    testWidgets(
+        'typing query and pressing Enter creates new task and starts timer',
+        (tester) async {
       bool closed = false;
       final timerNotifier = _FakeTimerNotifier();
       await tester.pumpWidget(
@@ -252,7 +265,9 @@ void main() {
       expect(closed, isTrue);
     });
 
-    testWidgets('WorkPulseApp dynamically renders QuickCaptureStandaloneView on WindowMode.quickCapture', (tester) async {
+    testWidgets(
+        'WorkPulseApp dynamically renders QuickCaptureStandaloneView on WindowMode.quickCapture',
+        (tester) async {
       tester.view.physicalSize = const Size(1280, 900);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
@@ -263,12 +278,16 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            currentWorkspaceProvider.overrideWith(() => _FakeWorkspaceNotifier(testWorkspace)),
-            projectsProvider.overrideWith(() => _FakeProjectsNotifier([testProject])),
-            categoriesProvider.overrideWith(() => _FakeCategoriesNotifier([testCategory])),
+            currentWorkspaceProvider
+                .overrideWith(() => _FakeWorkspaceNotifier(testWorkspace)),
+            projectsProvider
+                .overrideWith(() => _FakeProjectsNotifier([testProject])),
+            categoriesProvider
+                .overrideWith(() => _FakeCategoriesNotifier([testCategory])),
             tagsProvider.overrideWith(() => _FakeTagsNotifier()),
             peopleProvider.overrideWith(() => _FakePeopleNotifier()),
-            workItemsProvider.overrideWith(() => _FakeWorkItemsNotifier([testTask1, testTask2])),
+            workItemsProvider.overrideWith(
+                () => _FakeWorkItemsNotifier([testTask1, testTask2])),
             timerProvider.overrideWith(() => timerNotifier),
           ],
           child: WorkPulseApp(

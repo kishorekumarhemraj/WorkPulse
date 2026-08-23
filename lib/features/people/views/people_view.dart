@@ -1,7 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:workpulse/core/theme/app_theme.dart';
-import 'package:workpulse/domain/models/person_model.dart';
+import 'package:workpulse/core/theme/app_colors.dart';
+import 'package:workpulse/core/theme/design_tokens.dart';
+import 'package:workpulse/core/widgets/confirm_dialog.dart';
+import 'package:workpulse/core/widgets/empty_state.dart';
+import 'package:workpulse/core/widgets/entity_grid.dart';
+import 'package:workpulse/core/widgets/error_state.dart';
+import 'package:workpulse/core/widgets/page_header.dart';
+import 'package:workpulse/core/widgets/search_field.dart';
+import 'package:workpulse/core/widgets/skeleton_loader.dart';
 import 'package:workpulse/features/people/providers/people_provider.dart';
 import 'package:workpulse/features/people/views/person_form_dialog.dart';
 import 'package:workpulse/features/tasks/providers/work_items_provider.dart';
@@ -18,256 +25,114 @@ class _PeopleViewState extends ConsumerState<PeopleView> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     final peopleAsync = ref.watch(peopleProvider);
     final workItemsAsync = ref.watch(workItemsProvider);
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header bar
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'People',
-                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppTheme.getColors(context).textPrimary),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Team members, clients, and collaborators you work with',
-                        style: TextStyle(fontSize: 13, color: AppTheme.getColors(context).textSecondary),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 16),
-                ElevatedButton.icon(
-                  onPressed: () => PersonFormDialog.show(context),
-                  icon: const Icon(Icons.add, size: 18),
-                  label: const Text('Add Person'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-
-            // Search bar
-            SizedBox(
-              width: 320,
-              height: 38,
-              child: TextField(
-                onChanged: (value) => setState(() => _searchQuery = value.trim().toLowerCase()),
-                style: TextStyle(fontSize: 13, color: AppTheme.getColors(context).textPrimary),
-                decoration: InputDecoration(
-                  hintText: 'Search people...',
-                  prefixIcon: Icon(Icons.search, size: 18, color: AppTheme.getColors(context).textSecondary),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            // People List
-            Expanded(
-              child: peopleAsync.when(
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (error, _) => Center(
-                  child: Text('Error loading people: $error', style: const TextStyle(color: AppTheme.accentRed)),
-                ),
-                data: (people) {
-                  final filtered = people.where((p) {
-                    if (_searchQuery.isEmpty) return true;
-                    return p.name.toLowerCase().contains(_searchQuery) ||
-                        (p.email?.toLowerCase().contains(_searchQuery) ?? false);
-                  }).toList();
-
-                  if (filtered.isEmpty) {
-                    return Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.person_off_outlined, size: 48, color: AppTheme.getColors(context).textSecondary.withValues(alpha: 0.5)),
-                          const SizedBox(height: 12),
-                          Text(
-                            _searchQuery.isEmpty ? 'No people added yet' : 'No matching people',
-                            style: TextStyle(fontSize: 16, color: AppTheme.getColors(context).textSecondary),
-                          ),
-                          if (_searchQuery.isEmpty) ...[
-                            const SizedBox(height: 12),
-                            OutlinedButton.icon(
-                              onPressed: () => PersonFormDialog.show(context),
-                              icon: const Icon(Icons.add, size: 16),
-                              label: const Text('Add First Person'),
-                              style: OutlinedButton.styleFrom(foregroundColor: AppTheme.primaryColor),
-                            ),
-                          ],
-                        ],
-                      ),
-                    );
-                  }
-
-                  return GridView.builder(
-                    gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                      maxCrossAxisExtent: 320,
-                      mainAxisExtent: 130,
-                      crossAxisSpacing: 16,
-                      mainAxisSpacing: 16,
-                    ),
-                    itemCount: filtered.length,
-                    itemBuilder: (context, index) {
-                      final person = filtered[index];
-                      final taskCount = workItemsAsync.value?.where((w) => w.peopleIds.contains(person.id)).length ?? 0;
-                      return _PersonCard(person: person, taskCount: taskCount);
-                    },
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _PersonCard extends ConsumerWidget {
-  final Person person;
-  final int taskCount;
-
-  const _PersonCard({required this.person, required this.taskCount});
-
-  String _getInitials(String name) {
-    final parts = name.trim().split(' ');
-    if (parts.length >= 2 && parts[0].isNotEmpty && parts[1].isNotEmpty) {
-      return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
-    } else if (parts.isNotEmpty && parts[0].isNotEmpty) {
-      return parts[0].substring(0, parts[0].length.clamp(1, 2)).toUpperCase();
-    }
-    return '?';
-  }
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppTheme.getColors(context).surface,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppTheme.getColors(context).divider, width: 1),
-      ),
-      padding: const EdgeInsets.all(14),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              CircleAvatar(
-                radius: 18,
-                backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.2),
-                child: Text(
-                  _getInitials(person.name),
-                  style: const TextStyle(
-                    color: AppTheme.primaryColor,
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      person.name,
-                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppTheme.getColors(context).textPrimary),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    if (person.email != null) ...[
-                      const SizedBox(height: 2),
-                      Text(
-                        person.email!,
-                        style: TextStyle(fontSize: 11, color: AppTheme.getColors(context).textSecondary),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              PopupMenuButton<String>(
-                icon: Icon(Icons.more_vert, size: 18, color: AppTheme.getColors(context).textSecondary),
-                color: AppTheme.getColors(context).surface,
-                onSelected: (value) async {
-                  if (value == 'edit') {
-                    await PersonFormDialog.show(context, person: person);
-                  } else if (value == 'delete') {
-                    final confirm = await showDialog<bool>(
-                      context: context,
-                      builder: (ctx) => AlertDialog(
-                        backgroundColor: AppTheme.getColors(context).surface,
-                        title: Text('Delete Person', style: TextStyle(color: AppTheme.getColors(context).textPrimary)),
-                        content: Text('Are you sure you want to remove "${person.name}"?'),
-                        actions: [
-                          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-                          ElevatedButton(
-                            onPressed: () => Navigator.pop(ctx, true),
-                            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.accentRed, foregroundColor: Colors.white),
-                            child: const Text('Delete'),
-                          ),
-                        ],
-                      ),
-                    );
-                    if (confirm == true) {
-                      await ref.read(peopleProvider.notifier).deletePerson(person.id);
-                    }
-                  }
-                },
-                itemBuilder: (context) => [
-                  PopupMenuItem(
-                    value: 'edit',
-                    child: Row(
-                      children: [
-                        Icon(Icons.edit_outlined, size: 16, color: AppTheme.getColors(context).textPrimary),
-                        const SizedBox(width: 8),
-                        const Text('Edit'),
-                      ],
-                    ),
-                  ),
-                  const PopupMenuItem(
-                    value: 'delete',
-                    child: Row(
-                      children: [
-                        Icon(Icons.delete_outline, size: 16, color: AppTheme.accentRed),
-                        SizedBox(width: 8),
-                        Text('Delete', style: TextStyle(color: AppTheme.accentRed)),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          const Spacer(),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-            decoration: BoxDecoration(
-              color: AppTheme.getColors(context).card,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Text(
-              '$taskCount tasks assigned',
-              style: TextStyle(fontSize: 11, color: AppTheme.getColors(context).textSecondary),
-            ),
+      backgroundColor: colors.background,
+      body: PageScaffold(
+        title: 'People',
+        subtitle: 'Collaborators you can attribute work items and sessions to',
+        actions: [
+          ElevatedButton.icon(
+            onPressed: () => PersonFormDialog.show(context),
+            icon: const Icon(Icons.add, size: IconSizes.lg),
+            label: const Text('New Person'),
           ),
         ],
+        toolbar: SearchField(
+          hintText: 'Search people…',
+          width: 300,
+          onChanged: (value) =>
+              setState(() => _searchQuery = value.trim().toLowerCase()),
+        ),
+        child: peopleAsync.when(
+          loading: () => const SkeletonGrid(),
+          error: (error, _) => ErrorState(
+            title: 'Could not load people',
+            error: error,
+            onRetry: () => ref.invalidate(peopleProvider),
+          ),
+          data: (people) {
+            final filtered = people.where((p) {
+              if (_searchQuery.isEmpty) return true;
+              return p.name.toLowerCase().contains(_searchQuery) ||
+                  (p.email?.toLowerCase().contains(_searchQuery) ?? false);
+            }).toList();
+
+            if (filtered.isEmpty) {
+              return EmptyState(
+                icon: Icons.people_outline,
+                title: _searchQuery.isEmpty
+                    ? 'No people yet'
+                    : 'No people match "$_searchQuery"',
+                message: _searchQuery.isEmpty
+                    ? 'Add the people you work with to attribute sessions to '
+                        'them and see time split by person.'
+                    : null,
+                action: _searchQuery.isEmpty
+                    ? ElevatedButton.icon(
+                        onPressed: () => PersonFormDialog.show(context),
+                        icon: const Icon(Icons.add, size: IconSizes.md),
+                        label: const Text('Create First Person'),
+                      )
+                    : null,
+              );
+            }
+
+            return EntityGrid(
+              cardHeight: 148,
+              children: [
+                for (final person in filtered)
+                  EntityCard(
+                    name: person.name,
+                    icon: Icons.person_outline,
+                    details: [
+                      if ((person.email ?? '').isNotEmpty)
+                        EntityDetail(
+                          icon: Icons.mail_outline,
+                          value: person.email!,
+                        ),
+                    ],
+                    count: workItemsAsync.value
+                            ?.where((w) => w.peopleIds.contains(person.id))
+                            .length ??
+                        0,
+                    countLabel: 'work items',
+                    onTap: () => PersonFormDialog.show(context, person: person),
+                    actions: [
+                      EntityAction(
+                        label: 'Edit',
+                        icon: Icons.edit_outlined,
+                        onSelected: () =>
+                            PersonFormDialog.show(context, person: person),
+                      ),
+                      EntityAction(
+                        label: 'Delete',
+                        icon: Icons.delete_outline,
+                        isDestructive: true,
+                        onSelected: () async {
+                          final confirmed = await confirmDestructive(
+                            context,
+                            title: 'Delete Person',
+                            message:
+                                'Are you sure you want to delete "${person.name}"? '
+                                'This action cannot be undone.',
+                          );
+                          if (confirmed) {
+                            await ref
+                                .read(peopleProvider.notifier)
+                                .deletePerson(person.id);
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+              ],
+            );
+          },
+        ),
       ),
     );
   }
