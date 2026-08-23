@@ -326,13 +326,6 @@ class _SessionEditDialogState extends ConsumerState<SessionEditDialog> {
                                 fontSize: 12,
                                 color:
                                     AppTheme.getColors(context).textSecondary),
-                            filled: true,
-                            fillColor: AppTheme.getColors(context).card,
-                            border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                                borderSide: BorderSide(
-                                    color:
-                                        AppTheme.getColors(context).divider)),
                           ),
                         ),
                         SizedBox(height: 16),
@@ -397,29 +390,18 @@ class _SessionEditDialogState extends ConsumerState<SessionEditDialog> {
                   children: [
                     TextButton(
                       onPressed: () => Navigator.of(context).pop(),
-                      child: Text('Cancel',
-                          style: TextStyle(
-                              color:
-                                  AppTheme.getColors(context).textSecondary)),
+                      child: const Text('Cancel'),
                     ),
                     SizedBox(width: 12),
                     ElevatedButton(
                       onPressed: _isSubmitting ? null : _submit,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.primaryColor,
-                        foregroundColor: Colors.white,
-                        padding:
-                            EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8)),
-                      ),
                       child: _isSubmitting
                           ? SizedBox(
                               width: 16,
                               height: 16,
                               child: CircularProgressIndicator(
                                   strokeWidth: 2, color: Colors.white))
-                          : Text('Save Changes'),
+                          : const Text('Save Changes'),
                     ),
                   ],
                 ),
