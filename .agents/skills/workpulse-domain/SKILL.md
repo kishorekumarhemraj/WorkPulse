@@ -18,6 +18,52 @@ Workspace
 └── updatedAt: DateTime (UTC)
 ```
 
+### Project
+```text
+Project
+├── id: UUID (String)
+├── workspaceId: UUID (String, Required)
+├── name: String (Required)
+├── description: String? (Optional)
+├── colorHex: String? (Optional, e.g. "#4F46E5")
+├── createdAt: DateTime (UTC)
+├── updatedAt: DateTime (UTC)
+└── archivedAt: DateTime? (UTC)
+```
+
+### Category
+```text
+Category
+├── id: UUID (String)
+├── workspaceId: UUID (String, Required)
+├── name: String (Required)
+├── description: String? (Optional)
+├── iconName: String? (Optional, e.g. "code", "chat")
+├── createdAt: DateTime (UTC)
+├── updatedAt: DateTime (UTC)
+└── archivedAt: DateTime? (UTC)
+```
+
+### Tag
+```text
+Tag
+├── id: UUID (String)
+├── workspaceId: UUID (String, Required)
+├── name: String (Required)
+├── colorHex: String? (Optional)
+└── createdAt: DateTime (UTC)
+```
+
+### Person
+```text
+Person
+├── id: UUID (String)
+├── workspaceId: UUID (String, Required)
+├── name: String (Required)
+├── email: String? (Optional)
+└── createdAt: DateTime (UTC)
+```
+
 ### WorkItem
 ```text
 WorkItem
@@ -33,6 +79,29 @@ WorkItem
 ├── updatedAt: DateTime (UTC)
 ├── lastWorkedAt: DateTime? (UTC)
 └── archivedAt: DateTime? (UTC)
+```
+
+### Session
+```text
+Session
+├── id: UUID (String)
+├── workItemId: UUID (String, Required)
+├── startTime: DateTime (UTC, Required)
+├── endTime: DateTime? (UTC, null if currently active)
+├── peopleIds: List<String> (Session-specific participants)
+└── createdAt: DateTime (UTC)
+```
+*Note: Total work item duration is the sum of all completed session durations for that work item (`endTime - startTime`) plus the active session elapsed time if running.*
+
+### IdlePeriod
+```text
+IdlePeriod
+├── id: UUID (String)
+├── sessionId: UUID (String, Required)
+├── startTime: DateTime (UTC, Required)
+├── endTime: DateTime (UTC, Required)
+├── resolution: IdleResolution (keep_tracking, mark_idle, stop_session)
+└── createdAt: DateTime (UTC)
 ```
 
 ### Configurable Attributes
@@ -52,9 +121,9 @@ AttributeDefinition
 ├── showInQuickCapture: bool
 ├── showInTaskDetails: bool
 ├── displayOrder: int
-├── createdAt: DateTime
-├── updatedAt: DateTime
-└── archivedAt: DateTime?
+├── createdAt: DateTime (UTC)
+├── updatedAt: DateTime (UTC)
+└── archivedAt: DateTime? (UTC)
 
 AttributeOption
 ├── id: UUID (String)
@@ -64,8 +133,8 @@ AttributeOption
 ├── colorHex: String?
 ├── displayOrder: int
 ├── isDefault: bool
-├── createdAt: DateTime
-└── archivedAt: DateTime?
+├── createdAt: DateTime (UTC)
+└── archivedAt: DateTime? (UTC)
 
 WorkItemAttributeValue
 ├── id: UUID (String)
@@ -76,58 +145,54 @@ WorkItemAttributeValue
 ├── booleanValue: bool?
 ├── dateValue: DateTime?
 ├── optionId: UUID?
-├── createdAt: DateTime
-└── updatedAt: DateTime
-```
+├── createdAt: DateTime (UTC)
+└── updatedAt: DateTime (UTC)
 
-### Session
-```text
-Session
+SessionAttributeValue
 ├── id: UUID (String)
-├── workItemId: UUID (String)
-├── startTime: DateTime (UTC)
-├── endTime: DateTime? (UTC, null if currently active)
-├── peopleIds: List<String> (Session-specific participants)
-└── createdAt: DateTime (UTC)
+├── sessionId: UUID (String)
+├── attributeDefinitionId: UUID (String)
+├── textValue: String?
+├── numberValue: double?
+├── booleanValue: bool?
+├── dateValue: DateTime?
+├── optionId: UUID?
+├── createdAt: DateTime (UTC)
+└── updatedAt: DateTime (UTC)
 ```
-
-*Note: Total work item duration is the sum of all completed session durations for that work item (`endTime - startTime`) plus the active session elapsed time if running.*
-
-### Project & Category
-- **Project**: User workspace grouping (e.g. "WorkPulse Core", "Personal"). Contains `workspaceId`.
-- **Category**: Functional classification (e.g. "Engineering", "Architecture", "Meetings", "Deep Work"). Contains `workspaceId`.
 
 ---
 
 ## 2. Timer State Machine
 
 ```text
-                     ┌──────────────┐
-                     │              │
-                     ▼              │
-               ┌───────────┐       │
-               │   IDLE    │       │
-               └─────┬─────┘       │
-                     │ Start       │
-                     ▼             │
-               ┌───────────┐       │
-               │  ACTIVE   │───────┘
-               └─────┬─────┘
-                     │ Inactivity detected
+                     ┌──────────────────┐
+                     │                  │
+                     ▼                  │
+             ┌───────────────┐          │
+             │   STOPPED     │          │
+             │ (No Session)  │          │
+             └───────┬───────┘          │
+                     │ Start            │
+                     ▼                  │
+             ┌───────────────┐          │
+             │    ACTIVE     │──────────┘
+             │(Tracking Task)│
+             └───────┬───────┘
+                     │ Inactivity detected (> threshold)
                      ▼
-               ┌───────────┐
-               │IDLE PROMPT│
-               └─────┬─────┘
-              ┌──────┼──────┐
-              │      │      │
-              ▼      ▼      ▼
-            Keep   Mark   Stop
-           Tracking Idle  Session
-              │      │      │
-              └──┬───┘      ▼
-                 │        IDLE
-                 ▼
-               ACTIVE
+             ┌───────────────┐
+             │  IDLE PROMPT  │
+             └───────┬───────┘
+            ┌────────┼────────┐
+            │        │        │
+            ▼        ▼        ▼
+       [Keep Time] [Mark Idle] [Stop Session]
+            │        │        │
+            │        ▼        ▼
+            │   (Record Idle) └──> STOPPED
+            │        │
+            └────────┴───> ACTIVE
 ```
 
 ### WorkItem Switching Flow
@@ -162,3 +227,26 @@ Opened (Focus on WorkItem Name / Search input)
            ├── (Optional) Configured Attributes, Tags, People
            └── Press Enter / Cmd+Enter ──> Start Session & Close Popup (<300ms)
 ```
+
+---
+
+## 4. Multi-Select Attribute Storage Standard
+
+For attributes with `type == AttributeType.multiSelect`:
+- Values are stored normalized as **one row per selected option** in `work_item_attribute_values` (or `session_attribute_values`).
+- Each row contains:
+  - `work_item_id` (or `session_id`)
+  - `attribute_definition_id`
+  - `option_id` (pointing to the selected `AttributeOption`)
+- Reading multi-select values retrieves all rows matching `(work_item_id, attribute_definition_id)`.
+
+---
+
+## 5. Day-Boundary Allocation for Reports
+
+When a session spans across UTC midnight (e.g. `23:45 UTC` to `01:15 UTC` next day):
+1. **Raw Storage:** `sessions` table retains exact timestamps (`startTime = 23:45`, `endTime = 01:15`).
+2. **Reporting Aggregation:** The reporting engine splits the duration into date buckets:
+   - Day 1: 15 minutes (`23:45` to `24:00`)
+   - Day 2: 75 minutes (`00:00` to `01:15`)
+3. **Net Active Time:** Idle periods within the session are subtracted from their respective day buckets based on the idle period's timestamps.
