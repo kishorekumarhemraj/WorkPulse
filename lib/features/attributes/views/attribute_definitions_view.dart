@@ -60,7 +60,7 @@ class _AttributeDefinitionsViewState
     return Scaffold(
       backgroundColor: AppTheme.getColors(context).background,
       body: Padding(
-        padding: EdgeInsets.all(28.0),
+        padding: const EdgeInsets.all(28.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -81,7 +81,7 @@ class _AttributeDefinitionsViewState
                           letterSpacing: -0.5,
                         ),
                       ),
-                      SizedBox(height: 4),
+                      const SizedBox(height: 4),
                       Text(
                         'Configure organisation-specific metadata (Jira Key, Cost Centre, Billable, etc.)',
                         style: TextStyle(
@@ -93,7 +93,7 @@ class _AttributeDefinitionsViewState
                     ],
                   ),
                 ),
-                SizedBox(width: 16),
+                const SizedBox(width: 16),
                 ElevatedButton.icon(
                   onPressed: () => AttributeDefinitionFormDialog.show(context),
                   icon: const Icon(Icons.add, size: 16),
@@ -101,7 +101,7 @@ class _AttributeDefinitionsViewState
                 ),
               ],
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
 
             // Controls Bar (Search + Scope Filter Pills)
             Row(
@@ -125,19 +125,19 @@ class _AttributeDefinitionsViewState
                     ),
                   ),
                 ),
-                SizedBox(width: 12),
+                const SizedBox(width: 12),
 
                 // Scope Filters
                 _buildScopeFilterChip(label: 'All Scopes', scope: null),
-                SizedBox(width: 6),
+                const SizedBox(width: 6),
                 _buildScopeFilterChip(
                     label: 'Task Scope', scope: AttributeScope.task),
-                SizedBox(width: 6),
+                const SizedBox(width: 6),
                 _buildScopeFilterChip(
                     label: 'Session Scope', scope: AttributeScope.session),
               ],
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
 
             // Attribute Cards List
             Expanded(
@@ -145,7 +145,7 @@ class _AttributeDefinitionsViewState
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (e, _) => Center(
                     child: Text('Error loading attributes: $e',
-                        style: TextStyle(color: AppTheme.accentRed))),
+                        style: const TextStyle(color: AppTheme.accentRed))),
                 data: (definitions) {
                   var filtered =
                       definitions.where((d) => !d.isArchived).toList();
@@ -172,14 +172,14 @@ class _AttributeDefinitionsViewState
                               color: AppTheme.getColors(context)
                                   .textSecondary
                                   .withValues(alpha: 0.3)),
-                          SizedBox(height: 12),
+                          const SizedBox(height: 12),
                           Text('No custom attributes found',
                               style: TextStyle(
                                   fontSize: 15,
                                   fontWeight: FontWeight.w600,
                                   color:
                                       AppTheme.getColors(context).textPrimary)),
-                          SizedBox(height: 6),
+                          const SizedBox(height: 6),
                           Text(
                               'Add custom attributes to capture organization-specific workflow data',
                               style: TextStyle(
@@ -193,7 +193,7 @@ class _AttributeDefinitionsViewState
 
                   return ListView.separated(
                     itemCount: filtered.length,
-                    separatorBuilder: (_, __) => SizedBox(height: 10),
+                    separatorBuilder: (_, __) => const SizedBox(height: 10),
                     itemBuilder: (context, index) {
                       final def = filtered[index];
                       return _buildAttributeCard(context, def);
@@ -228,7 +228,7 @@ class _AttributeDefinitionsViewState
           onTap: () => setState(() => _scopeFilter = scope),
           borderRadius: BorderRadius.circular(6),
           child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
             child: Text(
               label,
               style: TextStyle(
@@ -250,7 +250,7 @@ class _AttributeDefinitionsViewState
         def.type == AttributeType.multiSelect;
 
     return Container(
-      padding: EdgeInsets.all(16),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppTheme.getColors(context).surface,
         borderRadius: BorderRadius.circular(10),
@@ -261,7 +261,7 @@ class _AttributeDefinitionsViewState
         children: [
           // Type Icon Box
           Container(
-            padding: EdgeInsets.all(10),
+            padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
               color: AppTheme.primaryColor.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(8),
@@ -269,7 +269,7 @@ class _AttributeDefinitionsViewState
             child: Icon(_getTypeIcon(def.type),
                 color: AppTheme.primaryColor, size: 20),
           ),
-          SizedBox(width: 14),
+          const SizedBox(width: 14),
 
           // Main Info
           Expanded(
@@ -289,7 +289,7 @@ class _AttributeDefinitionsViewState
                           color: AppTheme.getColors(context).textPrimary),
                     ),
                     Container(
-                      padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
                         color: AppTheme.getColors(context).card,
                         borderRadius: BorderRadius.circular(4),
@@ -306,7 +306,7 @@ class _AttributeDefinitionsViewState
                     ),
                     // Scope Pill
                     Container(
-                      padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
                         color: def.scope == AttributeScope.task
                             ? AppTheme.accentPurple.withValues(alpha: 0.2)
@@ -327,7 +327,7 @@ class _AttributeDefinitionsViewState
                   ],
                 ),
                 if (def.description != null && def.description!.isNotEmpty) ...[
-                  SizedBox(height: 4),
+                  const SizedBox(height: 4),
                   Text(
                     def.description!,
                     style: TextStyle(
@@ -335,7 +335,7 @@ class _AttributeDefinitionsViewState
                         color: AppTheme.getColors(context).textSecondary),
                   ),
                 ],
-                SizedBox(height: 10),
+                const SizedBox(height: 10),
 
                 // Properties Wrap
                 Wrap(
@@ -361,15 +361,15 @@ class _AttributeDefinitionsViewState
             OutlinedButton.icon(
               onPressed: () =>
                   AttributeOptionsEditorDialog.show(context, definition: def),
-              icon: Icon(Icons.list, size: 14),
-              label: Text('Options', style: TextStyle(fontSize: 12)),
+              icon: const Icon(Icons.list, size: 14),
+              label: const Text('Options', style: TextStyle(fontSize: 12)),
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppTheme.getColors(context).textPrimary,
                 side: BorderSide(color: AppTheme.getColors(context).divider),
-                padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               ),
             ),
-            SizedBox(width: 12),
+            const SizedBox(width: 12),
           ],
 
           // Enabled Switch
@@ -409,13 +409,13 @@ class _AttributeDefinitionsViewState
                     actions: [
                       TextButton(
                           onPressed: () => Navigator.pop(ctx, false),
-                          child: Text('Cancel')),
+                          child: const Text('Cancel')),
                       ElevatedButton(
                         onPressed: () => Navigator.pop(ctx, true),
                         style: ElevatedButton.styleFrom(
                             backgroundColor: AppTheme.accentRed,
                             foregroundColor: Colors.white),
-                        child: Text('Archive'),
+                        child: const Text('Archive'),
                       ),
                     ],
                   ),
@@ -463,7 +463,7 @@ class _AttributeDefinitionsViewState
 
   Widget _buildPillBadge(String label, Color color) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(4),

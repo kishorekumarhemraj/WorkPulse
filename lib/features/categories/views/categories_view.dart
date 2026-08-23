@@ -25,7 +25,7 @@ class _CategoriesViewState extends ConsumerState<CategoriesView> {
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: Padding(
-        padding: EdgeInsets.all(24.0),
+        padding: const EdgeInsets.all(24.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -41,7 +41,7 @@ class _CategoriesViewState extends ConsumerState<CategoriesView> {
                         'Categories',
                         style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppTheme.getColors(context).textPrimary),
                       ),
-                      SizedBox(height: 4),
+                      const SizedBox(height: 4),
                       Text(
                         'Functional classifications for your tracked time and work',
                         style: TextStyle(fontSize: 13, color: AppTheme.getColors(context).textSecondary),
@@ -49,7 +49,7 @@ class _CategoriesViewState extends ConsumerState<CategoriesView> {
                     ],
                   ),
                 ),
-                SizedBox(width: 16),
+                const SizedBox(width: 16),
                 ElevatedButton.icon(
                   onPressed: () => CategoryFormDialog.show(context),
                   icon: const Icon(Icons.add, size: 18),
@@ -57,7 +57,7 @@ class _CategoriesViewState extends ConsumerState<CategoriesView> {
                 ),
               ],
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
 
             // Search bar
             SizedBox(
@@ -73,14 +73,14 @@ class _CategoriesViewState extends ConsumerState<CategoriesView> {
                 ),
               ),
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
 
             // Categories List
             Expanded(
               child: categoriesAsync.when(
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (error, _) => Center(
-                  child: Text('Error loading categories: $error', style: TextStyle(color: AppTheme.accentRed)),
+                  child: Text('Error loading categories: $error', style: const TextStyle(color: AppTheme.accentRed)),
                 ),
                 data: (categories) {
                   final filtered = categories.where((c) {
@@ -95,17 +95,17 @@ class _CategoriesViewState extends ConsumerState<CategoriesView> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(Icons.folder_open_outlined, size: 48, color: AppTheme.getColors(context).textSecondary.withValues(alpha: 0.5)),
-                          SizedBox(height: 12),
+                          const SizedBox(height: 12),
                           Text(
                             _searchQuery.isEmpty ? 'No categories found' : 'No matching categories',
                             style: TextStyle(fontSize: 16, color: AppTheme.getColors(context).textSecondary),
                           ),
                           if (_searchQuery.isEmpty) ...[
-                            SizedBox(height: 12),
+                            const SizedBox(height: 12),
                             OutlinedButton.icon(
                               onPressed: () => CategoryFormDialog.show(context),
-                              icon: Icon(Icons.add, size: 16),
-                              label: Text('Create First Category'),
+                              icon: const Icon(Icons.add, size: 16),
+                              label: const Text('Create First Category'),
                               style: OutlinedButton.styleFrom(foregroundColor: AppTheme.primaryColor),
                             ),
                           ],
@@ -152,14 +152,14 @@ class _CategoryCard extends ConsumerWidget {
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: AppTheme.getColors(context).divider, width: 1),
       ),
-      padding: EdgeInsets.all(16),
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
               Container(
-                padding: EdgeInsets.all(6),
+                padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
                   color: AppTheme.primaryColor.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(6),
@@ -170,7 +170,7 @@ class _CategoryCard extends ConsumerWidget {
                   color: AppTheme.primaryColor,
                 ),
               ),
-              SizedBox(width: 10),
+              const SizedBox(width: 10),
               Expanded(
                 child: Text(
                   category.name,
@@ -195,11 +195,11 @@ class _CategoryCard extends ConsumerWidget {
                         title: Text('Delete Category', style: TextStyle(color: AppTheme.getColors(context).textPrimary)),
                         content: Text('Are you sure you want to delete "${category.name}"? This action cannot be undone.'),
                         actions: [
-                          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('Cancel')),
+                          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
                           ElevatedButton(
                             onPressed: () => Navigator.pop(ctx, true),
                             style: ElevatedButton.styleFrom(backgroundColor: AppTheme.accentRed, foregroundColor: Colors.white),
-                            child: Text('Delete'),
+                            child: const Text('Delete'),
                           ),
                         ],
                       ),
@@ -215,8 +215,8 @@ class _CategoryCard extends ConsumerWidget {
                     child: Row(
                       children: [
                         Icon(Icons.edit_outlined, size: 16, color: AppTheme.getColors(context).textPrimary),
-                        SizedBox(width: 8),
-                        Text('Edit'),
+                        const SizedBox(width: 8),
+                        const Text('Edit'),
                       ],
                     ),
                   ),
@@ -225,8 +225,8 @@ class _CategoryCard extends ConsumerWidget {
                     child: Row(
                       children: [
                         Icon(Icons.archive_outlined, size: 16, color: AppTheme.getColors(context).textPrimary),
-                        SizedBox(width: 8),
-                        Text('Archive'),
+                        const SizedBox(width: 8),
+                        const Text('Archive'),
                       ],
                     ),
                   ),
@@ -244,7 +244,7 @@ class _CategoryCard extends ConsumerWidget {
               ),
             ],
           ),
-          SizedBox(height: 6),
+          const SizedBox(height: 6),
           Expanded(
             child: Text(
               category.description ?? 'No description provided.',
@@ -261,7 +261,7 @@ class _CategoryCard extends ConsumerWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Container(
-                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
                   color: AppTheme.getColors(context).card,
                   borderRadius: BorderRadius.circular(12),
@@ -271,7 +271,7 @@ class _CategoryCard extends ConsumerWidget {
                   style: TextStyle(fontSize: 11, color: AppTheme.getColors(context).textSecondary, fontWeight: FontWeight.w500),
                 ),
               ),
-              SizedBox(width: 8),
+              const SizedBox(width: 8),
               Flexible(
                 child: Text(
                   'Updated ${_formatDate(category.updatedAt)}',

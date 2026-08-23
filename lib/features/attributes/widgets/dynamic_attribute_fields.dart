@@ -36,10 +36,10 @@ class DynamicAttributeFields extends ConsumerWidget {
               fontWeight: FontWeight.w600,
               color: AppTheme.getColors(context).textSecondary),
         ),
-        SizedBox(height: 10),
+        const SizedBox(height: 10),
         ...activeDefs.map((def) {
           return Padding(
-            padding: EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.only(bottom: 12),
             child: _buildFieldForDefinition(context, ref, def),
           );
         }),
@@ -99,7 +99,7 @@ class DynamicAttributeFields extends ConsumerWidget {
       case AttributeType.boolean:
         final boolVal = currentValue == true;
         return Container(
-          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
             color: AppTheme.getColors(context).card,
             borderRadius: BorderRadius.circular(8),
@@ -118,7 +118,7 @@ class DynamicAttributeFields extends ConsumerWidget {
                           color: AppTheme.getColors(context).textPrimary),
                     ),
                     if (def.description != null) ...[
-                      SizedBox(height: 2),
+                      const SizedBox(height: 2),
                       Text(def.description!,
                           style: TextStyle(
                               fontSize: 11,
@@ -173,7 +173,7 @@ class DynamicAttributeFields extends ConsumerWidget {
                           height: 8,
                           decoration: BoxDecoration(
                               color: col, shape: BoxShape.circle)),
-                      SizedBox(width: 8),
+                      const SizedBox(width: 8),
                       Expanded(
                         child: Text(opt.label,
                             style: TextStyle(
@@ -209,7 +209,7 @@ class DynamicAttributeFields extends ConsumerWidget {
                       fontSize: 12,
                       color: AppTheme.getColors(context).textSecondary),
                 ),
-                SizedBox(height: 6),
+                const SizedBox(height: 6),
                 Wrap(
                   spacing: 6,
                   runSpacing: 6,
@@ -281,12 +281,12 @@ class DynamicAttributeFields extends ConsumerWidget {
               },
               borderRadius: BorderRadius.circular(8),
               child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
                 child: Row(
                   children: [
-                    Icon(Icons.calendar_today,
+                    const Icon(Icons.calendar_today,
                         size: 16, color: AppTheme.primaryColor),
-                    SizedBox(width: 10),
+                    const SizedBox(width: 10),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -298,7 +298,7 @@ class DynamicAttributeFields extends ConsumerWidget {
                                 color:
                                     AppTheme.getColors(context).textSecondary),
                           ),
-                          SizedBox(height: 2),
+                          const SizedBox(height: 2),
                           Text(
                             formattedDate,
                             style: TextStyle(

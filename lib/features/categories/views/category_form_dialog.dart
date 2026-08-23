@@ -97,13 +97,13 @@ class _CategoryFormDialogState extends ConsumerState<CategoryFormDialog> {
           borderRadius: BorderRadius.circular(12),
           side: BorderSide(color: AppTheme.getColors(context).divider, width: 1),
         ),
-        titlePadding: EdgeInsets.fromLTRB(24, 20, 24, 12),
-        contentPadding: EdgeInsets.fromLTRB(24, 0, 24, 20),
-        actionsPadding: EdgeInsets.fromLTRB(24, 0, 24, 20),
+        titlePadding: const EdgeInsets.fromLTRB(24, 20, 24, 12),
+        contentPadding: const EdgeInsets.fromLTRB(24, 0, 24, 20),
+        actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 20),
         title: Row(
           children: [
             Container(
-              padding: EdgeInsets.all(8),
+              padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 color: AppTheme.primaryColor.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(8),
@@ -114,7 +114,7 @@ class _CategoryFormDialogState extends ConsumerState<CategoryFormDialog> {
                 size: 20,
               ),
             ),
-            SizedBox(width: 12),
+            const SizedBox(width: 12),
             Text(
               isEditing ? 'Edit Category' : 'New Category',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: AppTheme.getColors(context).textPrimary),
@@ -131,7 +131,7 @@ class _CategoryFormDialogState extends ConsumerState<CategoryFormDialog> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text('Category Name', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AppTheme.getColors(context).textSecondary)),
-                  SizedBox(height: 6),
+                  const SizedBox(height: 6),
                   TextFormField(
                     controller: _nameController,
                     autofocus: true,
@@ -148,9 +148,9 @@ class _CategoryFormDialogState extends ConsumerState<CategoryFormDialog> {
                     },
                     onFieldSubmitted: (_) => _submit(),
                   ),
-                  SizedBox(height: 16),
+                  const SizedBox(height: 16),
                   Text('Description (Optional)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AppTheme.getColors(context).textSecondary)),
-                  SizedBox(height: 6),
+                  const SizedBox(height: 6),
                   TextFormField(
                     controller: _descController,
                     maxLines: 2,
@@ -160,9 +160,9 @@ class _CategoryFormDialogState extends ConsumerState<CategoryFormDialog> {
                       hintStyle: TextStyle(color: AppTheme.getColors(context).textSecondary),
                     ),
                   ),
-                  SizedBox(height: 16),
+                  const SizedBox(height: 16),
                   Text('Select Icon', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AppTheme.getColors(context).textSecondary)),
-                  SizedBox(height: 8),
+                  const SizedBox(height: 8),
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,

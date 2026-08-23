@@ -28,7 +28,7 @@ class DailyActivityChart extends StatelessWidget {
     }
 
     return Container(
-      padding: EdgeInsets.all(18),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: AppTheme.getColors(context).surface,
         borderRadius: BorderRadius.circular(12),
@@ -39,8 +39,8 @@ class DailyActivityChart extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.bar_chart, size: 16, color: AppTheme.primaryColor),
-              SizedBox(width: 8),
+              const Icon(Icons.bar_chart, size: 16, color: AppTheme.primaryColor),
+              const SizedBox(width: 8),
               Text(
                 'Daily Focus & Activity Trend',
                 style: TextStyle(
@@ -54,17 +54,17 @@ class DailyActivityChart extends StatelessWidget {
               Row(
                 children: [
                   Container(width: 8, height: 8, decoration: BoxDecoration(color: AppTheme.accentGreen, borderRadius: BorderRadius.circular(2))),
-                  SizedBox(width: 4),
+                  const SizedBox(width: 4),
                   Text('Active', style: TextStyle(fontSize: 10, color: AppTheme.getColors(context).textSecondary)),
-                  SizedBox(width: 10),
+                  const SizedBox(width: 10),
                   Container(width: 8, height: 8, decoration: BoxDecoration(color: AppTheme.accentOrange, borderRadius: BorderRadius.circular(2))),
-                  SizedBox(width: 4),
+                  const SizedBox(width: 4),
                   Text('Idle', style: TextStyle(fontSize: 10, color: AppTheme.getColors(context).textSecondary)),
                 ],
               ),
             ],
           ),
-          SizedBox(height: 20),
+          const SizedBox(height: 20),
 
           // Bar Chart Row
           SizedBox(
@@ -83,7 +83,7 @@ class DailyActivityChart extends StatelessWidget {
                   child: Tooltip(
                     message: '${DateFormat.yMMMd().format(item.date)}\n$durationTooltip',
                     child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 2),
+                      padding: const EdgeInsets.symmetric(horizontal: 2),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
@@ -95,7 +95,7 @@ class DailyActivityChart extends StatelessWidget {
                                   Container(
                                     width: 14,
                                     height: idleHeight.clamp(2.0, 95.0),
-                                    decoration: BoxDecoration(
+                                    decoration: const BoxDecoration(
                                       color: AppTheme.accentOrange,
                                       borderRadius: BorderRadius.vertical(top: Radius.circular(3)),
                                     ),
@@ -120,7 +120,7 @@ class DailyActivityChart extends StatelessWidget {
                                 borderRadius: BorderRadius.circular(2),
                               ),
                             ),
-                          SizedBox(height: 8),
+                          const SizedBox(height: 8),
                           Text(
                             dayLabel,
                             style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: AppTheme.getColors(context).textPrimary),
