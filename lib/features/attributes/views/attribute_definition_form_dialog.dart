@@ -66,7 +66,7 @@ class _AttributeDefinitionFormDialogState extends ConsumerState<AttributeDefinit
       case AttributeType.number:
         return 'Number';
       case AttributeType.boolean:
-        return 'Boolean (Checkbox)';
+        return 'Boolean';
       case AttributeType.singleSelect:
         return 'Single Select';
       case AttributeType.multiSelect:
@@ -205,7 +205,8 @@ class _AttributeDefinitionFormDialogState extends ConsumerState<AttributeDefinit
                     // Type Dropdown
                     Expanded(
                       child: DropdownButtonFormField<AttributeType>(
-                        value: _selectedType,
+                        initialValue: _selectedType,
+                        isExpanded: true,
                         dropdownColor: AppTheme.surfaceDark,
                         style: const TextStyle(fontSize: 13, color: AppTheme.textPrimaryDark),
                         decoration: const InputDecoration(labelText: 'Data Type'),
@@ -224,7 +225,8 @@ class _AttributeDefinitionFormDialogState extends ConsumerState<AttributeDefinit
                     // Scope Dropdown
                     Expanded(
                       child: DropdownButtonFormField<AttributeScope>(
-                        value: _selectedScope,
+                        initialValue: _selectedScope,
+                        isExpanded: true,
                         dropdownColor: AppTheme.surfaceDark,
                         style: const TextStyle(fontSize: 13, color: AppTheme.textPrimaryDark),
                         decoration: const InputDecoration(labelText: 'Scope'),
@@ -259,29 +261,25 @@ class _AttributeDefinitionFormDialogState extends ConsumerState<AttributeDefinit
                 const SizedBox(height: 8),
 
                 // Options Switches
-                SwitchListTile(
-                  title: const Text('Required Field', style: TextStyle(fontSize: 13, color: AppTheme.textPrimaryDark)),
-                  subtitle: const Text('Must be provided when creating work items', style: TextStyle(fontSize: 11, color: AppTheme.textSecondaryDark)),
+                _buildSwitchRow(
+                  title: 'Required Field',
+                  subtitle: 'Must be provided when creating work items',
                   value: _required,
                   onChanged: (v) => setState(() => _required = v),
-                  activeTrackColor: AppTheme.primaryColor,
-                  contentPadding: EdgeInsets.zero,
                 ),
-                SwitchListTile(
-                  title: const Text('Show in Quick Capture', style: TextStyle(fontSize: 13, color: AppTheme.textPrimaryDark)),
-                  subtitle: const Text('Display in the floating Quick Capture dialog', style: TextStyle(fontSize: 11, color: AppTheme.textSecondaryDark)),
+                const SizedBox(height: 8),
+                _buildSwitchRow(
+                  title: 'Show in Quick Capture',
+                  subtitle: 'Display in the floating Quick Capture dialog',
                   value: _showInQuickCapture,
                   onChanged: (v) => setState(() => _showInQuickCapture = v),
-                  activeTrackColor: AppTheme.primaryColor,
-                  contentPadding: EdgeInsets.zero,
                 ),
-                SwitchListTile(
-                  title: const Text('Searchable', style: TextStyle(fontSize: 13, color: AppTheme.textPrimaryDark)),
-                  subtitle: const Text('Include attribute value in global search filtering', style: TextStyle(fontSize: 11, color: AppTheme.textSecondaryDark)),
+                const SizedBox(height: 8),
+                _buildSwitchRow(
+                  title: 'Searchable',
+                  subtitle: 'Include attribute value in global search filtering',
                   value: _searchable,
                   onChanged: (v) => setState(() => _searchable = v),
-                  activeTrackColor: AppTheme.primaryColor,
-                  contentPadding: EdgeInsets.zero,
                 ),
               ],
             ),
@@ -304,6 +302,36 @@ class _AttributeDefinitionFormDialogState extends ConsumerState<AttributeDefinit
           child: _isSaving
               ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
               : Text(isEditing ? 'Save Changes' : 'Create Attribute'),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSwitchRow({
+    required String title,
+    required String subtitle,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+  }) {
+    return Row(
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title, style: const TextStyle(fontSize: 13, color: AppTheme.textPrimaryDark)),
+              const SizedBox(height: 2),
+              Text(subtitle, style: const TextStyle(fontSize: 11, color: AppTheme.textSecondaryDark)),
+            ],
+          ),
+        ),
+        Transform.scale(
+          scale: 0.85,
+          child: Switch(
+            value: value,
+            onChanged: onChanged,
+            activeTrackColor: AppTheme.primaryColor,
+          ),
         ),
       ],
     );

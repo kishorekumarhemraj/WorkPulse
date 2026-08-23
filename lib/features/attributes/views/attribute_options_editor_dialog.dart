@@ -25,7 +25,7 @@ class AttributeOptionsEditorDialog extends ConsumerStatefulWidget {
 class _AttributeOptionsEditorDialogState extends ConsumerState<AttributeOptionsEditorDialog> {
   final _labelController = TextEditingController();
   final _valueController = TextEditingController();
-  String _selectedColor = AppTheme.projectColors.first;
+  String _selectedColor = ColorUtils.paletteHex.first;
   bool _isAdding = false;
 
   @override
@@ -45,7 +45,8 @@ class _AttributeOptionsEditorDialogState extends ConsumerState<AttributeOptionsE
 
     setState(() => _isAdding = true);
     try {
-      await ref.read(attributeOptionsFamilyProvider(widget.definition.id).notifier).createOption(
+      await ref.read(attributeOptionsControllerProvider).createOption(
+            definitionId: widget.definition.id,
             value: val,
             label: label,
             colorHex: _selectedColor,
@@ -122,7 +123,7 @@ class _AttributeOptionsEditorDialogState extends ConsumerState<AttributeOptionsE
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.format_list_bulleted, size: 36, color: AppTheme.textSecondaryDark.withValues(alpha: 0.4)),
+                          Icon(Icons.format_list_bulleted, size: 36, color: AppTheme.textSecondaryDark.withValues(alpha: 0.3)),
                           const SizedBox(height: 8),
                           const Text('No options defined yet', style: TextStyle(fontSize: 13, color: AppTheme.textSecondaryDark)),
                           const SizedBox(height: 4),
@@ -153,7 +154,7 @@ class _AttributeOptionsEditorDialogState extends ConsumerState<AttributeOptionsE
                           icon: const Icon(Icons.delete_outline, size: 16, color: AppTheme.accentRed),
                           tooltip: 'Delete option',
                           onPressed: () async {
-                            await ref.read(attributeOptionsFamilyProvider(widget.definition.id).notifier).deleteOption(opt.id);
+                            await ref.read(attributeOptionsControllerProvider).deleteOption(widget.definition.id, opt.id);
                           },
                         ),
                       );
@@ -220,7 +221,7 @@ class _AttributeOptionsEditorDialogState extends ConsumerState<AttributeOptionsE
                       const SizedBox(width: 6),
                       Wrap(
                         spacing: 6,
-                        children: AppTheme.projectColors.take(6).map((c) {
+                        children: ColorUtils.paletteHex.take(6).map((String c) {
                           final col = ColorUtils.parseHex(c);
                           final isSel = _selectedColor == c;
                           return InkWell(
@@ -247,7 +248,6 @@ class _AttributeOptionsEditorDialogState extends ConsumerState<AttributeOptionsE
                           backgroundColor: AppTheme.primaryColor,
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                          isDense: true,
                         ),
                       ),
                     ],
