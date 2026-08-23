@@ -1,13 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
 import 'package:workpulse/core/theme/app_theme.dart';
 import 'package:workpulse/core/theme/color_utils.dart';
 import 'package:workpulse/core/theme/icon_utils.dart';
 import 'package:workpulse/core/widgets/searchable_multi_select.dart';
+import 'package:workpulse/data/providers/repository_providers.dart';
 import 'package:workpulse/domain/models/attribute_model.dart';
+import 'package:workpulse/domain/models/session_model.dart';
 import 'package:workpulse/domain/models/work_item_model.dart';
+import 'package:workpulse/domain/services/export_service.dart';
+import 'package:workpulse/domain/services/timer_service.dart';
 import 'package:workpulse/features/attributes/providers/attribute_definitions_provider.dart';
 import 'package:workpulse/features/attributes/widgets/dynamic_attribute_fields.dart';
 import 'package:workpulse/features/categories/providers/categories_provider.dart';
@@ -16,8 +21,10 @@ import 'package:workpulse/features/people/providers/people_provider.dart';
 import 'package:workpulse/features/people/views/person_form_dialog.dart';
 import 'package:workpulse/features/projects/providers/projects_provider.dart';
 import 'package:workpulse/features/projects/views/project_form_dialog.dart';
+import 'package:workpulse/features/reports/views/session_edit_dialog.dart';
 import 'package:workpulse/features/tags/providers/tags_provider.dart';
 import 'package:workpulse/features/tags/views/tag_form_dialog.dart';
+import 'package:workpulse/features/tasks/providers/task_sessions_provider.dart';
 import 'package:workpulse/features/tasks/providers/work_items_provider.dart';
 
 const _uuid = Uuid();
@@ -58,7 +65,6 @@ class TaskFormDialog extends ConsumerStatefulWidget {
 class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _nameController;
-  late final TextEditingController _notesController;
 
   String? _selectedProjectId;
   String? _selectedCategoryId;
@@ -71,8 +77,6 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.workItem?.name ?? '');
-    _notesController =
-        TextEditingController(text: widget.workItem?.notes ?? '');
 
     _selectedProjectId = widget.workItem?.projectId ?? widget.initialProjectId;
     _selectedCategoryId =
@@ -107,8 +111,24 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
   @override
   void dispose() {
     _nameController.dispose();
-    _notesController.dispose();
     super.dispose();
+  }
+
+  /// Called after a nested SessionEditDialog closes. Tagging a new person
+  /// on a session additively merges them into WorkItem.peopleIds, but this
+  /// dialog's own _selectedPeopleIds is a local snapshot taken at open
+  /// time - without this, hitting "Save Changes" here afterward would
+  /// overwrite the just-merged people with that stale snapshot. Union
+  /// (never remove) so it can't clobber an in-progress local edit either.
+  Future<void> _refreshPeopleAfterSessionEdit() async {
+    if (widget.workItem == null || !mounted) return;
+    final latest =
+        await ref.read(workItemRepositoryProvider).getById(widget.workItem!.id);
+    if (latest == null || !mounted) return;
+    setState(() {
+      _selectedPeopleIds =
+          {..._selectedPeopleIds, ...latest.peopleIds}.toList();
+    });
   }
 
   Future<void> _submit() async {
@@ -140,7 +160,6 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
               name: _nameController.text.trim(),
               projectId: _selectedProjectId!,
               categoryId: _selectedCategoryId!,
-              notes: _notesController.text.trim(),
               tagIds: _selectedTagIds,
               peopleIds: _selectedPeopleIds,
             );
@@ -150,7 +169,6 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
                 name: _nameController.text.trim(),
                 projectId: _selectedProjectId!,
                 categoryId: _selectedCategoryId!,
-                notes: _notesController.text.trim(),
                 tagIds: _selectedTagIds,
                 peopleIds: _selectedPeopleIds,
               ),
@@ -607,6 +625,15 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
                       );
                     },
                   ),
+
+                  if (widget.workItem != null) ...[
+                    SizedBox(height: 16),
+                    _SessionsSection(
+                      workItem: widget.workItem!,
+                      onSessionEdited: _refreshPeopleAfterSessionEdit,
+                    ),
+                  ],
+
                   // Custom Attribute Fields
                   Builder(
                     builder: (context) {
@@ -635,25 +662,28 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
                     },
                   ),
 
-                  // Notes
-                  Text('Notes (Optional)',
+                  // Notes - a read-only rollup of this task's session notes.
+                  // Notes are now typed per-session (via SessionEditDialog);
+                  // this just shows the history in one place.
+                  Text('Notes',
                       style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w500,
                           color: AppTheme.getColors(context).textSecondary)),
                   SizedBox(height: 6),
-                  TextFormField(
-                    controller: _notesController,
-                    maxLines: 3,
-                    style: TextStyle(
-                        color: AppTheme.getColors(context).textPrimary,
-                        fontSize: 13),
-                    decoration: InputDecoration(
-                      hintText: 'Additional details, ticket links, context...',
-                      hintStyle: TextStyle(
+                  if (widget.workItem != null)
+                    _TaskNotesRollup(
+                      workItemId: widget.workItem!.id,
+                      legacyNotes: widget.workItem!.notes,
+                    )
+                  else
+                    Text(
+                      'Notes will appear here once you log time on this task.',
+                      style: TextStyle(
+                          fontSize: 12,
+                          fontStyle: FontStyle.italic,
                           color: AppTheme.getColors(context).textSecondary),
                     ),
-                  ),
                 ],
               ),
             ),
@@ -685,6 +715,274 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Collapsed-by-default list of this task's past sessions. Kept collapsed
+/// (and internally height-capped) so a task with a long history doesn't
+/// dominate the already-dense edit dialog.
+class _SessionsSection extends ConsumerStatefulWidget {
+  final WorkItem workItem;
+  final VoidCallback onSessionEdited;
+
+  const _SessionsSection(
+      {required this.workItem, required this.onSessionEdited});
+
+  @override
+  ConsumerState<_SessionsSection> createState() => _SessionsSectionState();
+}
+
+class _SessionsSectionState extends ConsumerState<_SessionsSection> {
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final sessionsAsync =
+        ref.watch(sessionsForWorkItemProvider(widget.workItem.id));
+    final count = sessionsAsync.value?.length ?? 0;
+    final colors = AppTheme.getColors(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () => setState(() => _expanded = !_expanded),
+            borderRadius: BorderRadius.circular(6),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Row(
+                children: [
+                  Icon(
+                    _expanded ? Icons.expand_more : Icons.chevron_right,
+                    size: 18,
+                    color: colors.textSecondary,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Sessions ($count)',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: colors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        if (_expanded)
+          Container(
+            margin: const EdgeInsets.only(top: 4),
+            constraints: const BoxConstraints(maxHeight: 180),
+            decoration: BoxDecoration(
+              border: Border.all(color: colors.divider),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: sessionsAsync.when(
+              loading: () => const Padding(
+                padding: EdgeInsets.all(12),
+                child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+              ),
+              error: (_, __) => Padding(
+                padding: const EdgeInsets.all(12),
+                child: Text('Failed to load sessions',
+                    style:
+                        TextStyle(fontSize: 12, color: colors.textSecondary)),
+              ),
+              data: (sessions) {
+                if (sessions.isEmpty) {
+                  return Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Text('No sessions logged yet',
+                        style: TextStyle(
+                            fontSize: 12, color: colors.textSecondary)),
+                  );
+                }
+                return ListView.separated(
+                  shrinkWrap: true,
+                  padding: EdgeInsets.zero,
+                  itemCount: sessions.length,
+                  separatorBuilder: (_, __) =>
+                      Divider(height: 1, color: colors.divider),
+                  itemBuilder: (context, index) {
+                    return _SessionRow(
+                      session: sessions[index],
+                      workItem: widget.workItem,
+                      onEdited: widget.onSessionEdited,
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _SessionRow extends StatelessWidget {
+  final Session session;
+  final WorkItem workItem;
+  final VoidCallback onEdited;
+
+  const _SessionRow(
+      {required this.session, required this.workItem, required this.onEdited});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppTheme.getColors(context);
+    final dateFormat = DateFormat('MMM d, HH:mm');
+    final start = session.startTime.toLocal();
+    final end = session.endTime?.toLocal();
+    final durationStr =
+        TimerService.formatDuration(session.duration, compact: true);
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () async {
+          // SessionEditDialog only reads record.session / record.workItem.name
+          // - the rest of SessionExportRecord's enrichment (project,
+          // category, tags, people, idle periods) isn't rendered by it, so
+          // a minimal record is enough to reopen the existing edit UI.
+          final record = SessionExportRecord(
+            session: session,
+            workItem: workItem,
+            grossDuration: session.duration,
+            idleDuration: Duration.zero,
+            netActiveDuration: session.duration,
+          );
+          await SessionEditDialog.show(context, record);
+          onEdited();
+        },
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      end != null
+                          ? '${dateFormat.format(start)} - ${DateFormat('HH:mm').format(end)}'
+                          : '${dateFormat.format(start)} - Running',
+                      style: TextStyle(fontSize: 12, color: colors.textPrimary),
+                    ),
+                    if ((session.notes ?? '').isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        session.notes!,
+                        style: TextStyle(
+                            fontSize: 11,
+                            fontStyle: FontStyle.italic,
+                            color: colors.textSecondary),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              Text(
+                durationStr,
+                style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.primaryColor),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Read-only rollup of a task's notes, built from its sessions' notes
+/// (newest first, since sessionsForWorkItemProvider is already ordered
+/// that way) rather than a single freeform field. Falls back to a
+/// pre-existing WorkItem.notes value (from before this feature existed)
+/// only when the task has no session notes yet - that legacy value is
+/// never written to again.
+class _TaskNotesRollup extends ConsumerWidget {
+  final String workItemId;
+  final String? legacyNotes;
+
+  const _TaskNotesRollup({required this.workItemId, this.legacyNotes});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final sessionsAsync = ref.watch(sessionsForWorkItemProvider(workItemId));
+    final colors = AppTheme.getColors(context);
+
+    return sessionsAsync.when(
+      loading: () => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
+      data: (sessions) {
+        final dateFormat = DateFormat('MMM d, HH:mm');
+        final noted =
+            sessions.where((s) => (s.notes ?? '').trim().isNotEmpty).toList();
+
+        if (noted.isEmpty) {
+          if ((legacyNotes ?? '').trim().isNotEmpty) {
+            return Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: colors.card,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: colors.divider),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Legacy note',
+                      style: TextStyle(
+                          fontSize: 10,
+                          fontStyle: FontStyle.italic,
+                          color: colors.textSecondary)),
+                  const SizedBox(height: 2),
+                  Text(legacyNotes!,
+                      style:
+                          TextStyle(fontSize: 13, color: colors.textPrimary)),
+                ],
+              ),
+            );
+          }
+          return Text(
+            'No notes yet - add notes while editing a session.',
+            style: TextStyle(
+                fontSize: 12,
+                fontStyle: FontStyle.italic,
+                color: colors.textSecondary),
+          );
+        }
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: noted.map((s) {
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(dateFormat.format(s.startTime.toLocal()),
+                      style:
+                          TextStyle(fontSize: 10, color: colors.textSecondary)),
+                  const SizedBox(height: 2),
+                  Text(s.notes!,
+                      style:
+                          TextStyle(fontSize: 13, color: colors.textPrimary)),
+                ],
+              ),
+            );
+          }).toList(),
+        );
+      },
     );
   }
 }
