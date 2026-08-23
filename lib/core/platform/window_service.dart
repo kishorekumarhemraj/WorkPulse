@@ -149,6 +149,8 @@ class DesktopWindowService with WindowListener implements WindowService {
     }
   }
 
+  bool _dashboardWasVisible = true;
+
   @override
   Future<void> openQuickCapture() async {
     if (kIsWeb ||
@@ -164,6 +166,8 @@ class DesktopWindowService with WindowListener implements WindowService {
       }
 
       final isAlreadyVisible = await windowManager.isVisible();
+      _dashboardWasVisible = isAlreadyVisible && _currentMode == WindowMode.dashboard;
+
       if (_currentMode == WindowMode.dashboard && isAlreadyVisible) {
         try {
           _savedDashboardBounds = await windowManager.getBounds();
@@ -179,10 +183,10 @@ class DesktopWindowService with WindowListener implements WindowService {
       );
       await windowManager.setAsFrameless();
       await windowManager.setHasShadow(true);
-      await windowManager.setBackgroundColor(const Color(0x00000000));
+      await windowManager.setBackgroundColor(const Color(0xFF1E1E2E));
       await windowManager.setAlwaysOnTop(true);
 
-      const targetWidth = 660.0;
+      const targetWidth = 640.0;
       const targetHeight = 440.0;
       await windowManager.setSize(const Size(targetWidth, targetHeight));
 
@@ -231,7 +235,7 @@ class DesktopWindowService with WindowListener implements WindowService {
   }
 
   @override
-  Future<void> closeQuickCapture() async {
+  Future<void> closeQuickCapture({bool forceHide = false}) async {
     _currentMode = WindowMode.dashboard;
     _modeNotifier.value = WindowMode.dashboard;
 
@@ -242,12 +246,17 @@ class DesktopWindowService with WindowListener implements WindowService {
 
     try {
       if (!_isInitialized) return;
-      await windowManager.hide();
       await windowManager.setAlwaysOnTop(false);
       await windowManager.setTitleBarStyle(
         TitleBarStyle.normal,
         windowButtonVisibility: true,
       );
+
+      if (_dashboardWasVisible && !forceHide) {
+        await openDashboard();
+      } else {
+        await windowManager.hide();
+      }
     } catch (e) {
       debugPrint('DesktopWindowService closeQuickCapture error: $e');
     }
@@ -257,6 +266,7 @@ class DesktopWindowService with WindowListener implements WindowService {
   Future<void> openDashboard() async {
     _currentMode = WindowMode.dashboard;
     _modeNotifier.value = WindowMode.dashboard;
+    _dashboardWasVisible = true;
 
     if (kIsWeb ||
         (!Platform.isMacOS && !Platform.isWindows && !Platform.isLinux)) {
@@ -273,6 +283,7 @@ class DesktopWindowService with WindowListener implements WindowService {
         TitleBarStyle.normal,
         windowButtonVisibility: true,
       );
+      await windowManager.setBackgroundColor(const Color(0xFF1E1E2E));
 
       if (_savedDashboardBounds != null) {
         await windowManager.setBounds(_savedDashboardBounds!);
