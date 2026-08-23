@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:workpulse/core/theme/design_tokens.dart';
 import 'package:workpulse/core/theme/app_colors.dart';
 import 'package:workpulse/core/widgets/error_state.dart';
 import 'package:workpulse/core/widgets/app_dialog.dart';
@@ -186,7 +187,7 @@ class _AttributeOptionsEditorDialogState
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
                 color: context.colors.card,
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: Radii.mdAll,
                 border: Border.all(color: context.colors.divider),
               ),
               child: Column(
@@ -256,7 +257,7 @@ class _AttributeOptionsEditorDialogState
                           final isSel = _selectedColor == c;
                           return InkWell(
                             onTap: () => setState(() => _selectedColor = c),
-                            borderRadius: BorderRadius.circular(10),
+                            borderRadius: Radii.lgAll,
                             child: Container(
                               width: 16,
                               height: 16,

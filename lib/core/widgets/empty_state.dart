@@ -72,7 +72,7 @@ class EmptyState extends StatelessWidget {
               ),
               child: Icon(
                 icon,
-                size: IconSizes.xl + 6,
+                size: IconSizes.xxl,
                 color: colors.textTertiary,
               ),
             ),

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
+import 'package:workpulse/core/theme/design_tokens.dart';
 import 'package:workpulse/core/theme/app_colors.dart';
 import 'package:workpulse/core/widgets/app_dialog.dart';
 import 'package:workpulse/core/theme/color_utils.dart';
@@ -718,7 +719,7 @@ class _SessionsSectionState extends ConsumerState<_SessionsSection> {
           color: Colors.transparent,
           child: InkWell(
             onTap: () => setState(() => _expanded = !_expanded),
-            borderRadius: BorderRadius.circular(6),
+            borderRadius: Radii.smAll,
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 4),
               child: Row(
@@ -748,7 +749,7 @@ class _SessionsSectionState extends ConsumerState<_SessionsSection> {
             constraints: const BoxConstraints(maxHeight: 180),
             decoration: BoxDecoration(
               border: Border.all(color: colors.divider),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: Radii.mdAll,
             ),
             child: sessionsAsync.when(
               loading: () => const Padding(
@@ -902,7 +903,7 @@ class _TaskNotesRollup extends ConsumerWidget {
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
                 color: colors.card,
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: Radii.mdAll,
                 border: Border.all(color: colors.divider),
               ),
               child: Column(

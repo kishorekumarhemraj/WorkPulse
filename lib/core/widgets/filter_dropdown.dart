@@ -52,8 +52,12 @@ class AppFilterDropdown<T> extends StatelessWidget {
     final hasValue = value != null && options.any((o) => o.value == value);
     final effectiveValue = hasValue ? value : null;
 
+    // A DropdownButton sizes itself to its widest item, so without a cap a
+    // single long project or tag name would stretch the control and push the
+    // rest of the toolbar off screen.
     return Container(
       height: ControlSizes.toolbar,
+      constraints: const BoxConstraints(maxWidth: 220),
       padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
       decoration: BoxDecoration(
         color: hasValue ? colors.accentSubtle : colors.card,
@@ -67,6 +71,7 @@ class AppFilterDropdown<T> extends StatelessWidget {
         child: DropdownButton<T?>(
           value: effectiveValue,
           isDense: true,
+          isExpanded: true,
           borderRadius: Radii.mdAll,
           dropdownColor: colors.surfaceRaised,
           focusColor: Colors.transparent,
@@ -156,12 +161,16 @@ class _Label extends StatelessWidget {
           Icon(icon, size: IconSizes.sm, color: color),
           const SizedBox(width: Spacing.sm - 2),
         ],
-        Text(
-          text,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: color,
-                fontWeight: bold ? FontWeight.w600 : FontWeight.w400,
-              ),
+        Flexible(
+          child: Text(
+            text,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: color,
+                  fontWeight: bold ? FontWeight.w600 : FontWeight.w400,
+                ),
+          ),
         ),
       ],
     );

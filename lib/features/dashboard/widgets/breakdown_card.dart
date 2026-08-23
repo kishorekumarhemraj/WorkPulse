@@ -214,6 +214,7 @@ class _BreakdownRow extends StatelessWidget {
           ),
           const SizedBox(height: Spacing.xs + 2),
           ClipRRect(
+            // Below the token scale on purpose: the bar itself is only 5px tall.
             borderRadius: BorderRadius.circular(3),
             child: TweenAnimationBuilder<double>(
               tween: Tween(begin: 0, end: fraction),

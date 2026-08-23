@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:workpulse/core/theme/design_tokens.dart';
 import 'package:workpulse/core/theme/app_colors.dart';
 import 'package:workpulse/core/widgets/keycap.dart';
 import 'package:workpulse/core/theme/color_utils.dart';
@@ -188,7 +189,7 @@ class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
             constraints: const BoxConstraints(maxHeight: 520),
             decoration: BoxDecoration(
               color: context.colors.surface,
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: Radii.xlAll,
               border: Border.all(color: context.colors.divider, width: 1.2),
               boxShadow: [
                 BoxShadow(
