@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workpulse/core/constants/app_constants.dart';
 import 'package:workpulse/core/platform/hotkey_service.dart';
 import 'package:workpulse/core/theme/app_theme.dart';
+import 'package:workpulse/features/attributes/providers/attribute_definitions_provider.dart';
+import 'package:workpulse/features/attributes/views/attribute_definitions_view.dart';
 import 'package:workpulse/features/categories/providers/categories_provider.dart';
 import 'package:workpulse/features/categories/views/categories_view.dart';
 import 'package:workpulse/features/people/providers/people_provider.dart';
@@ -23,6 +25,7 @@ enum ShellNavTab {
   categories,
   tags,
   people,
+  attributes,
 }
 
 final activeNavTabProvider = NotifierProvider<ActiveNavTabNotifier, ShellNavTab>(
@@ -242,6 +245,13 @@ class _MainShellViewState extends ConsumerState<MainShellView> {
                             countProvider: Provider((r) => r.watch(peopleProvider).value?.length),
                             onTap: () => ref.read(activeNavTabProvider.notifier).setTab(ShellNavTab.people),
                           ),
+                          _SidebarNavItem(
+                            icon: Icons.tune,
+                            label: 'Attributes',
+                            isSelected: activeTab == ShellNavTab.attributes,
+                            countProvider: Provider((r) => r.watch(attributeDefinitionsProvider).value?.length),
+                            onTap: () => ref.read(activeNavTabProvider.notifier).setTab(ShellNavTab.attributes),
+                          ),
                         ],
                       ),
                     ),
@@ -266,18 +276,19 @@ class _MainShellViewState extends ConsumerState<MainShellView> {
                   ShellNavTab.categories => const CategoriesView(),
                   ShellNavTab.tags => const TagsView(),
                   ShellNavTab.people => const PeopleView(),
-                      },
-                    ),
-                  ],
-                ),
+                  ShellNavTab.attributes => const AttributeDefinitionsView(),
+                },
               ),
-              const ActiveTimerBar(),
             ],
-          );
-        },
-      ),
+          ),
+        ),
+        const ActiveTimerBar(),
+      ],
     );
-  }
+  },
+),
+);
+}
 }
 
 class _SidebarNavItem extends ConsumerWidget {

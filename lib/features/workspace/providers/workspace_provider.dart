@@ -18,7 +18,13 @@ class CurrentWorkspaceNotifier extends AsyncNotifier<Workspace> {
     final workspaces = await workspaceRepo.getAll();
 
     if (workspaces.isNotEmpty) {
-      return workspaces.first;
+      final workspace = workspaces.first;
+      final projectRepo = ref.read(projectRepositoryProvider);
+      final projects = await projectRepo.getAll(workspaceId: workspace.id);
+      if (projects.isEmpty) {
+        await _seedDefaults(workspace.id);
+      }
+      return workspace;
     }
 
     // Bootstrap default workspace
