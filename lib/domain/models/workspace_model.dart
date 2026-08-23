@@ -1,36 +1,32 @@
 import 'package:equatable/equatable.dart';
 
-class Person extends Equatable {
+class Workspace extends Equatable {
   final String id;
-  final String workspaceId;
   final String name;
-  final String? email;
   final DateTime createdAt;
+  final DateTime updatedAt;
 
-  const Person({
+  const Workspace({
     required this.id,
-    required this.workspaceId,
     required this.name,
-    this.email,
     required this.createdAt,
+    required this.updatedAt,
   });
 
-  Person copyWith({
+  Workspace copyWith({
     String? id,
-    String? workspaceId,
     String? name,
-    String? email,
     DateTime? createdAt,
+    DateTime? updatedAt,
   }) {
-    return Person(
+    return Workspace(
       id: id ?? this.id,
-      workspaceId: workspaceId ?? this.workspaceId,
       name: name ?? this.name,
-      email: email ?? this.email,
       createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
     );
   }
 
   @override
-  List<Object?> get props => [id, workspaceId, name, email, createdAt];
+  List<Object?> get props => [id, name, createdAt, updatedAt];
 }
