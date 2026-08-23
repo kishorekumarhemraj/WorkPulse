@@ -24,7 +24,7 @@ class _TagsViewState extends ConsumerState<TagsView> {
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: Padding(
-        padding: EdgeInsets.all(24.0),
+        padding: const EdgeInsets.all(24.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -40,7 +40,7 @@ class _TagsViewState extends ConsumerState<TagsView> {
                         'Tags',
                         style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppTheme.getColors(context).textPrimary),
                       ),
-                      SizedBox(height: 4),
+                      const SizedBox(height: 4),
                       Text(
                         'Flexible labels to categorize and filter your work items',
                         style: TextStyle(fontSize: 13, color: AppTheme.getColors(context).textSecondary),
@@ -48,7 +48,7 @@ class _TagsViewState extends ConsumerState<TagsView> {
                     ],
                   ),
                 ),
-                SizedBox(width: 16),
+                const SizedBox(width: 16),
                 ElevatedButton.icon(
                   onPressed: () => TagFormDialog.show(context),
                   icon: const Icon(Icons.add, size: 18),
@@ -56,7 +56,7 @@ class _TagsViewState extends ConsumerState<TagsView> {
                 ),
               ],
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
 
             // Search bar
             SizedBox(
@@ -72,14 +72,14 @@ class _TagsViewState extends ConsumerState<TagsView> {
                 ),
               ),
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
 
             // Tags List
             Expanded(
               child: tagsAsync.when(
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (error, _) => Center(
-                  child: Text('Error loading tags: $error', style: TextStyle(color: AppTheme.accentRed)),
+                  child: Text('Error loading tags: $error', style: const TextStyle(color: AppTheme.accentRed)),
                 ),
                 data: (tags) {
                   final filtered = tags.where((t) {
@@ -93,17 +93,17 @@ class _TagsViewState extends ConsumerState<TagsView> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(Icons.label_off_outlined, size: 48, color: AppTheme.getColors(context).textSecondary.withValues(alpha: 0.5)),
-                          SizedBox(height: 12),
+                          const SizedBox(height: 12),
                           Text(
                             _searchQuery.isEmpty ? 'No tags created yet' : 'No matching tags',
                             style: TextStyle(fontSize: 16, color: AppTheme.getColors(context).textSecondary),
                           ),
                           if (_searchQuery.isEmpty) ...[
-                            SizedBox(height: 12),
+                            const SizedBox(height: 12),
                             OutlinedButton.icon(
                               onPressed: () => TagFormDialog.show(context),
-                              icon: Icon(Icons.add, size: 16),
-                              label: Text('Create First Tag'),
+                              icon: const Icon(Icons.add, size: 16),
+                              label: const Text('Create First Tag'),
                               style: OutlinedButton.styleFrom(foregroundColor: AppTheme.primaryColor),
                             ),
                           ],
@@ -125,7 +125,7 @@ class _TagsViewState extends ConsumerState<TagsView> {
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(color: AppTheme.getColors(context).divider),
                         ),
-                        padding: EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
@@ -134,14 +134,14 @@ class _TagsViewState extends ConsumerState<TagsView> {
                               height: 10,
                               decoration: BoxDecoration(color: color, shape: BoxShape.circle),
                             ),
-                            SizedBox(width: 8),
+                            const SizedBox(width: 8),
                             Text(
                               tag.name,
                               style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: AppTheme.getColors(context).textPrimary),
                             ),
-                            SizedBox(width: 10),
+                            const SizedBox(width: 10),
                             Container(
-                              padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                               decoration: BoxDecoration(
                                 color: AppTheme.getColors(context).card,
                                 borderRadius: BorderRadius.circular(10),
@@ -151,16 +151,16 @@ class _TagsViewState extends ConsumerState<TagsView> {
                                 style: TextStyle(fontSize: 11, color: AppTheme.getColors(context).textSecondary),
                               ),
                             ),
-                            SizedBox(width: 8),
+                            const SizedBox(width: 8),
                             InkWell(
                               onTap: () => TagFormDialog.show(context, tag: tag),
                               borderRadius: BorderRadius.circular(4),
                               child: Padding(
-                                padding: EdgeInsets.all(2.0),
+                                padding: const EdgeInsets.all(2.0),
                                 child: Icon(Icons.edit_outlined, size: 15, color: AppTheme.getColors(context).textSecondary),
                               ),
                             ),
-                            SizedBox(width: 4),
+                            const SizedBox(width: 4),
                             InkWell(
                               onTap: () async {
                                 final confirm = await showDialog<bool>(
@@ -170,11 +170,11 @@ class _TagsViewState extends ConsumerState<TagsView> {
                                     title: Text('Delete Tag', style: TextStyle(color: AppTheme.getColors(context).textPrimary)),
                                     content: Text('Are you sure you want to delete tag "${tag.name}"?'),
                                     actions: [
-                                      TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('Cancel')),
+                                      TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
                                       ElevatedButton(
                                         onPressed: () => Navigator.pop(ctx, true),
                                         style: ElevatedButton.styleFrom(backgroundColor: AppTheme.accentRed, foregroundColor: Colors.white),
-                                        child: Text('Delete'),
+                                        child: const Text('Delete'),
                                       ),
                                     ],
                                   ),
@@ -184,7 +184,7 @@ class _TagsViewState extends ConsumerState<TagsView> {
                                 }
                               },
                               borderRadius: BorderRadius.circular(4),
-                              child: Padding(
+                              child: const Padding(
                                 padding: EdgeInsets.all(2.0),
                                 child: Icon(Icons.close, size: 15, color: AppTheme.accentRed),
                               ),

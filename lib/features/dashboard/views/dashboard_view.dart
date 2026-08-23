@@ -59,7 +59,7 @@ class DashboardView extends ConsumerWidget {
         ),
         error: (err, stack) => Center(
           child: Text('Error loading dashboard: $err',
-              style: TextStyle(color: AppTheme.accentRed)),
+              style: const TextStyle(color: AppTheme.accentRed)),
         ),
         data: (data) {
           final summary = data.summary;

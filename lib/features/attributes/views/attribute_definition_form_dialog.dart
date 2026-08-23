@@ -133,20 +133,20 @@ class _AttributeDefinitionFormDialogState extends ConsumerState<AttributeDefinit
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(color: AppTheme.getColors(context).divider, width: 1),
       ),
-      titlePadding: EdgeInsets.fromLTRB(24, 20, 24, 12),
-      contentPadding: EdgeInsets.fromLTRB(24, 0, 24, 16),
-      actionsPadding: EdgeInsets.fromLTRB(24, 0, 24, 20),
+      titlePadding: const EdgeInsets.fromLTRB(24, 20, 24, 12),
+      contentPadding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+      actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 20),
       title: Row(
         children: [
           Container(
-            padding: EdgeInsets.all(8),
+            padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
               color: AppTheme.primaryColor.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(Icons.tune, color: AppTheme.primaryColor, size: 20),
+            child: const Icon(Icons.tune, color: AppTheme.primaryColor, size: 20),
           ),
-          SizedBox(width: 12),
+          const SizedBox(width: 12),
           Text(
             isEditing ? 'Edit Custom Attribute' : 'New Custom Attribute',
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: AppTheme.getColors(context).textPrimary),
@@ -178,7 +178,7 @@ class _AttributeDefinitionFormDialogState extends ConsumerState<AttributeDefinit
                     }
                   },
                 ),
-                SizedBox(height: 14),
+                const SizedBox(height: 14),
 
                 // Key Identifier
                 TextFormField(
@@ -197,7 +197,7 @@ class _AttributeDefinitionFormDialogState extends ConsumerState<AttributeDefinit
                     return null;
                   },
                 ),
-                SizedBox(height: 14),
+                const SizedBox(height: 14),
 
                 // Type and Scope Row
                 Row(
@@ -221,7 +221,7 @@ class _AttributeDefinitionFormDialogState extends ConsumerState<AttributeDefinit
                               },
                       ),
                     ),
-                    SizedBox(width: 14),
+                    const SizedBox(width: 14),
 
                     // Scope Dropdown
                     Expanded(
@@ -245,7 +245,7 @@ class _AttributeDefinitionFormDialogState extends ConsumerState<AttributeDefinit
                     ),
                   ],
                 ),
-                SizedBox(height: 14),
+                const SizedBox(height: 14),
 
                 // Description
                 TextFormField(
@@ -257,10 +257,10 @@ class _AttributeDefinitionFormDialogState extends ConsumerState<AttributeDefinit
                     hintText: 'Describe how this metadata field should be used',
                   ),
                 ),
-                SizedBox(height: 16),
+                const SizedBox(height: 16),
 
                 Divider(color: AppTheme.getColors(context).divider),
-                SizedBox(height: 8),
+                const SizedBox(height: 8),
 
                 // Options Switches
                 _buildSwitchRow(
@@ -269,14 +269,14 @@ class _AttributeDefinitionFormDialogState extends ConsumerState<AttributeDefinit
                   value: _required,
                   onChanged: (v) => setState(() => _required = v),
                 ),
-                SizedBox(height: 8),
+                const SizedBox(height: 8),
                 _buildSwitchRow(
                   title: 'Show in Quick Capture',
                   subtitle: 'Display in the floating Quick Capture dialog',
                   value: _showInQuickCapture,
                   onChanged: (v) => setState(() => _showInQuickCapture = v),
                 ),
-                SizedBox(height: 8),
+                const SizedBox(height: 8),
                 _buildSwitchRow(
                   title: 'Searchable',
                   subtitle: 'Include attribute value in global search filtering',
@@ -316,7 +316,7 @@ class _AttributeDefinitionFormDialogState extends ConsumerState<AttributeDefinit
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(title, style: TextStyle(fontSize: 13, color: AppTheme.getColors(context).textPrimary)),
-              SizedBox(height: 2),
+              const SizedBox(height: 2),
               Text(subtitle, style: TextStyle(fontSize: 11, color: AppTheme.getColors(context).textSecondary)),
             ],
           ),

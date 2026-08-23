@@ -125,10 +125,10 @@ class _MainShellViewState extends ConsumerState<MainShellView> {
                   style: TextStyle(
                       color: AppTheme.getColors(context).textSecondary),
                 ),
-                SizedBox(height: 16),
+                const SizedBox(height: 16),
                 Container(
                   width: double.infinity,
-                  padding: EdgeInsets.all(14),
+                  padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
                     color: AppTheme.getColors(context).card,
                     borderRadius: BorderRadius.circular(8),
@@ -148,11 +148,11 @@ class _MainShellViewState extends ConsumerState<MainShellView> {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
-              child: Text('Cancel'),
+              child: const Text('Cancel'),
             ),
             ElevatedButton(
               onPressed: () => Navigator.of(context).pop(true),
-              child: Text('Save Shortcut'),
+              child: const Text('Save Shortcut'),
             ),
           ],
         );
@@ -204,8 +204,8 @@ class _MainShellViewState extends ConsumerState<MainShellView> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              CircularProgressIndicator(),
-              SizedBox(height: 16),
+              const CircularProgressIndicator(),
+              const SizedBox(height: 16),
               Text('Initializing WorkPulse...',
                   style: TextStyle(
                       color: AppTheme.getColors(context).textSecondary)),
@@ -214,7 +214,7 @@ class _MainShellViewState extends ConsumerState<MainShellView> {
         ),
         error: (error, stack) => Center(
           child: Text('Initialization error: $error',
-              style: TextStyle(color: AppTheme.accentRed)),
+              style: const TextStyle(color: AppTheme.accentRed)),
         ),
         data: (workspace) {
           return Column(
@@ -239,24 +239,24 @@ class _MainShellViewState extends ConsumerState<MainShellView> {
                         children: [
                           // App Brand Header
                           Padding(
-                            padding: EdgeInsets.fromLTRB(16, 20, 16, 16),
+                            padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Row(
                                   children: [
                                     Container(
-                                      padding: EdgeInsets.all(6),
+                                      padding: const EdgeInsets.all(6),
                                       decoration: BoxDecoration(
                                         color: AppTheme.primaryColor
                                             .withValues(alpha: 0.2),
                                         borderRadius: BorderRadius.circular(8),
                                       ),
-                                      child: Icon(Icons.timer_outlined,
+                                      child: const Icon(Icons.timer_outlined,
                                           color: AppTheme.primaryColor,
                                           size: 20),
                                     ),
-                                    SizedBox(width: 10),
+                                    const SizedBox(width: 10),
                                     Expanded(
                                       child: Text(
                                         AppConstants.appName,
@@ -272,10 +272,10 @@ class _MainShellViewState extends ConsumerState<MainShellView> {
                                     ),
                                   ],
                                 ),
-                                SizedBox(height: 12),
+                                const SizedBox(height: 12),
                                 // Workspace Indicator
                                 Container(
-                                  padding: EdgeInsets.symmetric(
+                                  padding: const EdgeInsets.symmetric(
                                       horizontal: 8, vertical: 4),
                                   decoration: BoxDecoration(
                                     color: AppTheme.getColors(context).card,
@@ -291,7 +291,7 @@ class _MainShellViewState extends ConsumerState<MainShellView> {
                                           size: 12,
                                           color: AppTheme.getColors(context)
                                               .textSecondary),
-                                      SizedBox(width: 6),
+                                      const SizedBox(width: 6),
                                       Flexible(
                                         child: Text(
                                           workspace.name,
@@ -306,7 +306,7 @@ class _MainShellViewState extends ConsumerState<MainShellView> {
                                     ],
                                   ),
                                 ),
-                                SizedBox(height: 12),
+                                const SizedBox(height: 12),
                                 // Quick Capture Shortcut Button
                                 Container(
                                   decoration: BoxDecoration(
@@ -323,14 +323,14 @@ class _MainShellViewState extends ConsumerState<MainShellView> {
                                       onTap: _showQuickCapture,
                                       borderRadius: BorderRadius.circular(8),
                                       child: Padding(
-                                        padding: EdgeInsets.symmetric(
+                                        padding: const EdgeInsets.symmetric(
                                             horizontal: 10, vertical: 7),
                                         child: Row(
                                           children: [
-                                            Icon(Icons.flash_on,
+                                            const Icon(Icons.flash_on,
                                                 size: 15,
                                                 color: AppTheme.primaryColor),
-                                            SizedBox(width: 8),
+                                            const SizedBox(width: 8),
                                             Expanded(
                                               child: Text(
                                                 'Quick Capture',
@@ -343,7 +343,7 @@ class _MainShellViewState extends ConsumerState<MainShellView> {
                                               ),
                                             ),
                                             Container(
-                                              padding: EdgeInsets.symmetric(
+                                              padding: const EdgeInsets.symmetric(
                                                   horizontal: 5, vertical: 2),
                                               decoration: BoxDecoration(
                                                 color:
@@ -377,12 +377,12 @@ class _MainShellViewState extends ConsumerState<MainShellView> {
                           Divider(
                               color: AppTheme.getColors(context).divider,
                               height: 1),
-                          SizedBox(height: 8),
+                          const SizedBox(height: 8),
 
                           // Navigation Items
                           Expanded(
                             child: ListView(
-                              padding: EdgeInsets.symmetric(horizontal: 8),
+                              padding: const EdgeInsets.symmetric(horizontal: 8),
                               children: [
                                 _SidebarNavItem(
                                   icon: Icons.space_dashboard_outlined,
@@ -476,7 +476,7 @@ class _MainShellViewState extends ConsumerState<MainShellView> {
                           ),
 
                           Padding(
-                            padding: EdgeInsets.all(16.0),
+                            padding: const EdgeInsets.all(16.0),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
@@ -486,7 +486,7 @@ class _MainShellViewState extends ConsumerState<MainShellView> {
                                         size: 15,
                                         color: AppTheme.getColors(context)
                                             .textSecondary),
-                                    SizedBox(width: 8),
+                                    const SizedBox(width: 8),
                                     Expanded(
                                       child: Text(
                                         'Light Mode',
@@ -513,13 +513,13 @@ class _MainShellViewState extends ConsumerState<MainShellView> {
                                     ),
                                   ],
                                 ),
-                                SizedBox(height: 6),
+                                const SizedBox(height: 6),
                                 OutlinedButton.icon(
                                   onPressed: settings == null
                                       ? null
                                       : () => _showShortcutRecorder(
                                           settings.quickCaptureHotKey),
-                                  icon: Icon(Icons.keyboard_outlined, size: 15),
+                                  icon: const Icon(Icons.keyboard_outlined, size: 15),
                                   label: Text(
                                     settings == null
                                         ? 'Shortcut'
@@ -533,10 +533,10 @@ class _MainShellViewState extends ConsumerState<MainShellView> {
                                     side: BorderSide(
                                         color: AppTheme.getColors(context)
                                             .divider),
-                                    textStyle: TextStyle(fontSize: 12),
+                                    textStyle: const TextStyle(fontSize: 12),
                                   ),
                                 ),
-                                SizedBox(height: 10),
+                                const SizedBox(height: 10),
                                 Text(
                                   'v${AppConstants.appVersion} • macOS',
                                   style: TextStyle(
@@ -596,7 +596,7 @@ class _SidebarNavItem extends ConsumerWidget {
     final count = countProvider != null ? ref.watch(countProvider!) : null;
 
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: 2.0),
+      padding: const EdgeInsets.symmetric(vertical: 2.0),
       child: Material(
         color: isSelected
             ? AppTheme.primaryColor.withValues(alpha: 0.15)
@@ -606,7 +606,7 @@ class _SidebarNavItem extends ConsumerWidget {
           onTap: onTap,
           borderRadius: BorderRadius.circular(6),
           child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
             child: Row(
               children: [
                 Icon(
@@ -616,7 +616,7 @@ class _SidebarNavItem extends ConsumerWidget {
                       ? AppTheme.primaryColor
                       : AppTheme.getColors(context).textSecondary,
                 ),
-                SizedBox(width: 10),
+                const SizedBox(width: 10),
                 Expanded(
                   child: Text(
                     label,
@@ -632,7 +632,7 @@ class _SidebarNavItem extends ConsumerWidget {
                 ),
                 if (count != null && count > 0)
                   Container(
-                    padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
                       color: isSelected
                           ? AppTheme.primaryColor.withValues(alpha: 0.2)

@@ -24,7 +24,7 @@ class _PeopleViewState extends ConsumerState<PeopleView> {
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: Padding(
-        padding: EdgeInsets.all(24.0),
+        padding: const EdgeInsets.all(24.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -40,7 +40,7 @@ class _PeopleViewState extends ConsumerState<PeopleView> {
                         'People',
                         style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppTheme.getColors(context).textPrimary),
                       ),
-                      SizedBox(height: 4),
+                      const SizedBox(height: 4),
                       Text(
                         'Team members, clients, and collaborators you work with',
                         style: TextStyle(fontSize: 13, color: AppTheme.getColors(context).textSecondary),
@@ -48,7 +48,7 @@ class _PeopleViewState extends ConsumerState<PeopleView> {
                     ],
                   ),
                 ),
-                SizedBox(width: 16),
+                const SizedBox(width: 16),
                 ElevatedButton.icon(
                   onPressed: () => PersonFormDialog.show(context),
                   icon: const Icon(Icons.add, size: 18),
@@ -56,7 +56,7 @@ class _PeopleViewState extends ConsumerState<PeopleView> {
                 ),
               ],
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
 
             // Search bar
             SizedBox(
@@ -72,14 +72,14 @@ class _PeopleViewState extends ConsumerState<PeopleView> {
                 ),
               ),
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
 
             // People List
             Expanded(
               child: peopleAsync.when(
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (error, _) => Center(
-                  child: Text('Error loading people: $error', style: TextStyle(color: AppTheme.accentRed)),
+                  child: Text('Error loading people: $error', style: const TextStyle(color: AppTheme.accentRed)),
                 ),
                 data: (people) {
                   final filtered = people.where((p) {
@@ -94,17 +94,17 @@ class _PeopleViewState extends ConsumerState<PeopleView> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(Icons.person_off_outlined, size: 48, color: AppTheme.getColors(context).textSecondary.withValues(alpha: 0.5)),
-                          SizedBox(height: 12),
+                          const SizedBox(height: 12),
                           Text(
                             _searchQuery.isEmpty ? 'No people added yet' : 'No matching people',
                             style: TextStyle(fontSize: 16, color: AppTheme.getColors(context).textSecondary),
                           ),
                           if (_searchQuery.isEmpty) ...[
-                            SizedBox(height: 12),
+                            const SizedBox(height: 12),
                             OutlinedButton.icon(
                               onPressed: () => PersonFormDialog.show(context),
-                              icon: Icon(Icons.add, size: 16),
-                              label: Text('Add First Person'),
+                              icon: const Icon(Icons.add, size: 16),
+                              label: const Text('Add First Person'),
                               style: OutlinedButton.styleFrom(foregroundColor: AppTheme.primaryColor),
                             ),
                           ],
@@ -161,7 +161,7 @@ class _PersonCard extends ConsumerWidget {
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: AppTheme.getColors(context).divider, width: 1),
       ),
-      padding: EdgeInsets.all(14),
+      padding: const EdgeInsets.all(14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -172,14 +172,14 @@ class _PersonCard extends ConsumerWidget {
                 backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.2),
                 child: Text(
                   _getInitials(person.name),
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: AppTheme.primaryColor,
                     fontSize: 13,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
-              SizedBox(width: 10),
+              const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -191,7 +191,7 @@ class _PersonCard extends ConsumerWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                     if (person.email != null) ...[
-                      SizedBox(height: 2),
+                      const SizedBox(height: 2),
                       Text(
                         person.email!,
                         style: TextStyle(fontSize: 11, color: AppTheme.getColors(context).textSecondary),
@@ -216,11 +216,11 @@ class _PersonCard extends ConsumerWidget {
                         title: Text('Delete Person', style: TextStyle(color: AppTheme.getColors(context).textPrimary)),
                         content: Text('Are you sure you want to remove "${person.name}"?'),
                         actions: [
-                          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('Cancel')),
+                          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
                           ElevatedButton(
                             onPressed: () => Navigator.pop(ctx, true),
                             style: ElevatedButton.styleFrom(backgroundColor: AppTheme.accentRed, foregroundColor: Colors.white),
-                            child: Text('Delete'),
+                            child: const Text('Delete'),
                           ),
                         ],
                       ),
@@ -236,8 +236,8 @@ class _PersonCard extends ConsumerWidget {
                     child: Row(
                       children: [
                         Icon(Icons.edit_outlined, size: 16, color: AppTheme.getColors(context).textPrimary),
-                        SizedBox(width: 8),
-                        Text('Edit'),
+                        const SizedBox(width: 8),
+                        const Text('Edit'),
                       ],
                     ),
                   ),
@@ -257,7 +257,7 @@ class _PersonCard extends ConsumerWidget {
           ),
           const Spacer(),
           Container(
-            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
             decoration: BoxDecoration(
               color: AppTheme.getColors(context).card,
               borderRadius: BorderRadius.circular(10),

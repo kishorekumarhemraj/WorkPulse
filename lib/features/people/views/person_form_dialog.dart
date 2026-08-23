@@ -92,24 +92,24 @@ class _PersonFormDialogState extends ConsumerState<PersonFormDialog> {
           borderRadius: BorderRadius.circular(12),
           side: BorderSide(color: AppTheme.getColors(context).divider, width: 1),
         ),
-        titlePadding: EdgeInsets.fromLTRB(24, 20, 24, 12),
-        contentPadding: EdgeInsets.fromLTRB(24, 0, 24, 20),
-        actionsPadding: EdgeInsets.fromLTRB(24, 0, 24, 20),
+        titlePadding: const EdgeInsets.fromLTRB(24, 20, 24, 12),
+        contentPadding: const EdgeInsets.fromLTRB(24, 0, 24, 20),
+        actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 20),
         title: Row(
           children: [
             Container(
-              padding: EdgeInsets.all(8),
+              padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 color: AppTheme.primaryColor.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Icon(
+              child: const Icon(
                 Icons.person_outline,
                 color: AppTheme.primaryColor,
                 size: 20,
               ),
             ),
-            SizedBox(width: 12),
+            const SizedBox(width: 12),
             Text(
               isEditing ? 'Edit Person' : 'New Person',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: AppTheme.getColors(context).textPrimary),
@@ -126,7 +126,7 @@ class _PersonFormDialogState extends ConsumerState<PersonFormDialog> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text('Full Name', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AppTheme.getColors(context).textSecondary)),
-                  SizedBox(height: 6),
+                  const SizedBox(height: 6),
                   TextFormField(
                     controller: _nameController,
                     autofocus: true,
@@ -143,9 +143,9 @@ class _PersonFormDialogState extends ConsumerState<PersonFormDialog> {
                     },
                     onFieldSubmitted: (_) => _submit(),
                   ),
-                  SizedBox(height: 16),
+                  const SizedBox(height: 16),
                   Text('Email Address (Optional)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AppTheme.getColors(context).textSecondary)),
-                  SizedBox(height: 6),
+                  const SizedBox(height: 6),
                   TextFormField(
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,

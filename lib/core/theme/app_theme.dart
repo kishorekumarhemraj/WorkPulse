@@ -31,12 +31,12 @@ class AppTheme {
   static final BorderRadius dialogRadius = BorderRadius.circular(12);
 
   // Get theme colors based on current brightness
-  static _ThemeColors getColors(BuildContext context) {
+  static AppThemeColors getColors(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return isDark ? _darkColors : _lightColors;
   }
 
-  static const _ThemeColors _darkColors = _ThemeColors(
+  static const AppThemeColors _darkColors = AppThemeColors(
     background: backgroundDark,
     surface: surfaceDark,
     card: cardDark,
@@ -45,7 +45,7 @@ class AppTheme {
     divider: dividerDark,
   );
 
-  static const _ThemeColors _lightColors = _ThemeColors(
+  static const AppThemeColors _lightColors = AppThemeColors(
     background: backgroundLight,
     surface: surfaceLight,
     card: cardLight,
@@ -283,7 +283,7 @@ class AppTheme {
   }
 }
 
-class _ThemeColors {
+class AppThemeColors {
   final Color background;
   final Color surface;
   final Color card;
@@ -291,7 +291,7 @@ class _ThemeColors {
   final Color textSecondary;
   final Color divider;
 
-  const _ThemeColors({
+  const AppThemeColors({
     required this.background,
     required this.surface,
     required this.card,
