@@ -417,6 +417,68 @@ class AnalyticsService {
     final dailyActivity = dailyMap.values.toList()
       ..sort((a, b) => a.date.compareTo(b.date));
 
+    // 12. Hourly Activity Trend (for 24 hours breakdown)
+    final hourlyMap = <int, HourlyActivityItem>{
+      for (int h = 0; h < 24; h++)
+        h: HourlyActivityItem(
+          hour: h,
+          activeDuration: Duration.zero,
+          idleDuration: Duration.zero,
+          sessionCount: 0,
+        ),
+    };
+
+    for (final s in allSessions) {
+      final sessionEnd = s.endTime ?? DateTime.now().toUtc();
+      final active = sessionActiveDurations[s.id] ?? Duration.zero;
+      final idles = sessionIdleMap[s.id] ?? [];
+      Duration totalIdleDur = Duration.zero;
+      for (final idl in idles) {
+        if (idl.resolution == IdleResolution.markIdle) {
+          totalIdleDur += idl.duration;
+        }
+      }
+
+      final grossDuration = sessionEnd.difference(s.startTime);
+      if (grossDuration <= Duration.zero) continue;
+
+      // Split session across local hour boundaries
+      final hourSlices = _splitAcrossHours(s.startTime, sessionEnd);
+
+      for (final slice in hourSlices) {
+        final sliceDuration = slice.end.difference(slice.start);
+        final fraction =
+            sliceDuration.inMicroseconds / grossDuration.inMicroseconds;
+
+        final sliceActive =
+            Duration(microseconds: (active.inMicroseconds * fraction).round());
+        final sliceIdle = Duration(
+            microseconds: (totalIdleDur.inMicroseconds * fraction).round());
+
+        final localSliceStart = slice.start.toLocal();
+        final hour = localSliceStart.hour;
+
+        final existing = hourlyMap[hour] ??
+            HourlyActivityItem(
+              hour: hour,
+              activeDuration: Duration.zero,
+              idleDuration: Duration.zero,
+              sessionCount: 0,
+            );
+
+        hourlyMap[hour] = HourlyActivityItem(
+          hour: hour,
+          activeDuration: existing.activeDuration + sliceActive,
+          idleDuration: existing.idleDuration + sliceIdle,
+          sessionCount:
+              existing.sessionCount + (slice.start == s.startTime ? 1 : 0),
+        );
+      }
+    }
+
+    final hourlyActivity = hourlyMap.values.toList()
+      ..sort((a, b) => a.hour.compareTo(b.hour));
+
     return DashboardData(
       range: range,
       summary: summary,
@@ -427,6 +489,7 @@ class AnalyticsService {
       personBreakdown: personBreakdown,
       attributeBreakdowns: attributeBreakdowns,
       dailyActivity: dailyActivity,
+      hourlyActivity: hourlyActivity,
     );
   }
 
@@ -440,6 +503,27 @@ class AnalyticsService {
       final nextMidnight =
           DateTime(cursor.year, cursor.month, cursor.day + 1);
       final sliceEnd = nextMidnight.isBefore(localEnd) ? nextMidnight : localEnd;
+      slices.add(DateRange(start: cursor, end: sliceEnd));
+      cursor = sliceEnd;
+    }
+
+    return slices;
+  }
+
+  /// Splits a time range [start, end] into per-hour slices at local hour boundaries.
+  static List<DateRange> _splitAcrossHours(DateTime start, DateTime end) {
+    final slices = <DateRange>[];
+    var cursor = start.toLocal();
+    final localEnd = end.toLocal();
+
+    while (cursor.isBefore(localEnd)) {
+      final nextHour = DateTime(
+        cursor.year,
+        cursor.month,
+        cursor.day,
+        cursor.hour + 1,
+      );
+      final sliceEnd = nextHour.isBefore(localEnd) ? nextHour : localEnd;
       slices.add(DateRange(start: cursor, end: sliceEnd));
       cursor = sliceEnd;
     }

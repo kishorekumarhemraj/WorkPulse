@@ -385,10 +385,14 @@ class _WorkItemCardState extends ConsumerState<_WorkItemCard> {
     final people = widget.people;
 
     final projectColor = ColorUtils.parseHex(project?.colorHex);
-    final timerState = ref.watch(timerProvider).value;
-    final totalDurationAsync = ref.watch(taskTotalDurationProvider(item.id));
     final sessionsAsync = ref.watch(sessionsForWorkItemProvider(item.id));
-    final isItemActive = timerState != null && timerState.isRunning && timerState.activeWorkItem?.id == item.id;
+    final isItemActive = ref.watch(
+      timerProvider.select(
+        (s) =>
+            s.value?.isRunning == true &&
+            s.value?.activeWorkItem?.id == item.id,
+      ),
+    );
 
     return Container(
       decoration: BoxDecoration(
@@ -588,38 +592,9 @@ class _WorkItemCardState extends ConsumerState<_WorkItemCard> {
                         }),
 
                         // Total Duration Badge
-                        totalDurationAsync.when(
-                          data: (dur) {
-                            if (dur == Duration.zero && !isItemActive) return const SizedBox.shrink();
-                            final formatted = isItemActive
-                                ? TimerService.formatDuration(timerState.elapsed, includeSeconds: true)
-                                : TimerService.formatDuration(dur, compact: true);
-                            return Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: isItemActive ? AppTheme.accentGreen.withValues(alpha: 0.15) : AppTheme.getColors(context).card,
-                                borderRadius: BorderRadius.circular(4),
-                                border: isItemActive ? Border.all(color: AppTheme.accentGreen.withValues(alpha: 0.4)) : null,
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(Icons.schedule, size: 11, color: isItemActive ? AppTheme.accentGreen : AppTheme.getColors(context).textSecondary),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    formatted,
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: isItemActive ? FontWeight.bold : FontWeight.normal,
-                                      color: isItemActive ? AppTheme.accentGreen : AppTheme.getColors(context).textSecondary,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
-                          loading: () => const SizedBox.shrink(),
-                          error: (_, __) => const SizedBox.shrink(),
+                        _TaskDurationBadge(
+                          workItemId: item.id,
+                          isItemActive: isItemActive,
                         ),
 
                         // Interactive Sessions Badge / Toggle Button
@@ -682,13 +657,14 @@ class _WorkItemCardState extends ConsumerState<_WorkItemCard> {
                     if (isItemActive) {
                       await ref.read(timerProvider.notifier).stopTimer();
                     } else {
-                      final running = timerState != null && timerState.isRunning && timerState.activeWorkItem != null;
+                      final currentTimer = ref.read(timerProvider).value;
+                      final running = currentTimer != null && currentTimer.isRunning && currentTimer.activeWorkItem != null;
                       if (running) {
                         ref.read(timerProvider.notifier).requestSwitch(item);
                         await TaskSwitchDialog.show(
                           context,
-                          currentItem: timerState.activeWorkItem!,
-                          currentElapsed: timerState.elapsed,
+                          currentItem: currentTimer.activeWorkItem!,
+                          currentElapsed: currentTimer.elapsed,
                           targetItem: item,
                         );
                       } else {
@@ -1013,3 +989,77 @@ class _WorkItemSessionsList extends ConsumerWidget {
     );
   }
 }
+
+class _TaskDurationBadge extends ConsumerWidget {
+  final String workItemId;
+  final bool isItemActive;
+
+  const _TaskDurationBadge({
+    required this.workItemId,
+    required this.isItemActive,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (isItemActive) {
+      final elapsed = ref.watch(timerProvider.select((s) => s.value?.elapsed ?? Duration.zero));
+      final formatted = TimerService.formatDuration(elapsed, includeSeconds: true);
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+        decoration: BoxDecoration(
+          color: AppTheme.accentGreen.withValues(alpha: 0.15),
+          borderRadius: BorderRadius.circular(4),
+          border: Border.all(color: AppTheme.accentGreen.withValues(alpha: 0.4)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.schedule, size: 11, color: AppTheme.accentGreen),
+            const SizedBox(width: 4),
+            Text(
+              formatted,
+              style: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.accentGreen,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final totalDurationAsync = ref.watch(taskTotalDurationProvider(workItemId));
+    return totalDurationAsync.when(
+      data: (dur) {
+        if (dur == Duration.zero) return const SizedBox.shrink();
+        final formatted = TimerService.formatDuration(dur, compact: true);
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+          decoration: BoxDecoration(
+            color: AppTheme.getColors(context).card,
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.schedule, size: 11, color: AppTheme.getColors(context).textSecondary),
+              const SizedBox(width: 4),
+              Text(
+                formatted,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.normal,
+                  color: AppTheme.getColors(context).textSecondary,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+      loading: () => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
+    );
+  }
+}
+
