@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:workpulse/core/theme/app_theme.dart';
+import 'package:workpulse/core/theme/app_colors.dart';
+import 'package:workpulse/core/theme/app_typography.dart';
+import 'package:workpulse/core/theme/design_tokens.dart';
+import 'package:workpulse/core/widgets/app_dialog.dart';
 import 'package:workpulse/core/widgets/searchable_multi_select.dart';
 import 'package:workpulse/domain/models/attribute_model.dart';
 import 'package:workpulse/domain/services/export_service.dart';
@@ -100,9 +103,9 @@ class _SessionEditDialogState extends ConsumerState<SessionEditDialog> {
 
     if (_endTime != null && _endTime!.isBefore(_startTime)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('End time cannot be before start time'),
-            backgroundColor: AppTheme.accentRed),
+        SnackBar(
+            content: const Text('End time cannot be before start time'),
+            backgroundColor: context.colors.danger),
       );
       return;
     }
@@ -128,7 +131,7 @@ class _SessionEditDialogState extends ConsumerState<SessionEditDialog> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
               content: Text('Failed to update session: $e'),
-              backgroundColor: AppTheme.accentRed),
+              backgroundColor: context.colors.danger),
         );
       }
     } finally {
@@ -146,267 +149,173 @@ class _SessionEditDialogState extends ConsumerState<SessionEditDialog> {
             d.scope == AttributeScope.session && d.enabled && !d.isArchived)
         .toList();
     final peopleAsync = ref.watch(peopleProvider);
+    final colors = context.colors;
     final dateFormat = DateFormat('yyyy-MM-dd HH:mm');
 
-    return Dialog(
-      backgroundColor: AppTheme.getColors(context).surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: AppTheme.getColors(context).divider),
-      ),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 500, maxHeight: 620),
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Header
-                Row(
-                  children: [
-                    const Icon(Icons.edit_calendar,
-                        size: 20, color: AppTheme.primaryColor),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Edit Session',
-                            style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: AppTheme.getColors(context).textPrimary),
-                          ),
-                          Text(
-                            widget.record.workItem.name,
-                            style: TextStyle(
-                                fontSize: 12,
-                                color:
-                                    AppTheme.getColors(context).textSecondary),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ),
-                    ),
-                    IconButton(
-                      icon: Icon(Icons.close,
-                          size: 18,
-                          color: AppTheme.getColors(context).textSecondary),
-                      onPressed: () => Navigator.of(context).pop(),
-                    ),
-                  ],
+    return AppDialog(
+      title: 'Edit Session',
+      subtitle: widget.record.workItem.name,
+      icon: Icons.edit_calendar,
+      width: DialogWidth.medium,
+      onSubmit: _isSubmitting ? null : _submit,
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          onPressed: _isSubmitting ? null : _submit,
+          child: _isSubmitting
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                )
+              : const Text('Save Changes'),
+        ),
+      ],
+      child: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            DialogField(
+              label: 'Start Time',
+              child: _TimeField(
+                icon: Icons.access_time,
+                iconColor: colors.accent,
+                value: dateFormat.format(_startTime),
+                onTap: _pickStartTime,
+              ),
+            ),
+            const SizedBox(height: Spacing.lg),
+            DialogField(
+              label: 'End Time',
+              child: _TimeField(
+                icon: Icons.check_circle_outline,
+                iconColor: colors.success,
+                value: _endTime != null
+                    ? dateFormat.format(_endTime!)
+                    : 'In Progress',
+                valueColor: _endTime == null ? colors.success : null,
+                onTap: _pickEndTime,
+              ),
+            ),
+            const SizedBox(height: Spacing.lg),
+            DialogField(
+              label: 'Session Notes',
+              child: TextFormField(
+                controller: _notesController,
+                maxLines: 2,
+                decoration: const InputDecoration(
+                  hintText: 'What did you work on during this block?',
                 ),
-                const SizedBox(height: 20),
+              ),
+            ),
+            const SizedBox(height: Spacing.lg),
+            DialogField(
+              label: 'People',
+              child: peopleAsync.when(
+                loading: () => const SizedBox.shrink(),
+                error: (_, __) => const SizedBox.shrink(),
+                data: (people) {
+                  return SearchableMultiSelect(
+                    allItems: people
+                        .map((person) => SearchableMultiSelectItem(
+                              id: person.id,
+                              label: person.name,
+                              icon: Icons.person,
+                            ))
+                        .toList(),
+                    selectedIds: _selectedPeopleIds,
+                    onChanged: (ids) =>
+                        setState(() => _selectedPeopleIds = ids),
+                    hintText: 'Search people…',
+                    emptyStateText: 'No people added yet',
+                  );
+                },
+              ),
+            ),
+            if (sessionDefs.isNotEmpty) ...[
+              const SizedBox(height: Spacing.xl),
+              DialogSection(
+                title: 'Session Custom Attributes',
+                icon: Icons.tune,
+                child: DynamicAttributeFields(
+                  definitions: sessionDefs,
+                  values: _sessionAttributeValues,
+                  onValueChanged: (String id, dynamic val) =>
+                      _sessionAttributeValues[id] = val,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
 
-                Flexible(
-                  child: SingleChildScrollView(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Start Time Field
-                        Text('Start Time',
-                            style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color:
-                                    AppTheme.getColors(context).textSecondary)),
-                        const SizedBox(height: 6),
-                        Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                                color: AppTheme.getColors(context).divider),
-                          ),
-                          child: Material(
-                            color: AppTheme.getColors(context).card,
-                            borderRadius: BorderRadius.circular(8),
-                            child: InkWell(
-                              onTap: _pickStartTime,
-                              borderRadius: BorderRadius.circular(8),
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 12, vertical: 10),
-                                child: Row(
-                                  children: [
-                                    const Icon(Icons.access_time,
-                                        size: 16, color: AppTheme.primaryColor),
-                                    const SizedBox(width: 10),
-                                    Text(dateFormat.format(_startTime),
-                                        style: TextStyle(
-                                            fontSize: 13,
-                                            color: AppTheme.getColors(context)
-                                                .textPrimary)),
-                                    const Spacer(),
-                                    const Text('Change',
-                                        style: TextStyle(
-                                            fontSize: 11,
-                                            color: AppTheme.primaryColor)),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
+/// A read-only field that opens a date/time picker when tapped.
+class _TimeField extends StatelessWidget {
+  final IconData icon;
+  final Color iconColor;
+  final String value;
+  final Color? valueColor;
+  final VoidCallback onTap;
 
-                        // End Time Field
-                        Text('End Time',
-                            style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color:
-                                    AppTheme.getColors(context).textSecondary)),
-                        const SizedBox(height: 6),
-                        Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                                color: AppTheme.getColors(context).divider),
-                          ),
-                          child: Material(
-                            color: AppTheme.getColors(context).card,
-                            borderRadius: BorderRadius.circular(8),
-                            child: InkWell(
-                              onTap: _pickEndTime,
-                              borderRadius: BorderRadius.circular(8),
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 12, vertical: 10),
-                                child: Row(
-                                  children: [
-                                    const Icon(Icons.check_circle_outline,
-                                        size: 16, color: AppTheme.accentGreen),
-                                    const SizedBox(width: 10),
-                                    Text(
-                                      _endTime != null
-                                          ? dateFormat.format(_endTime!)
-                                          : 'In Progress',
-                                      style: TextStyle(
-                                          fontSize: 13,
-                                          color: _endTime != null
-                                              ? AppTheme.getColors(context)
-                                                  .textPrimary
-                                              : AppTheme.accentGreen),
-                                    ),
-                                    const Spacer(),
-                                    const Text('Change',
-                                        style: TextStyle(
-                                            fontSize: 11,
-                                            color: AppTheme.primaryColor)),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
+  const _TimeField({
+    required this.icon,
+    required this.iconColor,
+    required this.value,
+    required this.onTap,
+    this.valueColor,
+  });
 
-                        // Session Notes
-                        Text('Session Notes',
-                            style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color:
-                                    AppTheme.getColors(context).textSecondary)),
-                        const SizedBox(height: 6),
-                        TextFormField(
-                          controller: _notesController,
-                          maxLines: 2,
-                          style: TextStyle(
-                              fontSize: 13,
-                              color: AppTheme.getColors(context).textPrimary),
-                          decoration: InputDecoration(
-                            hintText: 'What did you work on during this block?',
-                            hintStyle: TextStyle(
-                                fontSize: 12,
-                                color:
-                                    AppTheme.getColors(context).textSecondary),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
 
-                        // Session People
-                        Text('People',
-                            style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color:
-                                    AppTheme.getColors(context).textSecondary)),
-                        const SizedBox(height: 6),
-                        peopleAsync.when(
-                          loading: () => const SizedBox.shrink(),
-                          error: (_, __) => const SizedBox.shrink(),
-                          data: (people) {
-                            return SearchableMultiSelect(
-                              allItems: people
-                                  .map((person) => SearchableMultiSelectItem(
-                                        id: person.id,
-                                        label: person.name,
-                                        icon: Icons.person,
-                                      ))
-                                  .toList(),
-                              selectedIds: _selectedPeopleIds,
-                              onChanged: (ids) =>
-                                  setState(() => _selectedPeopleIds = ids),
-                              hintText: 'Search people...',
-                              emptyStateText: 'No people added yet',
-                            );
-                          },
-                        ),
-
-                        // Custom Session Attributes
-                        if (sessionDefs.isNotEmpty) ...[
-                          const SizedBox(height: 20),
-                          Divider(color: AppTheme.getColors(context).divider),
-                          const SizedBox(height: 10),
-                          Text('Session Custom Attributes',
-                              style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                  color:
-                                      AppTheme.getColors(context).textPrimary)),
-                          const SizedBox(height: 12),
-                          DynamicAttributeFields(
-                            definitions: sessionDefs,
-                            values: _sessionAttributeValues,
-                            onValueChanged: (String id, dynamic val) =>
-                                _sessionAttributeValues[id] = val,
-                          ),
-                        ],
-                      ],
-                    ),
+    return Material(
+      color: colors.card,
+      borderRadius: Radii.mdAll,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: Radii.mdAll,
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: Radii.mdAll,
+            border: Border.all(color: colors.divider),
+          ),
+          padding: const EdgeInsets.symmetric(
+            horizontal: Spacing.md,
+            vertical: Spacing.sm + 2,
+          ),
+          child: Row(
+            children: [
+              Icon(icon, size: IconSizes.md, color: iconColor),
+              const SizedBox(width: Spacing.sm + 2),
+              Expanded(
+                child: Text(
+                  value,
+                  style: AppTypography.numeric(
+                    fontSize: 13,
+                    color: valueColor ?? colors.textPrimary,
                   ),
                 ),
-                const SizedBox(height: 20),
-
-                // Footer Actions
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    TextButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      child: const Text('Cancel'),
-                    ),
-                    const SizedBox(width: 12),
-                    ElevatedButton(
-                      onPressed: _isSubmitting ? null : _submit,
-                      child: _isSubmitting
-                          ? const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(
-                                  strokeWidth: 2, color: Colors.white))
-                          : const Text('Save Changes'),
-                    ),
-                  ],
-                ),
-              ],
-            ),
+              ),
+              Text(
+                'Change',
+                style: Theme.of(context)
+                    .textTheme
+                    .bodySmall
+                    ?.copyWith(color: colors.accent),
+              ),
+            ],
           ),
         ),
       ),

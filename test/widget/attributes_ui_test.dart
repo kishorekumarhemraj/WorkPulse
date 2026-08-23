@@ -141,12 +141,24 @@ void main() {
   );
 
   group('Attributes UI Widget Tests', () {
-    testWidgets('AttributeDefinitionsView renders title, search, filter chips, and cards', (tester) async {
+    testWidgets(
+        'AttributeDefinitionsView renders title, search, filter chips, and cards',
+        (tester) async {
+      // The app's own window is 1200x800; the default 800x600 test surface is
+      // shorter than WorkPulse ever runs.
+      tester.view.physicalSize = const Size(1280, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            currentWorkspaceProvider.overrideWith(() => _FakeWorkspaceNotifier(testWorkspace)),
-            attributeDefinitionsProvider.overrideWith(() => _FakeAttributeDefinitionsNotifier([testTaskDef, testSessionDef])),
+            currentWorkspaceProvider
+                .overrideWith(() => _FakeWorkspaceNotifier(testWorkspace)),
+            attributeDefinitionsProvider.overrideWith(() =>
+                _FakeAttributeDefinitionsNotifier(
+                    [testTaskDef, testSessionDef])),
           ],
           child: MaterialApp(
             theme: AppTheme.darkTheme,
@@ -170,11 +182,21 @@ void main() {
     });
 
     testWidgets('filtering by scope chips updates card list', (tester) async {
+      // The app's own window is 1200x800; the default 800x600 test surface is
+      // shorter than WorkPulse ever runs.
+      tester.view.physicalSize = const Size(1280, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            currentWorkspaceProvider.overrideWith(() => _FakeWorkspaceNotifier(testWorkspace)),
-            attributeDefinitionsProvider.overrideWith(() => _FakeAttributeDefinitionsNotifier([testTaskDef, testSessionDef])),
+            currentWorkspaceProvider
+                .overrideWith(() => _FakeWorkspaceNotifier(testWorkspace)),
+            attributeDefinitionsProvider.overrideWith(() =>
+                _FakeAttributeDefinitionsNotifier(
+                    [testTaskDef, testSessionDef])),
           ],
           child: MaterialApp(
             theme: AppTheme.darkTheme,
@@ -187,28 +209,40 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      // Tap Session Scope filter
-      await tester.tap(find.text('Session Scope'));
+      // The scope filter is now a segmented control reading "All" / "Task" /
+      // "Session", replacing the "Task Scope" / "Session Scope" chips. The
+      // scope badges on each row are uppercase (TASK / SESSION), so these
+      // finders match only the control.
+      await tester.tap(find.text('Session'));
       await tester.pumpAndSettle();
 
       expect(find.text('Meeting Type'), findsOneWidget);
       expect(find.text('Jira Key'), findsNothing);
 
-      // Tap Task Scope filter
-      await tester.tap(find.text('Task Scope'));
+      await tester.tap(find.text('Task'));
       await tester.pumpAndSettle();
 
       expect(find.text('Jira Key'), findsOneWidget);
       expect(find.text('Meeting Type'), findsNothing);
     });
 
-    testWidgets('AttributeDefinitionFormDialog validates required name and creates attribute', (tester) async {
+    testWidgets(
+        'AttributeDefinitionFormDialog validates required name and creates attribute',
+        (tester) async {
+      // The app's own window is 1200x800; the default 800x600 test surface is
+      // shorter than WorkPulse ever runs.
+      tester.view.physicalSize = const Size(1280, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
       final fakeNotifier = _FakeAttributeDefinitionsNotifier([]);
 
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            currentWorkspaceProvider.overrideWith(() => _FakeWorkspaceNotifier(testWorkspace)),
+            currentWorkspaceProvider
+                .overrideWith(() => _FakeWorkspaceNotifier(testWorkspace)),
             attributeDefinitionsProvider.overrideWith(() => fakeNotifier),
           ],
           child: MaterialApp(
@@ -225,7 +259,8 @@ void main() {
       expect(find.text('New Custom Attribute'), findsOneWidget);
 
       // Fill name
-      await tester.enterText(find.widgetWithText(TextFormField, 'Display Name *'), 'Client Code');
+      await tester.enterText(
+          find.widgetWithText(TextFormField, 'Display Name *'), 'Client Code');
       await tester.pumpAndSettle();
 
       // Tap create
@@ -237,15 +272,25 @@ void main() {
       expect(fakeNotifier._list.first.key, 'client_code');
     });
 
-    testWidgets('AttributeOptionsEditorDialog renders and adds select options', (tester) async {
+    testWidgets('AttributeOptionsEditorDialog renders and adds select options',
+        (tester) async {
+      // The app's own window is 1200x800; the default 800x600 test surface is
+      // shorter than WorkPulse ever runs.
+      tester.view.physicalSize = const Size(1280, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
       final optionsList = <AttributeOption>[testOption1];
       final fakeOptController = _FakeAttributeOptionsController(optionsList);
 
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            attributeOptionsFamilyProvider(testSessionDef.id).overrideWith((ref) => Future.value(optionsList)),
-            attributeOptionsControllerProvider.overrideWithValue(fakeOptController),
+            attributeOptionsFamilyProvider(testSessionDef.id)
+                .overrideWith((ref) => Future.value(optionsList)),
+            attributeOptionsControllerProvider
+                .overrideWithValue(fakeOptController),
           ],
           child: MaterialApp(
             theme: AppTheme.darkTheme,
@@ -262,7 +307,9 @@ void main() {
       expect(find.text('Daily Standup'), findsOneWidget);
 
       // Add a new option
-      await tester.enterText(find.widgetWithText(TextField, 'Option Label (e.g. High)'), 'Architecture Review');
+      await tester.enterText(
+          find.widgetWithText(TextField, 'Option Label (e.g. High)'),
+          'Architecture Review');
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Add Option'));
@@ -271,7 +318,16 @@ void main() {
       expect(fakeOptController._list.length, 2);
     });
 
-    testWidgets('DynamicAttributeFields dynamically renders text and boolean input controls', (tester) async {
+    testWidgets(
+        'DynamicAttributeFields dynamically renders text and boolean input controls',
+        (tester) async {
+      // The app's own window is 1200x800; the default 800x600 test surface is
+      // shorter than WorkPulse ever runs.
+      tester.view.physicalSize = const Size(1280, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
       final boolDef = AttributeDefinition(
         id: 'def-bool',
         workspaceId: testWorkspace.id,

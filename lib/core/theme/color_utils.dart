@@ -14,7 +14,8 @@ class ColorUtils {
     '#8E8E93', // Gray
   ];
 
-  static Color parseHex(String? hexString, {Color defaultColor = const Color(0xFF0A84FF)}) {
+  static Color parseHex(String? hexString,
+      {Color defaultColor = const Color(0xFF0A84FF)}) {
     if (hexString == null || hexString.isEmpty) return defaultColor;
     final buffer = StringBuffer();
     final clean = hexString.replaceAll('#', '');
@@ -26,7 +27,8 @@ class ColorUtils {
     } else {
       return defaultColor;
     }
-    return Color(int.tryParse(buffer.toString(), radix: 16) ?? defaultColor.toARGB32());
+    return Color(
+        int.tryParse(buffer.toString(), radix: 16) ?? defaultColor.toARGB32());
   }
 
   static String toHex(Color color) {

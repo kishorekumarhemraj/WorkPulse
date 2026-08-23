@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:workpulse/core/constants/app_constants.dart';
@@ -11,11 +12,14 @@ import 'package:workpulse/domain/models/work_item_model.dart';
 import 'package:workpulse/domain/models/workspace_model.dart';
 import 'package:workpulse/features/categories/providers/categories_provider.dart';
 import 'package:workpulse/features/categories/views/categories_view.dart';
+import 'package:workpulse/features/dashboard/views/dashboard_view.dart';
 import 'package:workpulse/features/people/providers/people_provider.dart';
 import 'package:workpulse/features/people/views/people_view.dart';
 import 'package:workpulse/features/projects/providers/projects_provider.dart';
 import 'package:workpulse/features/projects/views/project_form_dialog.dart';
 import 'package:workpulse/features/projects/views/projects_view.dart';
+import 'package:workpulse/features/reports/views/session_history_view.dart';
+import 'package:workpulse/features/shell/views/command_palette.dart';
 import 'package:workpulse/features/shell/views/main_shell_view.dart';
 import 'package:workpulse/features/tags/providers/tags_provider.dart';
 import 'package:workpulse/features/tags/views/tags_view.dart';
@@ -78,15 +82,26 @@ void main() {
       updatedAt: now,
     );
 
+    // The palette renders over a screen that has its own search field, so
+    // key and text input must be aimed at the palette's query field.
+    final paletteQueryField = find.descendant(
+      of: find.byType(CommandPalette),
+      matching: find.byType(TextField),
+    );
+
     Widget createTestApp({Widget? child}) {
       return ProviderScope(
         overrides: [
-          currentWorkspaceProvider.overrideWith(() => _FakeWorkspaceNotifier(testWorkspace)),
-          projectsProvider.overrideWith(() => _FakeProjectsNotifier([testProject])),
-          categoriesProvider.overrideWith(() => _FakeCategoriesNotifier([testCategory])),
+          currentWorkspaceProvider
+              .overrideWith(() => _FakeWorkspaceNotifier(testWorkspace)),
+          projectsProvider
+              .overrideWith(() => _FakeProjectsNotifier([testProject])),
+          categoriesProvider
+              .overrideWith(() => _FakeCategoriesNotifier([testCategory])),
           tagsProvider.overrideWith(() => _FakeTagsNotifier([testTag])),
           peopleProvider.overrideWith(() => _FakePeopleNotifier([testPerson])),
-          workItemsProvider.overrideWith(() => _FakeWorkItemsNotifier([testWorkItem])),
+          workItemsProvider
+              .overrideWith(() => _FakeWorkItemsNotifier([testWorkItem])),
         ],
         child: MaterialApp(
           theme: AppTheme.darkTheme,
@@ -95,7 +110,155 @@ void main() {
       );
     }
 
-    testWidgets('MainShellView renders sidebar and switches views', (tester) async {
+    testWidgets(
+        'MainShellView groups nav items and honours Cmd+digit shortcuts',
+        (tester) async {
+      tester.view.physicalSize = const Size(1280, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(createTestApp());
+      await tester.pumpAndSettle();
+
+      // The eight destinations are grouped rather than presented flat.
+      expect(find.text('TRACK'), findsOneWidget);
+      expect(find.text('LIBRARY'), findsOneWidget);
+      expect(find.text('CONFIGURE'), findsOneWidget);
+
+      // Work Items is the default landing tab.
+      expect(find.byType(TasksView), findsOneWidget);
+
+      // Cmd+1 jumps to the Dashboard (first destination).
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.meta);
+      await tester.sendKeyEvent(LogicalKeyboardKey.digit1);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.meta);
+      await tester.pumpAndSettle();
+      expect(find.byType(DashboardView), findsOneWidget);
+
+      // Cmd+4 jumps to Projects.
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.meta);
+      await tester.sendKeyEvent(LogicalKeyboardKey.digit4);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.meta);
+      await tester.pumpAndSettle();
+      expect(find.byType(ProjectsView), findsOneWidget);
+    });
+
+    testWidgets('MainShellView collapses the sidebar to an icon rail',
+        (tester) async {
+      tester.view.physicalSize = const Size(1280, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(createTestApp());
+      await tester.pumpAndSettle();
+
+      expect(find.text('Quick Capture'), findsOneWidget);
+      expect(find.text('Dashboard'), findsOneWidget);
+
+      await tester.tap(find.byTooltip('Collapse sidebar'));
+      await tester.pumpAndSettle();
+
+      // Labels give way to icons; the destinations are still reachable and
+      // are named by their tooltips instead.
+      expect(find.text('Quick Capture'), findsNothing);
+      expect(find.text('Dashboard'), findsNothing);
+      expect(find.byTooltip('Dashboard   \u23181'), findsOneWidget);
+
+      // Collapsed nav still switches views.
+      await tester.tap(find.byTooltip('Dashboard   \u23181'));
+      await tester.pumpAndSettle();
+      expect(find.byType(DashboardView), findsOneWidget);
+
+      await tester.tap(find.byTooltip('Expand sidebar'));
+      await tester.pumpAndSettle();
+      expect(find.text('Quick Capture'), findsOneWidget);
+    });
+
+    testWidgets('Cmd+K opens the command palette and navigates',
+        (tester) async {
+      tester.view.physicalSize = const Size(1280, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(createTestApp());
+      await tester.pumpAndSettle();
+
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.meta);
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyK);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.meta);
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('Search commands, screens and work items\u2026'),
+        findsOneWidget,
+      );
+      expect(find.text('GO TO'), findsOneWidget);
+
+      // Subsequence matching: "tmlg" should surface "Time Log". Scope the
+      // finder to the palette, since the sidebar behind it also lists the
+      // destination by name.
+      await tester.enterText(paletteQueryField, 'tmlg');
+      await tester.pumpAndSettle();
+      expect(
+        find.descendant(
+          of: find.byType(CommandPalette),
+          matching: find.text('Time Log'),
+        ),
+        findsOneWidget,
+      );
+
+      // Enter runs the highlighted command.
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pumpAndSettle();
+      expect(find.byType(SessionHistoryView), findsOneWidget);
+    });
+
+    testWidgets('command palette can start tracking a work item',
+        (tester) async {
+      tester.view.physicalSize = const Size(1280, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(createTestApp());
+      await tester.pumpAndSettle();
+
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.meta);
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyK);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.meta);
+      await tester.pumpAndSettle();
+
+      // Work items only appear once the user types, to keep the default
+      // listing focused on navigation and actions.
+      expect(
+        find.descendant(
+          of: find.byType(CommandPalette),
+          matching: find.text('Build Authentication'),
+        ),
+        findsNothing,
+      );
+
+      await tester.enterText(paletteQueryField, 'Build Auth');
+      await tester.pumpAndSettle();
+      expect(find.text('START TRACKING'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byType(CommandPalette),
+          matching: find.text('Build Authentication'),
+        ),
+        findsOneWidget,
+      );
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pumpAndSettle();
+      expect(find.text('START TRACKING'), findsNothing);
+    });
+
+    testWidgets('MainShellView renders sidebar and switches views',
+        (tester) async {
       // The sidebar nav is a virtualized ListView; the default 800x600 test
       // surface is too short to lay out all 8 items, so widgets scrolled
       // out of view (Tags/People/Attributes) wouldn't exist in the tree yet.
@@ -172,7 +335,8 @@ void main() {
       expect(find.text('New Project'), findsNothing);
     });
 
-    testWidgets('TaskFormDialog validates required name and creates task', (tester) async {
+    testWidgets('TaskFormDialog validates required name and creates task',
+        (tester) async {
       await tester.pumpWidget(
         createTestApp(
           child: Builder(
@@ -196,7 +360,8 @@ void main() {
       expect(find.text('Task name is required'), findsOneWidget);
 
       // Enter name and save
-      await tester.enterText(find.byType(TextFormField).first, 'Implement feature XYZ');
+      await tester.enterText(
+          find.byType(TextFormField).first, 'Implement feature XYZ');
       await tester.tap(find.text('Create Task'));
       await tester.pump();
 
@@ -218,7 +383,8 @@ class _FakeProjectsNotifier extends ProjectsNotifier {
   @override
   Future<List<Project>> build() async => _list;
   @override
-  Future<Project> createProject({required String name, String? description, String? colorHex}) async {
+  Future<Project> createProject(
+      {required String name, String? description, String? colorHex}) async {
     final p = Project(
       id: 'new-p',
       workspaceId: 'ws-1',

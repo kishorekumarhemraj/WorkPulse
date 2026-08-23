@@ -1,11 +1,18 @@
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:workpulse/core/theme/app_theme.dart';
+import 'package:workpulse/core/theme/app_colors.dart';
+import 'package:workpulse/core/theme/app_typography.dart';
+import 'package:workpulse/core/theme/design_tokens.dart';
+import 'package:workpulse/core/widgets/app_card.dart';
 import 'package:workpulse/domain/models/analytics_model.dart';
 import 'package:workpulse/domain/services/timer_service.dart';
 
-class DailyActivityChart extends StatelessWidget {
+/// The activity timeline — stacked active/idle bars, hourly for a single day
+/// and daily for longer ranges.
+///
+/// Adds a value axis, a "now" marker on the hourly view, and hover feedback,
+/// so a bar's height can actually be read rather than only compared.
+class DailyActivityChart extends StatefulWidget {
   final List<DailyActivityItem> activities;
   final List<HourlyActivityItem> hourlyActivities;
   final bool isHourly;
@@ -17,6 +24,15 @@ class DailyActivityChart extends StatelessWidget {
     this.isHourly = false,
   });
 
+  @override
+  State<DailyActivityChart> createState() => _DailyActivityChartState();
+}
+
+class _DailyActivityChartState extends State<DailyActivityChart> {
+  int? _hoveredIndex;
+
+  static const double _plotHeight = 150;
+
   String _formatHourLabel(int hour) {
     if (hour == 0) return '12a';
     if (hour == 12) return '12p';
@@ -27,348 +43,399 @@ class DailyActivityChart extends StatelessWidget {
   String _formatHourFullRange(int hour) {
     final start = DateTime(2026, 1, 1, hour);
     final end = DateTime(2026, 1, 1, (hour + 1) % 24);
-    final startStr = DateFormat('h:mm a').format(start);
-    final endStr = DateFormat('h:mm a').format(end);
-    return '$startStr – $endStr';
+    return '${DateFormat('h:mm a').format(start)} – '
+        '${DateFormat('h:mm a').format(end)}';
+  }
+
+  /// Rounds the axis maximum up to a whole number of hours so gridline labels
+  /// read as clean values rather than arbitrary minute counts.
+  int _axisMaxSeconds(int observedMax) {
+    const hour = 3600;
+    if (observedMax <= hour) return hour;
+    return ((observedMax + hour - 1) ~/ hour) * hour;
   }
 
   @override
   Widget build(BuildContext context) {
-    if (isHourly) {
-      if (hourlyActivities.isEmpty) return const SizedBox.shrink();
-      return _buildHourlyChart(context);
-    } else {
-      if (activities.isEmpty) return const SizedBox.shrink();
-      return _buildDailyChart(context);
+    if (widget.isHourly) {
+      if (widget.hourlyActivities.isEmpty) return const SizedBox.shrink();
+      return _buildChart(
+        context,
+        title: "Today's Hourly Breakdown",
+        icon: Icons.access_time,
+        bars: [
+          for (final h in widget.hourlyActivities)
+            _BarData(
+              label: _formatHourLabel(h.hour),
+              tooltipTitle: _formatHourFullRange(h.hour),
+              active: h.activeDuration,
+              idle: h.idleDuration,
+              sessionCount: h.sessionCount,
+              isNow: h.hour == DateTime.now().hour,
+              showLabel: h.hour % 3 == 0,
+            ),
+        ],
+      );
     }
+
+    if (widget.activities.isEmpty) return const SizedBox.shrink();
+    final dayFormat = DateFormat('E');
+    final fullFormat = DateFormat('EEE, MMM d');
+    final today = DateTime.now();
+    // With many days on screen, labelling every bar becomes unreadable.
+    final labelEvery = (widget.activities.length / 12).ceil().clamp(1, 7);
+
+    return _buildChart(
+      context,
+      title: 'Daily Activity',
+      icon: Icons.bar_chart,
+      bars: [
+        for (var i = 0; i < widget.activities.length; i++)
+          () {
+            final a = widget.activities[i];
+            final date = a.date.toLocal();
+            return _BarData(
+              label: dayFormat.format(date),
+              tooltipTitle: fullFormat.format(date),
+              active: a.activeDuration,
+              idle: a.idleDuration,
+              sessionCount: a.sessionCount,
+              isNow: date.year == today.year &&
+                  date.month == today.month &&
+                  date.day == today.day,
+              showLabel: i % labelEvery == 0,
+            );
+          }(),
+      ],
+    );
   }
 
-  Widget _buildHourlyChart(BuildContext context) {
-    int maxSeconds = 3600; // Baseline to 1 hour
-    for (final h in hourlyActivities) {
-      final total = h.totalDuration.inSeconds;
-      if (total > maxSeconds) {
-        maxSeconds = total;
-      }
-    }
+  Widget _buildChart(
+    BuildContext context, {
+    required String title,
+    required IconData icon,
+    required List<_BarData> bars,
+  }) {
+    final colors = context.colors;
+    final theme = Theme.of(context);
 
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: AppTheme.getColors(context).surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.getColors(context).divider),
-      ),
+    var observedMax = 0;
+    for (final bar in bars) {
+      final total = bar.total.inSeconds;
+      if (total > observedMax) observedMax = total;
+    }
+    final maxSeconds = _axisMaxSeconds(observedMax);
+
+    return AppCard(
+      padding: const EdgeInsets.all(Spacing.lg + 2),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(Icons.access_time, size: 16, color: AppTheme.primaryColor),
-              const SizedBox(width: 8),
-              Text(
-                'Today\'s Hourly Breakdown (24 Hours)',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: AppTheme.getColors(context).textPrimary,
-                ),
+              Icon(icon, size: IconSizes.md, color: colors.accent),
+              const SizedBox(width: Spacing.sm),
+              Expanded(
+                child: Text(title, style: theme.textTheme.titleMedium),
               ),
-              const Spacer(),
-              // Legend
-              Row(
-                children: [
-                  Container(
-                    width: 8,
-                    height: 8,
-                    decoration: BoxDecoration(
-                      color: AppTheme.accentGreen,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    'Active',
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: AppTheme.getColors(context).textSecondary,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Container(
-                    width: 8,
-                    height: 8,
-                    decoration: BoxDecoration(
-                      color: AppTheme.accentOrange,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    'Idle',
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: AppTheme.getColors(context).textSecondary,
-                    ),
-                  ),
-                ],
-              ),
+              _LegendSwatch(label: 'Active', color: colors.success),
+              const SizedBox(width: Spacing.md),
+              _LegendSwatch(label: 'Idle', color: colors.warning),
             ],
           ),
-          const SizedBox(height: 20),
-
-          // 24 Hour Bars
+          const SizedBox(height: Spacing.xl),
           SizedBox(
-            height: 140,
+            height: _plotHeight + 22,
             child: Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: hourlyActivities.map((item) {
-                final activeHeight =
-                    (item.activeDuration.inSeconds / maxSeconds) * 95;
-                final idleHeight =
-                    (item.idleDuration.inSeconds / maxSeconds) * 95;
-                final hasData = item.totalDuration.inSeconds > 0;
-                final hourRangeStr = _formatHourFullRange(item.hour);
-                final durationTooltip =
-                    'Active: ${TimerService.formatDuration(item.activeDuration, includeSeconds: false)}\nIdle: ${TimerService.formatDuration(item.idleDuration, includeSeconds: false)}';
-                final isMajorHour = item.hour % 3 == 0;
-
-                return Expanded(
-                  child: Tooltip(
-                    message: '$hourRangeStr\n$durationTooltip',
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 1.5),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.end,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _ValueAxis(maxSeconds: maxSeconds, height: _plotHeight),
+                const SizedBox(width: Spacing.sm),
+                Expanded(
+                  child: Stack(
+                    children: [
+                      // Gridlines sit behind the bars so heights can be read
+                      // against them.
+                      Positioned.fill(
+                        bottom: 22,
+                        child: _Gridlines(color: colors.divider),
+                      ),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
-                          if (hasData)
-                            Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                if (item.idleDuration.inSeconds > 0)
-                                  Container(
-                                    width: 12,
-                                    height: idleHeight.clamp(2.0, 95.0),
-                                    decoration: const BoxDecoration(
-                                      color: AppTheme.accentOrange,
-                                      borderRadius: BorderRadius.vertical(
-                                          top: Radius.circular(2)),
-                                    ),
-                                  ),
-                                if (item.activeDuration.inSeconds > 0)
-                                  Container(
-                                    width: 12,
-                                    height: activeHeight.clamp(4.0, 95.0),
-                                    decoration: BoxDecoration(
-                                      color: AppTheme.accentGreen,
-                                      borderRadius: item.idleDuration.inSeconds > 0
-                                          ? BorderRadius.zero
-                                          : const BorderRadius.vertical(
-                                              top: Radius.circular(2)),
-                                    ),
-                                  ),
-                              ],
-                            )
-                          else
-                            Container(
-                              width: 10,
-                              height: 3,
-                              decoration: BoxDecoration(
-                                color: AppTheme.getColors(context)
-                                    .divider
-                                    .withValues(alpha: 0.6),
-                                borderRadius: BorderRadius.circular(1.5),
+                          for (var i = 0; i < bars.length; i++)
+                            Expanded(
+                              child: _Bar(
+                                data: bars[i],
+                                maxSeconds: maxSeconds,
+                                plotHeight: _plotHeight,
+                                isHovered: _hoveredIndex == i,
+                                onHover: (hovering) => setState(
+                                  () => _hoveredIndex = hovering ? i : null,
+                                ),
                               ),
                             ),
-                          const SizedBox(height: 8),
-                          Text(
-                            _formatHourLabel(item.hour),
-                            style: TextStyle(
-                              fontSize: 9,
-                              fontWeight: isMajorHour
-                                  ? FontWeight.bold
-                                  : FontWeight.normal,
-                              color: isMajorHour
-                                  ? AppTheme.getColors(context).textPrimary
-                                  : AppTheme.getColors(context).textSecondary,
-                            ),
-                          ),
                         ],
                       ),
-                    ),
+                    ],
                   ),
-                );
-              }).toList(),
+                ),
+              ],
             ),
           ),
         ],
       ),
     );
   }
+}
 
-  Widget _buildDailyChart(BuildContext context) {
-    // Find max duration to scale bars
-    int maxSeconds = 1;
-    for (final a in activities) {
-      final total = a.totalDuration.inSeconds;
-      if (total > maxSeconds) {
-        maxSeconds = total;
-      }
+class _BarData {
+  final String label;
+  final String tooltipTitle;
+  final Duration active;
+  final Duration idle;
+  final int sessionCount;
+  final bool isNow;
+  final bool showLabel;
+
+  const _BarData({
+    required this.label,
+    required this.tooltipTitle,
+    required this.active,
+    required this.idle,
+    required this.sessionCount,
+    required this.isNow,
+    required this.showLabel,
+  });
+
+  Duration get total => active + idle;
+}
+
+class _Bar extends StatelessWidget {
+  final _BarData data;
+  final int maxSeconds;
+  final double plotHeight;
+  final bool isHovered;
+  final ValueChanged<bool> onHover;
+
+  const _Bar({
+    required this.data,
+    required this.maxSeconds,
+    required this.plotHeight,
+    required this.isHovered,
+    required this.onHover,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    final theme = Theme.of(context);
+
+    final activeHeight =
+        (data.active.inSeconds / maxSeconds).clamp(0.0, 1.0) * plotHeight;
+    final idleHeight =
+        (data.idle.inSeconds / maxSeconds).clamp(0.0, 1.0) * plotHeight;
+    final isEmpty = data.total == Duration.zero;
+
+    final tooltip = StringBuffer(data.tooltipTitle)
+      ..write('\n')
+      ..write(
+        isEmpty
+            ? 'No activity'
+            : 'Active ${TimerService.formatDuration(data.active, includeSeconds: false)}',
+      );
+    if (data.idle > Duration.zero) {
+      tooltip.write(
+        '\nIdle ${TimerService.formatDuration(data.idle, includeSeconds: false)}',
+      );
+    }
+    if (data.sessionCount > 0) {
+      tooltip.write(
+        '\n${data.sessionCount} session${data.sessionCount == 1 ? '' : 's'}',
+      );
     }
 
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: AppTheme.getColors(context).surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.getColors(context).divider),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+    return MouseRegion(
+      onEnter: (_) => onHover(true),
+      onExit: (_) => onHover(false),
+      child: Tooltip(
+        message: tooltip.toString(),
+        waitDuration: const Duration(milliseconds: 200),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 1.5),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              const Icon(Icons.bar_chart, size: 16, color: AppTheme.primaryColor),
-              const SizedBox(width: 8),
-              Text(
-                'Daily Focus & Activity Trend',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: AppTheme.getColors(context).textPrimary,
+              SizedBox(
+                height: plotHeight,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    if (idleHeight > 0)
+                      _Segment(
+                        height: idleHeight,
+                        color: colors.warning,
+                        isHovered: isHovered,
+                        isTop: true,
+                      ),
+                    if (activeHeight > 0)
+                      _Segment(
+                        height: activeHeight,
+                        color: colors.success,
+                        isHovered: isHovered,
+                        isTop: idleHeight <= 0,
+                      ),
+                    if (isEmpty)
+                      // A visible baseline keeps empty slots readable as
+                      // "nothing tracked" rather than as a gap in the chart.
+                      Container(
+                        height: 2,
+                        decoration: BoxDecoration(
+                          color:
+                              isHovered ? colors.borderStrong : colors.divider,
+                          borderRadius: Radii.xsAll,
+                        ),
+                      ),
+                  ],
                 ),
               ),
-              const Spacer(),
-              // Legend
-              Row(
-                children: [
-                  Container(
-                    width: 8,
-                    height: 8,
-                    decoration: BoxDecoration(
-                      color: AppTheme.accentGreen,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    'Active',
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: AppTheme.getColors(context).textSecondary,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Container(
-                    width: 8,
-                    height: 8,
-                    decoration: BoxDecoration(
-                      color: AppTheme.accentOrange,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    'Idle',
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: AppTheme.getColors(context).textSecondary,
-                    ),
-                  ),
-                ],
+              const SizedBox(height: Spacing.sm - 2),
+              SizedBox(
+                height: 14,
+                child: data.showLabel || isHovered
+                    ? Text(
+                        data.label,
+                        maxLines: 1,
+                        overflow: TextOverflow.clip,
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          letterSpacing: 0,
+                          fontWeight:
+                              data.isNow ? FontWeight.w700 : FontWeight.w500,
+                          color: data.isNow
+                              ? colors.accent
+                              : (isHovered
+                                  ? colors.textPrimary
+                                  : colors.textTertiary),
+                        ),
+                      )
+                    : null,
               ),
             ],
           ),
-          const SizedBox(height: 20),
+        ),
+      ),
+    );
+  }
+}
 
-          // Bar Chart Row
-          SizedBox(
-            height: 140,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: activities.map((item) {
-                final activeHeight =
-                    (item.activeDuration.inSeconds / maxSeconds) * 95;
-                final idleHeight =
-                    (item.idleDuration.inSeconds / maxSeconds) * 95;
-                final dayLabel = DateFormat.E().format(item.date);
-                final dateLabel = DateFormat.d().format(item.date);
-                final hasData = item.totalDuration.inSeconds > 0;
-                final durationTooltip =
-                    'Active: ${TimerService.formatDuration(item.activeDuration, includeSeconds: false)}\nIdle: ${TimerService.formatDuration(item.idleDuration, includeSeconds: false)}';
+class _Segment extends StatelessWidget {
+  final double height;
+  final Color color;
+  final bool isHovered;
+  final bool isTop;
 
-                return Expanded(
-                  child: Tooltip(
-                    message:
-                        '${DateFormat.yMMMd().format(item.date)}\n$durationTooltip',
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 2),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          if (hasData)
-                            Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                if (item.idleDuration.inSeconds > 0)
-                                  Container(
-                                    width: 14,
-                                    height: idleHeight.clamp(2.0, 95.0),
-                                    decoration: const BoxDecoration(
-                                      color: AppTheme.accentOrange,
-                                      borderRadius: BorderRadius.vertical(
-                                          top: Radius.circular(3)),
-                                    ),
-                                  ),
-                                if (item.activeDuration.inSeconds > 0)
-                                  Container(
-                                    width: 14,
-                                    height: activeHeight.clamp(4.0, 95.0),
-                                    decoration: BoxDecoration(
-                                      color: AppTheme.accentGreen,
-                                      borderRadius: item.idleDuration.inSeconds > 0
-                                          ? BorderRadius.zero
-                                          : const BorderRadius.vertical(
-                                              top: Radius.circular(3)),
-                                    ),
-                                  ),
-                              ],
-                            )
-                          else
-                            Container(
-                              width: 14,
-                              height: 3,
-                              decoration: BoxDecoration(
-                                color: AppTheme.getColors(context).divider,
-                                borderRadius: BorderRadius.circular(2),
-                              ),
-                            ),
-                          const SizedBox(height: 8),
-                          Text(
-                            dayLabel,
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w600,
-                              color: AppTheme.getColors(context).textPrimary,
-                            ),
-                          ),
-                          Text(
-                            dateLabel,
-                            style: TextStyle(
-                              fontSize: 9,
-                              color: AppTheme.getColors(context).textSecondary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              }).toList(),
-            ),
+  const _Segment({
+    required this.height,
+    required this.color,
+    required this.isHovered,
+    required this.isTop,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: height),
+      duration: Motion.duration(context, Motion.slow),
+      curve: Motion.curve,
+      builder: (context, value, _) => AnimatedContainer(
+        duration: Motion.duration(context, Motion.fast),
+        width: double.infinity,
+        height: value,
+        decoration: BoxDecoration(
+          color: isHovered ? color : color.withValues(alpha: 0.78),
+          borderRadius: isTop
+              ? const BorderRadius.vertical(top: Radius.circular(3))
+              : BorderRadius.zero,
+        ),
+      ),
+    );
+  }
+}
+
+/// The vertical scale, labelled at 0%, 50% and 100% of the axis maximum.
+class _ValueAxis extends StatelessWidget {
+  final int maxSeconds;
+  final double height;
+
+  const _ValueAxis({required this.maxSeconds, required this.height});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+
+    String label(int seconds) => TimerService.formatDuration(
+          Duration(seconds: seconds),
+          includeSeconds: false,
+        );
+
+    Widget tick(String text) => Text(
+          text,
+          textAlign: TextAlign.right,
+          style: AppTypography.numeric(
+            fontSize: 11,
+            color: colors.textTertiary,
           ),
+        );
+
+    return SizedBox(
+      height: height,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          tick(label(maxSeconds)),
+          tick(label(maxSeconds ~/ 2)),
+          tick('0'),
         ],
       ),
+    );
+  }
+}
+
+class _Gridlines extends StatelessWidget {
+  final Color color;
+
+  const _Gridlines({required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    Widget line() => Container(height: 1, color: color.withValues(alpha: 0.55));
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [line(), line(), line()],
+    );
+  }
+}
+
+class _LegendSwatch extends StatelessWidget {
+  final String label;
+  final Color color;
+
+  const _LegendSwatch({required this.label, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(color: color, borderRadius: Radii.xsAll),
+        ),
+        const SizedBox(width: Spacing.xs + 1),
+        Text(label, style: Theme.of(context).textTheme.bodySmall),
+      ],
     );
   }
 }
