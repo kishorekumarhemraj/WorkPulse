@@ -73,7 +73,17 @@ void main() {
   );
 
   group('IdlePromptDialog UI Widget Tests', () {
-    testWidgets('renders duration, active task name, and all 3 resolution choices', (tester) async {
+    testWidgets(
+        'renders duration, active task name, and all 3 resolution choices',
+        (tester) async {
+      // The app's own window is 1200x800; the default 800x600 test surface is
+      // shorter than WorkPulse ever runs, which would push this dialog's third
+      // option below the fold.
+      tester.view.physicalSize = const Size(1280, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
       final fakeNotifier = _FakeIdleNotifier(testIdleState);
 
       await tester.pumpWidget(
@@ -104,7 +114,16 @@ void main() {
       expect(find.text('Stop Timer at Inactivity'), findsOneWidget);
     });
 
-    testWidgets('tapping Keep Tracking triggers keepTracking on notifier', (tester) async {
+    testWidgets('tapping Keep Tracking triggers keepTracking on notifier',
+        (tester) async {
+      // The app's own window is 1200x800; the default 800x600 test surface is
+      // shorter than WorkPulse ever runs, which would push this dialog's third
+      // option below the fold.
+      tester.view.physicalSize = const Size(1280, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
       final fakeNotifier = _FakeIdleNotifier(testIdleState);
 
       await tester.pumpWidget(
@@ -133,7 +152,16 @@ void main() {
       expect(fakeNotifier.keepTrackingCalled, isTrue);
     });
 
-    testWidgets('tapping Mark as Idle & Resume triggers markIdle on notifier', (tester) async {
+    testWidgets('tapping Mark as Idle & Resume triggers markIdle on notifier',
+        (tester) async {
+      // The app's own window is 1200x800; the default 800x600 test surface is
+      // shorter than WorkPulse ever runs, which would push this dialog's third
+      // option below the fold.
+      tester.view.physicalSize = const Size(1280, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
       final fakeNotifier = _FakeIdleNotifier(testIdleState);
 
       await tester.pumpWidget(
@@ -162,7 +190,17 @@ void main() {
       expect(fakeNotifier.markIdleCalled, isTrue);
     });
 
-    testWidgets('tapping Stop Timer at Inactivity triggers stopSession on notifier', (tester) async {
+    testWidgets(
+        'tapping Stop Timer at Inactivity triggers stopSession on notifier',
+        (tester) async {
+      // The app's own window is 1200x800; the default 800x600 test surface is
+      // shorter than WorkPulse ever runs, which would push this dialog's third
+      // option below the fold.
+      tester.view.physicalSize = const Size(1280, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
       final fakeNotifier = _FakeIdleNotifier(testIdleState);
 
       await tester.pumpWidget(

@@ -6,6 +6,7 @@ import 'package:workpulse/domain/models/analytics_model.dart';
 import 'package:workpulse/domain/models/date_range.dart';
 import 'package:workpulse/features/dashboard/providers/dashboard_provider.dart';
 import 'package:workpulse/features/dashboard/views/dashboard_view.dart';
+import 'package:workpulse/features/dashboard/widgets/metric_card.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -121,22 +122,32 @@ void main() {
       await tester.pumpAndSettle();
 
       // Header assertions
-      expect(find.text('Dashboard & Insights'), findsOneWidget);
+      expect(find.text('Dashboard'), findsOneWidget);
       expect(find.text('Today'), findsOneWidget);
       expect(find.text('This Week'), findsOneWidget);
       expect(find.text('This Month'), findsOneWidget);
       expect(find.text('Custom'), findsOneWidget);
 
-      // KPI Metric Cards assertions
+      // KPI Metric Cards. Durations are scoped to their own card: the same
+      // figure legitimately appears again in breakdown rows and in the group
+      // totals the breakdown headers now show, so a global count would be
+      // brittle without testing anything extra.
+      Finder metricValue(String title, String value) => find.descendant(
+            of: find.ancestor(
+              of: find.text(title),
+              matching: find.byType(MetricCard),
+            ),
+            matching: find.text(value),
+          );
+
       expect(find.text('Total Tracked'), findsOneWidget);
-      expect(find.text('04:30'), findsOneWidget);
+      expect(metricValue('Total Tracked', '04:30'), findsOneWidget);
       expect(find.text('Net Focus Time'), findsOneWidget);
-      expect(find.text('04:00'),
-          findsNWidgets(2)); // In metric card and category card
+      expect(metricValue('Net Focus Time', '04:00'), findsOneWidget);
       expect(find.text('Idle Time'), findsOneWidget);
-      expect(find.text('00:30'), findsOneWidget);
+      expect(metricValue('Idle Time', '00:30'), findsOneWidget);
       expect(find.text('Active Tasks'), findsOneWidget);
-      expect(find.text('3'), findsOneWidget);
+      expect(metricValue('Active Tasks', '3'), findsOneWidget);
 
       // Breakdown Cards assertions
       expect(find.text('Time by Project'), findsOneWidget);

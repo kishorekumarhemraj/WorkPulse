@@ -3,7 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
-import 'package:workpulse/core/theme/app_theme.dart';
+import 'package:workpulse/core/theme/design_tokens.dart';
+import 'package:workpulse/core/theme/app_colors.dart';
+import 'package:workpulse/core/widgets/app_dialog.dart';
 import 'package:workpulse/core/theme/color_utils.dart';
 import 'package:workpulse/core/theme/icon_utils.dart';
 import 'package:workpulse/core/widgets/searchable_multi_select.dart';
@@ -141,18 +143,18 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
 
     if (_selectedProjectId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Please select a project'),
-            backgroundColor: AppTheme.accentRed),
+        SnackBar(
+            content: const Text('Please select a project'),
+            backgroundColor: context.colors.danger),
       );
       return;
     }
 
     if (_selectedCategoryId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Please select a category'),
-            backgroundColor: AppTheme.accentRed),
+        SnackBar(
+            content: const Text('Please select a category'),
+            backgroundColor: context.colors.danger),
       );
       return;
     }
@@ -252,7 +254,7 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
               content: Text('Failed to save task: $e'),
-              backgroundColor: AppTheme.accentRed),
+              backgroundColor: context.colors.danger),
         );
       }
     } finally {
@@ -291,419 +293,13 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
         }
         return KeyEventResult.ignored;
       },
-      child: AlertDialog(
-        backgroundColor: AppTheme.getColors(context).surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side:
-              BorderSide(color: AppTheme.getColors(context).divider, width: 1),
-        ),
-        titlePadding: const EdgeInsets.fromLTRB(24, 20, 24, 12),
-        contentPadding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
-        actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 20),
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: AppTheme.primaryColor.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Icon(
-                Icons.check_box_outlined,
-                color: AppTheme.primaryColor,
-                size: 20,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Text(
-              isEditing ? 'Edit Work Item' : 'New Work Item',
-              style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: AppTheme.getColors(context).textPrimary),
-            ),
-          ],
-        ),
-        content: SizedBox(
-          width: 520,
-          child: Form(
-            key: _formKey,
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Task Name
-                  Text('Task Name',
-                      style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                          color: AppTheme.getColors(context).textSecondary)),
-                  const SizedBox(height: 6),
-                  TextFormField(
-                    controller: _nameController,
-                    autofocus: true,
-                    style: TextStyle(
-                        color: AppTheme.getColors(context).textPrimary,
-                        fontSize: 14),
-                    decoration: InputDecoration(
-                      hintText: 'e.g. Design auth flow, Write repository tests',
-                      hintStyle: TextStyle(
-                          color: AppTheme.getColors(context).textSecondary),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Task name is required';
-                      }
-                      return null;
-                    },
-                    onFieldSubmitted: (_) => _submit(),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Project & Category Dropdowns in a row
-                  Row(
-                    children: [
-                      // Project Dropdown
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text('Project',
-                                    style: TextStyle(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w500,
-                                        color: AppTheme.getColors(context)
-                                            .textSecondary)),
-                                InkWell(
-                                  onTap: () async {
-                                    final p =
-                                        await ProjectFormDialog.show(context);
-                                    if (p != null) {
-                                      setState(() => _selectedProjectId = p.id);
-                                    }
-                                  },
-                                  child: const Text('+ New',
-                                      style: TextStyle(
-                                          fontSize: 12,
-                                          color: AppTheme.primaryColor,
-                                          fontWeight: FontWeight.w500)),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 6),
-                            projectsAsync.when(
-                              loading: () => SizedBox(
-                                  height: 38,
-                                  child: Align(
-                                      alignment: Alignment.centerLeft,
-                                      child: Text('Loading projects...',
-                                          style: TextStyle(
-                                              fontSize: 12,
-                                              color: AppTheme.getColors(context)
-                                                  .textSecondary)))),
-                              error: (_, __) => const Text('Error loading projects'),
-                              data: (projects) {
-                                return DropdownButtonFormField<String>(
-                                  isDense: true,
-                                  isExpanded: true,
-                                  initialValue: projects.any(
-                                          (p) => p.id == _selectedProjectId)
-                                      ? _selectedProjectId
-                                      : (projects.isNotEmpty
-                                          ? projects.first.id
-                                          : null),
-                                  items: projects.map((p) {
-                                    return DropdownMenuItem(
-                                      value: p.id,
-                                      child: Row(
-                                        children: [
-                                          Container(
-                                            width: 8,
-                                            height: 8,
-                                            decoration: BoxDecoration(
-                                              color: ColorUtils.parseHex(
-                                                  p.colorHex),
-                                              shape: BoxShape.circle,
-                                            ),
-                                          ),
-                                          const SizedBox(width: 8),
-                                          Expanded(
-                                            child: Text(p.name,
-                                                overflow: TextOverflow.ellipsis),
-                                          ),
-                                        ],
-                                      ),
-                                    );
-                                  }).toList(),
-                                  onChanged: (val) =>
-                                      setState(() => _selectedProjectId = val),
-                                  decoration: const InputDecoration(
-                                      contentPadding: EdgeInsets.symmetric(
-                                          horizontal: 10, vertical: 8)),
-                                  dropdownColor:
-                                      AppTheme.getColors(context).surface,
-                                );
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-
-                      // Category Dropdown
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text('Category',
-                                    style: TextStyle(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w500,
-                                        color: AppTheme.getColors(context)
-                                            .textSecondary)),
-                                InkWell(
-                                  onTap: () async {
-                                    final c =
-                                        await CategoryFormDialog.show(context);
-                                    if (c != null) {
-                                      setState(
-                                          () => _selectedCategoryId = c.id);
-                                    }
-                                  },
-                                  child: const Text('+ New',
-                                      style: TextStyle(
-                                          fontSize: 12,
-                                          color: AppTheme.primaryColor,
-                                          fontWeight: FontWeight.w500)),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 6),
-                            categoriesAsync.when(
-                              loading: () => SizedBox(
-                                  height: 38,
-                                  child: Align(
-                                      alignment: Alignment.centerLeft,
-                                      child: Text('Loading categories...',
-                                          style: TextStyle(
-                                              fontSize: 12,
-                                              color: AppTheme.getColors(context)
-                                                  .textSecondary)))),
-                              error: (_, __) =>
-                                  const Text('Error loading categories'),
-                              data: (categories) {
-                                return DropdownButtonFormField<String>(
-                                  isDense: true,
-                                  isExpanded: true,
-                                  initialValue: categories.any(
-                                          (c) => c.id == _selectedCategoryId)
-                                      ? _selectedCategoryId
-                                      : (categories.isNotEmpty
-                                          ? categories.first.id
-                                          : null),
-                                  items: categories.map((c) {
-                                    return DropdownMenuItem(
-                                      value: c.id,
-                                      child: Row(
-                                        children: [
-                                          Icon(IconUtils.getIcon(c.iconName),
-                                              size: 14,
-                                              color: AppTheme.primaryColor),
-                                          const SizedBox(width: 8),
-                                          Expanded(
-                                            child: Text(c.name,
-                                                overflow: TextOverflow.ellipsis),
-                                          ),
-                                        ],
-                                      ),
-                                    );
-                                  }).toList(),
-                                  onChanged: (val) =>
-                                      setState(() => _selectedCategoryId = val),
-                                  decoration: const InputDecoration(
-                                      contentPadding: EdgeInsets.symmetric(
-                                          horizontal: 10, vertical: 8)),
-                                  dropdownColor:
-                                      AppTheme.getColors(context).surface,
-                                );
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Tags Multi-select
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text('Tags',
-                          style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                              color:
-                                  AppTheme.getColors(context).textSecondary)),
-                      InkWell(
-                        onTap: () async {
-                          final t = await TagFormDialog.show(context);
-                          if (t != null && !_selectedTagIds.contains(t.id)) {
-                            setState(() => _selectedTagIds.add(t.id));
-                          }
-                        },
-                        child: const Text('+ New Tag',
-                            style: TextStyle(
-                                fontSize: 12,
-                                color: AppTheme.primaryColor,
-                                fontWeight: FontWeight.w500)),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  tagsAsync.when(
-                    loading: () => const SizedBox.shrink(),
-                    error: (_, __) => const SizedBox.shrink(),
-                    data: (tags) {
-                      return SearchableMultiSelect(
-                        allItems: tags
-                            .map((tag) => SearchableMultiSelectItem(
-                                  id: tag.id,
-                                  label: tag.name,
-                                  color: ColorUtils.parseHex(tag.colorHex),
-                                ))
-                            .toList(),
-                        selectedIds: _selectedTagIds,
-                        onChanged: (ids) =>
-                            setState(() => _selectedTagIds = ids),
-                        hintText: 'Search tags...',
-                        emptyStateText: 'No tags created yet',
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 16),
-
-                  // People Multi-select
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Flexible(
-                        child: Text('Assigned People',
-                            style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w500,
-                                color:
-                                    AppTheme.getColors(context).textSecondary),
-                            overflow: TextOverflow.ellipsis),
-                      ),
-                      InkWell(
-                        onTap: () async {
-                          final p = await PersonFormDialog.show(context);
-                          if (p != null && !_selectedPeopleIds.contains(p.id)) {
-                            setState(() => _selectedPeopleIds.add(p.id));
-                          }
-                        },
-                        child: const Text('+ Add Person',
-                            style: TextStyle(
-                                fontSize: 12,
-                                color: AppTheme.primaryColor,
-                                fontWeight: FontWeight.w500)),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  peopleAsync.when(
-                    loading: () => const SizedBox.shrink(),
-                    error: (_, __) => const SizedBox.shrink(),
-                    data: (people) {
-                      return SearchableMultiSelect(
-                        allItems: people
-                            .map((person) => SearchableMultiSelectItem(
-                                  id: person.id,
-                                  label: person.name,
-                                  icon: Icons.person,
-                                ))
-                            .toList(),
-                        selectedIds: _selectedPeopleIds,
-                        onChanged: (ids) =>
-                            setState(() => _selectedPeopleIds = ids),
-                        hintText: 'Search people...',
-                        emptyStateText: 'No people added yet',
-                      );
-                    },
-                  ),
-
-                  if (widget.workItem != null) ...[
-                    const SizedBox(height: 16),
-                    _SessionsSection(
-                      workItem: widget.workItem!,
-                      onSessionEdited: _refreshPeopleAfterSessionEdit,
-                    ),
-                  ],
-
-                  // Custom Attribute Fields
-                  Builder(
-                    builder: (context) {
-                      final definitions =
-                          ref.watch(attributeDefinitionsProvider).value ?? [];
-                      final taskDefs = definitions
-                          .where((d) =>
-                              d.scope == AttributeScope.task &&
-                              d.enabled &&
-                              !d.isArchived)
-                          .toList();
-                      if (taskDefs.isEmpty) return const SizedBox.shrink();
-
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 16),
-                        child: DynamicAttributeFields(
-                          definitions: taskDefs,
-                          values: _attributeValues,
-                          onValueChanged: (defId, val) {
-                            setState(() {
-                              _attributeValues[defId] = val;
-                            });
-                          },
-                        ),
-                      );
-                    },
-                  ),
-
-                  // Notes - a read-only rollup of this task's session notes.
-                  // Notes are now typed per-session (via SessionEditDialog);
-                  // this just shows the history in one place.
-                  Text('Notes',
-                      style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                          color: AppTheme.getColors(context).textSecondary)),
-                  const SizedBox(height: 6),
-                  if (widget.workItem != null)
-                    _TaskNotesRollup(
-                      workItemId: widget.workItem!.id,
-                      legacyNotes: widget.workItem!.notes,
-                    )
-                  else
-                    Text(
-                      'Notes will appear here once you log time on this task.',
-                      style: TextStyle(
-                          fontSize: 12,
-                          fontStyle: FontStyle.italic,
-                          color: AppTheme.getColors(context).textSecondary),
-                    ),
-                ],
-              ),
-            ),
-          ),
-        ),
+      child: AppDialog(
+        title: isEditing ? 'Edit Work Item' : 'New Work Item',
+        icon: Icons.check_box_outlined,
+        width: DialogWidth.large,
+        // The form is the longest in the app; AppDialog pins the footer so
+        // Save stays reachable no matter how far down the user has scrolled.
+        onSubmit: _isSubmitting ? null : _submit,
         actions: [
           TextButton(
             onPressed: _isSubmitting ? null : () => Navigator.of(context).pop(),
@@ -716,10 +312,377 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
                     width: 16,
                     height: 16,
                     child: CircularProgressIndicator(
-                        strokeWidth: 2, color: Colors.white))
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
                 : Text(isEditing ? 'Save Changes' : 'Create Task'),
           ),
         ],
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Task Name
+              Text('Task Name',
+                  style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: context.colors.textSecondary)),
+              const SizedBox(height: 6),
+              TextFormField(
+                controller: _nameController,
+                autofocus: true,
+                style:
+                    TextStyle(color: context.colors.textPrimary, fontSize: 14),
+                decoration: InputDecoration(
+                  hintText: 'e.g. Design auth flow, Write repository tests',
+                  hintStyle: TextStyle(color: context.colors.textSecondary),
+                ),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Task name is required';
+                  }
+                  return null;
+                },
+                onFieldSubmitted: (_) => _submit(),
+              ),
+              const SizedBox(height: 16),
+
+              // Project & Category Dropdowns in a row
+              Row(
+                children: [
+                  // Project Dropdown
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text('Project',
+                                style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w500,
+                                    color: context.colors.textSecondary)),
+                            InkWell(
+                              onTap: () async {
+                                final p = await ProjectFormDialog.show(context);
+                                if (p != null) {
+                                  setState(() => _selectedProjectId = p.id);
+                                }
+                              },
+                              child: Text('+ New',
+                                  style: TextStyle(
+                                      fontSize: 12,
+                                      color: context.colors.accent,
+                                      fontWeight: FontWeight.w500)),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        projectsAsync.when(
+                          loading: () => SizedBox(
+                              height: 38,
+                              child: Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: Text('Loading projects...',
+                                      style: TextStyle(
+                                          fontSize: 12,
+                                          color:
+                                              context.colors.textSecondary)))),
+                          error: (_, __) =>
+                              const Text('Error loading projects'),
+                          data: (projects) {
+                            return DropdownButtonFormField<String>(
+                              isDense: true,
+                              isExpanded: true,
+                              initialValue: projects
+                                      .any((p) => p.id == _selectedProjectId)
+                                  ? _selectedProjectId
+                                  : (projects.isNotEmpty
+                                      ? projects.first.id
+                                      : null),
+                              items: projects.map((p) {
+                                return DropdownMenuItem(
+                                  value: p.id,
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        width: 8,
+                                        height: 8,
+                                        decoration: BoxDecoration(
+                                          color:
+                                              ColorUtils.parseHex(p.colorHex),
+                                          shape: BoxShape.circle,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(p.name,
+                                            overflow: TextOverflow.ellipsis),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }).toList(),
+                              onChanged: (val) =>
+                                  setState(() => _selectedProjectId = val),
+                              decoration: const InputDecoration(
+                                  contentPadding: EdgeInsets.symmetric(
+                                      horizontal: 10, vertical: 8)),
+                              dropdownColor: context.colors.surface,
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+
+                  // Category Dropdown
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text('Category',
+                                style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w500,
+                                    color: context.colors.textSecondary)),
+                            InkWell(
+                              onTap: () async {
+                                final c =
+                                    await CategoryFormDialog.show(context);
+                                if (c != null) {
+                                  setState(() => _selectedCategoryId = c.id);
+                                }
+                              },
+                              child: Text('+ New',
+                                  style: TextStyle(
+                                      fontSize: 12,
+                                      color: context.colors.accent,
+                                      fontWeight: FontWeight.w500)),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        categoriesAsync.when(
+                          loading: () => SizedBox(
+                              height: 38,
+                              child: Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: Text('Loading categories...',
+                                      style: TextStyle(
+                                          fontSize: 12,
+                                          color:
+                                              context.colors.textSecondary)))),
+                          error: (_, __) =>
+                              const Text('Error loading categories'),
+                          data: (categories) {
+                            return DropdownButtonFormField<String>(
+                              isDense: true,
+                              isExpanded: true,
+                              initialValue: categories
+                                      .any((c) => c.id == _selectedCategoryId)
+                                  ? _selectedCategoryId
+                                  : (categories.isNotEmpty
+                                      ? categories.first.id
+                                      : null),
+                              items: categories.map((c) {
+                                return DropdownMenuItem(
+                                  value: c.id,
+                                  child: Row(
+                                    children: [
+                                      Icon(IconUtils.getIcon(c.iconName),
+                                          size: 14,
+                                          color: context.colors.accent),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(c.name,
+                                            overflow: TextOverflow.ellipsis),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }).toList(),
+                              onChanged: (val) =>
+                                  setState(() => _selectedCategoryId = val),
+                              decoration: const InputDecoration(
+                                  contentPadding: EdgeInsets.symmetric(
+                                      horizontal: 10, vertical: 8)),
+                              dropdownColor: context.colors.surface,
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+
+              // Tags Multi-select
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Tags',
+                      style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          color: context.colors.textSecondary)),
+                  InkWell(
+                    onTap: () async {
+                      final t = await TagFormDialog.show(context);
+                      if (t != null && !_selectedTagIds.contains(t.id)) {
+                        setState(() => _selectedTagIds.add(t.id));
+                      }
+                    },
+                    child: Text('+ New Tag',
+                        style: TextStyle(
+                            fontSize: 12,
+                            color: context.colors.accent,
+                            fontWeight: FontWeight.w500)),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              tagsAsync.when(
+                loading: () => const SizedBox.shrink(),
+                error: (_, __) => const SizedBox.shrink(),
+                data: (tags) {
+                  return SearchableMultiSelect(
+                    allItems: tags
+                        .map((tag) => SearchableMultiSelectItem(
+                              id: tag.id,
+                              label: tag.name,
+                              color: ColorUtils.parseHex(tag.colorHex),
+                            ))
+                        .toList(),
+                    selectedIds: _selectedTagIds,
+                    onChanged: (ids) => setState(() => _selectedTagIds = ids),
+                    hintText: 'Search tags...',
+                    emptyStateText: 'No tags created yet',
+                  );
+                },
+              ),
+              const SizedBox(height: 16),
+
+              // People Multi-select
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Flexible(
+                    child: Text('Assigned People',
+                        style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                            color: context.colors.textSecondary),
+                        overflow: TextOverflow.ellipsis),
+                  ),
+                  InkWell(
+                    onTap: () async {
+                      final p = await PersonFormDialog.show(context);
+                      if (p != null && !_selectedPeopleIds.contains(p.id)) {
+                        setState(() => _selectedPeopleIds.add(p.id));
+                      }
+                    },
+                    child: Text('+ Add Person',
+                        style: TextStyle(
+                            fontSize: 12,
+                            color: context.colors.accent,
+                            fontWeight: FontWeight.w500)),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              peopleAsync.when(
+                loading: () => const SizedBox.shrink(),
+                error: (_, __) => const SizedBox.shrink(),
+                data: (people) {
+                  return SearchableMultiSelect(
+                    allItems: people
+                        .map((person) => SearchableMultiSelectItem(
+                              id: person.id,
+                              label: person.name,
+                              icon: Icons.person,
+                            ))
+                        .toList(),
+                    selectedIds: _selectedPeopleIds,
+                    onChanged: (ids) =>
+                        setState(() => _selectedPeopleIds = ids),
+                    hintText: 'Search people...',
+                    emptyStateText: 'No people added yet',
+                  );
+                },
+              ),
+
+              if (widget.workItem != null) ...[
+                const SizedBox(height: 16),
+                _SessionsSection(
+                  workItem: widget.workItem!,
+                  onSessionEdited: _refreshPeopleAfterSessionEdit,
+                ),
+              ],
+
+              // Custom Attribute Fields
+              Builder(
+                builder: (context) {
+                  final definitions =
+                      ref.watch(attributeDefinitionsProvider).value ?? [];
+                  final taskDefs = definitions
+                      .where((d) =>
+                          d.scope == AttributeScope.task &&
+                          d.enabled &&
+                          !d.isArchived)
+                      .toList();
+                  if (taskDefs.isEmpty) return const SizedBox.shrink();
+
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: DynamicAttributeFields(
+                      definitions: taskDefs,
+                      values: _attributeValues,
+                      onValueChanged: (defId, val) {
+                        setState(() {
+                          _attributeValues[defId] = val;
+                        });
+                      },
+                    ),
+                  );
+                },
+              ),
+
+              // Notes - a read-only rollup of this task's session notes.
+              // Notes are now typed per-session (via SessionEditDialog);
+              // this just shows the history in one place.
+              Text('Notes',
+                  style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: context.colors.textSecondary)),
+              const SizedBox(height: 6),
+              if (widget.workItem != null)
+                _TaskNotesRollup(
+                  workItemId: widget.workItem!.id,
+                  legacyNotes: widget.workItem!.notes,
+                )
+              else
+                Text(
+                  'Notes will appear here once you log time on this task.',
+                  style: TextStyle(
+                      fontSize: 12,
+                      fontStyle: FontStyle.italic,
+                      color: context.colors.textSecondary),
+                ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -747,7 +710,7 @@ class _SessionsSectionState extends ConsumerState<_SessionsSection> {
     final sessionsAsync =
         ref.watch(sessionsForWorkItemProvider(widget.workItem.id));
     final count = sessionsAsync.value?.length ?? 0;
-    final colors = AppTheme.getColors(context);
+    final colors = context.colors;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -756,7 +719,7 @@ class _SessionsSectionState extends ConsumerState<_SessionsSection> {
           color: Colors.transparent,
           child: InkWell(
             onTap: () => setState(() => _expanded = !_expanded),
-            borderRadius: BorderRadius.circular(6),
+            borderRadius: Radii.smAll,
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 4),
               child: Row(
@@ -786,7 +749,7 @@ class _SessionsSectionState extends ConsumerState<_SessionsSection> {
             constraints: const BoxConstraints(maxHeight: 180),
             decoration: BoxDecoration(
               border: Border.all(color: colors.divider),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: Radii.mdAll,
             ),
             child: sessionsAsync.when(
               loading: () => const Padding(
@@ -840,7 +803,7 @@ class _SessionRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = AppTheme.getColors(context);
+    final colors = context.colors;
     final dateFormat = DateFormat('MMM d, HH:mm');
     final start = session.startTime.toLocal();
     final end = session.endTime?.toLocal();
@@ -884,7 +847,7 @@ class _SessionRow extends StatelessWidget {
                       Text(
                         session.notes!,
                         style: TextStyle(
-                            fontSize: 11,
+                            fontSize: 12,
                             fontStyle: FontStyle.italic,
                             color: colors.textSecondary),
                         maxLines: 1,
@@ -896,10 +859,10 @@ class _SessionRow extends StatelessWidget {
               ),
               Text(
                 durationStr,
-                style: const TextStyle(
+                style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: AppTheme.primaryColor),
+                    color: context.colors.accent),
               ),
             ],
           ),
@@ -924,7 +887,7 @@ class _TaskNotesRollup extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final sessionsAsync = ref.watch(sessionsForWorkItemProvider(workItemId));
-    final colors = AppTheme.getColors(context);
+    final colors = context.colors;
 
     return sessionsAsync.when(
       loading: () => const SizedBox.shrink(),
@@ -940,7 +903,7 @@ class _TaskNotesRollup extends ConsumerWidget {
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
                 color: colors.card,
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: Radii.mdAll,
                 border: Border.all(color: colors.divider),
               ),
               child: Column(
@@ -948,7 +911,7 @@ class _TaskNotesRollup extends ConsumerWidget {
                 children: [
                   Text('Legacy note',
                       style: TextStyle(
-                          fontSize: 10,
+                          fontSize: 11,
                           fontStyle: FontStyle.italic,
                           color: colors.textSecondary)),
                   const SizedBox(height: 2),
@@ -978,7 +941,7 @@ class _TaskNotesRollup extends ConsumerWidget {
                 children: [
                   Text(dateFormat.format(s.startTime.toLocal()),
                       style:
-                          TextStyle(fontSize: 10, color: colors.textSecondary)),
+                          TextStyle(fontSize: 11, color: colors.textSecondary)),
                   const SizedBox(height: 2),
                   Text(s.notes!,
                       style:

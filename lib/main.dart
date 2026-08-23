@@ -38,7 +38,8 @@ void main() async {
     }
 
     // Initialize desktop window manager and system tray
-    if (!kIsWeb && (Platform.isMacOS || Platform.isWindows || Platform.isLinux)) {
+    if (!kIsWeb &&
+        (Platform.isMacOS || Platform.isWindows || Platform.isLinux)) {
       await DesktopWindowService().initialize();
       await DesktopTrayService().initialize();
     }
@@ -62,17 +63,22 @@ void main() async {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.error_outline, color: AppTheme.accentRed, size: 48),
+                  const Icon(Icons.error_outline,
+                      color: AppTheme.accentRed, size: 48),
                   const SizedBox(height: 16),
                   const Text(
                     'WorkPulse failed to start',
-                    style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     '$e',
                     textAlign: TextAlign.center,
-                    style: const TextStyle(color: AppTheme.textSecondaryDark, fontSize: 13),
+                    style: const TextStyle(
+                        color: AppTheme.textSecondaryDark, fontSize: 13),
                   ),
                 ],
               ),

@@ -1,302 +1,338 @@
 import 'package:flutter/material.dart';
+import 'package:workpulse/core/theme/app_colors.dart';
+import 'package:workpulse/core/theme/app_typography.dart';
+import 'package:workpulse/core/theme/design_tokens.dart';
 
-/// WorkPulse macOS-focused theme definitions
+/// WorkPulse macOS-focused theme definitions.
+///
+/// The palette itself lives in [WorkPulseColors] and is attached to each
+/// [ThemeData] as a extension, so widgets resolve colours via
+/// `context.colors`. This class assembles the Material component themes on top
+/// of it.
 class AppTheme {
-  // Brand / Accent colors
-  static const Color primaryColor = Color(0xFF0A84FF); // macOS accent blue
-  static const Color primaryDark = Color(0xFF0066CC);
-  static const Color accentGreen = Color(0xFF30D158);
-  static const Color accentOrange = Color(0xFFFF9F0A);
-  static const Color accentPurple = Color(0xFFBF5AF2);
+  // The fatal-error screen in main.dart renders before any Theme exists, so
+  // it cannot reach the palette through context. These few constants mirror
+  // WorkPulseColors.dark for that one pre-theme case.
+  static const Color backgroundDark = Color(0xFF1A1A1C);
+  static const Color textSecondaryDark = Color(0xFFA1A1A8);
   static const Color accentRed = Color(0xFFFF453A);
 
-  // Neutral palette (Dark mode)
-  static const Color backgroundDark = Color(0xFF1E1E1E);
-  static const Color surfaceDark = Color(0xFF2D2D2D);
-  static const Color cardDark = Color(0xFF383838);
-  static const Color textPrimaryDark = Color(0xFFFFFFFF);
-  static const Color textSecondaryDark = Color(0xFF9E9E9E);
-  static const Color dividerDark = Color(0xFF404040);
+  static ThemeData get darkTheme =>
+      _build(WorkPulseColors.dark, Brightness.dark);
 
-  // Neutral palette (Light mode)
-  static const Color backgroundLight = Color(0xFFFAFAFA);
-  static const Color surfaceLight = Color(0xFFF5F5F5);
-  static const Color cardLight = Color(0xFFFFFFFF);
-  static const Color textPrimaryLight = Color(0xFF1E1E1E);
-  static const Color textSecondaryLight = Color(0xFF666666);
-  static const Color dividerLight = Color(0xFFE0E0E0);
+  static ThemeData get lightTheme =>
+      _build(WorkPulseColors.light, Brightness.light);
 
-  // Common Border Radii
-  static final BorderRadius controlRadius = BorderRadius.circular(8);
-  static final BorderRadius dialogRadius = BorderRadius.circular(12);
+  static ThemeData _build(WorkPulseColors c, Brightness brightness) {
+    final textTheme = AppTypography.textTheme(
+      primary: c.textPrimary,
+      secondary: c.textSecondary,
+    );
 
-  // Get theme colors based on current brightness
-  static AppThemeColors getColors(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return isDark ? _darkColors : _lightColors;
-  }
+    OutlineInputBorder inputBorder(Color color, [double width = 1.0]) =>
+        OutlineInputBorder(
+          borderRadius: Radii.mdAll,
+          borderSide: BorderSide(color: color, width: width),
+        );
 
-  static const AppThemeColors _darkColors = AppThemeColors(
-    background: backgroundDark,
-    surface: surfaceDark,
-    card: cardDark,
-    textPrimary: textPrimaryDark,
-    textSecondary: textSecondaryDark,
-    divider: dividerDark,
-  );
-
-  static const AppThemeColors _lightColors = AppThemeColors(
-    background: backgroundLight,
-    surface: surfaceLight,
-    card: cardLight,
-    textPrimary: textPrimaryLight,
-    textSecondary: textSecondaryLight,
-    divider: dividerLight,
-  );
-
-  static ThemeData get darkTheme {
     return ThemeData(
       useMaterial3: true,
-      brightness: Brightness.dark,
-      scaffoldBackgroundColor: backgroundDark,
-      colorScheme: const ColorScheme.dark(
-        primary: primaryColor,
-        secondary: accentGreen,
-        surface: surfaceDark,
-        error: accentRed,
+      brightness: brightness,
+      fontFamily: AppTypography.fontFamily,
+      textTheme: textTheme,
+      scaffoldBackgroundColor: c.background,
+      canvasColor: c.surface,
+      dividerColor: c.divider,
+      extensions: <ThemeExtension<dynamic>>[c],
+      colorScheme: ColorScheme(
+        brightness: brightness,
+        primary: c.accent,
+        onPrimary: c.onAccent,
+        secondary: c.success,
+        onSecondary: c.onAccent,
+        error: c.danger,
+        onError: c.onAccent,
+        surface: c.surface,
+        onSurface: c.textPrimary,
+        surfaceContainerHighest: c.card,
+        onSurfaceVariant: c.textSecondary,
+        outline: c.divider,
+        outlineVariant: c.divider,
       ),
+
+      // --- Surfaces -----------------------------------------------------
       cardTheme: CardThemeData(
-        color: cardDark,
+        color: c.surface,
         elevation: 0,
+        surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(
-          borderRadius: controlRadius,
+          borderRadius: Radii.xlAll,
+          side: BorderSide(color: c.divider),
         ),
       ),
       dialogTheme: DialogThemeData(
-        backgroundColor: surfaceDark,
+        backgroundColor: c.surfaceRaised,
         surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        barrierColor: c.overlay,
+        titleTextStyle: textTheme.titleLarge,
+        contentTextStyle: textTheme.bodyMedium,
         shape: RoundedRectangleBorder(
-          borderRadius: dialogRadius,
-          side: const BorderSide(color: dividerDark),
+          borderRadius: Radii.xlAll,
+          side: BorderSide(color: c.divider),
         ),
       ),
+      popupMenuTheme: PopupMenuThemeData(
+        color: c.surfaceRaised,
+        surfaceTintColor: Colors.transparent,
+        elevation: 8,
+        textStyle: textTheme.bodyMedium,
+        shape: RoundedRectangleBorder(
+          borderRadius: Radii.mdAll,
+          side: BorderSide(color: c.divider),
+        ),
+      ),
+      menuTheme: MenuThemeData(
+        style: MenuStyle(
+          backgroundColor: WidgetStatePropertyAll(c.surfaceRaised),
+          surfaceTintColor: const WidgetStatePropertyAll(Colors.transparent),
+          shape: WidgetStatePropertyAll(
+            RoundedRectangleBorder(
+              borderRadius: Radii.mdAll,
+              side: BorderSide(color: c.divider),
+            ),
+          ),
+        ),
+      ),
+      dividerTheme: DividerThemeData(
+        color: c.divider,
+        thickness: 1,
+        space: 1,
+      ),
+      tooltipTheme: TooltipThemeData(
+        waitDuration: const Duration(milliseconds: 500),
+        padding: const EdgeInsets.symmetric(
+          horizontal: Spacing.sm,
+          vertical: Spacing.xs + 2,
+        ),
+        decoration: BoxDecoration(
+          color: c.surfaceRaised,
+          borderRadius: Radii.smAll,
+          border: Border.all(color: c.divider),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.2),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        textStyle: textTheme.bodySmall?.copyWith(color: c.textPrimary),
+      ),
+      snackBarTheme: SnackBarThemeData(
+        backgroundColor: c.surfaceRaised,
+        contentTextStyle: textTheme.bodyMedium,
+        actionTextColor: c.accent,
+        behavior: SnackBarBehavior.floating,
+        elevation: 6,
+        shape: RoundedRectangleBorder(
+          borderRadius: Radii.mdAll,
+          side: BorderSide(color: c.divider),
+        ),
+      ),
+      scrollbarTheme: ScrollbarThemeData(
+        thumbColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.dragged)) {
+            return c.textSecondary.withValues(alpha: 0.7);
+          }
+          if (states.contains(WidgetState.hovered)) {
+            return c.textSecondary.withValues(alpha: 0.5);
+          }
+          return c.textSecondary.withValues(alpha: 0.28);
+        }),
+        thickness: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.hovered) ? 9 : 7,
+        ),
+        radius: const Radius.circular(Radii.xs),
+        crossAxisMargin: 2,
+        interactive: true,
+      ),
+
+      // --- Controls -----------------------------------------------------
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: primaryColor,
-          foregroundColor: Colors.white,
+          // accentFill, not accent: this carries white text.
+          backgroundColor: c.accentFill,
+          foregroundColor: c.onAccent,
+          disabledBackgroundColor: c.card,
+          disabledForegroundColor: c.textTertiary,
           elevation: 0,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          shape: RoundedRectangleBorder(borderRadius: controlRadius),
-          textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+          minimumSize: const Size(0, ControlSizes.standard),
+          padding: const EdgeInsets.symmetric(horizontal: Spacing.lg),
+          shape: const RoundedRectangleBorder(borderRadius: Radii.mdAll),
+          textStyle: textTheme.labelLarge,
+        ),
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          backgroundColor: c.accentFill,
+          foregroundColor: c.onAccent,
+          minimumSize: const Size(0, ControlSizes.standard),
+          padding: const EdgeInsets.symmetric(horizontal: Spacing.lg),
+          shape: const RoundedRectangleBorder(borderRadius: Radii.mdAll),
+          textStyle: textTheme.labelLarge,
         ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: textSecondaryDark,
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          shape: RoundedRectangleBorder(borderRadius: controlRadius),
-          textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+          foregroundColor: c.textSecondary,
+          minimumSize: const Size(0, ControlSizes.standard),
+          padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
+          shape: const RoundedRectangleBorder(borderRadius: Radii.mdAll),
+          textStyle:
+              textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w500),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: textPrimaryDark,
-          side: const BorderSide(color: dividerDark),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          shape: RoundedRectangleBorder(borderRadius: controlRadius),
-          textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+          foregroundColor: c.textPrimary,
+          side: BorderSide(color: c.divider),
+          minimumSize: const Size(0, ControlSizes.standard),
+          padding: const EdgeInsets.symmetric(horizontal: Spacing.lg),
+          shape: const RoundedRectangleBorder(borderRadius: Radii.mdAll),
+          textStyle:
+              textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w500),
         ),
       ),
+      iconButtonTheme: IconButtonThemeData(
+        style: IconButton.styleFrom(
+          foregroundColor: c.textSecondary,
+          hoverColor: c.hover,
+          highlightColor: c.pressed,
+          shape: const RoundedRectangleBorder(borderRadius: Radii.smAll),
+        ),
+      ),
+      chipTheme: ChipThemeData(
+        backgroundColor: c.card,
+        selectedColor: c.accentSubtle,
+        disabledColor: c.card,
+        side: BorderSide(color: c.divider),
+        labelStyle: textTheme.labelMedium!,
+        secondaryLabelStyle: textTheme.labelMedium!,
+        padding: const EdgeInsets.symmetric(
+          horizontal: Spacing.sm,
+          vertical: Spacing.xs,
+        ),
+        shape: const RoundedRectangleBorder(borderRadius: Radii.mdAll),
+        showCheckmark: false,
+      ),
+      switchTheme: SwitchThemeData(
+        thumbColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.disabled)) return c.textTertiary;
+          return Colors.white;
+        }),
+        trackColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.disabled)) {
+            return c.card;
+          }
+          if (states.contains(WidgetState.selected)) return c.accent;
+          return c.borderStrong;
+        }),
+        trackOutlineColor: const WidgetStatePropertyAll(Colors.transparent),
+      ),
+      segmentedButtonTheme: SegmentedButtonThemeData(
+        style: ButtonStyle(
+          textStyle: WidgetStatePropertyAll(textTheme.labelMedium),
+          shape: const WidgetStatePropertyAll(
+            RoundedRectangleBorder(borderRadius: Radii.smAll),
+          ),
+        ),
+      ),
+      progressIndicatorTheme: ProgressIndicatorThemeData(
+        color: c.accent,
+        linearTrackColor: c.card,
+        circularTrackColor: Colors.transparent,
+      ),
+      listTileTheme: ListTileThemeData(
+        iconColor: c.textSecondary,
+        textColor: c.textPrimary,
+        shape: const RoundedRectangleBorder(borderRadius: Radii.smAll),
+      ),
+
+      // --- Inputs -------------------------------------------------------
       inputDecorationTheme: InputDecorationTheme(
         isDense: true,
         filled: true,
-        fillColor: cardDark,
-        hintStyle: const TextStyle(fontSize: 13, color: textSecondaryDark),
-        labelStyle: const TextStyle(fontSize: 13, color: textSecondaryDark),
-        border: OutlineInputBorder(
-          borderRadius: controlRadius,
-          borderSide: const BorderSide(color: dividerDark, width: 1.0),
+        fillColor: c.card,
+        hintStyle: textTheme.bodyMedium?.copyWith(color: c.textTertiary),
+        labelStyle: textTheme.bodySmall,
+        floatingLabelStyle: textTheme.bodySmall?.copyWith(color: c.accent),
+        helperStyle: textTheme.bodySmall,
+        errorStyle: textTheme.bodySmall?.copyWith(color: c.danger),
+        prefixIconColor: c.textSecondary,
+        suffixIconColor: c.textSecondary,
+        border: inputBorder(c.divider),
+        enabledBorder: inputBorder(c.divider),
+        focusedBorder: inputBorder(c.focusRing, 1.5),
+        errorBorder: inputBorder(c.danger),
+        focusedErrorBorder: inputBorder(c.danger, 1.5),
+        disabledBorder: inputBorder(c.divider.withValues(alpha: 0.5)),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: Spacing.md,
+          vertical: Spacing.sm + 2,
         ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: controlRadius,
-          borderSide: const BorderSide(color: dividerDark, width: 1.0),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: controlRadius,
-          borderSide: const BorderSide(color: primaryColor, width: 1.5),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: controlRadius,
-          borderSide: const BorderSide(color: accentRed, width: 1.0),
-        ),
-        focusedErrorBorder: OutlineInputBorder(
-          borderRadius: controlRadius,
-          borderSide: const BorderSide(color: accentRed, width: 1.5),
-        ),
-        disabledBorder: OutlineInputBorder(
-          borderRadius: controlRadius,
-          borderSide: BorderSide(color: dividerDark.withValues(alpha: 0.5), width: 1.0),
-        ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       ),
+      dropdownMenuTheme: DropdownMenuThemeData(
+        textStyle: textTheme.bodyMedium,
+        menuStyle: MenuStyle(
+          backgroundColor: WidgetStatePropertyAll(c.surfaceRaised),
+          surfaceTintColor: const WidgetStatePropertyAll(Colors.transparent),
+          shape: WidgetStatePropertyAll(
+            RoundedRectangleBorder(
+              borderRadius: Radii.mdAll,
+              side: BorderSide(color: c.divider),
+            ),
+          ),
+        ),
+      ),
+
+      // --- Pickers ------------------------------------------------------
       datePickerTheme: DatePickerThemeData(
-        backgroundColor: surfaceDark,
+        backgroundColor: c.surfaceRaised,
         surfaceTintColor: Colors.transparent,
-        headerBackgroundColor: cardDark,
-        headerForegroundColor: textPrimaryDark,
-        headerHeadlineStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        headerBackgroundColor: c.card,
+        headerForegroundColor: c.textPrimary,
+        headerHeadlineStyle: textTheme.headlineSmall,
+        dayStyle: textTheme.bodyMedium,
         dayBackgroundColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.selected)) return primaryColor;
+          if (states.contains(WidgetState.selected)) return c.accent;
           return null;
         }),
         dayForegroundColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.selected)) return Colors.white;
-          if (states.contains(WidgetState.disabled)) return textSecondaryDark.withValues(alpha: 0.4);
-          return textPrimaryDark;
+          if (states.contains(WidgetState.selected)) return c.onAccent;
+          if (states.contains(WidgetState.disabled)) return c.textTertiary;
+          return c.textPrimary;
         }),
-        todayBorder: const BorderSide(color: primaryColor, width: 1.0),
+        rangeSelectionBackgroundColor: c.accentSubtle,
+        todayBorder: BorderSide(color: c.accent),
         todayForegroundColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.selected)) return Colors.white;
-          return primaryColor;
+          if (states.contains(WidgetState.selected)) return c.onAccent;
+          return c.accent;
         }),
         shape: RoundedRectangleBorder(
-          borderRadius: dialogRadius,
-          side: const BorderSide(color: dividerDark),
+          borderRadius: Radii.xlAll,
+          side: BorderSide(color: c.divider),
         ),
-        dividerColor: dividerDark,
+        dividerColor: c.divider,
+      ),
+      timePickerTheme: TimePickerThemeData(
+        backgroundColor: c.surfaceRaised,
+        dialBackgroundColor: c.card,
+        shape: RoundedRectangleBorder(
+          borderRadius: Radii.xlAll,
+          side: BorderSide(color: c.divider),
+        ),
       ),
     );
   }
-
-  static ThemeData get lightTheme {
-    return ThemeData(
-      useMaterial3: true,
-      brightness: Brightness.light,
-      scaffoldBackgroundColor: backgroundLight,
-      colorScheme: const ColorScheme.light(
-        primary: primaryColor,
-        secondary: accentGreen,
-        surface: surfaceLight,
-        error: accentRed,
-      ),
-      cardTheme: CardThemeData(
-        color: cardLight,
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: controlRadius,
-        ),
-      ),
-      dialogTheme: DialogThemeData(
-        backgroundColor: surfaceLight,
-        surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(
-          borderRadius: dialogRadius,
-          side: const BorderSide(color: dividerLight),
-        ),
-      ),
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: primaryColor,
-          foregroundColor: Colors.white,
-          elevation: 0,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          shape: RoundedRectangleBorder(borderRadius: controlRadius),
-          textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-        ),
-      ),
-      textButtonTheme: TextButtonThemeData(
-        style: TextButton.styleFrom(
-          foregroundColor: textSecondaryLight,
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          shape: RoundedRectangleBorder(borderRadius: controlRadius),
-          textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
-        ),
-      ),
-      outlinedButtonTheme: OutlinedButtonThemeData(
-        style: OutlinedButton.styleFrom(
-          foregroundColor: textPrimaryLight,
-          side: const BorderSide(color: dividerLight),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          shape: RoundedRectangleBorder(borderRadius: controlRadius),
-          textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
-        ),
-      ),
-      inputDecorationTheme: InputDecorationTheme(
-        isDense: true,
-        filled: true,
-        fillColor: cardLight,
-        hintStyle: const TextStyle(fontSize: 13, color: textSecondaryLight),
-        labelStyle: const TextStyle(fontSize: 13, color: textSecondaryLight),
-        border: OutlineInputBorder(
-          borderRadius: controlRadius,
-          borderSide: const BorderSide(color: dividerLight, width: 1.0),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: controlRadius,
-          borderSide: const BorderSide(color: dividerLight, width: 1.0),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: controlRadius,
-          borderSide: const BorderSide(color: primaryColor, width: 1.5),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: controlRadius,
-          borderSide: const BorderSide(color: accentRed, width: 1.0),
-        ),
-        focusedErrorBorder: OutlineInputBorder(
-          borderRadius: controlRadius,
-          borderSide: const BorderSide(color: accentRed, width: 1.5),
-        ),
-        disabledBorder: OutlineInputBorder(
-          borderRadius: controlRadius,
-          borderSide: BorderSide(color: dividerLight.withValues(alpha: 0.5), width: 1.0),
-        ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      ),
-      datePickerTheme: DatePickerThemeData(
-        backgroundColor: surfaceLight,
-        surfaceTintColor: Colors.transparent,
-        headerBackgroundColor: cardLight,
-        headerForegroundColor: textPrimaryLight,
-        headerHeadlineStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        dayBackgroundColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.selected)) return primaryColor;
-          return null;
-        }),
-        dayForegroundColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.selected)) return Colors.white;
-          if (states.contains(WidgetState.disabled)) return textSecondaryLight.withValues(alpha: 0.4);
-          return textPrimaryLight;
-        }),
-        todayBorder: const BorderSide(color: primaryColor, width: 1.0),
-        todayForegroundColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.selected)) return Colors.white;
-          return primaryColor;
-        }),
-        shape: RoundedRectangleBorder(
-          borderRadius: dialogRadius,
-          side: const BorderSide(color: dividerLight),
-        ),
-        dividerColor: dividerLight,
-      ),
-    );
-  }
-}
-
-class AppThemeColors {
-  final Color background;
-  final Color surface;
-  final Color card;
-  final Color textPrimary;
-  final Color textSecondary;
-  final Color divider;
-
-  const AppThemeColors({
-    required this.background,
-    required this.surface,
-    required this.card,
-    required this.textPrimary,
-    required this.textSecondary,
-    required this.divider,
-  });
 }

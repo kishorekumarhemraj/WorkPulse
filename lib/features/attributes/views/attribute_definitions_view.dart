@@ -1,10 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:workpulse/core/theme/app_theme.dart';
+import 'package:workpulse/core/theme/app_colors.dart';
+import 'package:workpulse/core/theme/color_utils.dart';
+import 'package:workpulse/core/theme/design_tokens.dart';
+import 'package:workpulse/core/widgets/app_card.dart';
+import 'package:workpulse/core/widgets/confirm_dialog.dart';
+import 'package:workpulse/core/widgets/empty_state.dart';
+import 'package:workpulse/core/widgets/error_state.dart';
+import 'package:workpulse/core/widgets/page_header.dart';
+import 'package:workpulse/core/widgets/search_field.dart';
+import 'package:workpulse/core/widgets/segmented_control.dart';
+import 'package:workpulse/core/widgets/skeleton_loader.dart';
+import 'package:workpulse/core/widgets/status_badge.dart';
 import 'package:workpulse/domain/models/attribute_model.dart';
 import 'package:workpulse/features/attributes/providers/attribute_definitions_provider.dart';
 import 'package:workpulse/features/attributes/views/attribute_definition_form_dialog.dart';
 import 'package:workpulse/features/attributes/views/attribute_options_editor_dialog.dart';
+
+/// The scope filter's selection, including "all".
+enum _ScopeFilter { all, task, session }
 
 class AttributeDefinitionsView extends ConsumerStatefulWidget {
   const AttributeDefinitionsView({super.key});
@@ -17,410 +31,313 @@ class AttributeDefinitionsView extends ConsumerStatefulWidget {
 class _AttributeDefinitionsViewState
     extends ConsumerState<AttributeDefinitionsView> {
   String _searchQuery = '';
-  AttributeScope? _scopeFilter;
-
-  IconData _getTypeIcon(AttributeType type) {
-    switch (type) {
-      case AttributeType.text:
-        return Icons.text_fields;
-      case AttributeType.number:
-        return Icons.numbers;
-      case AttributeType.boolean:
-        return Icons.check_box_outlined;
-      case AttributeType.singleSelect:
-        return Icons.radio_button_checked;
-      case AttributeType.multiSelect:
-        return Icons.checklist;
-      case AttributeType.date:
-        return Icons.calendar_today;
-    }
-  }
-
-  String _formatType(AttributeType type) {
-    switch (type) {
-      case AttributeType.text:
-        return 'TEXT';
-      case AttributeType.number:
-        return 'NUMBER';
-      case AttributeType.boolean:
-        return 'BOOLEAN';
-      case AttributeType.singleSelect:
-        return 'SINGLE SELECT';
-      case AttributeType.multiSelect:
-        return 'MULTI SELECT';
-      case AttributeType.date:
-        return 'DATE';
-    }
-  }
+  _ScopeFilter _scopeFilter = _ScopeFilter.all;
+  String? _selectedId;
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     final definitionsAsync = ref.watch(attributeDefinitionsProvider);
 
     return Scaffold(
-      backgroundColor: AppTheme.getColors(context).background,
-      body: Padding(
-        padding: const EdgeInsets.all(28.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      backgroundColor: colors.background,
+      body: PageScaffold(
+        title: 'Custom Attributes',
+        subtitle:
+            'Configure organisation-specific metadata, such as an issue key, '
+            'cost centre or billable flag',
+        actions: [
+          ElevatedButton.icon(
+            onPressed: () => AttributeDefinitionFormDialog.show(context),
+            icon: const Icon(Icons.add, size: IconSizes.lg),
+            label: const Text('New Attribute'),
+          ),
+        ],
+        toolbar: Wrap(
+          spacing: Spacing.sm + 2,
+          runSpacing: Spacing.sm + 2,
+          crossAxisAlignment: WrapCrossAlignment.center,
           children: [
-            // Header
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Custom Attributes',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.getColors(context).textPrimary,
-                          letterSpacing: -0.5,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Configure organisation-specific metadata (Jira Key, Cost Centre, Billable, etc.)',
-                        style: TextStyle(
-                            fontSize: 13,
-                            color: AppTheme.getColors(context)
-                                .textSecondary
-                                .withValues(alpha: 0.8)),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 16),
-                ElevatedButton.icon(
-                  onPressed: () => AttributeDefinitionFormDialog.show(context),
-                  icon: const Icon(Icons.add, size: 16),
-                  label: const Text('New Attribute'),
-                ),
-              ],
+            SearchField(
+              hintText: 'Search attributes by name or key…',
+              width: 320,
+              onChanged: (value) =>
+                  setState(() => _searchQuery = value.trim().toLowerCase()),
             ),
-            const SizedBox(height: 20),
-
-            // Controls Bar (Search + Scope Filter Pills)
-            Row(
-              children: [
-                Expanded(
-                  child: SizedBox(
-                    height: 38,
-                    child: TextField(
-                      style: TextStyle(
-                          fontSize: 13,
-                          color: AppTheme.getColors(context).textPrimary),
-                      decoration: InputDecoration(
-                        hintText: 'Search attributes by name or key...',
-                        prefixIcon: Icon(Icons.search,
-                            size: 18,
-                            color: AppTheme.getColors(context).textSecondary),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                      ),
-                      onChanged: (val) => setState(
-                          () => _searchQuery = val.trim().toLowerCase()),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-
-                // Scope Filters
-                _buildScopeFilterChip(label: 'All Scopes', scope: null),
-                const SizedBox(width: 6),
-                _buildScopeFilterChip(
-                    label: 'Task Scope', scope: AttributeScope.task),
-                const SizedBox(width: 6),
-                _buildScopeFilterChip(
-                    label: 'Session Scope', scope: AttributeScope.session),
+            AppSegmentedControl<_ScopeFilter>(
+              selected: _scopeFilter,
+              onChanged: (value) => setState(() => _scopeFilter = value),
+              options: const [
+                SegmentOption(value: _ScopeFilter.all, label: 'All'),
+                SegmentOption(value: _ScopeFilter.task, label: 'Task'),
+                SegmentOption(value: _ScopeFilter.session, label: 'Session'),
               ],
-            ),
-            const SizedBox(height: 16),
-
-            // Attribute Cards List
-            Expanded(
-              child: definitionsAsync.when(
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (e, _) => Center(
-                    child: Text('Error loading attributes: $e',
-                        style: const TextStyle(color: AppTheme.accentRed))),
-                data: (definitions) {
-                  var filtered =
-                      definitions.where((d) => !d.isArchived).toList();
-
-                  if (_scopeFilter != null) {
-                    filtered =
-                        filtered.where((d) => d.scope == _scopeFilter).toList();
-                  }
-
-                  if (_searchQuery.isNotEmpty) {
-                    filtered = filtered.where((d) {
-                      return d.name.toLowerCase().contains(_searchQuery) ||
-                          d.key.toLowerCase().contains(_searchQuery);
-                    }).toList();
-                  }
-
-                  if (filtered.isEmpty) {
-                    return Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.tune,
-                              size: 48,
-                              color: AppTheme.getColors(context)
-                                  .textSecondary
-                                  .withValues(alpha: 0.3)),
-                          const SizedBox(height: 12),
-                          Text('No custom attributes found',
-                              style: TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w600,
-                                  color:
-                                      AppTheme.getColors(context).textPrimary)),
-                          const SizedBox(height: 6),
-                          Text(
-                              'Add custom attributes to capture organization-specific workflow data',
-                              style: TextStyle(
-                                  fontSize: 12,
-                                  color: AppTheme.getColors(context)
-                                      .textSecondary)),
-                        ],
-                      ),
-                    );
-                  }
-
-                  return ListView.separated(
-                    itemCount: filtered.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 10),
-                    itemBuilder: (context, index) {
-                      final def = filtered[index];
-                      return _buildAttributeCard(context, def);
-                    },
-                  );
-                },
-              ),
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildScopeFilterChip(
-      {required String label, required AttributeScope? scope}) {
-    final isSelected = _scopeFilter == scope;
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(
-            color: isSelected
-                ? AppTheme.primaryColor
-                : AppTheme.getColors(context).divider),
-      ),
-      child: Material(
-        color: isSelected
-            ? AppTheme.primaryColor.withValues(alpha: 0.2)
-            : AppTheme.getColors(context).surface,
-        borderRadius: BorderRadius.circular(6),
-        child: InkWell(
-          onTap: () => setState(() => _scopeFilter = scope),
-          borderRadius: BorderRadius.circular(6),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                color: isSelected
-                    ? AppTheme.primaryColor
-                    : AppTheme.getColors(context).textSecondary,
-              ),
-            ),
+        child: definitionsAsync.when(
+          loading: () => const SkeletonList(itemCount: 5, itemHeight: 84),
+          error: (error, _) => ErrorState(
+            title: 'Could not load attributes',
+            error: error,
+            onRetry: () => ref.invalidate(attributeDefinitionsProvider),
           ),
+          data: (definitions) {
+            final filtered = definitions.where((def) {
+              final matchesScope = switch (_scopeFilter) {
+                _ScopeFilter.all => true,
+                _ScopeFilter.task => def.scope == AttributeScope.task,
+                _ScopeFilter.session => def.scope == AttributeScope.session,
+              };
+              if (!matchesScope) return false;
+              if (_searchQuery.isEmpty) return true;
+              return def.name.toLowerCase().contains(_searchQuery) ||
+                  def.key.toLowerCase().contains(_searchQuery);
+            }).toList();
+
+            if (filtered.isEmpty) {
+              return EmptyState(
+                icon: Icons.tune,
+                title: definitions.isEmpty
+                    ? 'No custom attributes yet'
+                    : 'No attributes match your filters',
+                message: definitions.isEmpty
+                    ? 'Attributes let you record metadata WorkPulse does not '
+                        'model itself, and report on it.'
+                    : null,
+                action: definitions.isEmpty
+                    ? ElevatedButton.icon(
+                        onPressed: () =>
+                            AttributeDefinitionFormDialog.show(context),
+                        icon: const Icon(Icons.add, size: IconSizes.md),
+                        label: const Text('Create First Attribute'),
+                      )
+                    : null,
+              );
+            }
+
+            final selected =
+                filtered.where((d) => d.id == _selectedId).firstOrNull;
+
+            final list = ListView.separated(
+              padding: const EdgeInsets.only(bottom: Spacing.xxl),
+              itemCount: filtered.length,
+              separatorBuilder: (_, __) =>
+                  const SizedBox(height: Spacing.sm + 2),
+              itemBuilder: (context, index) {
+                final def = filtered[index];
+                return _AttributeRow(
+                  definition: def,
+                  isSelected: def.id == _selectedId,
+                  onTap: () => setState(
+                    () => _selectedId = def.id == _selectedId ? null : def.id,
+                  ),
+                );
+              },
+            );
+
+            return LayoutBuilder(
+              builder: (context, constraints) {
+                // Select attributes have options worth editing alongside the
+                // list; below the two-pane breakpoint the modal editor
+                // (reachable from every row's menu) remains the way in.
+                final showOptionsPane =
+                    constraints.maxWidth >= Breakpoints.medium;
+                if (!showOptionsPane) return list;
+
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Expanded(flex: 3, child: list),
+                    const SizedBox(width: Spacing.xl),
+                    Expanded(
+                      flex: 2,
+                      child: selected == null
+                          ? const _OptionsPlaceholder()
+                          : _OptionsPane(definition: selected),
+                    ),
+                  ],
+                );
+              },
+            );
+          },
         ),
       ),
     );
   }
+}
 
-  Widget _buildAttributeCard(BuildContext context, AttributeDefinition def) {
-    final isSelectType = def.type == AttributeType.singleSelect ||
-        def.type == AttributeType.multiSelect;
+IconData _typeIcon(AttributeType type) => switch (type) {
+      AttributeType.text => Icons.text_fields,
+      AttributeType.number => Icons.numbers,
+      AttributeType.boolean => Icons.check_box_outlined,
+      AttributeType.singleSelect => Icons.radio_button_checked,
+      AttributeType.multiSelect => Icons.checklist,
+      AttributeType.date => Icons.calendar_today,
+    };
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppTheme.getColors(context).surface,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppTheme.getColors(context).divider),
+String _typeLabel(AttributeType type) => switch (type) {
+      AttributeType.text => 'TEXT',
+      AttributeType.number => 'NUMBER',
+      AttributeType.boolean => 'BOOLEAN',
+      AttributeType.singleSelect => 'SINGLE SELECT',
+      AttributeType.multiSelect => 'MULTI SELECT',
+      AttributeType.date => 'DATE',
+    };
+
+bool _isSelectType(AttributeType type) =>
+    type == AttributeType.singleSelect || type == AttributeType.multiSelect;
+
+class _AttributeRow extends ConsumerWidget {
+  final AttributeDefinition definition;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _AttributeRow({
+    required this.definition,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colors = context.colors;
+    final theme = Theme.of(context);
+    final def = definition;
+
+    return AppCard(
+      radius: Radii.lg,
+      isSelected: isSelected,
+      onTap: onTap,
+      padding: const EdgeInsets.symmetric(
+        horizontal: Spacing.md + 2,
+        vertical: Spacing.md,
       ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Type Icon Box
           Container(
-            padding: const EdgeInsets.all(10),
+            padding: const EdgeInsets.all(Spacing.sm),
             decoration: BoxDecoration(
-              color: AppTheme.primaryColor.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(8),
+              color: colors.accentSubtle,
+              borderRadius: Radii.mdAll,
             ),
-            child: Icon(_getTypeIcon(def.type),
-                color: AppTheme.primaryColor, size: 20),
+            child: Icon(
+              _typeIcon(def.type),
+              size: IconSizes.md,
+              color: colors.accent,
+            ),
           ),
-          const SizedBox(width: 14),
-
-          // Main Info
+          const SizedBox(width: Spacing.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Wrap(
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  spacing: 8,
-                  runSpacing: 4,
+                Row(
                   children: [
+                    Flexible(
+                      child: Text(
+                        def.name,
+                        style: theme.textTheme.titleSmall,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: Spacing.sm),
                     Text(
-                      def.name,
-                      style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: AppTheme.getColors(context).textPrimary),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: AppTheme.getColors(context).card,
-                        borderRadius: BorderRadius.circular(4),
-                        border: Border.all(
-                            color: AppTheme.getColors(context).divider),
-                      ),
-                      child: Text(
-                        def.key,
-                        style: TextStyle(
-                            fontSize: 11,
-                            fontFamily: 'Courier',
-                            color: AppTheme.getColors(context).textSecondary),
-                      ),
-                    ),
-                    // Scope Pill
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: def.scope == AttributeScope.task
-                            ? AppTheme.accentPurple.withValues(alpha: 0.2)
-                            : AppTheme.accentOrange.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        def.scope == AttributeScope.task ? 'TASK' : 'SESSION',
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                          color: def.scope == AttributeScope.task
-                              ? AppTheme.accentPurple
-                              : AppTheme.accentOrange,
-                        ),
-                      ),
+                      def.key,
+                      style: theme.textTheme.bodySmall
+                          ?.copyWith(color: colors.textTertiary),
                     ),
                   ],
                 ),
-                if (def.description != null && def.description!.isNotEmpty) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    def.description!,
-                    style: TextStyle(
-                        fontSize: 12,
-                        color: AppTheme.getColors(context).textSecondary),
-                  ),
-                ],
-                const SizedBox(height: 10),
-
-                // Properties Wrap
+                const SizedBox(height: Spacing.sm - 2),
                 Wrap(
-                  spacing: 6,
-                  runSpacing: 4,
+                  spacing: Spacing.sm - 2,
+                  runSpacing: Spacing.xs,
                   children: [
-                    _buildPillBadge(
-                        _formatType(def.type), Colors.grey.shade400),
+                    StatusBadge(
+                      label:
+                          def.scope == AttributeScope.task ? 'TASK' : 'SESSION',
+                      tone: BadgeTone.accent,
+                      emphasis: true,
+                    ),
+                    StatusBadge(label: _typeLabel(def.type), emphasis: true),
                     if (def.required)
-                      _buildPillBadge('REQUIRED', AppTheme.accentRed),
+                      const StatusBadge(
+                        label: 'REQUIRED',
+                        tone: BadgeTone.danger,
+                        emphasis: true,
+                      ),
                     if (def.showInQuickCapture)
-                      _buildPillBadge('QUICK CAPTURE', AppTheme.accentGreen),
-                    if (def.searchable)
-                      _buildPillBadge('SEARCHABLE', AppTheme.primaryColor),
+                      const StatusBadge(
+                        label: 'Quick Capture',
+                        icon: Icons.bolt,
+                        tone: BadgeTone.warning,
+                      ),
+                    if (def.reportable)
+                      const StatusBadge(
+                        label: 'Reportable',
+                        icon: Icons.insights,
+                        tone: BadgeTone.info,
+                      ),
                   ],
                 ),
               ],
             ),
           ),
-
-          // Options Button (if select type)
-          if (isSelectType) ...[
+          const SizedBox(width: Spacing.md),
+          if (_isSelectType(def.type)) ...[
             OutlinedButton.icon(
-              onPressed: () =>
-                  AttributeOptionsEditorDialog.show(context, definition: def),
-              icon: const Icon(Icons.list, size: 14),
-              label: const Text('Options', style: TextStyle(fontSize: 12)),
+              onPressed: () => AttributeOptionsEditorDialog.show(
+                context,
+                definition: def,
+              ),
+              icon: const Icon(Icons.list, size: IconSizes.sm),
+              label: const Text('Options'),
               style: OutlinedButton.styleFrom(
-                foregroundColor: AppTheme.getColors(context).textPrimary,
-                side: BorderSide(color: AppTheme.getColors(context).divider),
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                minimumSize: const Size(0, ControlSizes.toolbar),
+                padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: Spacing.sm),
           ],
-
-          // Enabled Switch
-          Transform.scale(
-            scale: 0.8,
+          Tooltip(
+            message: def.enabled ? 'Enabled' : 'Disabled',
             child: Switch(
               value: def.enabled,
-              onChanged: (val) => ref
+              onChanged: (value) => ref
                   .read(attributeDefinitionsProvider.notifier)
-                  .toggleEnabled(def.id, val),
-              activeTrackColor: AppTheme.primaryColor,
+                  .toggleEnabled(def.id, value),
             ),
           ),
-
-          // Actions Menu
           PopupMenuButton<String>(
-            icon: Icon(Icons.more_vert,
-                size: 18, color: AppTheme.getColors(context).textSecondary),
-            color: AppTheme.getColors(context).surface,
-            onSelected: (val) async {
-              if (val == 'edit') {
-                await AttributeDefinitionFormDialog.show(context,
-                    definition: def);
-              } else if (val == 'options') {
-                await AttributeOptionsEditorDialog.show(context,
-                    definition: def);
-              } else if (val == 'archive') {
-                final confirm = await showDialog<bool>(
-                  context: context,
-                  builder: (ctx) => AlertDialog(
-                    backgroundColor: AppTheme.getColors(context).surface,
-                    title: Text('Archive Attribute',
-                        style: TextStyle(
-                            color: AppTheme.getColors(context).textPrimary)),
-                    content: Text(
-                        'Are you sure you want to archive "${def.name}"? Historical work item values will be preserved.'),
-                    actions: [
-                      TextButton(
-                          onPressed: () => Navigator.pop(ctx, false),
-                          child: const Text('Cancel')),
-                      ElevatedButton(
-                        onPressed: () => Navigator.pop(ctx, true),
-                        style: ElevatedButton.styleFrom(
-                            backgroundColor: AppTheme.accentRed,
-                            foregroundColor: Colors.white),
-                        child: const Text('Archive'),
-                      ),
-                    ],
-                  ),
+            icon: Icon(
+              Icons.more_vert,
+              size: IconSizes.lg,
+              color: colors.textSecondary,
+            ),
+            tooltip: 'More actions',
+            onSelected: (value) async {
+              if (value == 'edit') {
+                await AttributeDefinitionFormDialog.show(
+                  context,
+                  definition: def,
                 );
-                if (confirm == true) {
+              } else if (value == 'options') {
+                await AttributeOptionsEditorDialog.show(
+                  context,
+                  definition: def,
+                );
+              } else if (value == 'archive') {
+                final confirmed = await confirmDestructive(
+                  context,
+                  title: 'Archive Attribute',
+                  message: 'Are you sure you want to archive "${def.name}"? '
+                      'Historical work item values will be preserved.',
+                  confirmLabel: 'Archive',
+                  icon: Icons.archive_outlined,
+                );
+                if (confirmed) {
                   await ref
                       .read(attributeDefinitionsProvider.notifier)
                       .archiveDefinition(def.id);
@@ -430,29 +347,38 @@ class _AttributeDefinitionsViewState
             itemBuilder: (context) => [
               const PopupMenuItem(
                 value: 'edit',
-                child: Row(children: [
-                  Icon(Icons.edit_outlined, size: 16),
-                  SizedBox(width: 8),
-                  Text('Edit')
-                ]),
+                child: Row(
+                  children: [
+                    Icon(Icons.edit_outlined, size: IconSizes.md),
+                    SizedBox(width: Spacing.sm),
+                    Text('Edit'),
+                  ],
+                ),
               ),
-              if (isSelectType)
+              if (_isSelectType(def.type))
                 const PopupMenuItem(
                   value: 'options',
-                  child: Row(children: [
-                    Icon(Icons.format_list_bulleted, size: 16),
-                    SizedBox(width: 8),
-                    Text('Manage Options')
-                  ]),
+                  child: Row(
+                    children: [
+                      Icon(Icons.list, size: IconSizes.md),
+                      SizedBox(width: Spacing.sm),
+                      Text('Manage Options'),
+                    ],
+                  ),
                 ),
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'archive',
-                child: Row(children: [
-                  Icon(Icons.archive_outlined,
-                      size: 16, color: AppTheme.accentRed),
-                  SizedBox(width: 8),
-                  Text('Archive', style: TextStyle(color: AppTheme.accentRed))
-                ]),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.archive_outlined,
+                      size: IconSizes.md,
+                      color: colors.danger,
+                    ),
+                    const SizedBox(width: Spacing.sm),
+                    Text('Archive', style: TextStyle(color: colors.danger)),
+                  ],
+                ),
               ),
             ],
           ),
@@ -460,19 +386,216 @@ class _AttributeDefinitionsViewState
       ),
     );
   }
+}
 
-  Widget _buildPillBadge(String label, Color color) {
+/// Live view of the selected attribute's options.
+class _OptionsPane extends ConsumerWidget {
+  final AttributeDefinition definition;
+
+  const _OptionsPane({required this.definition});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colors = context.colors;
+    final theme = Theme.of(context);
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: color.withValues(alpha: 0.4)),
+        color: colors.surface,
+        borderRadius: Radii.xlAll,
+        border: Border.all(color: colors.divider),
       ),
-      child: Text(
-        label,
-        style:
-            TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: color),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              Spacing.lg,
+              Spacing.lg,
+              Spacing.md,
+              Spacing.md,
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(definition.name, style: theme.textTheme.titleLarge),
+                      const SizedBox(height: Spacing.xxs),
+                      Text(
+                        definition.description?.trim().isNotEmpty == true
+                            ? definition.description!
+                            : _typeLabel(definition.type).toLowerCase(),
+                        style: theme.textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.edit_outlined, size: IconSizes.md),
+                  tooltip: 'Edit attribute',
+                  onPressed: () => AttributeDefinitionFormDialog.show(
+                    context,
+                    definition: definition,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Divider(height: 1, color: colors.divider),
+          Expanded(
+            child: _isSelectType(definition.type)
+                ? _OptionsList(definition: definition)
+                : EmptyState(
+                    icon: _typeIcon(definition.type),
+                    title: '${_typeLabel(definition.type)} attribute',
+                    message:
+                        'Only single- and multi-select attributes have a list '
+                        'of options to manage.',
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _OptionsList extends ConsumerWidget {
+  final AttributeDefinition definition;
+
+  const _OptionsList({required this.definition});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colors = context.colors;
+    final theme = Theme.of(context);
+    final optionsAsync =
+        ref.watch(attributeOptionsFamilyProvider(definition.id));
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Expanded(
+          child: optionsAsync.when(
+            loading: () => const Center(
+              child: SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            ),
+            error: (err, _) => Padding(
+              padding: const EdgeInsets.all(Spacing.lg),
+              child: ErrorState(
+                title: 'Could not load options',
+                error: err,
+                compact: true,
+                onRetry: () => ref.invalidate(
+                  attributeOptionsFamilyProvider(definition.id),
+                ),
+              ),
+            ),
+            data: (options) {
+              if (options.isEmpty) {
+                return const EmptyState(
+                  icon: Icons.list,
+                  title: 'No options yet',
+                  message: 'Add the values users can pick from.',
+                );
+              }
+              return ListView.separated(
+                padding: const EdgeInsets.all(Spacing.lg),
+                itemCount: options.length,
+                separatorBuilder: (_, __) => const SizedBox(height: Spacing.sm),
+                itemBuilder: (context, index) {
+                  final option = options[index];
+                  final color = ColorUtils.parseHex(
+                    option.colorHex,
+                    defaultColor: colors.textSecondary,
+                  );
+                  return Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: Spacing.md,
+                      vertical: Spacing.sm + 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: colors.surfaceSunken,
+                      borderRadius: Radii.mdAll,
+                      border: Border.all(color: colors.divider),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 10,
+                          height: 10,
+                          decoration: BoxDecoration(
+                            color: color,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: Spacing.sm + 2),
+                        Expanded(
+                          child: Text(
+                            option.label,
+                            style: theme.textTheme.bodyMedium,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (option.isDefault) ...[
+                          const StatusBadge(
+                            label: 'Default',
+                            tone: BadgeTone.accent,
+                          ),
+                          const SizedBox(width: Spacing.sm),
+                        ],
+                        Text(
+                          option.value,
+                          style: theme.textTheme.bodySmall
+                              ?.copyWith(color: colors.textTertiary),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              );
+            },
+          ),
+        ),
+        Divider(height: 1, color: colors.divider),
+        Padding(
+          padding: const EdgeInsets.all(Spacing.md),
+          child: OutlinedButton.icon(
+            onPressed: () => AttributeOptionsEditorDialog.show(
+              context,
+              definition: definition,
+            ),
+            icon: const Icon(Icons.tune, size: IconSizes.sm),
+            label: const Text('Manage Options'),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _OptionsPlaceholder extends StatelessWidget {
+  const _OptionsPlaceholder();
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    return Container(
+      decoration: BoxDecoration(
+        color: colors.surface.withValues(alpha: 0.4),
+        borderRadius: Radii.xlAll,
+        border: Border.all(color: colors.divider),
+      ),
+      child: const EmptyState(
+        icon: Icons.tune,
+        title: 'Select an attribute',
+        message: 'Its details and select options appear here.',
       ),
     );
   }

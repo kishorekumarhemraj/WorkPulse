@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:workpulse/core/theme/app_theme.dart';
+import 'package:workpulse/core/theme/design_tokens.dart';
+import 'package:workpulse/core/theme/app_colors.dart';
 
 /// One selectable option for [SearchableMultiSelect].
 class SearchableMultiSelectItem {
@@ -84,7 +85,7 @@ class _SearchableMultiSelectState extends State<SearchableMultiSelect> {
 
   @override
   Widget build(BuildContext context) {
-    final colors = AppTheme.getColors(context);
+    final colors = context.colors;
 
     final selectedItems = widget.selectedIds
         .map((id) => widget.allItems.where((i) => i.id == id).firstOrNull)
@@ -117,7 +118,7 @@ class _SearchableMultiSelectState extends State<SearchableMultiSelect> {
                         left: 8, right: 4, top: 3, bottom: 3),
                     decoration: BoxDecoration(
                       color: colors.card,
-                      borderRadius: BorderRadius.circular(6),
+                      borderRadius: Radii.smAll,
                       border: Border.all(color: item.color ?? colors.divider),
                     ),
                     child: Row(
@@ -132,7 +133,8 @@ class _SearchableMultiSelectState extends State<SearchableMultiSelect> {
                           ),
                           const SizedBox(width: 6),
                         ] else if (item.icon != null) ...[
-                          Icon(item.icon, size: 13, color: colors.textSecondary),
+                          Icon(item.icon,
+                              size: 13, color: colors.textSecondary),
                           const SizedBox(width: 6),
                         ],
                         Text(item.label,
@@ -141,7 +143,7 @@ class _SearchableMultiSelectState extends State<SearchableMultiSelect> {
                         const SizedBox(width: 2),
                         InkWell(
                           onTap: () => _remove(item.id),
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: Radii.lgAll,
                           child: Padding(
                             padding: const EdgeInsets.all(2),
                             child: Icon(Icons.close,
@@ -158,10 +160,10 @@ class _SearchableMultiSelectState extends State<SearchableMultiSelect> {
             decoration: BoxDecoration(
               color: colors.card,
               border: Border.all(
-                color: _focusNode.hasFocus ? AppTheme.primaryColor : colors.divider,
+                color: _focusNode.hasFocus ? colors.accent : colors.divider,
                 width: _focusNode.hasFocus ? 1.5 : 1.0,
               ),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: Radii.mdAll,
             ),
             child: TextField(
               controller: _searchController,
@@ -189,7 +191,7 @@ class _SearchableMultiSelectState extends State<SearchableMultiSelect> {
               constraints: const BoxConstraints(maxHeight: 160),
               decoration: BoxDecoration(
                 color: colors.card,
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: Radii.mdAll,
                 border: Border.all(color: colors.divider),
               ),
               child: unselected.isEmpty
@@ -199,8 +201,8 @@ class _SearchableMultiSelectState extends State<SearchableMultiSelect> {
                         widget.allItems.isEmpty
                             ? widget.emptyStateText
                             : 'No matches',
-                        style:
-                            TextStyle(fontSize: 12, color: colors.textSecondary),
+                        style: TextStyle(
+                            fontSize: 12, color: colors.textSecondary),
                       ),
                     )
                   : ListView.builder(
