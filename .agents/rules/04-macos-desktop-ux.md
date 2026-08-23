@@ -10,7 +10,7 @@ WorkPulse is designed to feel like a high-performance native macOS utility that 
    - `⌥ + Space` (Option + Space) default global shortcut to trigger Quick Capture.
    - `Enter` / `Return`: Trigger primary action (Start timer, Resume task, Confirm switch).
    - `Escape`: Cancel action and hide floating window without saving incomplete drafts.
-   - `Tab` / `Shift + Tab`: Seamlessly cycle through input fields (Task -> Project -> Category -> Tags -> People -> Jira).
+   - `Tab` / `Shift + Tab`: Seamlessly cycle through input fields (Task -> Project -> Category -> Tags -> People -> Configured Attributes).
    - `Arrow Up` / `Arrow Down`: Navigate task search list.
 3. **macOS Menu Bar / Tray**:
    - Show live timer formatted as `⏱ HH:MM:SS` when active.
