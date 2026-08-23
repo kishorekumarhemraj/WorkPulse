@@ -21,6 +21,7 @@ import 'package:workpulse/features/tasks/views/tasks_view.dart';
 import 'package:workpulse/features/timer/models/timer_state.dart';
 import 'package:workpulse/features/timer/providers/timer_provider.dart';
 import 'package:workpulse/features/timer/views/active_timer_bar.dart';
+import 'package:workpulse/features/tray/providers/tray_provider.dart';
 import 'package:workpulse/features/workspace/providers/workspace_provider.dart';
 
 enum ShellNavTab {
@@ -64,6 +65,15 @@ class _MainShellViewState extends ConsumerState<MainShellView> {
         }
       });
     });
+
+    // Initialize macOS Tray Coordinator
+    final trayCoordinator = ref.read(trayCoordinatorProvider);
+    trayCoordinator.onQuickCaptureRequested = () {
+      if (mounted) {
+        QuickCaptureDialog.show(context);
+      }
+    };
+    trayCoordinator.initialize();
   }
 
   @override

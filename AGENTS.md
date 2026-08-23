@@ -37,7 +37,7 @@ WorkPulse is a privacy-first, offline-first macOS time-tracking and work-awarene
    - Zero telemetry, analytics, or background outbound network calls in V1.
 
 9. **Platform-Specific Code Must Be Isolated**:
-   - Native macOS integrations (menu bar tray, global shortcut `⌥ + Space`, idle detection, notifications) live behind clean platform service interfaces.
+   - Native macOS integrations (menu bar tray, global shortcut `⌥ + Space`, idle detection, notifications, window management) live behind clean platform service interfaces in `lib/core/platform/`.
 
 10. **Migration-Based Database with Stable UUIDs**:
     - All entity IDs are stable UUIDs.
@@ -49,7 +49,15 @@ WorkPulse is a privacy-first, offline-first macOS time-tracking and work-awarene
 - `lib/data/`: SQLite tables, migrations, DAOs, concrete repository implementations.
 - `lib/features/`: Feature modules containing UI, Riverpod providers, controllers, and widgets.
 
-## Development Workflow
-- Build in vertical slices following the 10 Sprints defined in the PRD.
-- Write unit tests for domain logic and SQLite repositories with 100% deterministic test fixtures.
-- Refer to `.agents/skills/workpulse-domain` and `.agents/skills/workpulse-sprint-guide` for detailed specs.
+## Specialized Rules Reference
+- [01-architecture-clean-code.md](file:///Users/kkh/Code/WorkPulse/.agents/rules/01-architecture-clean-code.md)
+- [02-flutter-riverpod.md](file:///Users/kkh/Code/WorkPulse/.agents/rules/02-flutter-riverpod.md)
+- [03-offline-data-sqlite.md](file:///Users/kkh/Code/WorkPulse/.agents/rules/03-offline-data-sqlite.md)
+- [04-macos-desktop-ux.md](file:///Users/kkh/Code/WorkPulse/.agents/rules/04-macos-desktop-ux.md)
+- [05-testing-and-mocking.md](file:///Users/kkh/Code/WorkPulse/.agents/rules/05-testing-and-mocking.md)
+- [06-platform-bridges.md](file:///Users/kkh/Code/WorkPulse/.agents/rules/06-platform-bridges.md)
+
+## Development Workflow & Skills
+- Build in vertical slices following the 10 Sprints defined in [workpulse-sprint-guide](file:///Users/kkh/Code/WorkPulse/.agents/skills/workpulse-sprint-guide/SKILL.md).
+- Refer to [workpulse-domain](file:///Users/kkh/Code/WorkPulse/.agents/skills/workpulse-domain/SKILL.md) for domain models and state machines.
+- Consult [DESIGN.md](file:///Users/kkh/Code/WorkPulse/docs/DESIGN.md) for technical design and [DEVELOPMENT.md](file:///Users/kkh/Code/WorkPulse/docs/DEVELOPMENT.md) for local dev commands.
