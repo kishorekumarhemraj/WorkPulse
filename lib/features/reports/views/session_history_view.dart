@@ -339,11 +339,11 @@ class SessionHistoryView extends ConsumerWidget {
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                   ),
-                                  if (record.workItem.notes != null &&
-                                      record.workItem.notes!.isNotEmpty) ...[
+                                  if (record.session.notes != null &&
+                                      record.session.notes!.isNotEmpty) ...[
                                     SizedBox(height: 2),
                                     Text(
-                                      record.workItem.notes!,
+                                      record.session.notes!,
                                       style: TextStyle(
                                           fontSize: 11,
                                           fontStyle: FontStyle.italic,

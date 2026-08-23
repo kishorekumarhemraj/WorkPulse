@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workpulse/core/theme/app_theme.dart';
 import 'package:workpulse/core/theme/color_utils.dart';
 import 'package:workpulse/core/theme/icon_utils.dart';
+import 'package:workpulse/core/widgets/searchable_multi_select.dart';
 import 'package:workpulse/domain/models/attribute_model.dart';
 import 'package:workpulse/domain/models/category_model.dart';
 import 'package:workpulse/domain/models/project_model.dart';
@@ -442,40 +443,40 @@ class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
                           ],
                         ],
                       ),
-                      if (tags.isNotEmpty || people.isNotEmpty) ...[
+                      if (tags.isNotEmpty) ...[
                         const SizedBox(height: 10),
-                        Wrap(
-                          spacing: 6,
-                          runSpacing: 6,
-                          children: [
-                            ...tags.map((t) {
-                              final isTagSelected =
-                                  qcState.selectedTagIds.contains(t.id);
-                              final tagColor = ColorUtils.parseHex(t.colorHex);
-                              return _QuickChip(
-                                label: '#${t.name}',
-                                icon: Icons.label_outline,
-                                selected: isTagSelected,
-                                color: tagColor,
-                                onTap: () => ref
-                                    .read(quickCaptureProvider.notifier)
-                                    .toggleTag(t.id),
-                              );
-                            }),
-                            ...people.map((person) {
-                              final isPersonSelected =
-                                  qcState.selectedPeopleIds.contains(person.id);
-                              return _QuickChip(
-                                label: person.name,
-                                icon: Icons.person_outline,
-                                selected: isPersonSelected,
-                                color: AppTheme.primaryColor,
-                                onTap: () => ref
-                                    .read(quickCaptureProvider.notifier)
-                                    .togglePerson(person.id),
-                              );
-                            }),
-                          ],
+                        SearchableMultiSelect(
+                          allItems: tags
+                              .map((t) => SearchableMultiSelectItem(
+                                    id: t.id,
+                                    label: t.name,
+                                    color: ColorUtils.parseHex(t.colorHex),
+                                  ))
+                              .toList(),
+                          selectedIds: qcState.selectedTagIds,
+                          onChanged: (ids) => ref
+                              .read(quickCaptureProvider.notifier)
+                              .setTagIds(ids),
+                          hintText: 'Search tags...',
+                          emptyStateText: 'No tags created yet',
+                        ),
+                      ],
+                      if (people.isNotEmpty) ...[
+                        const SizedBox(height: 10),
+                        SearchableMultiSelect(
+                          allItems: people
+                              .map((person) => SearchableMultiSelectItem(
+                                    id: person.id,
+                                    label: person.name,
+                                    icon: Icons.person_outline,
+                                  ))
+                              .toList(),
+                          selectedIds: qcState.selectedPeopleIds,
+                          onChanged: (ids) => ref
+                              .read(quickCaptureProvider.notifier)
+                              .setPeopleIds(ids),
+                          hintText: 'Search people...',
+                          emptyStateText: 'No people added yet',
                         ),
                       ],
                       if (quickCaptureAttributes.isNotEmpty) ...[
@@ -656,63 +657,6 @@ class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
               ],
             ),
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _QuickChip extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final bool selected;
-  final Color color;
-  final VoidCallback onTap;
-
-  const _QuickChip({
-    required this.label,
-    required this.icon,
-    required this.selected,
-    required this.color,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(5),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-        decoration: BoxDecoration(
-          color: selected
-              ? color.withValues(alpha: 0.28)
-              : AppTheme.getColors(context).surface,
-          borderRadius: BorderRadius.circular(5),
-          border: Border.all(
-              color: selected ? color : AppTheme.getColors(context).divider),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              size: 11,
-              color:
-                  selected ? color : AppTheme.getColors(context).textSecondary,
-            ),
-            const SizedBox(width: 4),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 10,
-                color: selected
-                    ? color
-                    : AppTheme.getColors(context).textSecondary,
-                fontWeight: selected ? FontWeight.bold : FontWeight.normal,
-              ),
-            ),
-          ],
         ),
       ),
     );
