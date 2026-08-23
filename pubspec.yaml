@@ -50,3 +50,27 @@ flutter:
   uses-material-design: true
   assets:
     - assets/
+    - assets/fonts/
+
+  # Bundled locally rather than fetched at runtime: WorkPulse makes zero
+  # outbound network calls (AGENTS.md rule 8). Both families are SIL Open
+  # Font License 1.1; the licences ship alongside the .ttf files.
+  fonts:
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Inter-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Inter-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Inter-Bold.ttf
+          weight: 700
+    - family: JetBrainsMono
+      fonts:
+        - asset: assets/fonts/JetBrainsMono-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/JetBrainsMono-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/JetBrainsMono-Bold.ttf
+          weight: 700
