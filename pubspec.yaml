@@ -1,0 +1,50 @@
+name: workpulse
+description: "A lightweight, privacy-first, offline-first macOS time-tracking application."
+publish_to: 'none'
+version: 0.1.0+1
+
+environment:
+  sdk: '>=3.2.0 <4.0.0'
+  flutter: ">=3.16.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # State Management
+  flutter_riverpod: ^2.5.1
+  riverpod_annotation: ^2.3.5
+
+  # Local Persistence & SQLite
+  sqflite_common_ffi: ^2.3.3
+  sqlite3: ^2.4.4
+  path_provider: ^2.1.2
+  path: ^1.9.0
+
+  # Desktop Window & Tray Management
+  window_manager: ^0.3.9
+  tray_manager: ^0.2.3
+  hotkey_manager: ^0.1.9
+  screen_retriever: ^0.1.9
+
+  # Utilities & Formatting
+  intl: ^0.19.0
+  uuid: ^4.3.3
+  equatable: ^2.0.5
+  csv: ^6.0.0
+
+  # UI / Cupertino icons
+  cupertino_icons: ^1.0.6
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.1
+  build_runner: ^2.4.8
+  riverpod_generator: ^2.4.0
+  custom_lint: ^0.6.2
+  riverpod_lint: ^2.3.9
+  mocktail: ^1.0.3
+
+flutter:
+  uses-material-design: true
