@@ -36,17 +36,6 @@ class DashboardView extends ConsumerWidget {
             start: now.subtract(const Duration(days: 7)),
             end: now,
           ),
-      builder: (context, child) {
-        return Theme(
-          data: ThemeData.dark().copyWith(
-            colorScheme: const ColorScheme.dark(
-              primary: AppTheme.primaryColor,
-              surface: AppTheme.surfaceDark,
-            ),
-          ),
-          child: child!,
-        );
-      },
     );
 
     if (picked != null) {
@@ -89,7 +78,11 @@ class DashboardView extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Top Header with Range Filters
-                Row(
+                Wrap(
+                  alignment: WrapAlignment.spaceBetween,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 16,
+                  runSpacing: 12,
                   children: [
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -106,68 +99,75 @@ class DashboardView extends ConsumerWidget {
                         Text(
                           _formatRangeSubtitle(data.range),
                           style: TextStyle(
-                              fontSize: 12, color: AppTheme.getColors(context).textSecondary),
+                              fontSize: 12,
+                              color: AppTheme.getColors(context).textSecondary),
                         ),
                       ],
                     ),
-                    const Spacer(),
 
-                    // Time Range Selector Filter Pills
-                    Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        color: AppTheme.getColors(context).surface,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: AppTheme.getColors(context).divider),
-                      ),
-                      child: Row(
-                        children: DashboardTimeRange.values.map((r) {
-                          final isSelected = selectedRange == r;
-                          return InkWell(
-                            onTap: () {
-                              if (r == DashboardTimeRange.custom) {
-                                _pickCustomRange(context, ref);
-                              } else {
-                                ref
-                                    .read(selectedTimeRangeProvider.notifier)
-                                    .setRange(r);
-                              }
-                            },
-                            borderRadius: BorderRadius.circular(6),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 12, vertical: 6),
-                              decoration: BoxDecoration(
+                    // Controls Row (Pills + Refresh Button aligned together)
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: AppTheme.getColors(context).surface,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                                color: AppTheme.getColors(context).divider),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: DashboardTimeRange.values.map((r) {
+                              final isSelected = selectedRange == r;
+                              return Material(
                                 color: isSelected
                                     ? AppTheme.primaryColor
                                     : Colors.transparent,
                                 borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Text(
-                                r.label,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: isSelected
-                                      ? FontWeight.bold
-                                      : FontWeight.w500,
-                                  color: isSelected
-                                      ? Colors.white
-                                      : AppTheme.getColors(context).textSecondary,
+                                child: InkWell(
+                                  onTap: () {
+                                    if (r == DashboardTimeRange.custom) {
+                                      _pickCustomRange(context, ref);
+                                    } else {
+                                      ref
+                                          .read(selectedTimeRangeProvider.notifier)
+                                          .setRange(r);
+                                    }
+                                  },
+                                  borderRadius: BorderRadius.circular(6),
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 12, vertical: 6),
+                                    child: Text(
+                                      r.label,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: isSelected
+                                            ? FontWeight.bold
+                                            : FontWeight.w500,
+                                        color: isSelected
+                                            ? Colors.white
+                                            : AppTheme.getColors(context)
+                                                .textSecondary,
+                                      ),
+                                    ),
+                                  ),
                                 ),
-                              ),
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-
-                    // Refresh Button
-                    IconButton(
-                      onPressed: () => ref.invalidate(dashboardDataProvider),
-                      icon: Icon(Icons.refresh,
-                          size: 18, color: AppTheme.getColors(context).textSecondary),
-                      tooltip: 'Refresh analytics',
+                              );
+                            }).toList(),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        IconButton(
+                          onPressed: () => ref.invalidate(dashboardDataProvider),
+                          icon: Icon(Icons.refresh,
+                              size: 18,
+                              color: AppTheme.getColors(context).textSecondary),
+                          tooltip: 'Refresh analytics',
+                        ),
+                      ],
                     ),
                   ],
                 ),

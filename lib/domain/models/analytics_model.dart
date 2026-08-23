@@ -12,37 +12,39 @@ enum DashboardTimeRange {
   const DashboardTimeRange(this.label);
 
   DateRange toDateRange({DateRange? customRange, DateTime? referenceTime}) {
-    final now = referenceTime ?? DateTime.now().toUtc();
+    final now = (referenceTime ?? DateTime.now()).toLocal();
 
     switch (this) {
       case DashboardTimeRange.today:
-        final start = DateTime.utc(now.year, now.month, now.day);
-        final end = DateTime.utc(now.year, now.month, now.day, 23, 59, 59, 999);
-        return DateRange(start: start, end: end);
+        final localStart = DateTime(now.year, now.month, now.day);
+        final localEnd = DateTime(now.year, now.month, now.day, 23, 59, 59, 999);
+        return DateRange(start: localStart.toUtc(), end: localEnd.toUtc());
 
       case DashboardTimeRange.thisWeek:
-        // Monday as first day of week
+        // Monday as first day of week in user's local time
         final daysToSubtract = (now.weekday - DateTime.monday) % 7;
-        final startOfWeek =
-            DateTime.utc(now.year, now.month, now.day - daysToSubtract);
-        final endOfWeek = DateTime.utc(
+        final localStartOfWeek =
+            DateTime(now.year, now.month, now.day - daysToSubtract);
+        final localEndOfWeek = DateTime(
             now.year, now.month, now.day - daysToSubtract + 6, 23, 59, 59, 999);
-        return DateRange(start: startOfWeek, end: endOfWeek);
+        return DateRange(
+            start: localStartOfWeek.toUtc(), end: localEndOfWeek.toUtc());
 
       case DashboardTimeRange.thisMonth:
-        final startOfMonth = DateTime.utc(now.year, now.month, 1);
-        final nextMonth = now.month == 12
-            ? DateTime.utc(now.year + 1, 1, 1)
-            : DateTime.utc(now.year, now.month + 1, 1);
-        final endOfMonth = nextMonth.subtract(const Duration(milliseconds: 1));
-        return DateRange(start: startOfMonth, end: endOfMonth);
+        final localStartOfMonth = DateTime(now.year, now.month, 1);
+        final localNextMonth = now.month == 12
+            ? DateTime(now.year + 1, 1, 1)
+            : DateTime(now.year, now.month + 1, 1);
+        final localEndOfMonth =
+            localNextMonth.subtract(const Duration(milliseconds: 1));
+        return DateRange(
+            start: localStartOfMonth.toUtc(), end: localEndOfMonth.toUtc());
 
       case DashboardTimeRange.custom:
-        return customRange ??
-            DateRange(
-              start: DateTime.utc(now.year, now.month, now.day),
-              end: DateTime.utc(now.year, now.month, now.day, 23, 59, 59, 999),
-            );
+        if (customRange != null) return customRange;
+        final localStart = DateTime(now.year, now.month, now.day);
+        final localEnd = DateTime(now.year, now.month, now.day, 23, 59, 59, 999);
+        return DateRange(start: localStart.toUtc(), end: localEnd.toUtc());
     }
   }
 }

@@ -81,6 +81,12 @@ class QuickCaptureNotifier extends Notifier<QuickCaptureState> {
     state = state.copyWith(selectedPeopleIds: updated);
   }
 
+  void setTagIds(List<String> ids) =>
+      state = state.copyWith(selectedTagIds: ids);
+
+  void setPeopleIds(List<String> ids) =>
+      state = state.copyWith(selectedPeopleIds: ids);
+
   void reset() {
     final projects = ref.read(projectsProvider).value ?? [];
     final categories = ref.read(categoriesProvider).value ?? [];

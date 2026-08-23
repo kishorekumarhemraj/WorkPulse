@@ -13,6 +13,7 @@ import 'package:workpulse/features/categories/providers/categories_provider.dart
 import 'package:workpulse/features/people/providers/people_provider.dart';
 import 'package:workpulse/features/projects/providers/projects_provider.dart';
 import 'package:workpulse/features/tags/providers/tags_provider.dart';
+import 'package:workpulse/features/tasks/providers/task_sessions_provider.dart';
 import 'package:workpulse/features/tasks/providers/work_items_provider.dart';
 import 'package:workpulse/features/tasks/views/tasks_view.dart';
 import 'package:workpulse/features/timer/models/timer_state.dart';
@@ -78,7 +79,7 @@ class _FakeTimerNotifier extends TimerNotifier {
   }
 
   @override
-  Future<void> confirmSwitch({String? notes}) async {
+  Future<void> confirmSwitch({WorkItem? targetItem, String? notes}) async {
     confirmSwitchCalled = true;
     switchNotes = notes;
   }
@@ -173,7 +174,7 @@ void main() {
       expect(find.text('TRACKING'), findsOneWidget);
       expect(find.text('Build Timer Engine'), findsOneWidget);
       expect(find.text('WorkPulse App'), findsOneWidget);
-      expect(find.text('25:10'), findsOneWidget);
+      expect(find.text('00:25:10'), findsOneWidget);
       expect(find.text('Stop'), findsOneWidget);
 
       // Tap stop button
@@ -326,6 +327,76 @@ void main() {
 
       // Inactive task card has Play icon
       expect(find.byIcon(Icons.play_circle_fill), findsOneWidget);
+
+      // Tapping Play on inactive task triggers TaskSwitchDialog
+      await tester.tap(find.byIcon(Icons.play_circle_fill));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Switch Active Task?'), findsOneWidget);
+      expect(find.text('Switching To'), findsOneWidget);
+
+      // Confirm switch
+      await tester.tap(find.text('Confirm Switch'));
+      await tester.pumpAndSettle();
+
+      expect(fakeTimer.confirmSwitchCalled, isTrue);
+    });
+
+    testWidgets('TasksView expands and collapses sessions when clicking Sessions badge', (tester) async {
+      final sampleSession = Session(
+        id: 'session-1',
+        workItemId: testTaskA.id,
+        startTime: DateTime(2026, 8, 24, 9, 0),
+        endTime: DateTime(2026, 8, 24, 10, 30),
+        notes: 'Working on core timer engine',
+        createdAt: DateTime(2026, 8, 24, 9, 0),
+      );
+
+      final fakeTimer = _FakeTimerNotifier(
+        const TimerState(status: TimerStatus.idle),
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            currentWorkspaceProvider.overrideWith(() => _FakeWorkspaceNotifier(testWorkspace)),
+            projectsProvider.overrideWith(() => _FakeProjectsNotifier([testProject])),
+            categoriesProvider.overrideWith(() => _FakeCategoriesNotifier([testCategory])),
+            tagsProvider.overrideWith(() => _FakeTagsNotifier()),
+            peopleProvider.overrideWith(() => _FakePeopleNotifier()),
+            workItemsProvider.overrideWith(() => _FakeWorkItemsNotifier([testTaskA])),
+            timerProvider.overrideWith(() => fakeTimer),
+            sessionsForWorkItemProvider(testTaskA.id).overrideWith((ref) async => [sampleSession]),
+          ],
+          child: MaterialApp(
+            theme: AppTheme.darkTheme,
+            home: const TasksView(),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      // Sessions badge is visible with count
+      expect(find.text('Sessions (1)'), findsOneWidget);
+
+      // Session detail is initially collapsed
+      expect(find.text('Working on core timer engine'), findsNothing);
+
+      // Tap on Sessions badge to expand
+      await tester.tap(find.text('Sessions (1)'));
+      await tester.pumpAndSettle();
+
+      // Now session row is visible with note and duration
+      expect(find.text('Working on core timer engine'), findsOneWidget);
+      expect(find.text('01:30:00'), findsOneWidget);
+
+      // Tap Sessions badge again to collapse
+      await tester.tap(find.text('Sessions (1)'));
+      await tester.pumpAndSettle();
+
+      // Session detail is collapsed again
+      expect(find.text('Working on core timer engine'), findsNothing);
     });
   });
 }

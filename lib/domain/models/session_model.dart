@@ -6,6 +6,7 @@ class Session extends Equatable {
   final DateTime startTime;
   final DateTime? endTime;
   final List<String> peopleIds;
+  final String? notes;
   final DateTime createdAt;
 
   const Session({
@@ -14,6 +15,7 @@ class Session extends Equatable {
     required this.startTime,
     this.endTime,
     this.peopleIds = const [],
+    this.notes,
     required this.createdAt,
   });
 
@@ -31,6 +33,8 @@ class Session extends Equatable {
     DateTime? startTime,
     DateTime? endTime,
     List<String>? peopleIds,
+    String? notes,
+    bool clearNotes = false,
     DateTime? createdAt,
   }) {
     return Session(
@@ -39,10 +43,12 @@ class Session extends Equatable {
       startTime: startTime ?? this.startTime,
       endTime: endTime ?? this.endTime,
       peopleIds: peopleIds ?? this.peopleIds,
+      notes: clearNotes ? null : (notes ?? this.notes),
       createdAt: createdAt ?? this.createdAt,
     );
   }
 
   @override
-  List<Object?> get props => [id, workItemId, startTime, endTime, peopleIds, createdAt];
+  List<Object?> get props =>
+      [id, workItemId, startTime, endTime, peopleIds, notes, createdAt];
 }

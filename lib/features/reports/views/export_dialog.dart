@@ -52,17 +52,6 @@ class _ExportDialogState extends ConsumerState<ExportDialog> {
             start: now.subtract(const Duration(days: 7)),
             end: now,
           ),
-      builder: (context, child) {
-        return Theme(
-          data: ThemeData.dark().copyWith(
-            colorScheme: const ColorScheme.dark(
-              primary: AppTheme.primaryColor,
-              surface: AppTheme.surfaceDark,
-            ),
-          ),
-          child: child!,
-        );
-      },
     );
 
     if (picked != null) {
@@ -78,7 +67,9 @@ class _ExportDialogState extends ConsumerState<ExportDialog> {
     try {
       final workspace = await ref.read(currentWorkspaceProvider.future);
       final domainCustom = _customRange != null
-          ? DateRange(start: _customRange!.start, end: _customRange!.end)
+          ? DateRange(
+              start: _customRange!.start.toUtc(),
+              end: _customRange!.end.toUtc())
           : null;
       final range = _selectedRange.toDateRange(customRange: domainCustom);
       final exportService = ref.read(exportServiceProvider);
@@ -123,7 +114,8 @@ class _ExportDialogState extends ConsumerState<ExportDialog> {
   @override
   Widget build(BuildContext context) {
     final domainCustomBuild = _customRange != null
-        ? DateRange(start: _customRange!.start, end: _customRange!.end)
+        ? DateRange(
+            start: _customRange!.start.toUtc(), end: _customRange!.end.toUtc())
         : null;
     final range = _selectedRange.toDateRange(customRange: domainCustomBuild);
     final rangeLabel =
@@ -132,7 +124,7 @@ class _ExportDialogState extends ConsumerState<ExportDialog> {
     return Dialog(
       backgroundColor: AppTheme.getColors(context).surface,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: AppTheme.dialogRadius,
         side: BorderSide(color: AppTheme.getColors(context).divider),
       ),
       child: ConstrainedBox(
@@ -170,14 +162,16 @@ class _ExportDialogState extends ConsumerState<ExportDialog> {
                         Text(
                           'Generate clean reports and structured data backups',
                           style: TextStyle(
-                              fontSize: 12, color: AppTheme.getColors(context).textSecondary),
+                              fontSize: 12,
+                              color: AppTheme.getColors(context).textSecondary),
                         ),
                       ],
                     ),
                   ),
                   IconButton(
                     icon: Icon(Icons.close,
-                        size: 18, color: AppTheme.getColors(context).textSecondary),
+                        size: 18,
+                        color: AppTheme.getColors(context).textSecondary),
                     onPressed: () => Navigator.of(context).pop(),
                   ),
                 ],
@@ -196,40 +190,43 @@ class _ExportDialogState extends ConsumerState<ExportDialog> {
                 decoration: BoxDecoration(
                   color: AppTheme.getColors(context).card,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: AppTheme.getColors(context).divider),
+                  border:
+                      Border.all(color: AppTheme.getColors(context).divider),
                 ),
                 child: Row(
                   children: DashboardTimeRange.values.map((r) {
                     final isSelected = _selectedRange == r;
                     return Expanded(
-                      child: InkWell(
-                        onTap: () {
-                          if (r == DashboardTimeRange.custom) {
-                            _pickCustomRange();
-                          } else {
-                            setState(() => _selectedRange = r);
-                          }
-                        },
+                      child: Material(
+                        color: isSelected
+                            ? AppTheme.primaryColor.withValues(alpha: 0.15)
+                            : Colors.transparent,
                         borderRadius: BorderRadius.circular(6),
-                        child: Container(
-                          padding: EdgeInsets.symmetric(vertical: 8),
-                          decoration: BoxDecoration(
-                            color: isSelected
-                                ? AppTheme.primaryColor
-                                : Colors.transparent,
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          alignment: Alignment.center,
-                          child: Text(
-                            r.label,
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: isSelected
-                                  ? FontWeight.bold
-                                  : FontWeight.w500,
-                              color: isSelected
-                                  ? AppTheme.primaryColor
-                                  : AppTheme.getColors(context).textSecondary,
+                        child: InkWell(
+                          onTap: () {
+                            if (r == DashboardTimeRange.custom) {
+                              _pickCustomRange();
+                            } else {
+                              setState(() => _selectedRange = r);
+                            }
+                          },
+                          borderRadius: BorderRadius.circular(6),
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(vertical: 8),
+                            child: Center(
+                              child: Text(
+                                r.label,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: isSelected
+                                      ? FontWeight.bold
+                                      : FontWeight.w500,
+                                  color: isSelected
+                                      ? AppTheme.primaryColor
+                                      : AppTheme.getColors(context)
+                                          .textSecondary,
+                                ),
+                              ),
                             ),
                           ),
                         ),
@@ -242,7 +239,8 @@ class _ExportDialogState extends ConsumerState<ExportDialog> {
               Text(
                 'Selected: $rangeLabel',
                 style: TextStyle(
-                    fontSize: 11, color: AppTheme.getColors(context).textSecondary),
+                    fontSize: 11,
+                    color: AppTheme.getColors(context).textSecondary),
               ),
               SizedBox(height: 20),
 
@@ -257,64 +255,71 @@ class _ExportDialogState extends ConsumerState<ExportDialog> {
                 final isSelected = _format == fmt;
                 return Padding(
                   padding: EdgeInsets.only(bottom: 8.0),
-                  child: InkWell(
-                    onTap: () => setState(() => _format = fmt),
-                    borderRadius: BorderRadius.circular(8),
-                    child: Container(
-                      padding: EdgeInsets.all(12),
-                      decoration: BoxDecoration(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
                         color: isSelected
-                            ? AppTheme.primaryColor.withValues(alpha: 0.1)
-                            : AppTheme.getColors(context).card,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: isSelected
-                              ? AppTheme.primaryColor
-                              : AppTheme.getColors(context).divider,
-                          width: isSelected ? 1.5 : 1,
-                        ),
+                            ? AppTheme.primaryColor
+                            : AppTheme.getColors(context).divider,
+                        width: isSelected ? 1.5 : 1,
                       ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            fmt == ExportFormat.csv
-                                ? Icons.table_chart_outlined
-                                : Icons.code,
-                            size: 20,
-                            color: isSelected
-                                ? AppTheme.primaryColor
-                                : AppTheme.getColors(context).textSecondary,
-                          ),
-                          SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  fmt.title,
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: isSelected
-                                        ? FontWeight.bold
-                                        : FontWeight.w500,
-                                    color: isSelected
-                                        ? AppTheme.primaryColor
-                                        : AppTheme.getColors(context).textPrimary,
-                                  ),
+                    ),
+                    child: Material(
+                      color: isSelected
+                          ? AppTheme.primaryColor.withValues(alpha: 0.1)
+                          : AppTheme.getColors(context).card,
+                      borderRadius: BorderRadius.circular(8),
+                      child: InkWell(
+                        onTap: () => setState(() => _format = fmt),
+                        borderRadius: BorderRadius.circular(8),
+                        child: Padding(
+                          padding: EdgeInsets.all(12),
+                          child: Row(
+                            children: [
+                              Icon(
+                                fmt == ExportFormat.csv
+                                    ? Icons.table_chart_outlined
+                                    : Icons.code,
+                                size: 20,
+                                color: isSelected
+                                    ? AppTheme.primaryColor
+                                    : AppTheme.getColors(context).textSecondary,
+                              ),
+                              SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      fmt.title,
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: isSelected
+                                            ? FontWeight.bold
+                                            : FontWeight.w500,
+                                        color: isSelected
+                                            ? AppTheme.primaryColor
+                                            : AppTheme.getColors(context)
+                                                .textPrimary,
+                                      ),
+                                    ),
+                                    Text(
+                                      fmt.description,
+                                      style: TextStyle(
+                                          fontSize: 11,
+                                          color: AppTheme.getColors(context)
+                                              .textSecondary),
+                                    ),
+                                  ],
                                 ),
-                                Text(
-                                  fmt.description,
-                                  style: TextStyle(
-                                      fontSize: 11,
-                                      color: AppTheme.getColors(context).textSecondary),
-                                ),
-                              ],
-                            ),
+                              ),
+                              if (isSelected)
+                                Icon(Icons.check_circle,
+                                    size: 18, color: AppTheme.primaryColor),
+                            ],
                           ),
-                          if (isSelected)
-                            Icon(Icons.check_circle,
-                                size: 18, color: AppTheme.primaryColor),
-                        ],
+                        ),
                       ),
                     ),
                   ),
@@ -329,7 +334,8 @@ class _ExportDialogState extends ConsumerState<ExportDialog> {
                   TextButton(
                     onPressed: () => Navigator.of(context).pop(),
                     child: Text('Cancel',
-                        style: TextStyle(color: AppTheme.getColors(context).textSecondary)),
+                        style: TextStyle(
+                            color: AppTheme.getColors(context).textSecondary)),
                   ),
                   SizedBox(width: 12),
                   ElevatedButton.icon(
@@ -347,8 +353,8 @@ class _ExportDialogState extends ConsumerState<ExportDialog> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppTheme.primaryColor,
                       foregroundColor: Colors.white,
-                      padding: EdgeInsets.symmetric(
-                          horizontal: 18, vertical: 12),
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 18, vertical: 12),
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8)),
                     ),

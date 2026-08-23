@@ -11,26 +11,26 @@ WorkPulse is developed in vertical slices following `docs/WORKPULSE_SPEC.md` Sec
 
 | Sprint | Description | Status | Verification Command |
 | :--- | :--- | :--- | :--- |
-| **Sprint 1** | Foundation & SQLite Schema (16 tables, migrations) | ✅ Complete | `flutter test test/data/database_migration_test.dart` |
+| **Sprint 1** | Foundation & SQLite Schema (16 tables, migrations V1-V2) | ✅ Complete | `flutter test test/data/database_migration_test.dart` |
 | **Sprint 2** | Work Management (Projects, Categories, WorkItems, Tags, People) | ✅ Complete | `flutter test test/data/sqlite_repositories_test.dart` |
 | **Sprint 3** | Core Timer & Single Active Session Engine | ✅ Complete | `flutter test test/unit/services/timer_service_test.dart` |
 | **Sprint 4** | Quick Capture Floating UI & Keyboard Navigation | ✅ Complete | `flutter test test/widget/quick_capture_ui_test.dart` |
 | **Sprint 5** | Task Switching & Confirmation State Machine | ✅ Complete | `flutter test test/integration/task_switching_integration_test.dart` |
 | **Sprint 6** | Configurable Attributes & Dynamic Forms | ✅ Complete | `flutter test test/unit/providers/attributes_provider_test.dart` |
 | **Sprint 7** | Inactivity Detection, Idle Prompt & Resolution | ✅ Complete | `flutter test test/unit/services/idle_service_test.dart` |
-| **Sprint 8** | macOS Menu Bar Tray, Window Manager & Global Hotkey | 🔄 Next | `flutter test test/widget/timer_ui_test.dart` |
-| **Sprint 9** | Dashboard, Analytics & Reporting Aggregations | ⏳ Pending | `flutter test test/unit/` |
-| **Sprint 10** | CSV/JSON Export, Historical Session Editing & Hardening | ⏳ Pending | `flutter test test/` |
+| **Sprint 8** | macOS Menu Bar Tray, Window Manager & Global Hotkey | ✅ Complete | `flutter test test/unit/services/window_service_test.dart test/widget/quick_capture_standalone_view_test.dart` |
+| **Sprint 9** | Dashboard, Analytics & Reporting Aggregations | ✅ Complete | `flutter test test/unit/services/analytics_service_test.dart` |
+| **Sprint 10** | CSV/JSON Export, Historical Session Editing & Hardening | ✅ Complete | `flutter test test/` |
 
 ---
 
 ## Detailed Sprint Specifications
 
 ### 🏁 Sprint 1 — Project Foundation & Persistence
-- **Deliverable**: App initializes SQLite database with foreign keys enabled (`PRAGMA foreign_keys = ON`), executes migration V1 (16 tables), and enforces schema constraints.
+- **Deliverable**: App initializes SQLite database with foreign keys enabled (`PRAGMA foreign_keys = ON`), executes migration V1 (16 tables) and V2 (`sessions.notes`), and enforces schema constraints.
 - **Components**:
   - `lib/core/database/database_service.dart`
-  - `lib/data/migrations/migration_v1.dart`
+  - `lib/data/migrations/migration_v1.dart` and `migration_v2.dart`
   - `lib/data/database/tables.dart`
   - `lib/domain/models/` and `lib/domain/repositories/`
 - **Verification**: `flutter test test/data/database_migration_test.dart`
@@ -61,16 +61,17 @@ WorkPulse is developed in vertical slices following `docs/WORKPULSE_SPEC.md` Sec
 ---
 
 ### ⚡ Sprint 4 — Quick Capture Floating UI
-- **Deliverable**: Global shortcut (`⌥ + Space`) opens lightweight popup (<300ms) with keyboard-first navigation (`Enter` to start/switch, `Esc` to cancel, `Tab`/`Shift+Tab` cycling, `Arrow` keys for search).
+- **Deliverable**: Global shortcut (`⌥ + Space`) opens lightweight standalone popup (<300ms) with keyboard-first navigation (`Enter` to start/switch, `Esc` to cancel, `Tab`/`Shift+Tab` cycling, `Arrow` keys for search).
 - **Components**:
+  - `lib/features/quick_capture/views/quick_capture_standalone_view.dart`
   - `lib/features/quick_capture/views/quick_capture_dialog.dart`
   - `lib/features/quick_capture/providers/quick_capture_provider.dart`
-- **Verification**: `flutter test test/widget/quick_capture_ui_test.dart`
+- **Verification**: `flutter test test/widget/quick_capture_ui_test.dart test/widget/quick_capture_standalone_view_test.dart`
 
 ---
 
 ### 🔄 Sprint 5 — Task Switching
-- **Deliverable**: Seamless transition from active WorkItem A to WorkItem B with confirmation dialog, cleanly closing Session A before opening Session B.
+- **Deliverable**: Seamless transition from active WorkItem A to WorkItem B with confirmation dialog, cleanly closing Session A with optional notes before opening Session B.
 - **Components**:
   - `lib/domain/services/task_switch_service.dart`
   - `lib/features/timer/views/task_switch_dialog.dart`
@@ -97,16 +98,18 @@ WorkPulse is developed in vertical slices following `docs/WORKPULSE_SPEC.md` Sec
 
 ---
 
-### 🍎 Sprint 8 — macOS Native Integration
-- **Deliverable**: Menu bar extra (live ticker `⏱ 01:23:42`), dropdown menu, hotkey registration daemon, and multi-window management.
+### 🍎 Sprint 8 — macOS Native Integration & Floating Window
+- **Deliverable**: Menu bar extra (live ticker `⏱ 01:23:42  Task Name`), dropdown menu, hotkey registration daemon, `WindowMode` coordinator with focus-isolated floating Quick Capture HUD, and top header active timer bar.
 - **Components**:
   - `lib/core/platform/tray_service.dart` (`tray_manager`)
   - `lib/core/platform/hotkey_service.dart` (`hotkey_manager`)
   - `lib/core/platform/window_service.dart` (`window_manager`, `screen_retriever`)
+  - `lib/features/timer/views/active_timer_bar.dart`
 - **Key Invariants**:
   - Tray title updates on 1-second ticks during active sessions without blocking main thread.
-  - Quick Capture opens centered on the active display monitor.
-  - Headless/test environments use `MockHotKeyService` and `MockTrayService`.
+  - Quick Capture opens centered on the active display monitor with focus isolation.
+  - Headless/test environments use `NoOpHotKeyService`, `NoOpTrayService`, and `NoOpWindowService`.
+- **Verification**: `flutter test test/unit/services/window_service_test.dart test/widget/quick_capture_standalone_view_test.dart`
 
 ---
 
@@ -118,6 +121,7 @@ WorkPulse is developed in vertical slices following `docs/WORKPULSE_SPEC.md` Sec
 - **Key Invariants**:
   - Net active time = Gross tracked time minus Idle periods.
   - Sessions spanning midnight are split across calendar day boundaries.
+- **Verification**: `flutter test test/unit/services/analytics_service_test.dart`
 
 ---
 
@@ -129,3 +133,4 @@ WorkPulse is developed in vertical slices following `docs/WORKPULSE_SPEC.md` Sec
 - **Key Invariants**:
   - CSV export columns: Date, Project, Category, WorkItem, Tags, People, Start Time, End Time, Duration, Idle Duration, Active Duration, Configured Attributes.
   - JSON export contains complete reconstructible schema.
+- **Verification**: `flutter test`

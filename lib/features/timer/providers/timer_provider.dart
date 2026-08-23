@@ -150,11 +150,11 @@ class TimerNotifier extends AsyncNotifier<TimerState> {
   }
 
   /// Confirms and executes switching from active task to pending task with optional session note.
-  Future<void> confirmSwitch({String? notes}) async {
+  Future<void> confirmSwitch({WorkItem? targetItem, String? notes}) async {
     final current = state.value;
-    if (current == null || current.pendingSwitchWorkItem == null) return;
+    final targetWorkItem = targetItem ?? current?.pendingSwitchWorkItem;
+    if (current == null || targetWorkItem == null) return;
 
-    final targetWorkItem = current.pendingSwitchWorkItem!;
     final now = DateTime.now().toUtc();
 
     if (current.activeWorkItem != null && current.activeSession != null) {

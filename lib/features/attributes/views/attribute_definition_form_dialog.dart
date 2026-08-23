@@ -206,6 +206,7 @@ class _AttributeDefinitionFormDialogState extends ConsumerState<AttributeDefinit
                     Expanded(
                       child: DropdownButtonFormField<AttributeType>(
                         initialValue: _selectedType,
+                        isDense: true,
                         isExpanded: true,
                         dropdownColor: AppTheme.getColors(context).surface,
                         style: TextStyle(fontSize: 13, color: AppTheme.getColors(context).textPrimary),
@@ -226,6 +227,7 @@ class _AttributeDefinitionFormDialogState extends ConsumerState<AttributeDefinit
                     Expanded(
                       child: DropdownButtonFormField<AttributeScope>(
                         initialValue: _selectedScope,
+                        isDense: true,
                         isExpanded: true,
                         dropdownColor: AppTheme.getColors(context).surface,
                         style: TextStyle(fontSize: 13, color: AppTheme.getColors(context).textPrimary),
@@ -289,18 +291,12 @@ class _AttributeDefinitionFormDialogState extends ConsumerState<AttributeDefinit
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: Text('Cancel', style: TextStyle(color: AppTheme.getColors(context).textSecondary)),
+          child: const Text('Cancel'),
         ),
         ElevatedButton(
           onPressed: _isSaving ? null : _save,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppTheme.primaryColor,
-            foregroundColor: Colors.white,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          ),
           child: _isSaving
-              ? SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+              ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
               : Text(isEditing ? 'Save Changes' : 'Create Attribute'),
         ),
       ],
