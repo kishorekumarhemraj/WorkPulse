@@ -149,8 +149,6 @@ class DesktopWindowService with WindowListener implements WindowService {
     }
   }
 
-  bool _dashboardWasVisible = true;
-
   @override
   Future<void> openQuickCapture() async {
     if (kIsWeb ||
@@ -166,8 +164,6 @@ class DesktopWindowService with WindowListener implements WindowService {
       }
 
       final isAlreadyVisible = await windowManager.isVisible();
-      _dashboardWasVisible = isAlreadyVisible && _currentMode == WindowMode.dashboard;
-
       if (_currentMode == WindowMode.dashboard && isAlreadyVisible) {
         try {
           _savedDashboardBounds = await windowManager.getBounds();
@@ -235,7 +231,7 @@ class DesktopWindowService with WindowListener implements WindowService {
   }
 
   @override
-  Future<void> closeQuickCapture({bool forceHide = false}) async {
+  Future<void> closeQuickCapture() async {
     _currentMode = WindowMode.dashboard;
     _modeNotifier.value = WindowMode.dashboard;
 
@@ -246,17 +242,12 @@ class DesktopWindowService with WindowListener implements WindowService {
 
     try {
       if (!_isInitialized) return;
+      await windowManager.hide();
       await windowManager.setAlwaysOnTop(false);
       await windowManager.setTitleBarStyle(
         TitleBarStyle.normal,
         windowButtonVisibility: true,
       );
-
-      if (_dashboardWasVisible && !forceHide) {
-        await openDashboard();
-      } else {
-        await windowManager.hide();
-      }
     } catch (e) {
       debugPrint('DesktopWindowService closeQuickCapture error: $e');
     }
@@ -266,7 +257,6 @@ class DesktopWindowService with WindowListener implements WindowService {
   Future<void> openDashboard() async {
     _currentMode = WindowMode.dashboard;
     _modeNotifier.value = WindowMode.dashboard;
-    _dashboardWasVisible = true;
 
     if (kIsWeb ||
         (!Platform.isMacOS && !Platform.isWindows && !Platform.isLinux)) {
