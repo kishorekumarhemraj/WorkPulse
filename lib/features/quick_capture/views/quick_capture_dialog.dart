@@ -82,26 +82,27 @@ class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
       final targetTask = matchingTasks[qcState.selectedIndex];
       final timerState = ref.read(timerProvider).value;
 
-      if (mounted) {
-        Navigator.of(context).pop();
-      }
-
       if (timerState != null &&
           timerState.isRunning &&
           timerState.activeWorkItem != null &&
           timerState.activeWorkItem!.id != targetTask.id) {
-        if (mounted) {
-          await TaskSwitchDialog.show(
-            context,
-            currentItem: timerState.activeWorkItem!,
-            currentElapsed: timerState.elapsed,
-            targetItem: targetTask,
-          );
+        ref.read(timerProvider.notifier).requestSwitch(targetTask);
+        final switched = await TaskSwitchDialog.show(
+          context,
+          currentItem: timerState.activeWorkItem!,
+          currentElapsed: timerState.elapsed,
+          targetItem: targetTask,
+        );
+        if (switched == true && mounted) {
+          Navigator.of(context).pop();
         }
       } else {
         await ref
             .read(quickCaptureProvider.notifier)
             .startExistingTask(targetTask);
+        if (mounted) {
+          Navigator.of(context).pop();
+        }
       }
     }
   }

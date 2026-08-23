@@ -86,6 +86,7 @@ class _QuickCaptureStandaloneViewState
           timerState.isRunning &&
           timerState.activeWorkItem != null &&
           timerState.activeWorkItem!.id != targetTask.id) {
+        ref.read(timerProvider.notifier).requestSwitch(targetTask);
         if (mounted) {
           final switched = await TaskSwitchDialog.show(
             context,

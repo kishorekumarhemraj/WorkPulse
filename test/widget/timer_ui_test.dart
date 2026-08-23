@@ -78,7 +78,7 @@ class _FakeTimerNotifier extends TimerNotifier {
   }
 
   @override
-  Future<void> confirmSwitch({String? notes}) async {
+  Future<void> confirmSwitch({WorkItem? targetItem, String? notes}) async {
     confirmSwitchCalled = true;
     switchNotes = notes;
   }
@@ -326,6 +326,19 @@ void main() {
 
       // Inactive task card has Play icon
       expect(find.byIcon(Icons.play_circle_fill), findsOneWidget);
+
+      // Tapping Play on inactive task triggers TaskSwitchDialog
+      await tester.tap(find.byIcon(Icons.play_circle_fill));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Switch Active Task?'), findsOneWidget);
+      expect(find.text('Switching To'), findsOneWidget);
+
+      // Confirm switch
+      await tester.tap(find.text('Confirm Switch'));
+      await tester.pumpAndSettle();
+
+      expect(fakeTimer.confirmSwitchCalled, isTrue);
     });
   });
 }
