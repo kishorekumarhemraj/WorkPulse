@@ -60,6 +60,11 @@ class TimerNotifier extends AsyncNotifier<TimerState> {
     return const TimerState(status: TimerStatus.idle);
   }
 
+  /// Reloads active session from SQLite (e.g. after idle recovery, sleep/wake).
+  Future<void> recoverActiveSession() async {
+    ref.invalidateSelf();
+  }
+
   void _startTicker(DateTime startTime) {
     _ticker?.cancel();
     _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
