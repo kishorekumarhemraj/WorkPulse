@@ -132,7 +132,8 @@ class _SearchableMultiSelectState extends State<SearchableMultiSelect> {
                           ),
                           const SizedBox(width: 6),
                         ] else if (item.icon != null) ...[
-                          Icon(item.icon, size: 13, color: colors.textSecondary),
+                          Icon(item.icon,
+                              size: 13, color: colors.textSecondary),
                           const SizedBox(width: 6),
                         ],
                         Text(item.label,
@@ -158,7 +159,9 @@ class _SearchableMultiSelectState extends State<SearchableMultiSelect> {
             decoration: BoxDecoration(
               color: colors.card,
               border: Border.all(
-                color: _focusNode.hasFocus ? AppTheme.primaryColor : colors.divider,
+                color: _focusNode.hasFocus
+                    ? AppTheme.primaryColor
+                    : colors.divider,
                 width: _focusNode.hasFocus ? 1.5 : 1.0,
               ),
               borderRadius: BorderRadius.circular(8),
@@ -199,8 +202,8 @@ class _SearchableMultiSelectState extends State<SearchableMultiSelect> {
                         widget.allItems.isEmpty
                             ? widget.emptyStateText
                             : 'No matches',
-                        style:
-                            TextStyle(fontSize: 12, color: colors.textSecondary),
+                        style: TextStyle(
+                            fontSize: 12, color: colors.textSecondary),
                       ),
                     )
                   : ListView.builder(
