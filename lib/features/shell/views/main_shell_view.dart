@@ -217,6 +217,7 @@ class _MainShellViewState extends ConsumerState<MainShellView> {
         data: (workspace) {
           return Column(
             children: [
+              const ActiveTimerBar(),
               Expanded(
                 child: Row(
                   children: [
@@ -547,7 +548,6 @@ class _MainShellViewState extends ConsumerState<MainShellView> {
                   ],
                 ),
               ),
-              const ActiveTimerBar(),
             ],
           );
         },

@@ -10,6 +10,7 @@ import 'package:workpulse/core/theme/app_theme.dart';
 import 'package:workpulse/features/quick_capture/views/quick_capture_standalone_view.dart';
 import 'package:workpulse/features/settings/providers/app_settings_provider.dart';
 import 'package:workpulse/features/shell/views/main_shell_view.dart';
+import 'package:workpulse/features/tray/providers/tray_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -67,6 +68,13 @@ class _WorkPulseAppState extends ConsumerState<WorkPulseApp> {
   void initState() {
     super.initState();
     _windowService = widget.windowService ?? DesktopWindowService.instance;
+    Future.microtask(() {
+      final tray = ref.read(trayCoordinatorProvider);
+      tray.onQuickCaptureRequested = () {
+        _windowService.openQuickCapture();
+      };
+      tray.initialize();
+    });
   }
 
   @override

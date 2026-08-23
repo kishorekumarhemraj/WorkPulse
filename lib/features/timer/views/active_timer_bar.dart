@@ -17,27 +17,37 @@ class ActiveTimerBar extends ConsumerWidget {
     final projects = ref.watch(projectsProvider).value ?? [];
     final workItems = ref.watch(workItemsProvider).value ?? [];
 
-    if (timerState == null || !timerState.isRunning || timerState.activeWorkItem == null) {
+    if (timerState == null ||
+        !timerState.isRunning ||
+        timerState.activeWorkItem == null) {
       return const SizedBox.shrink();
     }
 
-    final activeItem = workItems.where((w) => w.id == timerState.activeWorkItem!.id).firstOrNull ?? timerState.activeWorkItem!;
-    final project = projects.where((p) => p.id == activeItem.projectId).firstOrNull;
+    final activeItem = workItems
+            .where((w) => w.id == timerState.activeWorkItem!.id)
+            .firstOrNull ??
+        timerState.activeWorkItem!;
+    final project =
+        projects.where((p) => p.id == activeItem.projectId).firstOrNull;
     final projectColor = ColorUtils.parseHex(project?.colorHex);
-    final formattedTime = TimerService.formatDuration(timerState.elapsed, includeSeconds: true);
+    final formattedTime =
+        TimerService.formatDuration(timerState.elapsed, includeSeconds: true);
 
     return Container(
       height: 48,
-      padding: EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.symmetric(horizontal: 20),
       decoration: BoxDecoration(
         color: AppTheme.getColors(context).surface,
         border: Border(
-          top: BorderSide(color: AppTheme.getColors(context).divider, width: 1),
+          bottom: BorderSide(
+            color: AppTheme.getColors(context).divider,
+            width: 1,
+          ),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.2),
-            offset: const Offset(0, -2),
+            color: Colors.black.withValues(alpha: 0.15),
+            offset: const Offset(0, 2),
             blurRadius: 6,
           ),
         ],
@@ -60,7 +70,7 @@ class ActiveTimerBar extends ConsumerWidget {
               ],
             ),
           ),
-          SizedBox(width: 12),
+          const SizedBox(width: 12),
 
           // Active label
           Text(
@@ -72,12 +82,12 @@ class ActiveTimerBar extends ConsumerWidget {
               color: AppTheme.accentGreen,
             ),
           ),
-          SizedBox(width: 12),
+          const SizedBox(width: 12),
 
           // Project indicator
           if (project != null) ...[
             Container(
-              padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(
                 color: projectColor.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(4),
@@ -88,17 +98,24 @@ class ActiveTimerBar extends ConsumerWidget {
                   Container(
                     width: 6,
                     height: 6,
-                    decoration: BoxDecoration(color: projectColor, shape: BoxShape.circle),
+                    decoration: BoxDecoration(
+                      color: projectColor,
+                      shape: BoxShape.circle,
+                    ),
                   ),
-                  SizedBox(width: 4),
+                  const SizedBox(width: 4),
                   Text(
                     project.name,
-                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: projectColor),
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                      color: projectColor,
+                    ),
                   ),
                 ],
               ),
             ),
-            SizedBox(width: 10),
+            const SizedBox(width: 10),
           ],
 
           // Active task title
@@ -117,7 +134,7 @@ class ActiveTimerBar extends ConsumerWidget {
 
           // Live Duration Ticker
           Container(
-            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
             decoration: BoxDecoration(
               color: AppTheme.getColors(context).card,
               borderRadius: BorderRadius.circular(6),
@@ -126,8 +143,12 @@ class ActiveTimerBar extends ConsumerWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.timer_outlined, size: 14, color: AppTheme.primaryColor),
-                SizedBox(width: 6),
+                Icon(
+                  Icons.timer_outlined,
+                  size: 14,
+                  color: AppTheme.primaryColor,
+                ),
+                const SizedBox(width: 6),
                 Text(
                   formattedTime,
                   style: TextStyle(
@@ -141,34 +162,34 @@ class ActiveTimerBar extends ConsumerWidget {
               ],
             ),
           ),
-          SizedBox(width: 16),
+          const SizedBox(width: 16),
 
           // Switch Task Button
           OutlinedButton.icon(
             onPressed: () => QuickCaptureDialog.show(context),
-            icon: Icon(Icons.swap_horiz, size: 15),
-            label: Text('Switch'),
+            icon: const Icon(Icons.swap_horiz, size: 15),
+            label: const Text('Switch'),
             style: OutlinedButton.styleFrom(
               foregroundColor: AppTheme.getColors(context).textPrimary,
               side: BorderSide(color: AppTheme.getColors(context).divider),
-              padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(6),
               ),
             ),
           ),
-          SizedBox(width: 8),
+          const SizedBox(width: 8),
 
           // Stop Button
           ElevatedButton.icon(
             onPressed: () => ref.read(timerProvider.notifier).stopTimer(),
-            icon: Icon(Icons.stop, size: 16),
-            label: Text('Stop'),
+            icon: const Icon(Icons.stop, size: 16),
+            label: const Text('Stop'),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.accentRed.withValues(alpha: 0.15),
               foregroundColor: AppTheme.accentRed,
               elevation: 0,
-              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(6),
                 side: BorderSide(color: AppTheme.accentRed, width: 1),
