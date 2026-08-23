@@ -4,6 +4,7 @@ import 'package:workpulse/core/theme/app_theme.dart';
 import 'package:workpulse/core/theme/color_utils.dart';
 import 'package:workpulse/domain/services/timer_service.dart';
 import 'package:workpulse/features/projects/providers/projects_provider.dart';
+import 'package:workpulse/features/quick_capture/views/quick_capture_dialog.dart';
 import 'package:workpulse/features/tasks/providers/work_items_provider.dart';
 import 'package:workpulse/features/timer/providers/timer_provider.dart';
 
@@ -141,6 +142,22 @@ class ActiveTimerBar extends ConsumerWidget {
             ),
           ),
           const SizedBox(width: 16),
+
+          // Switch Task Button
+          OutlinedButton.icon(
+            onPressed: () => QuickCaptureDialog.show(context),
+            icon: const Icon(Icons.swap_horiz, size: 15),
+            label: const Text('Switch'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppTheme.textPrimaryDark,
+              side: const BorderSide(color: AppTheme.dividerDark),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(6),
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
 
           // Stop Button
           ElevatedButton.icon(
