@@ -1416,7 +1416,7 @@ workpulse/
 │
 ├── docs/
 │   ├── WORKPULSE_SPEC.md
-│   ├── ARCHITECTURE.md
+│   ├── DESIGN.md
 │   └── DEVELOPMENT.md
 │
 ├── lib/
