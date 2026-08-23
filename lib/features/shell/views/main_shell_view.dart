@@ -73,6 +73,7 @@ class _MainShellViewState extends ConsumerState<MainShellView> {
         QuickCaptureDialog.show(context);
       }
     };
+    trayCoordinator.initialize();
   }
 
   @override
