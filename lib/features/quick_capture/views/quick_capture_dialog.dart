@@ -6,7 +6,6 @@ import 'package:workpulse/core/theme/color_utils.dart';
 import 'package:workpulse/core/theme/icon_utils.dart';
 import 'package:workpulse/domain/models/category_model.dart';
 import 'package:workpulse/domain/models/project_model.dart';
-import 'package:workpulse/domain/models/tag_model.dart';
 import 'package:workpulse/domain/models/work_item_model.dart';
 import 'package:workpulse/features/categories/providers/categories_provider.dart';
 import 'package:workpulse/features/projects/providers/projects_provider.dart';
@@ -35,13 +34,6 @@ class QuickCaptureDialog extends ConsumerStatefulWidget {
 class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
   late final TextEditingController _searchController;
   late final FocusNode _inputFocusNode;
-
-  @override
-  void initStatePlugin() {
-    super.initState();
-    _searchController = TextEditingController();
-    _inputFocusNode = FocusNode();
-  }
 
   @override
   void initState() {

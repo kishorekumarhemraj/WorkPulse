@@ -1,11 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:workpulse/domain/models/category_model.dart';
+import 'package:workpulse/domain/models/project_model.dart';
 import 'package:workpulse/domain/models/work_item_model.dart';
 import 'package:workpulse/features/categories/providers/categories_provider.dart';
 import 'package:workpulse/features/projects/providers/projects_provider.dart';
 import 'package:workpulse/features/quick_capture/models/quick_capture_state.dart';
 import 'package:workpulse/features/tasks/providers/work_items_provider.dart';
 import 'package:workpulse/features/timer/providers/timer_provider.dart';
-import 'package:workpulse/features/workspace/providers/workspace_provider.dart';
 
 final quickCaptureProvider = NotifierProvider<QuickCaptureNotifier, QuickCaptureState>(
   QuickCaptureNotifier.new,
@@ -94,16 +95,30 @@ class QuickCaptureNotifier extends Notifier<QuickCaptureState> {
   Future<WorkItem?> createAndStartTask({
     required String name,
   }) async {
-    final workspace = ref.read(currentWorkspaceProvider).value;
-    if (workspace == null || name.trim().isEmpty) return null;
+    if (name.trim().isEmpty) return null;
 
-    final projectId = state.selectedProjectId;
-    final categoryId = state.selectedCategoryId;
+    List<Project> projects;
+    final cachedProjects = ref.read(projectsProvider).value;
+    if (cachedProjects != null && cachedProjects.isNotEmpty) {
+      projects = cachedProjects;
+    } else {
+      projects = await ref.read(projectsProvider.future);
+    }
+
+    List<Category> categories;
+    final cachedCategories = ref.read(categoriesProvider).value;
+    if (cachedCategories != null && cachedCategories.isNotEmpty) {
+      categories = cachedCategories;
+    } else {
+      categories = await ref.read(categoriesProvider.future);
+    }
+
+    final projectId = state.selectedProjectId ?? (projects.isNotEmpty ? projects.first.id : null);
+    final categoryId = state.selectedCategoryId ?? (categories.isNotEmpty ? categories.first.id : null);
 
     if (projectId == null || categoryId == null) return null;
 
     final created = await ref.read(workItemsProvider.notifier).createWorkItem(
-          workspaceId: workspace.id,
           projectId: projectId,
           categoryId: categoryId,
           name: name.trim(),
