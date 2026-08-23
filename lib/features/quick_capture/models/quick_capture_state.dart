@@ -30,11 +30,8 @@ class QuickCaptureState extends Equatable {
     return QuickCaptureState(
       query: query ?? this.query,
       selectedIndex: selectedIndex ?? this.selectedIndex,
-      selectedProjectId:
-          clearProjectId ? null : (selectedProjectId ?? this.selectedProjectId),
-      selectedCategoryId: clearCategoryId
-          ? null
-          : (selectedCategoryId ?? this.selectedCategoryId),
+      selectedProjectId: clearProjectId ? null : (selectedProjectId ?? this.selectedProjectId),
+      selectedCategoryId: clearCategoryId ? null : (selectedCategoryId ?? this.selectedCategoryId),
       selectedTagIds: selectedTagIds ?? this.selectedTagIds,
       selectedPeopleIds: selectedPeopleIds ?? this.selectedPeopleIds,
     );

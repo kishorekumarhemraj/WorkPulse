@@ -39,14 +39,10 @@ class TimerState extends Equatable {
   }) {
     return TimerState(
       status: status ?? this.status,
-      activeWorkItem:
-          clearActiveWorkItem ? null : (activeWorkItem ?? this.activeWorkItem),
-      activeSession:
-          clearActiveSession ? null : (activeSession ?? this.activeSession),
+      activeWorkItem: clearActiveWorkItem ? null : (activeWorkItem ?? this.activeWorkItem),
+      activeSession: clearActiveSession ? null : (activeSession ?? this.activeSession),
       elapsed: elapsed ?? this.elapsed,
-      pendingSwitchWorkItem: clearPendingSwitchWorkItem
-          ? null
-          : (pendingSwitchWorkItem ?? this.pendingSwitchWorkItem),
+      pendingSwitchWorkItem: clearPendingSwitchWorkItem ? null : (pendingSwitchWorkItem ?? this.pendingSwitchWorkItem),
     );
   }
 
