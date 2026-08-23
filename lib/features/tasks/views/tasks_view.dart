@@ -121,7 +121,7 @@ class TasksView extends ConsumerWidget {
                       ),
                       child: DropdownButtonHideUnderline(
                         child: DropdownButton<String?>(
-                          value: filter.projectId,
+                          value: projects.any((p) => p.id == filter.projectId) ? filter.projectId : null,
                           hint: Text('All Projects', style: TextStyle(fontSize: 13, color: AppTheme.getColors(context).textSecondary)),
                           icon: Icon(Icons.arrow_drop_down, size: 18, color: AppTheme.getColors(context).textSecondary),
                           dropdownColor: AppTheme.getColors(context).surface,
@@ -170,7 +170,7 @@ class TasksView extends ConsumerWidget {
                       ),
                       child: DropdownButtonHideUnderline(
                         child: DropdownButton<String?>(
-                          value: filter.categoryId,
+                          value: categories.any((c) => c.id == filter.categoryId) ? filter.categoryId : null,
                           hint: Text('All Categories', style: TextStyle(fontSize: 13, color: AppTheme.getColors(context).textSecondary)),
                           icon: Icon(Icons.arrow_drop_down, size: 18, color: AppTheme.getColors(context).textSecondary),
                           dropdownColor: AppTheme.getColors(context).surface,
@@ -216,7 +216,7 @@ class TasksView extends ConsumerWidget {
                       ),
                       child: DropdownButtonHideUnderline(
                         child: DropdownButton<String?>(
-                          value: filter.tagId,
+                          value: tags.any((t) => t.id == filter.tagId) ? filter.tagId : null,
                           hint: Text('All Tags', style: TextStyle(fontSize: 13, color: AppTheme.getColors(context).textSecondary)),
                           icon: Icon(Icons.arrow_drop_down, size: 18, color: AppTheme.getColors(context).textSecondary),
                           dropdownColor: AppTheme.getColors(context).surface,
