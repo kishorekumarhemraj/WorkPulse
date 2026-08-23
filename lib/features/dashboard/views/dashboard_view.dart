@@ -89,7 +89,11 @@ class DashboardView extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Top Header with Range Filters
-                Row(
+                Wrap(
+                  alignment: WrapAlignment.spaceBetween,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 16,
+                  runSpacing: 12,
                   children: [
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -111,7 +115,6 @@ class DashboardView extends ConsumerWidget {
                         ),
                       ],
                     ),
-                    const Spacer(),
 
                     // Time Range Selector Filter Pills
                     Container(
@@ -123,6 +126,7 @@ class DashboardView extends ConsumerWidget {
                             color: AppTheme.getColors(context).divider),
                       ),
                       child: Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: DashboardTimeRange.values.map((r) {
                           final isSelected = selectedRange == r;
                           return Material(

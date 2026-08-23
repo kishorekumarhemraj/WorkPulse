@@ -154,7 +154,7 @@ class _QuickCaptureStandaloneViewState
     final totalItems = matchingTasks.length + (showCreateOption ? 1 : 0);
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppTheme.getColors(context).surface,
       body: Focus(
         autofocus: true,
         onKeyEvent: (node, event) {
@@ -187,30 +187,20 @@ class _QuickCaptureStandaloneViewState
           }
           return KeyEventResult.ignored;
         },
-        child: Center(
-          child: Container(
-            width: 640,
-            constraints: const BoxConstraints(maxHeight: 440),
-            decoration: BoxDecoration(
-              color: AppTheme.getColors(context).surface,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                color: AppTheme.getColors(context).divider,
-                width: 1.2,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.55),
-                  offset: const Offset(0, 14),
-                  blurRadius: 36,
-                  spreadRadius: 4,
-                ),
-              ],
+        child: Container(
+          width: double.infinity,
+          height: double.infinity,
+          decoration: BoxDecoration(
+            color: AppTheme.getColors(context).surface,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: AppTheme.getColors(context).divider,
+              width: 1.2,
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
                 // Search Input Header
                 Container(
                   padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
@@ -546,8 +536,7 @@ class _QuickCaptureStandaloneViewState
             ),
           ),
         ),
-      ),
-    );
+      );
   }
 
   Widget _buildTaskResultItem(
