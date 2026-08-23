@@ -7,8 +7,10 @@ import 'package:workpulse/core/database/database_service.dart';
 import 'package:workpulse/core/platform/tray_service.dart';
 import 'package:workpulse/core/platform/window_service.dart';
 import 'package:workpulse/core/theme/app_theme.dart';
+import 'package:workpulse/features/quick_capture/views/quick_capture_standalone_view.dart';
 import 'package:workpulse/features/settings/providers/app_settings_provider.dart';
 import 'package:workpulse/features/shell/views/main_shell_view.dart';
+import 'package:workpulse/features/tray/providers/tray_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -47,20 +49,57 @@ void main() async {
   );
 }
 
-class WorkPulseApp extends ConsumerWidget {
-  const WorkPulseApp({super.key});
+class WorkPulseApp extends ConsumerStatefulWidget {
+  final WindowService? windowService;
+
+  const WorkPulseApp({
+    super.key,
+    this.windowService,
+  });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<WorkPulseApp> createState() => _WorkPulseAppState();
+}
+
+class _WorkPulseAppState extends ConsumerState<WorkPulseApp> {
+  late final WindowService _windowService;
+
+  @override
+  void initState() {
+    super.initState();
+    _windowService = widget.windowService ?? DesktopWindowService.instance;
+    Future.microtask(() {
+      final tray = ref.read(trayCoordinatorProvider);
+      tray.onQuickCaptureRequested = () {
+        _windowService.openQuickCapture();
+      };
+      tray.initialize();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final settings = ref.watch(appSettingsProvider).value;
 
-    return MaterialApp(
-      title: AppConstants.appName,
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
-      themeMode: settings?.themeMode ?? ThemeMode.dark,
-      home: const MainShellView(),
+    return ValueListenableBuilder<WindowMode>(
+      valueListenable: _windowService.windowModeNotifier,
+      builder: (context, mode, _) {
+        final isQuickCapture = mode == WindowMode.quickCapture;
+
+        return MaterialApp(
+          title: AppConstants.appName,
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.lightTheme,
+          darkTheme: AppTheme.darkTheme,
+          themeMode: settings?.themeMode ?? ThemeMode.dark,
+          color: isQuickCapture ? Colors.transparent : null,
+          home: isQuickCapture
+              ? QuickCaptureStandaloneView(
+                  onClose: () => _windowService.closeQuickCapture(),
+                )
+              : const MainShellView(),
+        );
+      },
     );
   }
 }
