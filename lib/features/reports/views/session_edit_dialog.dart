@@ -157,7 +157,7 @@ class _SessionEditDialogState extends ConsumerState<SessionEditDialog> {
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 500, maxHeight: 620),
         child: Padding(
-          padding: EdgeInsets.all(24.0),
+          padding: const EdgeInsets.all(24.0),
           child: Form(
             key: _formKey,
             child: Column(
@@ -167,9 +167,9 @@ class _SessionEditDialogState extends ConsumerState<SessionEditDialog> {
                 // Header
                 Row(
                   children: [
-                    Icon(Icons.edit_calendar,
+                    const Icon(Icons.edit_calendar,
                         size: 20, color: AppTheme.primaryColor),
-                    SizedBox(width: 10),
+                    const SizedBox(width: 10),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -201,7 +201,7 @@ class _SessionEditDialogState extends ConsumerState<SessionEditDialog> {
                     ),
                   ],
                 ),
-                SizedBox(height: 20),
+                const SizedBox(height: 20),
 
                 Flexible(
                   child: SingleChildScrollView(
@@ -215,7 +215,7 @@ class _SessionEditDialogState extends ConsumerState<SessionEditDialog> {
                                 fontWeight: FontWeight.w600,
                                 color:
                                     AppTheme.getColors(context).textSecondary)),
-                        SizedBox(height: 6),
+                        const SizedBox(height: 6),
                         Container(
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(8),
@@ -229,20 +229,20 @@ class _SessionEditDialogState extends ConsumerState<SessionEditDialog> {
                               onTap: _pickStartTime,
                               borderRadius: BorderRadius.circular(8),
                               child: Padding(
-                                padding: EdgeInsets.symmetric(
+                                padding: const EdgeInsets.symmetric(
                                     horizontal: 12, vertical: 10),
                                 child: Row(
                                   children: [
-                                    Icon(Icons.access_time,
+                                    const Icon(Icons.access_time,
                                         size: 16, color: AppTheme.primaryColor),
-                                    SizedBox(width: 10),
+                                    const SizedBox(width: 10),
                                     Text(dateFormat.format(_startTime),
                                         style: TextStyle(
                                             fontSize: 13,
                                             color: AppTheme.getColors(context)
                                                 .textPrimary)),
                                     const Spacer(),
-                                    Text('Change',
+                                    const Text('Change',
                                         style: TextStyle(
                                             fontSize: 11,
                                             color: AppTheme.primaryColor)),
@@ -252,7 +252,7 @@ class _SessionEditDialogState extends ConsumerState<SessionEditDialog> {
                             ),
                           ),
                         ),
-                        SizedBox(height: 16),
+                        const SizedBox(height: 16),
 
                         // End Time Field
                         Text('End Time',
@@ -261,7 +261,7 @@ class _SessionEditDialogState extends ConsumerState<SessionEditDialog> {
                                 fontWeight: FontWeight.w600,
                                 color:
                                     AppTheme.getColors(context).textSecondary)),
-                        SizedBox(height: 6),
+                        const SizedBox(height: 6),
                         Container(
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(8),
@@ -275,13 +275,13 @@ class _SessionEditDialogState extends ConsumerState<SessionEditDialog> {
                               onTap: _pickEndTime,
                               borderRadius: BorderRadius.circular(8),
                               child: Padding(
-                                padding: EdgeInsets.symmetric(
+                                padding: const EdgeInsets.symmetric(
                                     horizontal: 12, vertical: 10),
                                 child: Row(
                                   children: [
-                                    Icon(Icons.check_circle_outline,
+                                    const Icon(Icons.check_circle_outline,
                                         size: 16, color: AppTheme.accentGreen),
-                                    SizedBox(width: 10),
+                                    const SizedBox(width: 10),
                                     Text(
                                       _endTime != null
                                           ? dateFormat.format(_endTime!)
@@ -294,7 +294,7 @@ class _SessionEditDialogState extends ConsumerState<SessionEditDialog> {
                                               : AppTheme.accentGreen),
                                     ),
                                     const Spacer(),
-                                    Text('Change',
+                                    const Text('Change',
                                         style: TextStyle(
                                             fontSize: 11,
                                             color: AppTheme.primaryColor)),
@@ -304,7 +304,7 @@ class _SessionEditDialogState extends ConsumerState<SessionEditDialog> {
                             ),
                           ),
                         ),
-                        SizedBox(height: 16),
+                        const SizedBox(height: 16),
 
                         // Session Notes
                         Text('Session Notes',
@@ -313,7 +313,7 @@ class _SessionEditDialogState extends ConsumerState<SessionEditDialog> {
                                 fontWeight: FontWeight.w600,
                                 color:
                                     AppTheme.getColors(context).textSecondary)),
-                        SizedBox(height: 6),
+                        const SizedBox(height: 6),
                         TextFormField(
                           controller: _notesController,
                           maxLines: 2,
@@ -328,7 +328,7 @@ class _SessionEditDialogState extends ConsumerState<SessionEditDialog> {
                                     AppTheme.getColors(context).textSecondary),
                           ),
                         ),
-                        SizedBox(height: 16),
+                        const SizedBox(height: 16),
 
                         // Session People
                         Text('People',
@@ -337,7 +337,7 @@ class _SessionEditDialogState extends ConsumerState<SessionEditDialog> {
                                 fontWeight: FontWeight.w600,
                                 color:
                                     AppTheme.getColors(context).textSecondary)),
-                        SizedBox(height: 6),
+                        const SizedBox(height: 6),
                         peopleAsync.when(
                           loading: () => const SizedBox.shrink(),
                           error: (_, __) => const SizedBox.shrink(),
@@ -361,16 +361,16 @@ class _SessionEditDialogState extends ConsumerState<SessionEditDialog> {
 
                         // Custom Session Attributes
                         if (sessionDefs.isNotEmpty) ...[
-                          SizedBox(height: 20),
+                          const SizedBox(height: 20),
                           Divider(color: AppTheme.getColors(context).divider),
-                          SizedBox(height: 10),
+                          const SizedBox(height: 10),
                           Text('Session Custom Attributes',
                               style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,
                                   color:
                                       AppTheme.getColors(context).textPrimary)),
-                          SizedBox(height: 12),
+                          const SizedBox(height: 12),
                           DynamicAttributeFields(
                             definitions: sessionDefs,
                             values: _sessionAttributeValues,
@@ -382,7 +382,7 @@ class _SessionEditDialogState extends ConsumerState<SessionEditDialog> {
                     ),
                   ),
                 ),
-                SizedBox(height: 20),
+                const SizedBox(height: 20),
 
                 // Footer Actions
                 Row(
@@ -392,11 +392,11 @@ class _SessionEditDialogState extends ConsumerState<SessionEditDialog> {
                       onPressed: () => Navigator.of(context).pop(),
                       child: const Text('Cancel'),
                     ),
-                    SizedBox(width: 12),
+                    const SizedBox(width: 12),
                     ElevatedButton(
                       onPressed: _isSubmitting ? null : _submit,
                       child: _isSubmitting
-                          ? SizedBox(
+                          ? const SizedBox(
                               width: 16,
                               height: 16,
                               child: CircularProgressIndicator(

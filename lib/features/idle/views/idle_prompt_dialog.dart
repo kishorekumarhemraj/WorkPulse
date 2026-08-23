@@ -113,21 +113,21 @@ class _IdlePromptDialogState extends ConsumerState<IdlePromptDialog> {
           side:
               BorderSide(color: AppTheme.getColors(context).divider, width: 1),
         ),
-        titlePadding: EdgeInsets.fromLTRB(24, 24, 24, 12),
-        contentPadding: EdgeInsets.fromLTRB(24, 0, 24, 20),
-        actionsPadding: EdgeInsets.fromLTRB(24, 0, 24, 24),
+        titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 12),
+        contentPadding: const EdgeInsets.fromLTRB(24, 0, 24, 20),
+        actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
         title: Row(
           children: [
             Container(
-              padding: EdgeInsets.all(10),
+              padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
                 color: AppTheme.accentOrange.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(Icons.nightlight_round,
+              child: const Icon(Icons.nightlight_round,
                   color: AppTheme.accentOrange, size: 24),
             ),
-            SizedBox(width: 14),
+            const SizedBox(width: 14),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -138,7 +138,7 @@ class _IdlePromptDialogState extends ConsumerState<IdlePromptDialog> {
                       fontWeight: FontWeight.bold,
                       color: AppTheme.getColors(context).textPrimary),
                 ),
-                SizedBox(height: 2),
+                const SizedBox(height: 2),
                 Text(
                   'You were away while timer was running',
                   style: TextStyle(
@@ -159,7 +159,7 @@ class _IdlePromptDialogState extends ConsumerState<IdlePromptDialog> {
                 // Idle Duration Box
                 Container(
                   width: double.infinity,
-                  padding: EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: AppTheme.getColors(context).card,
                     borderRadius: BorderRadius.circular(10),
@@ -170,14 +170,14 @@ class _IdlePromptDialogState extends ConsumerState<IdlePromptDialog> {
                     children: [
                       Text(
                         durationStr,
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.bold,
                           color: AppTheme.accentOrange,
                           letterSpacing: -0.5,
                         ),
                       ),
-                      SizedBox(height: 4),
+                      const SizedBox(height: 4),
                       Text(
                         'Idle period started at $timeStr',
                         style: TextStyle(
@@ -187,12 +187,12 @@ class _IdlePromptDialogState extends ConsumerState<IdlePromptDialog> {
                     ],
                   ),
                 ),
-                SizedBox(height: 14),
+                const SizedBox(height: 14),
 
                 // Active Task Card
                 Container(
                   width: double.infinity,
-                  padding: EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   decoration: BoxDecoration(
                     color: AppTheme.getColors(context).background,
                     borderRadius: BorderRadius.circular(8),
@@ -203,9 +203,9 @@ class _IdlePromptDialogState extends ConsumerState<IdlePromptDialog> {
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.timer_outlined,
+                      const Icon(Icons.timer_outlined,
                           size: 16, color: AppTheme.accentGreen),
-                      SizedBox(width: 10),
+                      const SizedBox(width: 10),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -230,7 +230,7 @@ class _IdlePromptDialogState extends ConsumerState<IdlePromptDialog> {
                     ],
                   ),
                 ),
-                SizedBox(height: 16),
+                const SizedBox(height: 16),
 
                 Text(
                   'How would you like to handle this time?',
@@ -239,7 +239,7 @@ class _IdlePromptDialogState extends ConsumerState<IdlePromptDialog> {
                       fontWeight: FontWeight.w500,
                       color: AppTheme.getColors(context).textPrimary),
                 ),
-                SizedBox(height: 10),
+                const SizedBox(height: 10),
 
                 // Action Options list
                 _buildOptionTile(
@@ -250,7 +250,7 @@ class _IdlePromptDialogState extends ConsumerState<IdlePromptDialog> {
                   color: AppTheme.primaryColor,
                   onTap: _handleKeepTracking,
                 ),
-                SizedBox(height: 8),
+                const SizedBox(height: 8),
                 _buildOptionTile(
                   title: 'Mark as Idle & Resume',
                   subtitle: 'Discard idle time and restart timer from now (M)',
@@ -259,7 +259,7 @@ class _IdlePromptDialogState extends ConsumerState<IdlePromptDialog> {
                   color: AppTheme.accentPurple,
                   onTap: _handleMarkIdle,
                 ),
-                SizedBox(height: 8),
+                const SizedBox(height: 8),
                 _buildOptionTile(
                   title: 'Stop Timer at Inactivity',
                   subtitle:
@@ -297,18 +297,18 @@ class _IdlePromptDialogState extends ConsumerState<IdlePromptDialog> {
           onTap: _isProcessing ? null : onTap,
           borderRadius: BorderRadius.circular(8),
           child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             child: Row(
               children: [
                 Container(
-                  padding: EdgeInsets.all(6),
+                  padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
                     color: color.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Icon(icon, color: color, size: 18),
                 ),
-                SizedBox(width: 12),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -330,7 +330,7 @@ class _IdlePromptDialogState extends ConsumerState<IdlePromptDialog> {
                   ),
                 ),
                 Container(
-                  padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
                     color: AppTheme.getColors(context).background,
                     borderRadius: BorderRadius.circular(4),

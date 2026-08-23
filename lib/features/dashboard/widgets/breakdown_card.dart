@@ -22,7 +22,7 @@ class BreakdownCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.all(18),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: AppTheme.getColors(context).surface,
         borderRadius: BorderRadius.circular(12),
@@ -35,7 +35,7 @@ class BreakdownCard extends StatelessWidget {
           Row(
             children: [
               Icon(icon, size: 16, color: AppTheme.primaryColor),
-              SizedBox(width: 8),
+              const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   title,
@@ -48,18 +48,18 @@ class BreakdownCard extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              SizedBox(width: 8),
+              const SizedBox(width: 8),
               Text(
                 '${items.length} ${items.length == 1 ? 'item' : 'items'}',
                 style: TextStyle(fontSize: 11, color: AppTheme.getColors(context).textSecondary),
               ),
             ],
           ),
-          SizedBox(height: 16),
+          const SizedBox(height: 16),
 
           if (items.isEmpty)
             Padding(
-              padding: EdgeInsets.symmetric(vertical: 24),
+              padding: const EdgeInsets.symmetric(vertical: 24),
               child: Center(
                 child: Text(
                   emptyMessage,
@@ -72,7 +72,7 @@ class BreakdownCard extends StatelessWidget {
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: items.length > 5 ? 5 : items.length,
-              separatorBuilder: (_, __) => SizedBox(height: 12),
+              separatorBuilder: (_, __) => const SizedBox(height: 12),
               itemBuilder: (context, index) {
                 final item = items[index];
                 final color = ColorUtils.parseHex(item.colorHex);
@@ -85,10 +85,10 @@ class BreakdownCard extends StatelessWidget {
                       children: [
                         if (item.iconName != null) ...[
                           Icon(IconUtils.getIcon(item.iconName), size: 13, color: color),
-                          SizedBox(width: 6),
+                          const SizedBox(width: 6),
                         ] else ...[
                           Container(width: 8, height: 8, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
-                          SizedBox(width: 6),
+                          const SizedBox(width: 6),
                         ],
                         Expanded(
                           child: Text(
@@ -102,7 +102,7 @@ class BreakdownCard extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        SizedBox(width: 8),
+                        const SizedBox(width: 8),
                         Text(
                           durationStr,
                           style: TextStyle(
@@ -111,7 +111,7 @@ class BreakdownCard extends StatelessWidget {
                             color: AppTheme.getColors(context).textPrimary,
                           ),
                         ),
-                        SizedBox(width: 8),
+                        const SizedBox(width: 8),
                         SizedBox(
                           width: 44,
                           child: Text(
@@ -122,7 +122,7 @@ class BreakdownCard extends StatelessWidget {
                         ),
                       ],
                     ),
-                    SizedBox(height: 6),
+                    const SizedBox(height: 6),
                     ClipRRect(
                       borderRadius: BorderRadius.circular(3),
                       child: LinearProgressIndicator(

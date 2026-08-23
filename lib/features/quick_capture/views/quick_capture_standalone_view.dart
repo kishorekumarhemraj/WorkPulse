@@ -214,7 +214,7 @@ class _QuickCaptureStandaloneViewState
                   ),
                   child: Row(
                     children: [
-                      Icon(
+                      const Icon(
                         Icons.search,
                         size: 22,
                         color: AppTheme.primaryColor,
@@ -551,7 +551,7 @@ class _QuickCaptureStandaloneViewState
     return Container(
       decoration: BoxDecoration(
         border: isSelected
-            ? Border(left: BorderSide(color: AppTheme.primaryColor, width: 3))
+            ? const Border(left: BorderSide(color: AppTheme.primaryColor, width: 3))
             : null,
       ),
       child: Material(
@@ -629,7 +629,7 @@ class _QuickCaptureStandaloneViewState
                   ),
                 ),
                 if (isSelected)
-                  Text(
+                  const Text(
                     '↵ to track',
                     style: TextStyle(
                       fontSize: 11,
@@ -649,7 +649,7 @@ class _QuickCaptureStandaloneViewState
     return Container(
       decoration: BoxDecoration(
         border: isSelected
-            ? Border(left: BorderSide(color: AppTheme.accentGreen, width: 3))
+            ? const Border(left: BorderSide(color: AppTheme.accentGreen, width: 3))
             : null,
       ),
       child: Material(
@@ -695,7 +695,7 @@ class _QuickCaptureStandaloneViewState
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                Text(
+                const Text(
                   '↵ to create',
                   style: TextStyle(
                     fontSize: 11,

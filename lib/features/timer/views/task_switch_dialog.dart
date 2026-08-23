@@ -99,24 +99,24 @@ class _TaskSwitchDialogState extends ConsumerState<TaskSwitchDialog> {
           borderRadius: BorderRadius.circular(12),
           side: BorderSide(color: AppTheme.getColors(context).divider, width: 1),
         ),
-        titlePadding: EdgeInsets.fromLTRB(24, 20, 24, 12),
-        contentPadding: EdgeInsets.fromLTRB(24, 0, 24, 16),
-        actionsPadding: EdgeInsets.fromLTRB(24, 0, 24, 20),
+        titlePadding: const EdgeInsets.fromLTRB(24, 20, 24, 12),
+        contentPadding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+        actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 20),
         title: Row(
           children: [
             Container(
-              padding: EdgeInsets.all(8),
+              padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 color: AppTheme.accentOrange.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Icon(
+              child: const Icon(
                 Icons.swap_horiz,
                 color: AppTheme.accentOrange,
                 size: 20,
               ),
             ),
-            SizedBox(width: 12),
+            const SizedBox(width: 12),
             Text(
               'Switch Active Task?',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: AppTheme.getColors(context).textPrimary),
@@ -133,11 +133,11 @@ class _TaskSwitchDialogState extends ConsumerState<TaskSwitchDialog> {
                 'You are currently tracking another task. Switching will stop and commit your active session.',
                 style: TextStyle(fontSize: 13, color: AppTheme.getColors(context).textSecondary, height: 1.4),
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
 
               // Current Active Task card
               Container(
-                padding: EdgeInsets.all(12),
+                padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: AppTheme.getColors(context).card,
                   borderRadius: BorderRadius.circular(8),
@@ -145,14 +145,14 @@ class _TaskSwitchDialogState extends ConsumerState<TaskSwitchDialog> {
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.stop_circle_outlined, size: 16, color: AppTheme.accentRed),
-                    SizedBox(width: 8),
+                    const Icon(Icons.stop_circle_outlined, size: 16, color: AppTheme.accentRed),
+                    const SizedBox(width: 8),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text('Current Active Task', style: TextStyle(fontSize: 11, color: AppTheme.getColors(context).textSecondary)),
-                          SizedBox(height: 2),
+                          const SizedBox(height: 2),
                           Text(
                             widget.currentItem.name,
                             style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.getColors(context).textPrimary),
@@ -162,7 +162,7 @@ class _TaskSwitchDialogState extends ConsumerState<TaskSwitchDialog> {
                       ),
                     ),
                     Container(
-                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
                         color: AppTheme.getColors(context).surface,
                         borderRadius: BorderRadius.circular(6),
@@ -175,17 +175,17 @@ class _TaskSwitchDialogState extends ConsumerState<TaskSwitchDialog> {
                   ],
                 ),
               ),
-              SizedBox(height: 10),
+              const SizedBox(height: 10),
 
               // Arrow indicator
               Center(
                 child: Icon(Icons.arrow_downward, size: 16, color: AppTheme.getColors(context).textSecondary),
               ),
-              SizedBox(height: 10),
+              const SizedBox(height: 10),
 
               // Target Task card
               Container(
-                padding: EdgeInsets.all(12),
+                padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: AppTheme.primaryColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
@@ -193,14 +193,14 @@ class _TaskSwitchDialogState extends ConsumerState<TaskSwitchDialog> {
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.play_circle_outline, size: 16, color: AppTheme.accentGreen),
-                    SizedBox(width: 8),
+                    const Icon(Icons.play_circle_outline, size: 16, color: AppTheme.accentGreen),
+                    const SizedBox(width: 8),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Switching To', style: TextStyle(fontSize: 11, color: AppTheme.primaryColor)),
-                          SizedBox(height: 2),
+                          const Text('Switching To', style: TextStyle(fontSize: 11, color: AppTheme.primaryColor)),
+                          const SizedBox(height: 2),
                           Text(
                             widget.targetItem.name,
                             style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.getColors(context).textPrimary),
@@ -212,14 +212,14 @@ class _TaskSwitchDialogState extends ConsumerState<TaskSwitchDialog> {
                   ],
                 ),
               ),
-              SizedBox(height: 14),
+              const SizedBox(height: 14),
 
               // Optional Session Note Field
               Text(
                 'Session Note (optional)',
                 style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: AppTheme.getColors(context).textSecondary),
               ),
-              SizedBox(height: 6),
+              const SizedBox(height: 6),
               TextField(
                 controller: _notesController,
                 maxLines: 2,

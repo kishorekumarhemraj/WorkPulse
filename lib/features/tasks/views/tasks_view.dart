@@ -39,7 +39,7 @@ class TasksView extends ConsumerWidget {
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: Padding(
-        padding: EdgeInsets.all(24.0),
+        padding: const EdgeInsets.all(24.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -55,7 +55,7 @@ class TasksView extends ConsumerWidget {
                         'Work Items',
                         style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppTheme.getColors(context).textPrimary),
                       ),
-                      SizedBox(height: 4),
+                      const SizedBox(height: 4),
                       Text(
                         'Tracked tasks, issues, and activities across all projects',
                         style: TextStyle(fontSize: 13, color: AppTheme.getColors(context).textSecondary),
@@ -63,21 +63,21 @@ class TasksView extends ConsumerWidget {
                     ],
                   ),
                 ),
-                SizedBox(width: 16),
+                const SizedBox(width: 16),
                 ElevatedButton.icon(
                   onPressed: () => TaskFormDialog.show(context),
-                  icon: Icon(Icons.add, size: 18),
-                  label: Text('New Task'),
+                  icon: const Icon(Icons.add, size: 18),
+                  label: const Text('New Task'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.primaryColor,
                     foregroundColor: Colors.white,
-                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
                 ),
               ],
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
 
             // Filter and Search Toolbar
             Wrap(
@@ -107,7 +107,7 @@ class TasksView extends ConsumerWidget {
                   data: (projects) {
                     return Container(
                       height: 36,
-                      padding: EdgeInsets.symmetric(horizontal: 10),
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
                       decoration: BoxDecoration(
                         color: AppTheme.getColors(context).surface,
                         borderRadius: BorderRadius.circular(8),
@@ -136,8 +136,8 @@ class TasksView extends ConsumerWidget {
                                         height: 8,
                                         decoration: BoxDecoration(color: ColorUtils.parseHex(p.colorHex), shape: BoxShape.circle),
                                       ),
-                                      SizedBox(width: 6),
-                                      Text(p.name, style: TextStyle(fontSize: 13)),
+                                      const SizedBox(width: 6),
+                                      Text(p.name, style: const TextStyle(fontSize: 13)),
                                     ],
                                   ),
                                 )),
@@ -156,7 +156,7 @@ class TasksView extends ConsumerWidget {
                   data: (categories) {
                     return Container(
                       height: 36,
-                      padding: EdgeInsets.symmetric(horizontal: 10),
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
                       decoration: BoxDecoration(
                         color: AppTheme.getColors(context).surface,
                         borderRadius: BorderRadius.circular(8),
@@ -181,8 +181,8 @@ class TasksView extends ConsumerWidget {
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       Icon(IconUtils.getIcon(c.iconName), size: 14, color: AppTheme.primaryColor),
-                                      SizedBox(width: 6),
-                                      Text(c.name, style: TextStyle(fontSize: 13)),
+                                      const SizedBox(width: 6),
+                                      Text(c.name, style: const TextStyle(fontSize: 13)),
                                     ],
                                   ),
                                 )),
@@ -202,7 +202,7 @@ class TasksView extends ConsumerWidget {
                     if (tags.isEmpty) return const SizedBox.shrink();
                     return Container(
                       height: 36,
-                      padding: EdgeInsets.symmetric(horizontal: 10),
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
                       decoration: BoxDecoration(
                         color: AppTheme.getColors(context).surface,
                         borderRadius: BorderRadius.circular(8),
@@ -231,8 +231,8 @@ class TasksView extends ConsumerWidget {
                                         height: 8,
                                         decoration: BoxDecoration(color: ColorUtils.parseHex(t.colorHex), shape: BoxShape.circle),
                                       ),
-                                      SizedBox(width: 6),
-                                      Text(t.name, style: TextStyle(fontSize: 13)),
+                                      const SizedBox(width: 6),
+                                      Text(t.name, style: const TextStyle(fontSize: 13)),
                                     ],
                                   ),
                                 )),
@@ -246,7 +246,7 @@ class TasksView extends ConsumerWidget {
 
                 // Archived Toggle Filter
                 FilterChip(
-                  label: Text('Include Archived'),
+                  label: const Text('Include Archived'),
                   selected: filter.includeArchived,
                   onSelected: (_) => ref.read(workItemFilterProvider.notifier).toggleIncludeArchived(),
                   backgroundColor: AppTheme.getColors(context).surface,
@@ -267,20 +267,20 @@ class TasksView extends ConsumerWidget {
                 if (filter.hasActiveFilters)
                   TextButton.icon(
                     onPressed: () => ref.read(workItemFilterProvider.notifier).reset(),
-                    icon: Icon(Icons.clear, size: 14),
-                    label: Text('Clear Filters', style: TextStyle(fontSize: 12)),
+                    icon: const Icon(Icons.clear, size: 14),
+                    label: const Text('Clear Filters', style: TextStyle(fontSize: 12)),
                     style: TextButton.styleFrom(foregroundColor: AppTheme.accentRed),
                   ),
               ],
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
 
             // Work Items List
             Expanded(
               child: workItemsAsync.when(
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (error, _) => Center(
-                  child: Text('Error loading tasks: $error', style: TextStyle(color: AppTheme.accentRed)),
+                  child: Text('Error loading tasks: $error', style: const TextStyle(color: AppTheme.accentRed)),
                 ),
                 data: (workItems) {
                   if (workItems.isEmpty) {
@@ -289,22 +289,22 @@ class TasksView extends ConsumerWidget {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(Icons.assignment_outlined, size: 48, color: AppTheme.getColors(context).textSecondary.withValues(alpha: 0.5)),
-                          SizedBox(height: 12),
+                          const SizedBox(height: 12),
                           Text(
                             filter.hasActiveFilters ? 'No tasks match current filters' : 'No tasks created yet',
                             style: TextStyle(fontSize: 16, color: AppTheme.getColors(context).textSecondary),
                           ),
-                          SizedBox(height: 12),
+                          const SizedBox(height: 12),
                           if (filter.hasActiveFilters)
                             OutlinedButton(
                               onPressed: () => ref.read(workItemFilterProvider.notifier).reset(),
-                              child: Text('Reset Filters'),
+                              child: const Text('Reset Filters'),
                             )
                           else
                             OutlinedButton.icon(
                               onPressed: () => TaskFormDialog.show(context),
-                              icon: Icon(Icons.add, size: 16),
-                              label: Text('Create First Task'),
+                              icon: const Icon(Icons.add, size: 16),
+                              label: const Text('Create First Task'),
                               style: OutlinedButton.styleFrom(foregroundColor: AppTheme.primaryColor),
                             ),
                         ],
@@ -324,7 +324,7 @@ class TasksView extends ConsumerWidget {
 
                   return ListView.separated(
                     itemCount: workItems.length,
-                    separatorBuilder: (_, __) => SizedBox(height: 10),
+                    separatorBuilder: (_, __) => const SizedBox(height: 10),
                     itemBuilder: (context, index) {
                       final item = workItems[index];
                       final project = projectMap[item.projectId];
@@ -410,7 +410,7 @@ class _WorkItemCardState extends ConsumerState<_WorkItemCard> {
               ]
             : null,
       ),
-      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -426,7 +426,7 @@ class _WorkItemCardState extends ConsumerState<_WorkItemCard> {
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
-              SizedBox(width: 14),
+              const SizedBox(width: 14),
 
               // Main Info
               Expanded(
@@ -448,14 +448,14 @@ class _WorkItemCardState extends ConsumerState<_WorkItemCard> {
                         ),
                         if (isItemActive)
                           Container(
-                            padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            margin: EdgeInsets.only(right: 8),
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            margin: const EdgeInsets.only(right: 8),
                             decoration: BoxDecoration(
                               color: AppTheme.accentGreen.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(4),
                               border: Border.all(color: AppTheme.accentGreen.withValues(alpha: 0.5)),
                             ),
-                            child: Row(
+                            child: const Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Icon(Icons.timer, size: 11, color: AppTheme.accentGreen),
@@ -469,13 +469,13 @@ class _WorkItemCardState extends ConsumerState<_WorkItemCard> {
                           ),
                         if (item.isArchived)
                           Container(
-                            padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            margin: EdgeInsets.only(right: 8),
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            margin: const EdgeInsets.only(right: 8),
                             decoration: BoxDecoration(
                               color: AppTheme.accentOrange.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(4),
                             ),
-                            child: Text(
+                            child: const Text(
                               'ARCHIVED',
                               style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.accentOrange),
                             ),
@@ -483,7 +483,7 @@ class _WorkItemCardState extends ConsumerState<_WorkItemCard> {
                       ],
                     ),
                     if (item.notes != null && item.notes!.isNotEmpty) ...[
-                      SizedBox(height: 4),
+                      const SizedBox(height: 4),
                       Text(
                         item.notes!,
                         style: TextStyle(fontSize: 12, color: AppTheme.getColors(context).textSecondary),
@@ -491,7 +491,7 @@ class _WorkItemCardState extends ConsumerState<_WorkItemCard> {
                         overflow: TextOverflow.ellipsis,
                       ),
                     ],
-                    SizedBox(height: 10),
+                    const SizedBox(height: 10),
 
                     // Meta badges: Project, Category, Tags, People, Total Duration, Sessions
                     Wrap(
@@ -502,7 +502,7 @@ class _WorkItemCardState extends ConsumerState<_WorkItemCard> {
                         // Project Badge
                         if (project != null)
                           Container(
-                            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                             decoration: BoxDecoration(
                               color: projectColor.withValues(alpha: 0.15),
                               borderRadius: BorderRadius.circular(6),
@@ -512,7 +512,7 @@ class _WorkItemCardState extends ConsumerState<_WorkItemCard> {
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Icon(Icons.folder_outlined, size: 12, color: projectColor),
-                                SizedBox(width: 4),
+                                const SizedBox(width: 4),
                                 Text(
                                   project.name,
                                   style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: projectColor),
@@ -524,7 +524,7 @@ class _WorkItemCardState extends ConsumerState<_WorkItemCard> {
                         // Category Badge
                         if (category != null)
                           Container(
-                            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                             decoration: BoxDecoration(
                               color: AppTheme.getColors(context).card,
                               borderRadius: BorderRadius.circular(6),
@@ -533,7 +533,7 @@ class _WorkItemCardState extends ConsumerState<_WorkItemCard> {
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Icon(IconUtils.getIcon(category.iconName), size: 12, color: AppTheme.getColors(context).textSecondary),
-                                SizedBox(width: 4),
+                                const SizedBox(width: 4),
                                 Text(
                                   category.name,
                                   style: TextStyle(fontSize: 11, color: AppTheme.getColors(context).textSecondary),
@@ -546,7 +546,7 @@ class _WorkItemCardState extends ConsumerState<_WorkItemCard> {
                         ...tags.map((t) {
                           final tagColor = ColorUtils.parseHex(t.colorHex);
                           return Container(
-                            padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
                               color: tagColor.withValues(alpha: 0.15),
                               borderRadius: BorderRadius.circular(4),
@@ -555,7 +555,7 @@ class _WorkItemCardState extends ConsumerState<_WorkItemCard> {
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Container(width: 6, height: 6, decoration: BoxDecoration(color: tagColor, shape: BoxShape.circle)),
-                                SizedBox(width: 4),
+                                const SizedBox(width: 4),
                                 Text(
                                   t.name,
                                   style: TextStyle(fontSize: 11, color: tagColor, fontWeight: FontWeight.w500),
@@ -568,7 +568,7 @@ class _WorkItemCardState extends ConsumerState<_WorkItemCard> {
                         // People
                         ...people.map((p) {
                           return Container(
-                            padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
                               color: AppTheme.getColors(context).card,
                               borderRadius: BorderRadius.circular(10),
@@ -577,7 +577,7 @@ class _WorkItemCardState extends ConsumerState<_WorkItemCard> {
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Icon(Icons.person, size: 11, color: AppTheme.getColors(context).textSecondary),
-                                SizedBox(width: 4),
+                                const SizedBox(width: 4),
                                 Text(
                                   p.name,
                                   style: TextStyle(fontSize: 11, color: AppTheme.getColors(context).textSecondary),
@@ -595,7 +595,7 @@ class _WorkItemCardState extends ConsumerState<_WorkItemCard> {
                                 ? TimerService.formatDuration(timerState.elapsed, includeSeconds: true)
                                 : TimerService.formatDuration(dur, compact: true);
                             return Container(
-                              padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                               decoration: BoxDecoration(
                                 color: isItemActive ? AppTheme.accentGreen.withValues(alpha: 0.15) : AppTheme.getColors(context).card,
                                 borderRadius: BorderRadius.circular(4),
@@ -605,7 +605,7 @@ class _WorkItemCardState extends ConsumerState<_WorkItemCard> {
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Icon(Icons.schedule, size: 11, color: isItemActive ? AppTheme.accentGreen : AppTheme.getColors(context).textSecondary),
-                                  SizedBox(width: 4),
+                                  const SizedBox(width: 4),
                                   Text(
                                     formatted,
                                     style: TextStyle(
@@ -627,7 +627,7 @@ class _WorkItemCardState extends ConsumerState<_WorkItemCard> {
                           onTap: () => setState(() => _isExpanded = !_isExpanded),
                           borderRadius: BorderRadius.circular(4),
                           child: Container(
-                            padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
                               color: _isExpanded
                                   ? AppTheme.primaryColor.withValues(alpha: 0.18)
@@ -647,7 +647,7 @@ class _WorkItemCardState extends ConsumerState<_WorkItemCard> {
                                   size: 11,
                                   color: _isExpanded ? AppTheme.primaryColor : AppTheme.getColors(context).textSecondary,
                                 ),
-                                SizedBox(width: 4),
+                                const SizedBox(width: 4),
                                 Text(
                                   sessionsAsync.maybeWhen(
                                     data: (sessions) => 'Sessions (${sessions.length})',
@@ -697,7 +697,7 @@ class _WorkItemCardState extends ConsumerState<_WorkItemCard> {
                     }
                   },
                 ),
-                SizedBox(width: 4),
+                const SizedBox(width: 4),
               ],
 
               // Actions Popup Menu
@@ -722,11 +722,11 @@ class _WorkItemCardState extends ConsumerState<_WorkItemCard> {
                         title: Text('Delete Task', style: TextStyle(color: AppTheme.getColors(context).textPrimary)),
                         content: Text('Are you sure you want to permanently delete task "${item.name}"?'),
                         actions: [
-                          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('Cancel')),
+                          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
                           ElevatedButton(
                             onPressed: () => Navigator.pop(ctx, true),
                             style: ElevatedButton.styleFrom(backgroundColor: AppTheme.accentRed, foregroundColor: Colors.white),
-                            child: Text('Delete'),
+                            child: const Text('Delete'),
                           ),
                         ],
                       ),
@@ -745,8 +745,8 @@ class _WorkItemCardState extends ConsumerState<_WorkItemCard> {
                     child: Row(
                       children: [
                         Icon(Icons.edit_outlined, size: 16, color: AppTheme.getColors(context).textPrimary),
-                        SizedBox(width: 8),
-                        Text('Edit'),
+                        const SizedBox(width: 8),
+                        const Text('Edit'),
                       ],
                     ),
                   ),
@@ -756,8 +756,8 @@ class _WorkItemCardState extends ConsumerState<_WorkItemCard> {
                       child: Row(
                         children: [
                           Icon(Icons.unarchive_outlined, size: 16, color: AppTheme.getColors(context).textPrimary),
-                          SizedBox(width: 8),
-                          Text('Unarchive'),
+                          const SizedBox(width: 8),
+                          const Text('Unarchive'),
                         ],
                       ),
                     )
@@ -767,8 +767,8 @@ class _WorkItemCardState extends ConsumerState<_WorkItemCard> {
                       child: Row(
                         children: [
                           Icon(Icons.archive_outlined, size: 16, color: AppTheme.getColors(context).textPrimary),
-                          SizedBox(width: 8),
-                          Text('Archive'),
+                          const SizedBox(width: 8),
+                          const Text('Archive'),
                         ],
                       ),
                     ),
@@ -789,9 +789,9 @@ class _WorkItemCardState extends ConsumerState<_WorkItemCard> {
 
           // Inline Expandable Sessions Section
           if (_isExpanded) ...[
-            SizedBox(height: 12),
+            const SizedBox(height: 12),
             Divider(height: 1, color: AppTheme.getColors(context).divider.withValues(alpha: 0.6)),
-            SizedBox(height: 10),
+            const SizedBox(height: 10),
             _WorkItemSessionsList(
               workItem: item,
               sessionsAsync: sessionsAsync,
@@ -822,8 +822,8 @@ class _WorkItemSessionsList extends ConsumerWidget {
     final timeFormat = DateFormat('HH:mm');
 
     return sessionsAsync.when(
-      loading: () => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 12),
+      loading: () => const Padding(
+        padding: EdgeInsets.symmetric(vertical: 12),
         child: Center(
           child: SizedBox(
             width: 18,
@@ -836,7 +836,7 @@ class _WorkItemSessionsList extends ConsumerWidget {
         padding: const EdgeInsets.symmetric(vertical: 8),
         child: Text(
           'Failed to load sessions: $err',
-          style: TextStyle(fontSize: 12, color: AppTheme.accentRed),
+          style: const TextStyle(fontSize: 12, color: AppTheme.accentRed),
         ),
       ),
       data: (sessions) {
