@@ -65,7 +65,9 @@ void main() {
   );
 
   group('Export UI Widget Tests', () {
-    testWidgets('ExportDialog renders title, range pills, formats, and handles copy', (tester) async {
+    testWidgets(
+        'ExportDialog renders title, range pills, formats, and handles copy',
+        (tester) async {
       tester.view.physicalSize = const Size(1280, 900);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(() {
@@ -94,7 +96,9 @@ void main() {
       expect(find.text('JSON (Structured Backup)'), findsOneWidget);
     });
 
-    testWidgets('SessionHistoryView renders header, export button, and session logs', (tester) async {
+    testWidgets(
+        'SessionHistoryView renders header, export button, and session logs',
+        (tester) async {
       tester.view.physicalSize = const Size(1280, 900);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(() {
@@ -105,7 +109,8 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            sessionHistoryProvider.overrideWith((ref) => Future.value([mockRecord])),
+            sessionHistoryProvider
+                .overrideWith((ref) => Future.value([mockRecord])),
           ],
           child: MaterialApp(
             theme: AppTheme.darkTheme,
@@ -124,7 +129,9 @@ void main() {
       expect(find.text('01:00:00'), findsOneWidget);
     });
 
-    testWidgets('SessionEditDialog renders session details, time pickers, and notes field', (tester) async {
+    testWidgets(
+        'SessionEditDialog renders session details, time pickers, and notes field',
+        (tester) async {
       tester.view.physicalSize = const Size(1280, 900);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(() {

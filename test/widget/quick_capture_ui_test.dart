@@ -86,10 +86,12 @@ class _FakeTimerNotifier extends TimerNotifier {
   WorkItem? startedTask;
 
   @override
-  Future<TimerState> build() async => const TimerState(status: TimerStatus.idle);
+  Future<TimerState> build() async =>
+      const TimerState(status: TimerStatus.idle);
 
   @override
-  Future<void> startTimer(WorkItem workItem, {List<String> peopleIds = const []}) async {
+  Future<void> startTimer(WorkItem workItem,
+      {List<String> peopleIds = const []}) async {
     startedTask = workItem;
     state = AsyncData(
       TimerState(
@@ -158,12 +160,16 @@ void main() {
   Widget createTestApp(FakeTimerProviderContainer container) {
     return ProviderScope(
       overrides: [
-        currentWorkspaceProvider.overrideWith(() => _FakeWorkspaceNotifier(testWorkspace)),
-        projectsProvider.overrideWith(() => _FakeProjectsNotifier([testProject])),
-        categoriesProvider.overrideWith(() => _FakeCategoriesNotifier([testCategory])),
+        currentWorkspaceProvider
+            .overrideWith(() => _FakeWorkspaceNotifier(testWorkspace)),
+        projectsProvider
+            .overrideWith(() => _FakeProjectsNotifier([testProject])),
+        categoriesProvider
+            .overrideWith(() => _FakeCategoriesNotifier([testCategory])),
         tagsProvider.overrideWith(() => _FakeTagsNotifier()),
         peopleProvider.overrideWith(() => _FakePeopleNotifier()),
-        workItemsProvider.overrideWith(() => _FakeWorkItemsNotifier([testTask1, testTask2])),
+        workItemsProvider
+            .overrideWith(() => _FakeWorkItemsNotifier([testTask1, testTask2])),
         timerProvider.overrideWith(() => container.fakeTimer),
       ],
       child: MaterialApp(
@@ -176,7 +182,9 @@ void main() {
   }
 
   group('QuickCaptureDialog UI Widget Tests', () {
-    testWidgets('renders search input, shortcut badges, and matching tasks list', (tester) async {
+    testWidgets(
+        'renders search input, shortcut badges, and matching tasks list',
+        (tester) async {
       final container = FakeTimerProviderContainer();
       await tester.pumpWidget(createTestApp(container));
       await tester.pumpAndSettle();
@@ -189,7 +197,9 @@ void main() {
       expect(find.text('App Core'), findsWidgets);
     });
 
-    testWidgets('typing search query filters tasks in real-time and shows create option', (tester) async {
+    testWidgets(
+        'typing search query filters tasks in real-time and shows create option',
+        (tester) async {
       final container = FakeTimerProviderContainer();
       await tester.pumpWidget(createTestApp(container));
       await tester.pumpAndSettle();

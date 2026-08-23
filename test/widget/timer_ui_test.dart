@@ -142,7 +142,17 @@ void main() {
   );
 
   group('Timer UI Widget Tests', () {
-    testWidgets('ActiveTimerBar renders active task name and stop button when running', (tester) async {
+    testWidgets(
+        'ActiveTimerBar renders active task name and stop button when running',
+        (tester) async {
+      // The bar is a single fixed-height row that sheds optional content as
+      // it narrows, so give it a realistic desktop width. The app's own
+      // window is 1200x800.
+      tester.view.physicalSize = const Size(1280, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
       final fakeTimer = _FakeTimerNotifier(
         TimerState(
           status: TimerStatus.running,
@@ -155,9 +165,12 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            currentWorkspaceProvider.overrideWith(() => _FakeWorkspaceNotifier(testWorkspace)),
-            projectsProvider.overrideWith(() => _FakeProjectsNotifier([testProject])),
-            workItemsProvider.overrideWith(() => _FakeWorkItemsNotifier([testTaskA, testTaskB])),
+            currentWorkspaceProvider
+                .overrideWith(() => _FakeWorkspaceNotifier(testWorkspace)),
+            projectsProvider
+                .overrideWith(() => _FakeProjectsNotifier([testProject])),
+            workItemsProvider.overrideWith(
+                () => _FakeWorkItemsNotifier([testTaskA, testTaskB])),
             timerProvider.overrideWith(() => fakeTimer),
           ],
           child: const MaterialApp(
@@ -184,11 +197,65 @@ void main() {
       expect(fakeTimer.stopCalled, isTrue);
     });
 
+    testWidgets('ActiveTimerBar sheds optional content on a narrow window',
+        (tester) async {
+      // Narrow enough to drop the project chip and the Switch button, but the
+      // task name, elapsed time and Stop must always survive.
+      tester.view.physicalSize = const Size(600, 700);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final fakeTimer = _FakeTimerNotifier(
+        TimerState(
+          status: TimerStatus.running,
+          activeWorkItem: testTaskA,
+          activeSession: testActiveSession,
+          elapsed: const Duration(minutes: 25, seconds: 10),
+        ),
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            currentWorkspaceProvider
+                .overrideWith(() => _FakeWorkspaceNotifier(testWorkspace)),
+            projectsProvider
+                .overrideWith(() => _FakeProjectsNotifier([testProject])),
+            workItemsProvider.overrideWith(
+                () => _FakeWorkItemsNotifier([testTaskA, testTaskB])),
+            timerProvider.overrideWith(() => fakeTimer),
+          ],
+          child: const MaterialApp(
+            themeMode: ThemeMode.dark,
+            home: Scaffold(
+              bottomNavigationBar: ActiveTimerBar(),
+            ),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      // No overflow banner: the bar fits whatever width it is given.
+      expect(tester.takeException(), isNull);
+
+      // Essentials survive.
+      expect(find.text('Build Timer Engine'), findsOneWidget);
+      expect(find.text('00:25:10'), findsOneWidget);
+      expect(find.text('Stop'), findsOneWidget);
+
+      // Optional content is dropped rather than overflowing.
+      expect(find.text('WorkPulse App'), findsNothing);
+      expect(find.text('Switch'), findsNothing);
+    });
+
     testWidgets('ActiveTimerBar is hidden when timer is idle', (tester) async {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            timerProvider.overrideWith(() => _FakeTimerNotifier(const TimerState(status: TimerStatus.idle))),
+            timerProvider.overrideWith(() =>
+                _FakeTimerNotifier(const TimerState(status: TimerStatus.idle))),
           ],
           child: const MaterialApp(
             home: Scaffold(
@@ -204,7 +271,8 @@ void main() {
       expect(find.text('Stop'), findsNothing);
     });
 
-    testWidgets('TaskSwitchDialog renders comparison and confirms switch', (tester) async {
+    testWidgets('TaskSwitchDialog renders comparison and confirms switch',
+        (tester) async {
       final fakeTimer = _FakeTimerNotifier(
         TimerState(
           status: TimerStatus.switching,
@@ -246,7 +314,9 @@ void main() {
       expect(fakeTimer.confirmSwitchCalled, isTrue);
     });
 
-    testWidgets('TaskSwitchDialog captures optional session note and confirms switch', (tester) async {
+    testWidgets(
+        'TaskSwitchDialog captures optional session note and confirms switch',
+        (tester) async {
       final fakeTimer = _FakeTimerNotifier(
         TimerState(
           status: TimerStatus.switching,
@@ -278,7 +348,8 @@ void main() {
       await tester.pumpAndSettle();
 
       // Enter session note
-      await tester.enterText(find.byType(TextField), 'Finished timer foundation');
+      await tester.enterText(
+          find.byType(TextField), 'Finished timer foundation');
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Confirm Switch'));
@@ -288,7 +359,9 @@ void main() {
       expect(fakeTimer.switchNotes, 'Finished timer foundation');
     });
 
-    testWidgets('TasksView displays Play button and TRACKING status on active task card', (tester) async {
+    testWidgets(
+        'TasksView displays Play button and TRACKING status on active task card',
+        (tester) async {
       final fakeTimer = _FakeTimerNotifier(
         TimerState(
           status: TimerStatus.running,
@@ -301,12 +374,16 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            currentWorkspaceProvider.overrideWith(() => _FakeWorkspaceNotifier(testWorkspace)),
-            projectsProvider.overrideWith(() => _FakeProjectsNotifier([testProject])),
-            categoriesProvider.overrideWith(() => _FakeCategoriesNotifier([testCategory])),
+            currentWorkspaceProvider
+                .overrideWith(() => _FakeWorkspaceNotifier(testWorkspace)),
+            projectsProvider
+                .overrideWith(() => _FakeProjectsNotifier([testProject])),
+            categoriesProvider
+                .overrideWith(() => _FakeCategoriesNotifier([testCategory])),
             tagsProvider.overrideWith(() => _FakeTagsNotifier()),
             peopleProvider.overrideWith(() => _FakePeopleNotifier()),
-            workItemsProvider.overrideWith(() => _FakeWorkItemsNotifier([testTaskA, testTaskB])),
+            workItemsProvider.overrideWith(
+                () => _FakeWorkItemsNotifier([testTaskA, testTaskB])),
             timerProvider.overrideWith(() => fakeTimer),
           ],
           child: MaterialApp(
@@ -342,7 +419,9 @@ void main() {
       expect(fakeTimer.confirmSwitchCalled, isTrue);
     });
 
-    testWidgets('TasksView expands and collapses sessions when clicking Sessions badge', (tester) async {
+    testWidgets(
+        'TasksView expands and collapses sessions when clicking Sessions badge',
+        (tester) async {
       final sampleSession = Session(
         id: 'session-1',
         workItemId: testTaskA.id,
@@ -359,14 +438,19 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            currentWorkspaceProvider.overrideWith(() => _FakeWorkspaceNotifier(testWorkspace)),
-            projectsProvider.overrideWith(() => _FakeProjectsNotifier([testProject])),
-            categoriesProvider.overrideWith(() => _FakeCategoriesNotifier([testCategory])),
+            currentWorkspaceProvider
+                .overrideWith(() => _FakeWorkspaceNotifier(testWorkspace)),
+            projectsProvider
+                .overrideWith(() => _FakeProjectsNotifier([testProject])),
+            categoriesProvider
+                .overrideWith(() => _FakeCategoriesNotifier([testCategory])),
             tagsProvider.overrideWith(() => _FakeTagsNotifier()),
             peopleProvider.overrideWith(() => _FakePeopleNotifier()),
-            workItemsProvider.overrideWith(() => _FakeWorkItemsNotifier([testTaskA])),
+            workItemsProvider
+                .overrideWith(() => _FakeWorkItemsNotifier([testTaskA])),
             timerProvider.overrideWith(() => fakeTimer),
-            sessionsForWorkItemProvider(testTaskA.id).overrideWith((ref) async => [sampleSession]),
+            sessionsForWorkItemProvider(testTaskA.id)
+                .overrideWith((ref) async => [sampleSession]),
           ],
           child: MaterialApp(
             theme: AppTheme.darkTheme,
