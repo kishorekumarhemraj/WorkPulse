@@ -96,6 +96,15 @@ void main() {
     }
 
     testWidgets('MainShellView renders sidebar and switches views', (tester) async {
+      // The sidebar nav is a virtualized ListView; the default 800x600 test
+      // surface is too short to lay out all 8 items, so widgets scrolled
+      // out of view (Tags/People/Attributes) wouldn't exist in the tree yet.
+      // Use a realistic desktop window size instead.
+      tester.view.physicalSize = const Size(1280, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
       await tester.pumpWidget(createTestApp());
       await tester.pumpAndSettle();
 
