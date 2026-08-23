@@ -28,25 +28,25 @@ class DailyActivityChart extends StatelessWidget {
     }
 
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: AppTheme.surfaceDark,
+        color: AppTheme.getColors(context).surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.dividerDark),
+        border: Border.all(color: AppTheme.getColors(context).divider),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(Icons.bar_chart, size: 16, color: AppTheme.primaryColor),
-              const SizedBox(width: 8),
-              const Text(
+              Icon(Icons.bar_chart, size: 16, color: AppTheme.primaryColor),
+              SizedBox(width: 8),
+              Text(
                 'Daily Focus & Activity Trend',
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: AppTheme.textPrimaryDark,
+                  color: AppTheme.getColors(context).textPrimary,
                 ),
               ),
               const Spacer(),
@@ -54,17 +54,17 @@ class DailyActivityChart extends StatelessWidget {
               Row(
                 children: [
                   Container(width: 8, height: 8, decoration: BoxDecoration(color: AppTheme.accentGreen, borderRadius: BorderRadius.circular(2))),
-                  const SizedBox(width: 4),
-                  const Text('Active', style: TextStyle(fontSize: 10, color: AppTheme.textSecondaryDark)),
-                  const SizedBox(width: 10),
+                  SizedBox(width: 4),
+                  Text('Active', style: TextStyle(fontSize: 10, color: AppTheme.getColors(context).textSecondary)),
+                  SizedBox(width: 10),
                   Container(width: 8, height: 8, decoration: BoxDecoration(color: AppTheme.accentOrange, borderRadius: BorderRadius.circular(2))),
-                  const SizedBox(width: 4),
-                  const Text('Idle', style: TextStyle(fontSize: 10, color: AppTheme.textSecondaryDark)),
+                  SizedBox(width: 4),
+                  Text('Idle', style: TextStyle(fontSize: 10, color: AppTheme.getColors(context).textSecondary)),
                 ],
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: 20),
 
           // Bar Chart Row
           SizedBox(
@@ -83,7 +83,7 @@ class DailyActivityChart extends StatelessWidget {
                   child: Tooltip(
                     message: '${DateFormat.yMMMd().format(item.date)}\n$durationTooltip',
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 2),
+                      padding: EdgeInsets.symmetric(horizontal: 2),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
@@ -95,7 +95,7 @@ class DailyActivityChart extends StatelessWidget {
                                   Container(
                                     width: 14,
                                     height: idleHeight.clamp(2.0, 95.0),
-                                    decoration: const BoxDecoration(
+                                    decoration: BoxDecoration(
                                       color: AppTheme.accentOrange,
                                       borderRadius: BorderRadius.vertical(top: Radius.circular(3)),
                                     ),
@@ -116,18 +116,18 @@ class DailyActivityChart extends StatelessWidget {
                               width: 14,
                               height: 3,
                               decoration: BoxDecoration(
-                                color: AppTheme.dividerDark,
+                                color: AppTheme.getColors(context).divider,
                                 borderRadius: BorderRadius.circular(2),
                               ),
                             ),
-                          const SizedBox(height: 8),
+                          SizedBox(height: 8),
                           Text(
                             dayLabel,
-                            style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: AppTheme.textPrimaryDark),
+                            style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: AppTheme.getColors(context).textPrimary),
                           ),
                           Text(
                             dateLabel,
-                            style: const TextStyle(fontSize: 9, color: AppTheme.textSecondaryDark),
+                            style: TextStyle(fontSize: 9, color: AppTheme.getColors(context).textSecondary),
                           ),
                         ],
                       ),

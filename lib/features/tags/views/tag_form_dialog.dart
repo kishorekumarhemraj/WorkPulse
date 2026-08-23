@@ -87,18 +87,18 @@ class _TagFormDialogState extends ConsumerState<TagFormDialog> {
         return KeyEventResult.ignored;
       },
       child: AlertDialog(
-        backgroundColor: AppTheme.surfaceDark,
+        backgroundColor: AppTheme.getColors(context).surface,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
-          side: const BorderSide(color: AppTheme.dividerDark, width: 1),
+          side: BorderSide(color: AppTheme.getColors(context).divider, width: 1),
         ),
-        titlePadding: const EdgeInsets.fromLTRB(24, 20, 24, 12),
-        contentPadding: const EdgeInsets.fromLTRB(24, 0, 24, 20),
-        actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 20),
+        titlePadding: EdgeInsets.fromLTRB(24, 20, 24, 12),
+        contentPadding: EdgeInsets.fromLTRB(24, 0, 24, 20),
+        actionsPadding: EdgeInsets.fromLTRB(24, 0, 24, 20),
         title: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(8),
+              padding: EdgeInsets.all(8),
               decoration: BoxDecoration(
                 color: ColorUtils.parseHex(_selectedColorHex).withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(8),
@@ -109,10 +109,10 @@ class _TagFormDialogState extends ConsumerState<TagFormDialog> {
                 size: 20,
               ),
             ),
-            const SizedBox(width: 12),
+            SizedBox(width: 12),
             Text(
               isEditing ? 'Edit Tag' : 'New Tag',
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: AppTheme.textPrimaryDark),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: AppTheme.getColors(context).textPrimary),
             ),
           ],
         ),
@@ -125,15 +125,15 @@ class _TagFormDialogState extends ConsumerState<TagFormDialog> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Tag Name', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AppTheme.textSecondaryDark)),
-                  const SizedBox(height: 6),
+                  Text('Tag Name', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AppTheme.getColors(context).textSecondary)),
+                  SizedBox(height: 6),
                   TextFormField(
                     controller: _nameController,
                     autofocus: true,
-                    style: const TextStyle(color: AppTheme.textPrimaryDark, fontSize: 14),
-                    decoration: const InputDecoration(
+                    style: TextStyle(color: AppTheme.getColors(context).textPrimary, fontSize: 14),
+                    decoration: InputDecoration(
                       hintText: 'e.g. Urgent, Bug, Release, Research',
-                      hintStyle: TextStyle(color: AppTheme.textSecondaryDark),
+                      hintStyle: TextStyle(color: AppTheme.getColors(context).textSecondary),
                     ),
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
@@ -143,9 +143,9 @@ class _TagFormDialogState extends ConsumerState<TagFormDialog> {
                     },
                     onFieldSubmitted: (_) => _submit(),
                   ),
-                  const SizedBox(height: 16),
-                  const Text('Color Badge', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AppTheme.textSecondaryDark)),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 16),
+                  Text('Color Badge', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AppTheme.getColors(context).textSecondary)),
+                  SizedBox(height: 8),
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
@@ -167,7 +167,7 @@ class _TagFormDialogState extends ConsumerState<TagFormDialog> {
                             ),
                           ),
                           child: isSelected
-                              ? const Icon(Icons.check, size: 16, color: Colors.white)
+                              ? Icon(Icons.check, size: 16, color: Colors.white)
                               : null,
                         ),
                       );
@@ -181,7 +181,7 @@ class _TagFormDialogState extends ConsumerState<TagFormDialog> {
         actions: [
           TextButton(
             onPressed: _isSubmitting ? null : () => Navigator.of(context).pop(),
-            child: const Text('Cancel', style: TextStyle(color: AppTheme.textSecondaryDark)),
+            child: Text('Cancel', style: TextStyle(color: AppTheme.getColors(context).textSecondary)),
           ),
           ElevatedButton(
             onPressed: _isSubmitting ? null : _submit,
@@ -189,10 +189,10 @@ class _TagFormDialogState extends ConsumerState<TagFormDialog> {
               backgroundColor: AppTheme.primaryColor,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             ),
             child: _isSubmitting
-                ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                ? SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                 : Text(isEditing ? 'Save Changes' : 'Create Tag'),
           ),
         ],

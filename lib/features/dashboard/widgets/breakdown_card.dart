@@ -22,11 +22,11 @@ class BreakdownCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: AppTheme.surfaceDark,
+        color: AppTheme.getColors(context).surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.dividerDark),
+        border: Border.all(color: AppTheme.getColors(context).divider),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -35,35 +35,35 @@ class BreakdownCard extends StatelessWidget {
           Row(
             children: [
               Icon(icon, size: 16, color: AppTheme.primaryColor),
-              const SizedBox(width: 8),
+              SizedBox(width: 8),
               Expanded(
                 child: Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: AppTheme.textPrimaryDark,
+                    color: AppTheme.getColors(context).textPrimary,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: 8),
               Text(
                 '${items.length} ${items.length == 1 ? 'item' : 'items'}',
-                style: const TextStyle(fontSize: 11, color: AppTheme.textSecondaryDark),
+                style: TextStyle(fontSize: 11, color: AppTheme.getColors(context).textSecondary),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
 
           if (items.isEmpty)
             Padding(
-              padding: const EdgeInsets.symmetric(vertical: 24),
+              padding: EdgeInsets.symmetric(vertical: 24),
               child: Center(
                 child: Text(
                   emptyMessage,
-                  style: const TextStyle(fontSize: 12, color: AppTheme.textSecondaryDark),
+                  style: TextStyle(fontSize: 12, color: AppTheme.getColors(context).textSecondary),
                 ),
               ),
             )
@@ -72,7 +72,7 @@ class BreakdownCard extends StatelessWidget {
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: items.length > 5 ? 5 : items.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 12),
+              separatorBuilder: (_, __) => SizedBox(height: 12),
               itemBuilder: (context, index) {
                 final item = items[index];
                 final color = ColorUtils.parseHex(item.colorHex);
@@ -85,49 +85,49 @@ class BreakdownCard extends StatelessWidget {
                       children: [
                         if (item.iconName != null) ...[
                           Icon(IconUtils.getIcon(item.iconName), size: 13, color: color),
-                          const SizedBox(width: 6),
+                          SizedBox(width: 6),
                         ] else ...[
                           Container(width: 8, height: 8, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
-                          const SizedBox(width: 6),
+                          SizedBox(width: 6),
                         ],
                         Expanded(
                           child: Text(
                             item.name,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w500,
-                              color: AppTheme.textPrimaryDark,
+                              color: AppTheme.getColors(context).textPrimary,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        const SizedBox(width: 8),
+                        SizedBox(width: 8),
                         Text(
                           durationStr,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
-                            color: AppTheme.textPrimaryDark,
+                            color: AppTheme.getColors(context).textPrimary,
                           ),
                         ),
-                        const SizedBox(width: 8),
+                        SizedBox(width: 8),
                         SizedBox(
                           width: 44,
                           child: Text(
                             '${item.percentage.toStringAsFixed(1)}%',
                             textAlign: TextAlign.end,
-                            style: const TextStyle(fontSize: 11, color: AppTheme.textSecondaryDark),
+                            style: TextStyle(fontSize: 11, color: AppTheme.getColors(context).textSecondary),
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 6),
+                    SizedBox(height: 6),
                     ClipRRect(
                       borderRadius: BorderRadius.circular(3),
                       child: LinearProgressIndicator(
                         value: (item.percentage / 100.0).clamp(0.0, 1.0),
-                        backgroundColor: AppTheme.cardDark,
+                        backgroundColor: AppTheme.getColors(context).card,
                         valueColor: AlwaysStoppedAnimation<Color>(color),
                         minHeight: 5,
                       ),

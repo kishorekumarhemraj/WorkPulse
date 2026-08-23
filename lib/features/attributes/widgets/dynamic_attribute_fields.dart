@@ -28,14 +28,14 @@ class DynamicAttributeFields extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Custom Attributes',
-          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppTheme.textSecondaryDark),
+          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppTheme.getColors(context).textSecondary),
         ),
-        const SizedBox(height: 10),
+        SizedBox(height: 10),
         ...activeDefs.map((def) {
           return Padding(
-            padding: const EdgeInsets.only(bottom: 12),
+            padding: EdgeInsets.only(bottom: 12),
             child: _buildFieldForDefinition(context, ref, def),
           );
         }),
@@ -50,7 +50,7 @@ class DynamicAttributeFields extends ConsumerWidget {
       case AttributeType.text:
         return TextFormField(
           initialValue: currentValue as String?,
-          style: const TextStyle(fontSize: 13, color: AppTheme.textPrimaryDark),
+          style: TextStyle(fontSize: 13, color: AppTheme.getColors(context).textPrimary),
           decoration: InputDecoration(
             labelText: '${def.name}${def.required ? ' *' : ''}',
             hintText: def.description ?? 'Enter ${def.name}',
@@ -65,7 +65,7 @@ class DynamicAttributeFields extends ConsumerWidget {
         return TextFormField(
           initialValue: currentValue?.toString(),
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          style: const TextStyle(fontSize: 13, color: AppTheme.textPrimaryDark),
+          style: TextStyle(fontSize: 13, color: AppTheme.getColors(context).textPrimary),
           decoration: InputDecoration(
             labelText: '${def.name}${def.required ? ' *' : ''}',
             hintText: def.description ?? 'Enter number',
@@ -88,11 +88,11 @@ class DynamicAttributeFields extends ConsumerWidget {
       case AttributeType.boolean:
         final boolVal = currentValue == true;
         return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: AppTheme.cardDark,
+            color: AppTheme.getColors(context).card,
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: AppTheme.dividerDark),
+            border: Border.all(color: AppTheme.getColors(context).divider),
           ),
           child: Row(
             children: [
@@ -102,11 +102,11 @@ class DynamicAttributeFields extends ConsumerWidget {
                   children: [
                     Text(
                       '${def.name}${def.required ? ' *' : ''}',
-                      style: const TextStyle(fontSize: 13, color: AppTheme.textPrimaryDark),
+                      style: TextStyle(fontSize: 13, color: AppTheme.getColors(context).textPrimary),
                     ),
                     if (def.description != null) ...[
-                      const SizedBox(height: 2),
-                      Text(def.description!, style: const TextStyle(fontSize: 11, color: AppTheme.textSecondaryDark)),
+                      SizedBox(height: 2),
+                      Text(def.description!, style: TextStyle(fontSize: 11, color: AppTheme.getColors(context).textSecondary)),
                     ],
                   ],
                 ),
@@ -131,8 +131,8 @@ class DynamicAttributeFields extends ConsumerWidget {
           data: (options) {
             return DropdownButtonFormField<String>(
               initialValue: options.any((o) => o.id == currentValue) ? currentValue as String? : null,
-              dropdownColor: AppTheme.surfaceDark,
-              style: const TextStyle(fontSize: 13, color: AppTheme.textPrimaryDark),
+              dropdownColor: AppTheme.getColors(context).surface,
+              style: TextStyle(fontSize: 13, color: AppTheme.getColors(context).textPrimary),
               decoration: InputDecoration(
                 labelText: '${def.name}${def.required ? ' *' : ''}',
                 hintText: 'Select ${def.name}',
@@ -148,8 +148,8 @@ class DynamicAttributeFields extends ConsumerWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Container(width: 8, height: 8, decoration: BoxDecoration(color: col, shape: BoxShape.circle)),
-                      const SizedBox(width: 8),
-                      Text(opt.label, style: const TextStyle(fontSize: 13, color: AppTheme.textPrimaryDark)),
+                      SizedBox(width: 8),
+                      Text(opt.label, style: TextStyle(fontSize: 13, color: AppTheme.getColors(context).textPrimary)),
                     ],
                   ),
                 );
@@ -172,9 +172,9 @@ class DynamicAttributeFields extends ConsumerWidget {
               children: [
                 Text(
                   '${def.name}${def.required ? ' *' : ''}',
-                  style: const TextStyle(fontSize: 12, color: AppTheme.textSecondaryDark),
+                  style: TextStyle(fontSize: 12, color: AppTheme.getColors(context).textSecondary),
                 ),
-                const SizedBox(height: 6),
+                SizedBox(height: 6),
                 Wrap(
                   spacing: 6,
                   runSpacing: 6,
@@ -189,11 +189,11 @@ class DynamicAttributeFields extends ConsumerWidget {
                       checkmarkColor: col,
                       labelStyle: TextStyle(
                         fontSize: 11,
-                        color: isSel ? Colors.white : AppTheme.textSecondaryDark,
+                        color: isSel ? Colors.white : AppTheme.getColors(context).textSecondary,
                         fontWeight: isSel ? FontWeight.bold : FontWeight.normal,
                       ),
-                      backgroundColor: AppTheme.cardDark,
-                      side: BorderSide(color: isSel ? col : AppTheme.dividerDark),
+                      backgroundColor: AppTheme.getColors(context).card,
+                      side: BorderSide(color: isSel ? col : AppTheme.getColors(context).divider),
                       onSelected: (selected) {
                         final updated = List<String>.from(selectedIds);
                         if (selected) {
@@ -229,30 +229,30 @@ class DynamicAttributeFields extends ConsumerWidget {
           },
           borderRadius: BorderRadius.circular(8),
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 14),
             decoration: BoxDecoration(
-              color: AppTheme.cardDark,
+              color: AppTheme.getColors(context).card,
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: AppTheme.dividerDark),
+              border: Border.all(color: AppTheme.getColors(context).divider),
             ),
             child: Row(
               children: [
-                const Icon(Icons.calendar_today, size: 16, color: AppTheme.primaryColor),
-                const SizedBox(width: 10),
+                Icon(Icons.calendar_today, size: 16, color: AppTheme.primaryColor),
+                SizedBox(width: 10),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         '${def.name}${def.required ? ' *' : ''}',
-                        style: const TextStyle(fontSize: 11, color: AppTheme.textSecondaryDark),
+                        style: TextStyle(fontSize: 11, color: AppTheme.getColors(context).textSecondary),
                       ),
-                      const SizedBox(height: 2),
+                      SizedBox(height: 2),
                       Text(
                         formattedDate,
                         style: TextStyle(
                           fontSize: 13,
-                          color: dateVal != null ? AppTheme.textPrimaryDark : AppTheme.textSecondaryDark,
+                          color: dateVal != null ? AppTheme.getColors(context).textPrimary : AppTheme.getColors(context).textSecondary,
                           fontWeight: dateVal != null ? FontWeight.w500 : FontWeight.normal,
                         ),
                       ),
@@ -261,7 +261,7 @@ class DynamicAttributeFields extends ConsumerWidget {
                 ),
                 if (dateVal != null)
                   IconButton(
-                    icon: const Icon(Icons.close, size: 14, color: AppTheme.textSecondaryDark),
+                    icon: Icon(Icons.close, size: 14, color: AppTheme.getColors(context).textSecondary),
                     onPressed: () => onValueChanged(def.id, null),
                   ),
               ],
