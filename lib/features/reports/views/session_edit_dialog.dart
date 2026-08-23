@@ -39,7 +39,7 @@ class _SessionEditDialogState extends ConsumerState<SessionEditDialog> {
     final s = widget.record.session;
     _startTime = s.startTime.toLocal();
     _endTime = s.endTime?.toLocal();
-    _notesController = TextEditingController(text: s.notes ?? '');
+    _notesController = TextEditingController(text: widget.record.workItem.notes ?? '');
   }
 
   @override
@@ -263,7 +263,7 @@ class _SessionEditDialogState extends ConsumerState<SessionEditDialog> {
                           DynamicAttributeFields(
                             definitions: sessionDefs,
                             values: _sessionAttributeValues,
-                            onChanged: (id, val) => _sessionAttributeValues[id] = val,
+                            onValueChanged: (String id, dynamic val) => _sessionAttributeValues[id] = val,
                           ),
                         ],
                       ],

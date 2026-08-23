@@ -87,10 +87,17 @@ class SessionEditorController {
     final updated = session.copyWith(
       startTime: startTime ?? session.startTime,
       endTime: endTime ?? session.endTime,
-      notes: notes ?? session.notes,
     );
 
     await sessionRepo.update(updated);
+
+    if (notes != null) {
+      final workItemRepo = _ref.read(workItemRepositoryProvider);
+      final workItem = await workItemRepo.getById(session.workItemId);
+      if (workItem != null) {
+        await workItemRepo.update(workItem.copyWith(notes: notes));
+      }
+    }
 
     // Save session-scoped attributes if provided
     if (attributeValues.isNotEmpty) {
