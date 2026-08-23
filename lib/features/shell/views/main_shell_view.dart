@@ -12,6 +12,7 @@ import 'package:workpulse/features/tags/providers/tags_provider.dart';
 import 'package:workpulse/features/tags/views/tags_view.dart';
 import 'package:workpulse/features/tasks/providers/work_items_provider.dart';
 import 'package:workpulse/features/tasks/views/tasks_view.dart';
+import 'package:workpulse/features/timer/views/active_timer_bar.dart';
 import 'package:workpulse/features/workspace/providers/workspace_provider.dart';
 
 enum ShellNavTab {
@@ -58,10 +59,13 @@ class MainShellView extends ConsumerWidget {
           child: Text('Initialization error: $error', style: const TextStyle(color: AppTheme.accentRed)),
         ),
         data: (workspace) {
-          return Row(
+          return Column(
             children: [
-              // Sidebar
-              Container(
+              Expanded(
+                child: Row(
+                  children: [
+                    // Sidebar
+                    Container(
                 width: 220,
                 decoration: const BoxDecoration(
                   color: AppTheme.surfaceDark,
@@ -197,8 +201,12 @@ class MainShellView extends ConsumerWidget {
                   ShellNavTab.categories => const CategoriesView(),
                   ShellNavTab.tags => const TagsView(),
                   ShellNavTab.people => const PeopleView(),
-                },
+                      },
+                    ),
+                  ],
+                ),
               ),
+              const ActiveTimerBar(),
             ],
           );
         },
