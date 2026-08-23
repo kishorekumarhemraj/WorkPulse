@@ -33,20 +33,23 @@ class _CategoriesViewState extends ConsumerState<CategoriesView> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Categories',
-                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppTheme.textPrimaryDark),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Functional classifications for your tracked time and work',
-                      style: TextStyle(fontSize: 13, color: AppTheme.textSecondaryDark),
-                    ),
-                  ],
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Categories',
+                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppTheme.textPrimaryDark),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        'Functional classifications for your tracked time and work',
+                        style: TextStyle(fontSize: 13, color: AppTheme.textSecondaryDark),
+                      ),
+                    ],
+                  ),
                 ),
+                const SizedBox(width: 16),
                 ElevatedButton.icon(
                   onPressed: () => CategoryFormDialog.show(context),
                   icon: const Icon(Icons.add, size: 18),
@@ -195,7 +198,7 @@ class _CategoryCard extends ConsumerWidget {
                 color: AppTheme.surfaceDark,
                 onSelected: (value) async {
                   if (value == 'edit') {
-                    CategoryFormDialog.show(context, category: category);
+                    await CategoryFormDialog.show(context, category: category);
                   } else if (value == 'archive') {
                     await ref.read(categoriesProvider.notifier).archiveCategory(category.id);
                   } else if (value == 'delete') {
@@ -282,9 +285,13 @@ class _CategoryCard extends ConsumerWidget {
                   style: const TextStyle(fontSize: 11, color: AppTheme.textSecondaryDark, fontWeight: FontWeight.w500),
                 ),
               ),
-              Text(
-                'Updated ${_formatDate(category.updatedAt)}',
-                style: const TextStyle(fontSize: 11, color: AppTheme.textSecondaryDark),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  'Updated ${_formatDate(category.updatedAt)}',
+                  style: const TextStyle(fontSize: 11, color: AppTheme.textSecondaryDark),
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ],
           ),
