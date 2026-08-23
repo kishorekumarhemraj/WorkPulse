@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:workpulse/core/theme/app_theme.dart';
+import 'package:workpulse/core/theme/app_colors.dart';
+import 'package:workpulse/core/theme/design_tokens.dart';
+import 'package:workpulse/core/widgets/app_dialog.dart';
 import 'package:workpulse/domain/models/person_model.dart';
 import 'package:workpulse/features/people/providers/people_provider.dart';
 
@@ -66,8 +67,9 @@ class _PersonFormDialogState extends ConsumerState<PersonFormDialog> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content: Text('Failed to save person: $e'),
-              backgroundColor: AppTheme.accentRed),
+            content: Text('Failed to save person: $e'),
+            backgroundColor: context.colors.danger,
+          ),
         );
       }
     } finally {
@@ -79,135 +81,77 @@ class _PersonFormDialogState extends ConsumerState<PersonFormDialog> {
   Widget build(BuildContext context) {
     final isEditing = widget.person != null;
 
-    return Focus(
-      autofocus: true,
-      onKeyEvent: (node, event) {
-        if (event is KeyDownEvent &&
-            event.logicalKey == LogicalKeyboardKey.escape) {
-          Navigator.of(context).pop();
-          return KeyEventResult.handled;
-        }
-        return KeyEventResult.ignored;
-      },
-      child: AlertDialog(
-        backgroundColor: AppTheme.getColors(context).surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side:
-              BorderSide(color: AppTheme.getColors(context).divider, width: 1),
+    return AppDialog(
+      title: isEditing ? 'Edit Person' : 'New Person',
+      icon: Icons.person_outline,
+      onSubmit: _isSubmitting ? null : _submit,
+      actions: [
+        TextButton(
+          onPressed: _isSubmitting ? null : () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
         ),
-        titlePadding: const EdgeInsets.fromLTRB(24, 20, 24, 12),
-        contentPadding: const EdgeInsets.fromLTRB(24, 0, 24, 20),
-        actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 20),
-        title: Row(
+        ElevatedButton(
+          onPressed: _isSubmitting ? null : _submit,
+          child: _isSubmitting
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                )
+              : Text(isEditing ? 'Save Changes' : 'Create Person'),
+        ),
+      ],
+      child: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: AppTheme.primaryColor.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Icon(
-                Icons.person_outline,
-                color: AppTheme.primaryColor,
-                size: 20,
+            DialogField(
+              label: 'Name',
+              required: true,
+              child: TextFormField(
+                controller: _nameController,
+                autofocus: true,
+                decoration: const InputDecoration(
+                  hintText: 'e.g. John Doe, Alice Smith',
+                ),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Name is required';
+                  }
+                  return null;
+                },
+                onFieldSubmitted: (_) => _submit(),
               ),
             ),
-            const SizedBox(width: 12),
-            Text(
-              isEditing ? 'Edit Person' : 'New Person',
-              style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: AppTheme.getColors(context).textPrimary),
+            const SizedBox(height: Spacing.lg),
+            DialogField(
+              label: 'Email Address (Optional)',
+              child: TextFormField(
+                controller: _emailController,
+                keyboardType: TextInputType.emailAddress,
+                decoration: const InputDecoration(
+                  hintText: 'e.g. john@company.com',
+                ),
+                validator: (value) {
+                  if (value != null && value.trim().isNotEmpty) {
+                    final emailRegExp =
+                        RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+                    if (!emailRegExp.hasMatch(value.trim())) {
+                      return 'Please enter a valid email address';
+                    }
+                  }
+                  return null;
+                },
+                onFieldSubmitted: (_) => _submit(),
+              ),
             ),
           ],
         ),
-        content: SizedBox(
-          width: 400,
-          child: Form(
-            key: _formKey,
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Full Name',
-                      style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                          color: AppTheme.getColors(context).textSecondary)),
-                  const SizedBox(height: 6),
-                  TextFormField(
-                    controller: _nameController,
-                    autofocus: true,
-                    style: TextStyle(
-                        color: AppTheme.getColors(context).textPrimary,
-                        fontSize: 14),
-                    decoration: InputDecoration(
-                      hintText: 'e.g. John Doe, Alice Smith',
-                      hintStyle: TextStyle(
-                          color: AppTheme.getColors(context).textSecondary),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Name is required';
-                      }
-                      return null;
-                    },
-                    onFieldSubmitted: (_) => _submit(),
-                  ),
-                  const SizedBox(height: 16),
-                  Text('Email Address (Optional)',
-                      style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                          color: AppTheme.getColors(context).textSecondary)),
-                  const SizedBox(height: 6),
-                  TextFormField(
-                    controller: _emailController,
-                    keyboardType: TextInputType.emailAddress,
-                    style: TextStyle(
-                        color: AppTheme.getColors(context).textPrimary,
-                        fontSize: 14),
-                    decoration: InputDecoration(
-                      hintText: 'e.g. john@company.com',
-                      hintStyle: TextStyle(
-                          color: AppTheme.getColors(context).textSecondary),
-                    ),
-                    validator: (value) {
-                      if (value != null && value.trim().isNotEmpty) {
-                        final emailRegExp =
-                            RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-                        if (!emailRegExp.hasMatch(value.trim())) {
-                          return 'Please enter a valid email address';
-                        }
-                      }
-                      return null;
-                    },
-                    onFieldSubmitted: (_) => _submit(),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: _isSubmitting ? null : () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: _isSubmitting ? null : _submit,
-            child: _isSubmitting
-                ? const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(
-                        strokeWidth: 2, color: Colors.white))
-                : Text(isEditing ? 'Save Changes' : 'Add Person'),
-          ),
-        ],
       ),
     );
   }

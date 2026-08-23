@@ -30,12 +30,20 @@ class AppSegmentedControl<T> extends StatelessWidget {
   /// Renders icons only, with the label moved into the tooltip.
   final bool iconOnly;
 
+  /// Stretches the segments to share the full available width.
+  ///
+  /// The default sizes to content, which is right in a toolbar. Inside a
+  /// fixed-width container — a dialog, say — content sizing can exceed the
+  /// space available, so those callers pass true.
+  final bool fillWidth;
+
   const AppSegmentedControl({
     super.key,
     required this.options,
     required this.selected,
     required this.onChanged,
     this.iconOnly = false,
+    this.fillWidth = false,
   });
 
   @override
@@ -51,7 +59,7 @@ class AppSegmentedControl<T> extends StatelessWidget {
         border: Border.all(color: colors.divider),
       ),
       child: Row(
-        mainAxisSize: MainAxisSize.min,
+        mainAxisSize: fillWidth ? MainAxisSize.max : MainAxisSize.min,
         children: options.map((option) {
           final isSelected = option.value == selected;
           final foreground =
@@ -61,7 +69,10 @@ class AppSegmentedControl<T> extends StatelessWidget {
             duration: Motion.duration(context, Motion.fast),
             curve: Motion.curve,
             padding: EdgeInsets.symmetric(
-              horizontal: iconOnly ? Spacing.sm : Spacing.md,
+              // Stretched segments share a fixed width, so they take less
+              // padding to leave room for the label itself.
+              horizontal:
+                  iconOnly ? Spacing.sm : (fillWidth ? Spacing.sm : Spacing.md),
               vertical: Spacing.xs + 2,
             ),
             decoration: BoxDecoration(
@@ -78,19 +89,25 @@ class AppSegmentedControl<T> extends StatelessWidget {
                   : null,
             ),
             child: Row(
-              mainAxisSize: MainAxisSize.min,
+              mainAxisSize: fillWidth ? MainAxisSize.max : MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 if (option.icon != null)
                   Icon(option.icon, size: IconSizes.sm, color: foreground),
                 if (option.icon != null && !iconOnly)
                   const SizedBox(width: Spacing.xs + 2),
                 if (!iconOnly)
-                  Text(
-                    option.label,
-                    style: theme.textTheme.labelMedium?.copyWith(
-                      color: foreground,
-                      fontWeight:
-                          isSelected ? FontWeight.w600 : FontWeight.w500,
+                  Flexible(
+                    child: Text(
+                      option.label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: foreground,
+                        fontWeight:
+                            isSelected ? FontWeight.w600 : FontWeight.w500,
+                      ),
                     ),
                   ),
               ],
@@ -112,13 +129,15 @@ class AppSegmentedControl<T> extends StatelessWidget {
           }
 
           // Announce this as a radio-style selection to assistive tech.
-          return Semantics(
+          final result = Semantics(
             selected: isSelected,
             inMutuallyExclusiveGroup: true,
             button: true,
             label: option.label,
             child: segment,
           );
+
+          return fillWidth ? Expanded(child: result) : result;
         }).toList(),
       ),
     );

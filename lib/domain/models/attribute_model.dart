@@ -175,7 +175,8 @@ class AttributeOption extends Equatable {
   }) {
     return AttributeOption(
       id: id ?? this.id,
-      attributeDefinitionId: attributeDefinitionId ?? this.attributeDefinitionId,
+      attributeDefinitionId:
+          attributeDefinitionId ?? this.attributeDefinitionId,
       value: value ?? this.value,
       label: label ?? this.label,
       colorHex: colorHex ?? this.colorHex,
@@ -240,7 +241,8 @@ class WorkItemAttributeValue extends Equatable {
     return WorkItemAttributeValue(
       id: id ?? this.id,
       workItemId: workItemId ?? this.workItemId,
-      attributeDefinitionId: attributeDefinitionId ?? this.attributeDefinitionId,
+      attributeDefinitionId:
+          attributeDefinitionId ?? this.attributeDefinitionId,
       textValue: textValue ?? this.textValue,
       numberValue: numberValue ?? this.numberValue,
       booleanValue: booleanValue ?? this.booleanValue,
@@ -306,7 +308,8 @@ class SessionAttributeValue extends Equatable {
     return SessionAttributeValue(
       id: id ?? this.id,
       sessionId: sessionId ?? this.sessionId,
-      attributeDefinitionId: attributeDefinitionId ?? this.attributeDefinitionId,
+      attributeDefinitionId:
+          attributeDefinitionId ?? this.attributeDefinitionId,
       textValue: textValue ?? this.textValue,
       numberValue: numberValue ?? this.numberValue,
       booleanValue: booleanValue ?? this.booleanValue,

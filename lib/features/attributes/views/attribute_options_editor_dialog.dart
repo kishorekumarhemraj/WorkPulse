@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:workpulse/core/theme/app_theme.dart';
+import 'package:workpulse/core/theme/app_colors.dart';
+import 'package:workpulse/core/widgets/error_state.dart';
+import 'package:workpulse/core/widgets/app_dialog.dart';
 import 'package:workpulse/core/theme/color_utils.dart';
 import 'package:workpulse/domain/models/attribute_model.dart';
 import 'package:workpulse/features/attributes/providers/attribute_definitions_provider.dart';
@@ -62,7 +64,7 @@ class _AttributeOptionsEditorDialogState
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
               content: Text('Error creating option: $e'),
-              backgroundColor: AppTheme.accentRed),
+              backgroundColor: context.colors.danger),
         );
       }
     } finally {
@@ -75,65 +77,39 @@ class _AttributeOptionsEditorDialogState
     final optionsAsync =
         ref.watch(attributeOptionsFamilyProvider(widget.definition.id));
 
-    return AlertDialog(
-      backgroundColor: AppTheme.getColors(context).surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: AppTheme.getColors(context).divider, width: 1),
-      ),
-      titlePadding: const EdgeInsets.fromLTRB(24, 20, 24, 12),
-      contentPadding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
-      actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 20),
-      title: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: AppTheme.accentPurple.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: const Icon(Icons.list_alt,
-                color: AppTheme.accentPurple, size: 20),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Options for "${widget.definition.name}"',
-                  style: TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w600,
-                      color: AppTheme.getColors(context).textPrimary),
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  widget.definition.type == AttributeType.singleSelect
-                      ? 'Single Select Options'
-                      : 'Multi Select Options',
-                  style: TextStyle(
-                      fontSize: 11,
-                      color: AppTheme.getColors(context).textSecondary),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-      content: SizedBox(
-        width: 480,
-        height: 380,
+    return AppDialog(
+      title: 'Options for "${widget.definition.name}"',
+      subtitle: widget.definition.type == AttributeType.singleSelect
+          ? 'Single Select Options'
+          : 'Multi Select Options',
+      icon: Icons.list_alt,
+      iconColor: context.colors.info,
+      width: DialogWidth.large,
+      // The options list scrolls itself and should fill the height available
+      // rather than sit inside an outer scroll view at a fixed size.
+      scrollableBody: false,
+      actions: [
+        ElevatedButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Done'),
+        ),
+      ],
+      child: SizedBox(
+        height: 420,
         child: Column(
           children: [
             // Options list
             Expanded(
               child: optionsAsync.when(
                 loading: () => const Center(child: CircularProgressIndicator()),
-                error: (e, _) => Center(
-                    child: Text('Error: $e',
-                        style: const TextStyle(color: AppTheme.accentRed))),
+                error: (e, _) => ErrorState(
+                  title: 'Could not load options',
+                  error: e,
+                  compact: true,
+                  onRetry: () => ref.invalidate(
+                    attributeOptionsFamilyProvider(widget.definition.id),
+                  ),
+                ),
                 data: (options) {
                   if (options.isEmpty) {
                     return Center(
@@ -141,22 +117,17 @@ class _AttributeOptionsEditorDialogState
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(Icons.format_list_bulleted,
-                              size: 36,
-                              color: AppTheme.getColors(context)
-                                  .textSecondary
-                                  .withValues(alpha: 0.3)),
+                              size: 36, color: context.colors.textTertiary),
                           const SizedBox(height: 8),
                           Text('No options defined yet',
                               style: TextStyle(
                                   fontSize: 13,
-                                  color: AppTheme.getColors(context)
-                                      .textSecondary)),
+                                  color: context.colors.textSecondary)),
                           const SizedBox(height: 4),
                           Text('Add options using the input below',
                               style: TextStyle(
-                                  fontSize: 11,
-                                  color: AppTheme.getColors(context)
-                                      .textSecondary)),
+                                  fontSize: 12,
+                                  color: context.colors.textSecondary)),
                         ],
                       ),
                     );
@@ -164,8 +135,8 @@ class _AttributeOptionsEditorDialogState
 
                   return ListView.separated(
                     itemCount: options.length,
-                    separatorBuilder: (_, __) => Divider(
-                        color: AppTheme.getColors(context).divider, height: 1),
+                    separatorBuilder: (_, __) =>
+                        Divider(color: context.colors.divider, height: 1),
                     itemBuilder: (context, index) {
                       final opt = options[index];
                       final col = ColorUtils.parseHex(opt.colorHex);
@@ -183,17 +154,16 @@ class _AttributeOptionsEditorDialogState
                         title: Text(opt.label,
                             style: TextStyle(
                                 fontSize: 13,
-                                color: AppTheme.getColors(context).textPrimary,
+                                color: context.colors.textPrimary,
                                 fontWeight: FontWeight.w500)),
                         subtitle: Text(opt.value,
                             style: TextStyle(
-                                fontSize: 11,
+                                fontSize: 12,
                                 fontFamily: 'Courier',
-                                color:
-                                    AppTheme.getColors(context).textSecondary)),
+                                color: context.colors.textSecondary)),
                         trailing: IconButton(
-                          icon: const Icon(Icons.delete_outline,
-                              size: 16, color: AppTheme.accentRed),
+                          icon: Icon(Icons.delete_outline,
+                              size: 16, color: context.colors.danger),
                           tooltip: 'Delete option',
                           onPressed: () async {
                             await ref
@@ -208,16 +178,16 @@ class _AttributeOptionsEditorDialogState
               ),
             ),
 
-            Divider(color: AppTheme.getColors(context).divider, height: 1),
+            Divider(color: context.colors.divider, height: 1),
             const SizedBox(height: 12),
 
             // Add Option Box
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: AppTheme.getColors(context).card,
+                color: context.colors.card,
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: AppTheme.getColors(context).divider),
+                border: Border.all(color: context.colors.divider),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -229,14 +199,12 @@ class _AttributeOptionsEditorDialogState
                         child: TextField(
                           controller: _labelController,
                           style: TextStyle(
-                              fontSize: 13,
-                              color: AppTheme.getColors(context).textPrimary),
+                              fontSize: 13, color: context.colors.textPrimary),
                           decoration: InputDecoration(
                             hintText: 'Option Label (e.g. High)',
                             hintStyle: TextStyle(
                                 fontSize: 12,
-                                color:
-                                    AppTheme.getColors(context).textSecondary),
+                                color: context.colors.textSecondary),
                             isDense: true,
                             contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 8, vertical: 8),
@@ -259,13 +227,12 @@ class _AttributeOptionsEditorDialogState
                           style: TextStyle(
                               fontSize: 12,
                               fontFamily: 'Courier',
-                              color: AppTheme.getColors(context).textPrimary),
+                              color: context.colors.textPrimary),
                           decoration: InputDecoration(
                             hintText: 'Value (e.g. high)',
                             hintStyle: TextStyle(
-                                fontSize: 11,
-                                color:
-                                    AppTheme.getColors(context).textSecondary),
+                                fontSize: 12,
+                                color: context.colors.textSecondary),
                             isDense: true,
                             contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 8, vertical: 8),
@@ -279,9 +246,8 @@ class _AttributeOptionsEditorDialogState
                     children: [
                       Text('Color: ',
                           style: TextStyle(
-                              fontSize: 11,
-                              color:
-                                  AppTheme.getColors(context).textSecondary)),
+                              fontSize: 12,
+                              color: context.colors.textSecondary)),
                       const SizedBox(width: 6),
                       Wrap(
                         spacing: 6,
@@ -324,12 +290,6 @@ class _AttributeOptionsEditorDialogState
           ],
         ),
       ),
-      actions: [
-        ElevatedButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Done'),
-        ),
-      ],
     );
   }
 }

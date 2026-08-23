@@ -50,7 +50,8 @@ class TimerService {
     final created = await _sessionRepository.create(newSession);
 
     // Update last_worked_at timestamp on the work item
-    await _workItemRepository.updateLastWorkedAt(workItemId, effectiveStartTime);
+    await _workItemRepository.updateLastWorkedAt(
+        workItemId, effectiveStartTime);
 
     return created;
   }
@@ -78,7 +79,8 @@ class TimerService {
     String workItemId, {
     Session? activeSession,
   }) async {
-    final historicalSessions = await _sessionRepository.getByWorkItemId(workItemId);
+    final historicalSessions =
+        await _sessionRepository.getByWorkItemId(workItemId);
 
     var totalMicroseconds = 0;
     var activeIncluded = false;
@@ -92,7 +94,9 @@ class TimerService {
       }
     }
 
-    if (activeSession != null && activeSession.workItemId == workItemId && !activeIncluded) {
+    if (activeSession != null &&
+        activeSession.workItemId == workItemId &&
+        !activeIncluded) {
       totalMicroseconds += activeSession.duration.inMicroseconds;
     }
 
@@ -102,7 +106,8 @@ class TimerService {
   /// Formats duration into a readable string format.
   /// Standard: `HH:MM:SS` (e.g. `01:23:45`) or `MM:SS` (e.g. `05:12`)
   /// Compact: `1h 23m` or `5m 12s` or `45s`
-  static String formatDuration(Duration duration, {bool compact = false, bool includeSeconds = true}) {
+  static String formatDuration(Duration duration,
+      {bool compact = false, bool includeSeconds = true}) {
     if (duration.isNegative) {
       return '00:00';
     }
@@ -117,7 +122,9 @@ class TimerService {
         return minutes > 0 ? '${hours}h ${minutes}m' : '${hours}h';
       }
       if (minutes > 0) {
-        return includeSeconds && seconds > 0 ? '${minutes}m ${seconds}s' : '${minutes}m';
+        return includeSeconds && seconds > 0
+            ? '${minutes}m ${seconds}s'
+            : '${minutes}m';
       }
       return '${seconds}s';
     }

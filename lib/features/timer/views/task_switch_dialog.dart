@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:workpulse/core/theme/app_theme.dart';
+import 'package:workpulse/core/theme/app_colors.dart';
+import 'package:workpulse/core/theme/app_typography.dart';
+import 'package:workpulse/core/theme/design_tokens.dart';
+import 'package:workpulse/core/widgets/app_dialog.dart';
 import 'package:workpulse/domain/models/work_item_model.dart';
 import 'package:workpulse/domain/services/timer_service.dart';
 import 'package:workpulse/features/timer/providers/timer_provider.dart';
@@ -77,207 +80,171 @@ class _TaskSwitchDialogState extends ConsumerState<TaskSwitchDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
+    final theme = Theme.of(context);
     final formattedElapsed =
         TimerService.formatDuration(widget.currentElapsed, compact: true);
 
     return Focus(
       autofocus: true,
       onKeyEvent: (node, event) {
-        if (event is KeyDownEvent &&
-            event.logicalKey == LogicalKeyboardKey.escape) {
+        if (event is! KeyDownEvent) return KeyEventResult.ignored;
+        if (event.logicalKey == LogicalKeyboardKey.escape) {
           _handleCancel();
           return KeyEventResult.handled;
         }
-        if (event is KeyDownEvent &&
-            (event.logicalKey == LogicalKeyboardKey.enter ||
-                event.logicalKey == LogicalKeyboardKey.numpadEnter)) {
-          // If in textfield and pressing enter, submit
+        if (event.logicalKey == LogicalKeyboardKey.enter ||
+            event.logicalKey == LogicalKeyboardKey.numpadEnter) {
           _handleConfirm();
           return KeyEventResult.handled;
         }
         return KeyEventResult.ignored;
       },
-      child: AlertDialog(
-        backgroundColor: AppTheme.getColors(context).surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side:
-              BorderSide(color: AppTheme.getColors(context).divider, width: 1),
-        ),
-        titlePadding: const EdgeInsets.fromLTRB(24, 20, 24, 12),
-        contentPadding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
-        actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 20),
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: AppTheme.accentOrange.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Icon(
-                Icons.swap_horiz,
-                color: AppTheme.accentOrange,
-                size: 20,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Text(
-              'Switch Active Task?',
-              style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: AppTheme.getColors(context).textPrimary),
-            ),
-          ],
-        ),
-        content: SizedBox(
-          width: 460,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'You are currently tracking another task. Switching will stop and commit your active session.',
-                style: TextStyle(
-                    fontSize: 13,
-                    color: AppTheme.getColors(context).textSecondary,
-                    height: 1.4),
-              ),
-              const SizedBox(height: 16),
-
-              // Current Active Task card
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppTheme.getColors(context).card,
-                  borderRadius: BorderRadius.circular(8),
-                  border:
-                      Border.all(color: AppTheme.getColors(context).divider),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.stop_circle_outlined,
-                        size: 16, color: AppTheme.accentRed),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Current Active Task',
-                              style: TextStyle(
-                                  fontSize: 11,
-                                  color: AppTheme.getColors(context)
-                                      .textSecondary)),
-                          const SizedBox(height: 2),
-                          Text(
-                            widget.currentItem.name,
-                            style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                                color: AppTheme.getColors(context).textPrimary),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: AppTheme.getColors(context).surface,
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        formattedElapsed,
-                        style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w500,
-                            color: AppTheme.getColors(context).textSecondary),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 10),
-
-              // Arrow indicator
-              Center(
-                child: Icon(Icons.arrow_downward,
-                    size: 16, color: AppTheme.getColors(context).textSecondary),
-              ),
-              const SizedBox(height: 10),
-
-              // Target Task card
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppTheme.primaryColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                      color: AppTheme.primaryColor.withValues(alpha: 0.4)),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.play_circle_outline,
-                        size: 16, color: AppTheme.accentGreen),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text('Switching To',
-                              style: TextStyle(
-                                  fontSize: 11, color: AppTheme.primaryColor)),
-                          const SizedBox(height: 2),
-                          Text(
-                            widget.targetItem.name,
-                            style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                                color: AppTheme.getColors(context).textPrimary),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 14),
-
-              // Optional Session Note Field
-              Text(
-                'Session Note (optional)',
-                style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    color: AppTheme.getColors(context).textSecondary),
-              ),
-              const SizedBox(height: 6),
-              TextField(
-                controller: _notesController,
-                maxLines: 2,
-                style: TextStyle(
-                    fontSize: 13,
-                    color: AppTheme.getColors(context).textPrimary),
-                decoration: const InputDecoration(
-                  hintText:
-                      'Add closing summary or work log for previous task...',
-                ),
-              ),
-            ],
-          ),
-        ),
+      child: AppDialog(
+        title: 'Switch Active Task?',
+        subtitle: 'Switching stops and commits your active session.',
+        icon: Icons.swap_horiz,
+        iconColor: colors.warning,
+        width: DialogWidth.medium,
+        onSubmit: _handleConfirm,
         actions: [
-          TextButton(
-            onPressed: _handleCancel,
-            child: const Text('Cancel'),
-          ),
+          TextButton(onPressed: _handleCancel, child: const Text('Cancel')),
           ElevatedButton(
             onPressed: _handleConfirm,
             child: const Text('Confirm Switch'),
           ),
+        ],
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Outgoing task
+            _SwitchCard(
+              icon: Icons.stop_circle_outlined,
+              iconColor: colors.danger,
+              label: 'Current Active Task',
+              name: widget.currentItem.name,
+              trailing: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: Spacing.sm,
+                  vertical: Spacing.xxs + 1,
+                ),
+                decoration: BoxDecoration(
+                  color: colors.surface,
+                  borderRadius: Radii.smAll,
+                ),
+                child: Text(
+                  formattedElapsed,
+                  style: AppTypography.numeric(
+                    fontSize: 12,
+                    color: colors.textSecondary,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: Spacing.sm),
+            Center(
+              child: Icon(
+                Icons.arrow_downward,
+                size: IconSizes.md,
+                color: colors.textTertiary,
+              ),
+            ),
+            const SizedBox(height: Spacing.sm),
+
+            // Incoming task
+            _SwitchCard(
+              icon: Icons.play_circle_outline,
+              iconColor: colors.success,
+              label: 'Switching To',
+              labelColor: colors.accent,
+              name: widget.targetItem.name,
+              background: colors.accentSubtle,
+              borderColor: colors.accent.withValues(alpha: 0.4),
+            ),
+            const SizedBox(height: Spacing.lg),
+
+            DialogField(
+              label: 'Session Note (optional)',
+              helperText: 'Recorded against the session you are closing.',
+              child: TextField(
+                controller: _notesController,
+                maxLines: 2,
+                style: theme.textTheme.bodyMedium,
+                decoration: const InputDecoration(
+                  hintText:
+                      'Add a closing summary or work log for the previous task…',
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// One side of the before/after comparison in the switch dialog.
+class _SwitchCard extends StatelessWidget {
+  final IconData icon;
+  final Color iconColor;
+  final String label;
+  final Color? labelColor;
+  final String name;
+  final Widget? trailing;
+  final Color? background;
+  final Color? borderColor;
+
+  const _SwitchCard({
+    required this.icon,
+    required this.iconColor,
+    required this.label,
+    required this.name,
+    this.labelColor,
+    this.trailing,
+    this.background,
+    this.borderColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    final theme = Theme.of(context);
+
+    return Container(
+      padding: const EdgeInsets.all(Spacing.md),
+      decoration: BoxDecoration(
+        color: background ?? colors.card,
+        borderRadius: Radii.mdAll,
+        border: Border.all(color: borderColor ?? colors.divider),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: IconSizes.md, color: iconColor),
+          const SizedBox(width: Spacing.sm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: theme.textTheme.bodySmall
+                      ?.copyWith(color: labelColor ?? colors.textTertiary),
+                ),
+                const SizedBox(height: Spacing.xxs),
+                Text(
+                  name,
+                  style: theme.textTheme.titleSmall,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          if (trailing != null) ...[
+            const SizedBox(width: Spacing.sm),
+            trailing!,
+          ],
         ],
       ),
     );

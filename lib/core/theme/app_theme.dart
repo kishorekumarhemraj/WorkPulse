@@ -10,42 +10,12 @@ import 'package:workpulse/core/theme/design_tokens.dart';
 /// `context.colors`. This class assembles the Material component themes on top
 /// of it.
 class AppTheme {
-  // ---------------------------------------------------------------------
-  // Legacy colour constants.
-  //
-  // Prefer `context.colors` — these remain because a large amount of existing
-  // UI code references them directly, and they are migrated screen by screen.
-  // ---------------------------------------------------------------------
-  static const Color primaryColor = Color(0xFF0A84FF);
-  static const Color primaryDark = Color(0xFF0066CC);
-  static const Color accentGreen = Color(0xFF30D158);
-  static const Color accentOrange = Color(0xFFFF9F0A);
-  static const Color accentPurple = Color(0xFFBF5AF2);
-  static const Color accentRed = Color(0xFFFF453A);
-
+  // The fatal-error screen in main.dart renders before any Theme exists, so
+  // it cannot reach the palette through context. These few constants mirror
+  // WorkPulseColors.dark for that one pre-theme case.
   static const Color backgroundDark = Color(0xFF1A1A1C);
-  static const Color surfaceDark = Color(0xFF232326);
-  static const Color cardDark = Color(0xFF2C2C30);
-  static const Color textPrimaryDark = Color(0xFFF5F5F7);
   static const Color textSecondaryDark = Color(0xFFA1A1A8);
-  static const Color dividerDark = Color(0xFF3A3A3F);
-
-  static const Color backgroundLight = Color(0xFFF7F7F9);
-  static const Color surfaceLight = Color(0xFFFFFFFF);
-  static const Color cardLight = Color(0xFFF2F2F5);
-  static const Color textPrimaryLight = Color(0xFF1C1C1E);
-  static const Color textSecondaryLight = Color(0xFF60606A);
-  static const Color dividerLight = Color(0xFFE2E2E7);
-
-  static const BorderRadius controlRadius = Radii.mdAll;
-  static const BorderRadius dialogRadius = Radii.xlAll;
-
-  /// Resolves the active palette.
-  ///
-  /// Prefer `context.colors` in new code; this delegates to the same
-  /// [WorkPulseColors] extension and exists so existing call sites keep
-  /// working while screens are migrated.
-  static WorkPulseColors getColors(BuildContext context) => context.colors;
+  static const Color accentRed = Color(0xFFFF453A);
 
   static ThemeData get darkTheme =>
       _build(WorkPulseColors.dark, Brightness.dark);
@@ -365,7 +335,3 @@ class AppTheme {
     );
   }
 }
-
-/// Retained for source compatibility with code that imported the old palette
-/// struct from this library.
-typedef AppThemeColors = WorkPulseColors;

@@ -394,8 +394,8 @@ class AnalyticsService {
             microseconds: (totalIdleDur.inMicroseconds * fraction).round());
 
         final localSliceStart = slice.start.toLocal();
-        final dayKey =
-            DateTime(localSliceStart.year, localSliceStart.month, localSliceStart.day);
+        final dayKey = DateTime(
+            localSliceStart.year, localSliceStart.month, localSliceStart.day);
         final existing = dailyMap[dayKey] ??
             DailyActivityItem(
               date: dayKey,
@@ -500,9 +500,9 @@ class AnalyticsService {
     final localEnd = end.toLocal();
 
     while (cursor.isBefore(localEnd)) {
-      final nextMidnight =
-          DateTime(cursor.year, cursor.month, cursor.day + 1);
-      final sliceEnd = nextMidnight.isBefore(localEnd) ? nextMidnight : localEnd;
+      final nextMidnight = DateTime(cursor.year, cursor.month, cursor.day + 1);
+      final sliceEnd =
+          nextMidnight.isBefore(localEnd) ? nextMidnight : localEnd;
       slices.add(DateRange(start: cursor, end: sliceEnd));
       cursor = sliceEnd;
     }

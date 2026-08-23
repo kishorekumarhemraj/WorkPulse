@@ -45,6 +45,13 @@ class AppDialog extends StatelessWidget {
   /// primary footer button.
   final VoidCallback? onSubmit;
 
+  /// Whether the dialog scrolls its own body.
+  ///
+  /// Set false for a body that manages its own scrolling — a list that should
+  /// fill the available height rather than sit inside an outer scroll view.
+  /// Such a child gets a bounded height, so an Expanded inside it works.
+  final bool scrollableBody;
+
   const AppDialog({
     super.key,
     required this.title,
@@ -56,6 +63,7 @@ class AppDialog extends StatelessWidget {
     this.leadingFooter,
     this.width = DialogWidth.medium,
     this.onSubmit,
+    this.scrollableBody = true,
   });
 
   @override
@@ -128,10 +136,15 @@ class AppDialog extends StatelessWidget {
 
           // Body
           Flexible(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(Spacing.xl),
-              child: child,
-            ),
+            child: scrollableBody
+                ? SingleChildScrollView(
+                    padding: const EdgeInsets.all(Spacing.xl),
+                    child: child,
+                  )
+                : Padding(
+                    padding: const EdgeInsets.all(Spacing.xl),
+                    child: child,
+                  ),
           ),
 
           // Footer

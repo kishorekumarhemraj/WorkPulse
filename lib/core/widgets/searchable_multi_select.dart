@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:workpulse/core/theme/app_theme.dart';
+import 'package:workpulse/core/theme/app_colors.dart';
 
 /// One selectable option for [SearchableMultiSelect].
 class SearchableMultiSelectItem {
@@ -84,7 +84,7 @@ class _SearchableMultiSelectState extends State<SearchableMultiSelect> {
 
   @override
   Widget build(BuildContext context) {
-    final colors = AppTheme.getColors(context);
+    final colors = context.colors;
 
     final selectedItems = widget.selectedIds
         .map((id) => widget.allItems.where((i) => i.id == id).firstOrNull)
@@ -159,9 +159,7 @@ class _SearchableMultiSelectState extends State<SearchableMultiSelect> {
             decoration: BoxDecoration(
               color: colors.card,
               border: Border.all(
-                color: _focusNode.hasFocus
-                    ? AppTheme.primaryColor
-                    : colors.divider,
+                color: _focusNode.hasFocus ? colors.accent : colors.divider,
                 width: _focusNode.hasFocus ? 1.5 : 1.0,
               ),
               borderRadius: BorderRadius.circular(8),
