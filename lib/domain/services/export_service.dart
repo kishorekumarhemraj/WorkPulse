@@ -86,8 +86,10 @@ class ExportService {
   }) async {
     final allSessions =
         await _sessionRepository.getByDateRange(range.start, range.end);
-    final allWorkItems =
-        await _workItemRepository.getAll(workspaceId: workspaceId);
+    // includeArchived: true - a session for an archived task must still
+    // appear in Time Log / Session History / CSV / JSON export.
+    final allWorkItems = await _workItemRepository.getAll(
+        workspaceId: workspaceId, includeArchived: true);
     final allProjects =
         await _projectRepository.getAll(workspaceId: workspaceId);
     final allCategories =

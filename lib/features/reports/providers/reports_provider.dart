@@ -60,9 +60,12 @@ final sessionHistoryProvider =
   // Invalidate when timer state changes to reflect freshly stopped sessions
   ref.watch(timerProvider.select((s) => s.value?.activeSession?.id));
 
-  // Bridge Flutter DateTimeRange to pure-Dart DateRange for domain layer
+  // Bridge Flutter DateTimeRange to pure-Dart DateRange for domain layer.
+  // .toUtc() matters here: DateTimeRange is local wall-clock time from the
+  // date picker, but start_time/end_time are always stored as UTC.
   final domainCustomRange = customRange != null
-      ? DateRange(start: customRange.start, end: customRange.end)
+      ? DateRange(
+          start: customRange.start.toUtc(), end: customRange.end.toUtc())
       : null;
   final calculatedRange = timeRange.toDateRange(customRange: domainCustomRange);
 
