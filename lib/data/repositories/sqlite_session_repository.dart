@@ -52,7 +52,10 @@ class SqliteSessionRepository implements SessionRepository {
     final results = await _db.query(
       Tables.sessions,
       where: 'start_time >= ? AND start_time <= ?',
-      whereArgs: [start.toIso8601String(), end.toIso8601String()],
+      whereArgs: [
+        start.toUtc().toIso8601String(),
+        end.toUtc().toIso8601String()
+      ],
       orderBy: 'start_time DESC',
     );
 

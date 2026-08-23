@@ -39,7 +39,8 @@ class _SessionEditDialogState extends ConsumerState<SessionEditDialog> {
     final s = widget.record.session;
     _startTime = s.startTime.toLocal();
     _endTime = s.endTime?.toLocal();
-    _notesController = TextEditingController(text: widget.record.workItem.notes ?? '');
+    _notesController =
+        TextEditingController(text: widget.record.workItem.notes ?? '');
   }
 
   @override
@@ -64,7 +65,8 @@ class _SessionEditDialogState extends ConsumerState<SessionEditDialog> {
     if (time == null || !mounted) return;
 
     setState(() {
-      _startTime = DateTime(date.year, date.month, date.day, time.hour, time.minute);
+      _startTime =
+          DateTime(date.year, date.month, date.day, time.hour, time.minute);
     });
   }
 
@@ -85,7 +87,8 @@ class _SessionEditDialogState extends ConsumerState<SessionEditDialog> {
     if (time == null || !mounted) return;
 
     setState(() {
-      _endTime = DateTime(date.year, date.month, date.day, time.hour, time.minute);
+      _endTime =
+          DateTime(date.year, date.month, date.day, time.hour, time.minute);
     });
   }
 
@@ -94,7 +97,9 @@ class _SessionEditDialogState extends ConsumerState<SessionEditDialog> {
 
     if (_endTime != null && _endTime!.isBefore(_startTime)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('End time cannot be before start time'), backgroundColor: AppTheme.accentRed),
+        const SnackBar(
+            content: Text('End time cannot be before start time'),
+            backgroundColor: AppTheme.accentRed),
       );
       return;
     }
@@ -115,7 +120,9 @@ class _SessionEditDialogState extends ConsumerState<SessionEditDialog> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to update session: $e'), backgroundColor: AppTheme.accentRed),
+          SnackBar(
+              content: Text('Failed to update session: $e'),
+              backgroundColor: AppTheme.accentRed),
         );
       }
     } finally {
@@ -128,7 +135,10 @@ class _SessionEditDialogState extends ConsumerState<SessionEditDialog> {
   @override
   Widget build(BuildContext context) {
     final definitions = ref.watch(attributeDefinitionsProvider).value ?? [];
-    final sessionDefs = definitions.where((d) => d.scope == AttributeScope.session && d.enabled && !d.isArchived).toList();
+    final sessionDefs = definitions
+        .where((d) =>
+            d.scope == AttributeScope.session && d.enabled && !d.isArchived)
+        .toList();
     final dateFormat = DateFormat('yyyy-MM-dd HH:mm');
 
     return Dialog(
@@ -150,7 +160,8 @@ class _SessionEditDialogState extends ConsumerState<SessionEditDialog> {
                 // Header
                 Row(
                   children: [
-                    Icon(Icons.edit_calendar, size: 20, color: AppTheme.primaryColor),
+                    Icon(Icons.edit_calendar,
+                        size: 20, color: AppTheme.primaryColor),
                     SizedBox(width: 10),
                     Expanded(
                       child: Column(
@@ -158,11 +169,17 @@ class _SessionEditDialogState extends ConsumerState<SessionEditDialog> {
                         children: [
                           Text(
                             'Edit Session',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.getColors(context).textPrimary),
+                            style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: AppTheme.getColors(context).textPrimary),
                           ),
                           Text(
                             widget.record.workItem.name,
-                            style: TextStyle(fontSize: 12, color: AppTheme.getColors(context).textSecondary),
+                            style: TextStyle(
+                                fontSize: 12,
+                                color:
+                                    AppTheme.getColors(context).textSecondary),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -170,7 +187,9 @@ class _SessionEditDialogState extends ConsumerState<SessionEditDialog> {
                       ),
                     ),
                     IconButton(
-                      icon: Icon(Icons.close, size: 18, color: AppTheme.getColors(context).textSecondary),
+                      icon: Icon(Icons.close,
+                          size: 18,
+                          color: AppTheme.getColors(context).textSecondary),
                       onPressed: () => Navigator.of(context).pop(),
                     ),
                   ],
@@ -183,73 +202,130 @@ class _SessionEditDialogState extends ConsumerState<SessionEditDialog> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // Start Time Field
-                        Text('Start Time', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppTheme.getColors(context).textSecondary)),
+                        Text('Start Time',
+                            style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color:
+                                    AppTheme.getColors(context).textSecondary)),
                         SizedBox(height: 6),
-                        InkWell(
-                          onTap: _pickStartTime,
-                          borderRadius: BorderRadius.circular(8),
-                          child: Container(
-                            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                            decoration: BoxDecoration(
-                              color: AppTheme.getColors(context).card,
+                        Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                                color: AppTheme.getColors(context).divider),
+                          ),
+                          child: Material(
+                            color: AppTheme.getColors(context).card,
+                            borderRadius: BorderRadius.circular(8),
+                            child: InkWell(
+                              onTap: _pickStartTime,
                               borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: AppTheme.getColors(context).divider),
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(Icons.access_time, size: 16, color: AppTheme.primaryColor),
-                                SizedBox(width: 10),
-                                Text(dateFormat.format(_startTime), style: TextStyle(fontSize: 13, color: AppTheme.getColors(context).textPrimary)),
-                                const Spacer(),
-                                Text('Change', style: TextStyle(fontSize: 11, color: AppTheme.primaryColor)),
-                              ],
+                              child: Padding(
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 10),
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.access_time,
+                                        size: 16, color: AppTheme.primaryColor),
+                                    SizedBox(width: 10),
+                                    Text(dateFormat.format(_startTime),
+                                        style: TextStyle(
+                                            fontSize: 13,
+                                            color: AppTheme.getColors(context)
+                                                .textPrimary)),
+                                    const Spacer(),
+                                    Text('Change',
+                                        style: TextStyle(
+                                            fontSize: 11,
+                                            color: AppTheme.primaryColor)),
+                                  ],
+                                ),
+                              ),
                             ),
                           ),
                         ),
                         SizedBox(height: 16),
 
                         // End Time Field
-                        Text('End Time', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppTheme.getColors(context).textSecondary)),
+                        Text('End Time',
+                            style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color:
+                                    AppTheme.getColors(context).textSecondary)),
                         SizedBox(height: 6),
-                        InkWell(
-                          onTap: _pickEndTime,
-                          borderRadius: BorderRadius.circular(8),
-                          child: Container(
-                            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                            decoration: BoxDecoration(
-                              color: AppTheme.getColors(context).card,
+                        Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                                color: AppTheme.getColors(context).divider),
+                          ),
+                          child: Material(
+                            color: AppTheme.getColors(context).card,
+                            borderRadius: BorderRadius.circular(8),
+                            child: InkWell(
+                              onTap: _pickEndTime,
                               borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: AppTheme.getColors(context).divider),
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(Icons.check_circle_outline, size: 16, color: AppTheme.accentGreen),
-                                SizedBox(width: 10),
-                                Text(
-                                  _endTime != null ? dateFormat.format(_endTime!) : 'In Progress',
-                                  style: TextStyle(fontSize: 13, color: _endTime != null ? AppTheme.getColors(context).textPrimary : AppTheme.accentGreen),
+                              child: Padding(
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 10),
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.check_circle_outline,
+                                        size: 16, color: AppTheme.accentGreen),
+                                    SizedBox(width: 10),
+                                    Text(
+                                      _endTime != null
+                                          ? dateFormat.format(_endTime!)
+                                          : 'In Progress',
+                                      style: TextStyle(
+                                          fontSize: 13,
+                                          color: _endTime != null
+                                              ? AppTheme.getColors(context)
+                                                  .textPrimary
+                                              : AppTheme.accentGreen),
+                                    ),
+                                    const Spacer(),
+                                    Text('Change',
+                                        style: TextStyle(
+                                            fontSize: 11,
+                                            color: AppTheme.primaryColor)),
+                                  ],
                                 ),
-                                const Spacer(),
-                                Text('Change', style: TextStyle(fontSize: 11, color: AppTheme.primaryColor)),
-                              ],
+                              ),
                             ),
                           ),
                         ),
                         SizedBox(height: 16),
 
                         // Session Notes
-                        Text('Session Notes', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppTheme.getColors(context).textSecondary)),
+                        Text('Session Notes',
+                            style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color:
+                                    AppTheme.getColors(context).textSecondary)),
                         SizedBox(height: 6),
                         TextFormField(
                           controller: _notesController,
                           maxLines: 2,
-                          style: TextStyle(fontSize: 13, color: AppTheme.getColors(context).textPrimary),
+                          style: TextStyle(
+                              fontSize: 13,
+                              color: AppTheme.getColors(context).textPrimary),
                           decoration: InputDecoration(
                             hintText: 'What did you work on during this block?',
-                            hintStyle: TextStyle(fontSize: 12, color: AppTheme.getColors(context).textSecondary),
+                            hintStyle: TextStyle(
+                                fontSize: 12,
+                                color:
+                                    AppTheme.getColors(context).textSecondary),
                             filled: true,
                             fillColor: AppTheme.getColors(context).card,
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: AppTheme.getColors(context).divider)),
+                            border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: BorderSide(
+                                    color:
+                                        AppTheme.getColors(context).divider)),
                           ),
                         ),
 
@@ -258,12 +334,18 @@ class _SessionEditDialogState extends ConsumerState<SessionEditDialog> {
                           SizedBox(height: 20),
                           Divider(color: AppTheme.getColors(context).divider),
                           SizedBox(height: 10),
-                          Text('Session Custom Attributes', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.getColors(context).textPrimary)),
+                          Text('Session Custom Attributes',
+                              style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color:
+                                      AppTheme.getColors(context).textPrimary)),
                           SizedBox(height: 12),
                           DynamicAttributeFields(
                             definitions: sessionDefs,
                             values: _sessionAttributeValues,
-                            onValueChanged: (String id, dynamic val) => _sessionAttributeValues[id] = val,
+                            onValueChanged: (String id, dynamic val) =>
+                                _sessionAttributeValues[id] = val,
                           ),
                         ],
                       ],
@@ -278,7 +360,10 @@ class _SessionEditDialogState extends ConsumerState<SessionEditDialog> {
                   children: [
                     TextButton(
                       onPressed: () => Navigator.of(context).pop(),
-                      child: Text('Cancel', style: TextStyle(color: AppTheme.getColors(context).textSecondary)),
+                      child: Text('Cancel',
+                          style: TextStyle(
+                              color:
+                                  AppTheme.getColors(context).textSecondary)),
                     ),
                     SizedBox(width: 12),
                     ElevatedButton(
@@ -286,11 +371,17 @@ class _SessionEditDialogState extends ConsumerState<SessionEditDialog> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppTheme.primaryColor,
                         foregroundColor: Colors.white,
-                        padding: EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8)),
                       ),
                       child: _isSubmitting
-                          ? SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                          ? SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                  strokeWidth: 2, color: Colors.white))
                           : Text('Save Changes'),
                     ),
                   ],
