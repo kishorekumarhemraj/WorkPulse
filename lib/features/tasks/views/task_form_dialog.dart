@@ -181,7 +181,7 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
       }
 
       if (valuesToSave.isNotEmpty) {
-        await ref.read(workItemAttributeValuesFamilyProvider(result.id).notifier).saveValues(valuesToSave);
+        await ref.read(workItemAttributeValuesControllerProvider).saveValues(result.id, valuesToSave);
       }
 
       if (mounted) Navigator.of(context).pop(result);

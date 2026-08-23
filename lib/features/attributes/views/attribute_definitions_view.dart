@@ -66,25 +66,28 @@ class _AttributeDefinitionsViewState extends ConsumerState<AttributeDefinitionsV
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Custom Attributes',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: AppTheme.textPrimaryDark,
-                        letterSpacing: -0.5,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Custom Attributes',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.textPrimaryDark,
+                          letterSpacing: -0.5,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Configure organisation-specific metadata (Jira Key, Cost Centre, Billable, etc.)',
-                      style: TextStyle(fontSize: 13, color: AppTheme.textSecondaryDark.withValues(alpha: 0.8)),
-                    ),
-                  ],
+                      const SizedBox(height: 4),
+                      Text(
+                        'Configure organisation-specific metadata (Jira Key, Cost Centre, Billable, etc.)',
+                        style: TextStyle(fontSize: 13, color: AppTheme.textSecondaryDark.withValues(alpha: 0.8)),
+                      ),
+                    ],
+                  ),
                 ),
+                const SizedBox(width: 16),
                 ElevatedButton.icon(
                   onPressed: () => AttributeDefinitionFormDialog.show(context),
                   icon: const Icon(Icons.add, size: 16),
@@ -239,13 +242,15 @@ class _AttributeDefinitionsViewState extends ConsumerState<AttributeDefinitionsV
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
+                Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 8,
+                  runSpacing: 4,
                   children: [
                     Text(
                       def.name,
                       style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppTheme.textPrimaryDark),
                     ),
-                    const SizedBox(width: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
@@ -258,7 +263,6 @@ class _AttributeDefinitionsViewState extends ConsumerState<AttributeDefinitionsV
                         style: const TextStyle(fontSize: 11, fontFamily: 'Courier', color: AppTheme.textSecondaryDark),
                       ),
                     ),
-                    const SizedBox(width: 6),
                     // Scope Pill
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),

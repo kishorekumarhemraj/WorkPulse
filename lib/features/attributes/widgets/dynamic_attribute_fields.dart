@@ -63,7 +63,7 @@ class DynamicAttributeFields extends ConsumerWidget {
 
       case AttributeType.number:
         return TextFormField(
-          initialValue: currentValue != null ? currentValue.toString() : null,
+          initialValue: currentValue?.toString(),
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
           style: const TextStyle(fontSize: 13, color: AppTheme.textPrimaryDark),
           decoration: InputDecoration(
@@ -88,24 +88,38 @@ class DynamicAttributeFields extends ConsumerWidget {
       case AttributeType.boolean:
         final boolVal = currentValue == true;
         return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
             color: AppTheme.cardDark,
             borderRadius: BorderRadius.circular(8),
             border: Border.all(color: AppTheme.dividerDark),
           ),
-          child: SwitchListTile(
-            dense: true,
-            title: Text(
-              '${def.name}${def.required ? ' *' : ''}',
-              style: const TextStyle(fontSize: 13, color: AppTheme.textPrimaryDark),
-            ),
-            subtitle: def.description != null
-                ? Text(def.description!, style: const TextStyle(fontSize: 11, color: AppTheme.textSecondaryDark))
-                : null,
-            value: boolVal,
-            onChanged: (val) => onValueChanged(def.id, val),
-            activeTrackColor: AppTheme.primaryColor,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${def.name}${def.required ? ' *' : ''}',
+                      style: const TextStyle(fontSize: 13, color: AppTheme.textPrimaryDark),
+                    ),
+                    if (def.description != null) ...[
+                      const SizedBox(height: 2),
+                      Text(def.description!, style: const TextStyle(fontSize: 11, color: AppTheme.textSecondaryDark)),
+                    ],
+                  ],
+                ),
+              ),
+              Transform.scale(
+                scale: 0.85,
+                child: Switch(
+                  value: boolVal,
+                  onChanged: (val) => onValueChanged(def.id, val),
+                  activeTrackColor: AppTheme.primaryColor,
+                ),
+              ),
+            ],
           ),
         );
 
@@ -116,7 +130,7 @@ class DynamicAttributeFields extends ConsumerWidget {
           error: (_, __) => const SizedBox.shrink(),
           data: (options) {
             return DropdownButtonFormField<String>(
-              value: options.any((o) => o.id == currentValue) ? currentValue as String? : null,
+              initialValue: options.any((o) => o.id == currentValue) ? currentValue as String? : null,
               dropdownColor: AppTheme.surfaceDark,
               style: const TextStyle(fontSize: 13, color: AppTheme.textPrimaryDark),
               decoration: InputDecoration(

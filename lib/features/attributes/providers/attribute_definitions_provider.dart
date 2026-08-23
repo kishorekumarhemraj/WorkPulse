@@ -96,19 +96,23 @@ class AttributeDefinitionsNotifier extends AsyncNotifier<List<AttributeDefinitio
   }
 }
 
-final attributeOptionsFamilyProvider = AsyncNotifierProvider.family<AttributeOptionsNotifier, List<AttributeOption>, String>(
-  AttributeOptionsNotifier.new,
-);
+final attributeOptionsFamilyProvider = FutureProvider.family<List<AttributeOption>, String>((ref, definitionId) async {
+  final repo = ref.watch(attributeRepositoryProvider);
+  return repo.getOptions(definitionId, includeArchived: false);
+});
 
-class AttributeOptionsNotifier extends FamilyAsyncNotifier<List<AttributeOption>, String> {
-  AttributeRepository get _repo => ref.read(attributeRepositoryProvider);
+final attributeOptionsControllerProvider = Provider<AttributeOptionsController>((ref) {
+  return AttributeOptionsController(ref);
+});
 
-  @override
-  Future<List<AttributeOption>> build(String arg) async {
-    return _repo.getOptions(arg, includeArchived: false);
-  }
+class AttributeOptionsController {
+  final Ref _ref;
+  AttributeOptionsController(this._ref);
+
+  AttributeRepository get _repo => _ref.read(attributeRepositoryProvider);
 
   Future<AttributeOption> createOption({
+    required String definitionId,
     required String value,
     required String label,
     String? colorHex,
@@ -118,7 +122,7 @@ class AttributeOptionsNotifier extends FamilyAsyncNotifier<List<AttributeOption>
     final now = DateTime.now().toUtc();
     final option = AttributeOption(
       id: _uuid.v4(),
-      attributeDefinitionId: arg,
+      attributeDefinitionId: definitionId,
       value: value.trim(),
       label: label.trim(),
       colorHex: colorHex,
@@ -128,48 +132,51 @@ class AttributeOptionsNotifier extends FamilyAsyncNotifier<List<AttributeOption>
     );
 
     final created = await _repo.createOption(option);
-    ref.invalidateSelf();
+    _ref.invalidate(attributeOptionsFamilyProvider(definitionId));
     return created;
   }
 
   Future<AttributeOption> updateOption(AttributeOption option) async {
     final updated = await _repo.updateOption(option);
-    ref.invalidateSelf();
+    _ref.invalidate(attributeOptionsFamilyProvider(option.attributeDefinitionId));
     return updated;
   }
 
-  Future<void> archiveOption(String optionId) async {
+  Future<void> archiveOption(String definitionId, String optionId) async {
     await _repo.archiveOption(optionId);
-    ref.invalidateSelf();
+    _ref.invalidate(attributeOptionsFamilyProvider(definitionId));
   }
 
-  Future<void> deleteOption(String optionId) async {
+  Future<void> deleteOption(String definitionId, String optionId) async {
     await _repo.deleteOption(optionId);
-    ref.invalidateSelf();
+    _ref.invalidate(attributeOptionsFamilyProvider(definitionId));
   }
 }
 
-final workItemAttributeValuesFamilyProvider = AsyncNotifierProvider.family<WorkItemAttributeValuesNotifier, List<WorkItemAttributeValue>, String>(
-  WorkItemAttributeValuesNotifier.new,
-);
+final workItemAttributeValuesFamilyProvider = FutureProvider.family<List<WorkItemAttributeValue>, String>((ref, workItemId) async {
+  final repo = ref.watch(attributeRepositoryProvider);
+  return repo.getWorkItemValues(workItemId);
+});
 
-class WorkItemAttributeValuesNotifier extends FamilyAsyncNotifier<List<WorkItemAttributeValue>, String> {
-  AttributeRepository get _repo => ref.read(attributeRepositoryProvider);
+final workItemAttributeValuesControllerProvider = Provider<WorkItemAttributeValuesController>((ref) {
+  return WorkItemAttributeValuesController(ref);
+});
 
-  @override
-  Future<List<WorkItemAttributeValue>> build(String arg) async {
-    return _repo.getWorkItemValues(arg);
-  }
+class WorkItemAttributeValuesController {
+  final Ref _ref;
+  WorkItemAttributeValuesController(this._ref);
+
+  AttributeRepository get _repo => _ref.read(attributeRepositoryProvider);
 
   Future<void> setValue(WorkItemAttributeValue value) async {
     await _repo.setWorkItemValue(value);
-    ref.invalidateSelf();
+    _ref.invalidate(workItemAttributeValuesFamilyProvider(value.workItemId));
   }
 
-  Future<void> saveValues(List<WorkItemAttributeValue> values) async {
+  Future<void> saveValues(String workItemId, List<WorkItemAttributeValue> values) async {
     for (final v in values) {
       await _repo.setWorkItemValue(v);
     }
-    ref.invalidateSelf();
+    _ref.invalidate(workItemAttributeValuesFamilyProvider(workItemId));
   }
 }
