@@ -382,7 +382,7 @@ class _ValueAxis extends StatelessWidget {
           text,
           textAlign: TextAlign.right,
           style: AppTypography.numeric(
-            fontSize: 10,
+            fontSize: 11,
             color: colors.textTertiary,
           ),
         );

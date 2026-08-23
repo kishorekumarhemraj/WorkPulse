@@ -46,24 +46,6 @@ void main() {
       }
     });
 
-    testWidgets('getColors shim resolves to the same palette as context.colors',
-        (tester) async {
-      late WorkPulseColors viaShim;
-      late WorkPulseColors viaExtension;
-      await tester.pumpWidget(
-        host(
-          Builder(
-            builder: (context) {
-              viaShim = AppTheme.getColors(context);
-              viaExtension = context.colors;
-              return const SizedBox();
-            },
-          ),
-        ),
-      );
-      expect(identical(viaShim, viaExtension), isTrue);
-    });
-
     test('numeric styles use tabular figures so tickers do not jitter', () {
       final style = AppTypography.numeric();
       expect(style.fontFamily, AppTypography.monoFontFamily);

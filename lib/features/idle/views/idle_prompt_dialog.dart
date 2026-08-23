@@ -2,7 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:workpulse/core/theme/app_theme.dart';
+import 'package:workpulse/core/theme/app_colors.dart';
+import 'package:workpulse/core/theme/app_typography.dart';
+import 'package:workpulse/core/theme/design_tokens.dart';
+import 'package:workpulse/core/widgets/app_dialog.dart';
+import 'package:workpulse/core/widgets/keycap.dart';
 import 'package:workpulse/domain/models/work_item_model.dart';
 import 'package:workpulse/features/idle/providers/idle_provider.dart';
 
@@ -85,6 +89,8 @@ class _IdlePromptDialogState extends ConsumerState<IdlePromptDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
+    final theme = Theme.of(context);
     final timeStr = DateFormat.jm().format(widget.idleStartTime.toLocal());
     final durationStr = _formatDuration(widget.idleDuration);
 
@@ -106,173 +112,122 @@ class _IdlePromptDialogState extends ConsumerState<IdlePromptDialog> {
         }
         return KeyEventResult.ignored;
       },
-      child: AlertDialog(
-        backgroundColor: AppTheme.getColors(context).surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: AppTheme.dialogRadius,
-          side:
-              BorderSide(color: AppTheme.getColors(context).divider, width: 1),
-        ),
-        titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 12),
-        contentPadding: const EdgeInsets.fromLTRB(24, 0, 24, 20),
-        actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-        title: Row(
+      child: AppDialog(
+        title: 'Inactivity Detected',
+        subtitle: 'You were away while the timer was running.',
+        icon: Icons.nightlight_round,
+        iconColor: colors.warning,
+        width: DialogWidth.medium,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // How long they were away — the number that drives the decision.
             Container(
-              padding: const EdgeInsets.all(10),
+              width: double.infinity,
+              padding: const EdgeInsets.all(Spacing.lg),
               decoration: BoxDecoration(
-                color: AppTheme.accentOrange.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(10),
+                color: colors.warningSubtle,
+                borderRadius: Radii.lgAll,
+                border: Border.all(
+                  color: colors.warning.withValues(alpha: 0.3),
+                ),
               ),
-              child: const Icon(Icons.nightlight_round,
-                  color: AppTheme.accentOrange, size: 24),
+              child: Column(
+                children: [
+                  Text(
+                    durationStr,
+                    style: AppTypography.numeric(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w700,
+                      color: colors.warning,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                  const SizedBox(height: Spacing.xs),
+                  Text(
+                    'Idle period started at $timeStr',
+                    style: theme.textTheme.bodySmall,
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(width: 14),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Inactivity Detected',
-                  style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: AppTheme.getColors(context).textPrimary),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  'You were away while timer was running',
-                  style: TextStyle(
-                      fontSize: 12,
-                      color: AppTheme.getColors(context).textSecondary),
-                ),
-              ],
+            const SizedBox(height: Spacing.md + 2),
+
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(
+                horizontal: Spacing.md + 2,
+                vertical: Spacing.sm + 2,
+              ),
+              decoration: BoxDecoration(
+                color: colors.card,
+                borderRadius: Radii.mdAll,
+                border: Border.all(color: colors.divider),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.timer_outlined,
+                    size: IconSizes.md,
+                    color: colors.success,
+                  ),
+                  const SizedBox(width: Spacing.sm + 2),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Active Task',
+                          style: theme.textTheme.bodySmall
+                              ?.copyWith(color: colors.textTertiary),
+                        ),
+                        Text(
+                          widget.activeWorkItem.name,
+                          style: theme.textTheme.titleSmall,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: Spacing.lg),
+
+            Text(
+              'How would you like to handle this time?',
+              style: theme.textTheme.titleSmall,
+            ),
+            const SizedBox(height: Spacing.sm + 2),
+
+            _buildOptionTile(
+              title: 'Keep Tracking',
+              subtitle: 'Count this entire time as active work',
+              shortcut: '↩',
+              icon: Icons.play_arrow_outlined,
+              color: colors.accent,
+              onTap: _handleKeepTracking,
+            ),
+            const SizedBox(height: Spacing.sm),
+            _buildOptionTile(
+              title: 'Mark as Idle & Resume',
+              subtitle: 'Discard the idle time and restart the timer from now',
+              shortcut: 'M',
+              icon: Icons.replay,
+              color: colors.info,
+              onTap: _handleMarkIdle,
+            ),
+            const SizedBox(height: Spacing.sm),
+            _buildOptionTile(
+              title: 'Stop Timer at Inactivity',
+              subtitle: 'End tracking at $timeStr, when the inactivity began',
+              shortcut: 'S',
+              icon: Icons.stop_circle_outlined,
+              color: colors.danger,
+              onTap: _handleStopSession,
             ),
           ],
-        ),
-        content: SizedBox(
-          width: 480,
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Idle Duration Box
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: AppTheme.getColors(context).card,
-                    borderRadius: BorderRadius.circular(10),
-                    border:
-                        Border.all(color: AppTheme.getColors(context).divider),
-                  ),
-                  child: Column(
-                    children: [
-                      Text(
-                        durationStr,
-                        style: const TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.accentOrange,
-                          letterSpacing: -0.5,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Idle period started at $timeStr',
-                        style: TextStyle(
-                            fontSize: 12,
-                            color: AppTheme.getColors(context).textSecondary),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 14),
-
-                // Active Task Card
-                Container(
-                  width: double.infinity,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: AppTheme.getColors(context).background,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                        color: AppTheme.getColors(context)
-                            .divider
-                            .withValues(alpha: 0.5)),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.timer_outlined,
-                          size: 16, color: AppTheme.accentGreen),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Active Task',
-                                style: TextStyle(
-                                    fontSize: 11,
-                                    color: AppTheme.getColors(context)
-                                        .textSecondary)),
-                            Text(
-                              widget.activeWorkItem.name,
-                              style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                  color:
-                                      AppTheme.getColors(context).textPrimary),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                Text(
-                  'How would you like to handle this time?',
-                  style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                      color: AppTheme.getColors(context).textPrimary),
-                ),
-                const SizedBox(height: 10),
-
-                // Action Options list
-                _buildOptionTile(
-                  title: 'Keep Tracking',
-                  subtitle: 'Count this entire time as active work (Enter)',
-                  shortcut: 'Enter',
-                  icon: Icons.play_arrow_outlined,
-                  color: AppTheme.primaryColor,
-                  onTap: _handleKeepTracking,
-                ),
-                const SizedBox(height: 8),
-                _buildOptionTile(
-                  title: 'Mark as Idle & Resume',
-                  subtitle: 'Discard idle time and restart timer from now (M)',
-                  shortcut: 'M',
-                  icon: Icons.replay,
-                  color: AppTheme.accentPurple,
-                  onTap: _handleMarkIdle,
-                ),
-                const SizedBox(height: 8),
-                _buildOptionTile(
-                  title: 'Stop Timer at Inactivity',
-                  subtitle:
-                      'End tracking at $timeStr when inactivity began (S / Esc)',
-                  shortcut: 'S',
-                  icon: Icons.stop_circle_outlined,
-                  color: AppTheme.accentRed,
-                  onTap: _handleStopSession,
-                ),
-              ],
-            ),
-          ),
         ),
       ),
     );
@@ -286,67 +241,49 @@ class _IdlePromptDialogState extends ConsumerState<IdlePromptDialog> {
     required Color color,
     required VoidCallback onTap,
   }) {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppTheme.getColors(context).divider),
-      ),
+    final colors = context.colors;
+    final theme = Theme.of(context);
+
+    return Semantics(
+      button: true,
+      label: '$title. $subtitle',
       child: Material(
-        color: AppTheme.getColors(context).card,
-        borderRadius: BorderRadius.circular(8),
+        color: colors.card,
+        borderRadius: Radii.mdAll,
         child: InkWell(
           onTap: _isProcessing ? null : onTap,
-          borderRadius: BorderRadius.circular(8),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          borderRadius: Radii.mdAll,
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: Radii.mdAll,
+              border: Border.all(color: colors.divider),
+            ),
+            padding: const EdgeInsets.symmetric(
+              horizontal: Spacing.md,
+              vertical: Spacing.sm + 2,
+            ),
             child: Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(6),
+                  padding: const EdgeInsets.all(Spacing.xs + 2),
                   decoration: BoxDecoration(
                     color: color.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(6),
+                    borderRadius: Radii.smAll,
                   ),
-                  child: Icon(icon, color: color, size: 18),
+                  child: Icon(icon, color: color, size: IconSizes.lg),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: Spacing.md),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        title,
-                        style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: AppTheme.getColors(context).textPrimary),
-                      ),
-                      Text(
-                        subtitle,
-                        style: TextStyle(
-                            fontSize: 11,
-                            color: AppTheme.getColors(context).textSecondary),
-                      ),
+                      Text(title, style: theme.textTheme.titleSmall),
+                      Text(subtitle, style: theme.textTheme.bodySmall),
                     ],
                   ),
                 ),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: AppTheme.getColors(context).background,
-                    borderRadius: BorderRadius.circular(4),
-                    border:
-                        Border.all(color: AppTheme.getColors(context).divider),
-                  ),
-                  child: Text(
-                    shortcut,
-                    style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                        color: AppTheme.getColors(context).textSecondary),
-                  ),
-                ),
+                const SizedBox(width: Spacing.sm),
+                Keycap(shortcut),
               ],
             ),
           ),

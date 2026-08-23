@@ -144,6 +144,13 @@ void main() {
     testWidgets(
         'AttributeDefinitionsView renders title, search, filter chips, and cards',
         (tester) async {
+      // The app's own window is 1200x800; the default 800x600 test surface is
+      // shorter than WorkPulse ever runs.
+      tester.view.physicalSize = const Size(1280, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
@@ -175,6 +182,13 @@ void main() {
     });
 
     testWidgets('filtering by scope chips updates card list', (tester) async {
+      // The app's own window is 1200x800; the default 800x600 test surface is
+      // shorter than WorkPulse ever runs.
+      tester.view.physicalSize = const Size(1280, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
@@ -215,6 +229,13 @@ void main() {
     testWidgets(
         'AttributeDefinitionFormDialog validates required name and creates attribute',
         (tester) async {
+      // The app's own window is 1200x800; the default 800x600 test surface is
+      // shorter than WorkPulse ever runs.
+      tester.view.physicalSize = const Size(1280, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
       final fakeNotifier = _FakeAttributeDefinitionsNotifier([]);
 
       await tester.pumpWidget(
@@ -253,6 +274,13 @@ void main() {
 
     testWidgets('AttributeOptionsEditorDialog renders and adds select options',
         (tester) async {
+      // The app's own window is 1200x800; the default 800x600 test surface is
+      // shorter than WorkPulse ever runs.
+      tester.view.physicalSize = const Size(1280, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
       final optionsList = <AttributeOption>[testOption1];
       final fakeOptController = _FakeAttributeOptionsController(optionsList);
 
@@ -293,6 +321,13 @@ void main() {
     testWidgets(
         'DynamicAttributeFields dynamically renders text and boolean input controls',
         (tester) async {
+      // The app's own window is 1200x800; the default 800x600 test surface is
+      // shorter than WorkPulse ever runs.
+      tester.view.physicalSize = const Size(1280, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
       final boolDef = AttributeDefinition(
         id: 'def-bool',
         workspaceId: testWorkspace.id,

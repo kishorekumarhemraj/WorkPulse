@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:workpulse/core/theme/app_theme.dart';
+import 'package:workpulse/core/theme/app_colors.dart';
+import 'package:workpulse/core/widgets/keycap.dart';
 import 'package:workpulse/core/theme/color_utils.dart';
 import 'package:workpulse/core/theme/icon_utils.dart';
 import 'package:workpulse/domain/models/attribute_model.dart';
@@ -154,7 +155,7 @@ class _QuickCaptureStandaloneViewState
     final totalItems = matchingTasks.length + (showCreateOption ? 1 : 0);
 
     return Scaffold(
-      backgroundColor: AppTheme.getColors(context).surface,
+      backgroundColor: context.colors.surface,
       body: Focus(
         autofocus: true,
         onKeyEvent: (node, event) {
@@ -191,10 +192,10 @@ class _QuickCaptureStandaloneViewState
           width: double.infinity,
           height: double.infinity,
           decoration: BoxDecoration(
-            color: AppTheme.getColors(context).surface,
+            color: context.colors.surface,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: AppTheme.getColors(context).divider,
+              color: context.colors.divider,
               width: 1.2,
             ),
           ),
@@ -207,17 +208,17 @@ class _QuickCaptureStandaloneViewState
                 decoration: BoxDecoration(
                   border: Border(
                     bottom: BorderSide(
-                      color: AppTheme.getColors(context).divider,
+                      color: context.colors.divider,
                       width: 1,
                     ),
                   ),
                 ),
                 child: Row(
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.search,
                       size: 22,
-                      color: AppTheme.primaryColor,
+                      color: context.colors.accent,
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -227,14 +228,14 @@ class _QuickCaptureStandaloneViewState
                         autofocus: true,
                         style: TextStyle(
                           fontSize: 16,
-                          color: AppTheme.getColors(context).textPrimary,
+                          color: context.colors.textPrimary,
                           fontWeight: FontWeight.w500,
                         ),
                         decoration: InputDecoration(
                           hintText: 'Search tasks or type new task name...',
                           hintStyle: TextStyle(
                             fontSize: 15,
-                            color: AppTheme.getColors(context).textSecondary,
+                            color: context.colors.textSecondary,
                           ),
                           border: InputBorder.none,
                           contentPadding: EdgeInsets.zero,
@@ -247,10 +248,11 @@ class _QuickCaptureStandaloneViewState
                     ),
                     if (qcState.query.isNotEmpty)
                       IconButton(
+                        tooltip: 'Clear search',
                         icon: Icon(
                           Icons.close,
                           size: 16,
-                          color: AppTheme.getColors(context).textSecondary,
+                          color: context.colors.textSecondary,
                         ),
                         onPressed: () {
                           _searchController.clear();
@@ -258,49 +260,9 @@ class _QuickCaptureStandaloneViewState
                         },
                       ),
                     // Shortcut Badges
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 3,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppTheme.getColors(context).card,
-                        borderRadius: BorderRadius.circular(4),
-                        border: Border.all(
-                          color: AppTheme.getColors(context).divider,
-                        ),
-                      ),
-                      child: Text(
-                        '↵ Track',
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.getColors(context).textSecondary,
-                        ),
-                      ),
-                    ),
+                    const Keycap('↵ Track'),
                     const SizedBox(width: 6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 3,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppTheme.getColors(context).card,
-                        borderRadius: BorderRadius.circular(4),
-                        border: Border.all(
-                          color: AppTheme.getColors(context).divider,
-                        ),
-                      ),
-                      child: Text(
-                        'esc',
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.getColors(context).textSecondary,
-                        ),
-                      ),
-                    ),
+                    const Keycap('esc'),
                   ],
                 ),
               ),
@@ -323,7 +285,7 @@ class _QuickCaptureStandaloneViewState
                             'Type a task name to track',
                             style: TextStyle(
                               fontSize: 13,
-                              color: AppTheme.getColors(context).textSecondary,
+                              color: context.colors.textSecondary,
                             ),
                           ),
                         ),
@@ -357,13 +319,13 @@ class _QuickCaptureStandaloneViewState
               Container(
                 padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
                 decoration: BoxDecoration(
-                  color: AppTheme.getColors(context).card,
+                  color: context.colors.card,
                   borderRadius: const BorderRadius.vertical(
                     bottom: Radius.circular(14),
                   ),
                   border: Border(
                     top: BorderSide(
-                      color: AppTheme.getColors(context).divider,
+                      color: context.colors.divider,
                       width: 1,
                     ),
                   ),
@@ -377,7 +339,7 @@ class _QuickCaptureStandaloneViewState
                           Icon(
                             Icons.folder_outlined,
                             size: 14,
-                            color: AppTheme.getColors(context).textSecondary,
+                            color: context.colors.textSecondary,
                           ),
                           const SizedBox(width: 6),
                           DropdownButton<String>(
@@ -386,12 +348,12 @@ class _QuickCaptureStandaloneViewState
                             )
                                 ? qcState.selectedProjectId
                                 : projects.first.id,
-                            dropdownColor: AppTheme.getColors(context).surface,
+                            dropdownColor: context.colors.surface,
                             underline: const SizedBox.shrink(),
                             isDense: true,
                             style: TextStyle(
                               fontSize: 12,
-                              color: AppTheme.getColors(context).textPrimary,
+                              color: context.colors.textPrimary,
                             ),
                             items: projects.map((p) {
                               final col = ColorUtils.parseHex(p.colorHex);
@@ -413,8 +375,7 @@ class _QuickCaptureStandaloneViewState
                                       p.name,
                                       style: TextStyle(
                                         fontSize: 12,
-                                        color: AppTheme.getColors(context)
-                                            .textPrimary,
+                                        color: context.colors.textPrimary,
                                       ),
                                     ),
                                   ],
@@ -431,7 +392,7 @@ class _QuickCaptureStandaloneViewState
                           Icon(
                             Icons.category_outlined,
                             size: 14,
-                            color: AppTheme.getColors(context).textSecondary,
+                            color: context.colors.textSecondary,
                           ),
                           const SizedBox(width: 6),
                           DropdownButton<String>(
@@ -440,12 +401,12 @@ class _QuickCaptureStandaloneViewState
                             )
                                 ? qcState.selectedCategoryId
                                 : categories.first.id,
-                            dropdownColor: AppTheme.getColors(context).surface,
+                            dropdownColor: context.colors.surface,
                             underline: const SizedBox.shrink(),
                             isDense: true,
                             style: TextStyle(
                               fontSize: 12,
-                              color: AppTheme.getColors(context).textPrimary,
+                              color: context.colors.textPrimary,
                             ),
                             items: categories.map((c) {
                               return DropdownMenuItem(
@@ -456,15 +417,14 @@ class _QuickCaptureStandaloneViewState
                                     Icon(
                                       IconUtils.getIcon(c.iconName),
                                       size: 12,
-                                      color: AppTheme.primaryColor,
+                                      color: context.colors.accent,
                                     ),
                                     const SizedBox(width: 6),
                                     Text(
                                       c.name,
                                       style: TextStyle(
                                         fontSize: 12,
-                                        color: AppTheme.getColors(context)
-                                            .textPrimary,
+                                        color: context.colors.textPrimary,
                                       ),
                                     ),
                                   ],
@@ -505,7 +465,7 @@ class _QuickCaptureStandaloneViewState
                               label: person.name,
                               icon: Icons.person_outline,
                               selected: isPersonSelected,
-                              color: AppTheme.primaryColor,
+                              color: context.colors.accent,
                               onTap: () => ref
                                   .read(quickCaptureProvider.notifier)
                                   .togglePerson(person.id),
@@ -548,13 +508,12 @@ class _QuickCaptureStandaloneViewState
     return Container(
       decoration: BoxDecoration(
         border: isSelected
-            ? const Border(
-                left: BorderSide(color: AppTheme.primaryColor, width: 3))
+            ? Border(left: BorderSide(color: context.colors.accent, width: 3))
             : null,
       ),
       child: Material(
         color: isSelected
-            ? AppTheme.primaryColor.withValues(alpha: 0.15)
+            ? context.colors.accent.withValues(alpha: 0.15)
             : Colors.transparent,
         child: InkWell(
           onTap: () {
@@ -569,8 +528,8 @@ class _QuickCaptureStandaloneViewState
                   Icons.play_circle_outline,
                   size: 18,
                   color: isSelected
-                      ? AppTheme.primaryColor
-                      : AppTheme.getColors(context).textSecondary,
+                      ? context.colors.accent
+                      : context.colors.textSecondary,
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -584,8 +543,8 @@ class _QuickCaptureStandaloneViewState
                           fontWeight:
                               isSelected ? FontWeight.w600 : FontWeight.w500,
                           color: isSelected
-                              ? AppTheme.primaryColor
-                              : AppTheme.getColors(context).textPrimary,
+                              ? context.colors.accent
+                              : context.colors.textPrimary,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -606,7 +565,7 @@ class _QuickCaptureStandaloneViewState
                             Text(
                               project.name,
                               style: TextStyle(
-                                fontSize: 11,
+                                fontSize: 12,
                                 color: projectColor,
                               ),
                             ),
@@ -616,9 +575,8 @@ class _QuickCaptureStandaloneViewState
                             Text(
                               category.name,
                               style: TextStyle(
-                                fontSize: 11,
-                                color:
-                                    AppTheme.getColors(context).textSecondary,
+                                fontSize: 12,
+                                color: context.colors.textSecondary,
                               ),
                             ),
                           ],
@@ -628,11 +586,11 @@ class _QuickCaptureStandaloneViewState
                   ),
                 ),
                 if (isSelected)
-                  const Text(
+                  Text(
                     '↵ to track',
                     style: TextStyle(
-                      fontSize: 11,
-                      color: AppTheme.primaryColor,
+                      fontSize: 12,
+                      color: context.colors.accent,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -648,13 +606,12 @@ class _QuickCaptureStandaloneViewState
     return Container(
       decoration: BoxDecoration(
         border: isSelected
-            ? const Border(
-                left: BorderSide(color: AppTheme.accentGreen, width: 3))
+            ? Border(left: BorderSide(color: context.colors.success, width: 3))
             : null,
       ),
       child: Material(
         color: isSelected
-            ? AppTheme.accentGreen.withValues(alpha: 0.15)
+            ? context.colors.success.withValues(alpha: 0.15)
             : Colors.transparent,
         child: InkWell(
           onTap: () {
@@ -668,8 +625,8 @@ class _QuickCaptureStandaloneViewState
                   Icons.add_circle_outline,
                   size: 18,
                   color: isSelected
-                      ? AppTheme.accentGreen
-                      : AppTheme.accentGreen.withValues(alpha: 0.7),
+                      ? context.colors.success
+                      : context.colors.success.withValues(alpha: 0.7),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -678,7 +635,7 @@ class _QuickCaptureStandaloneViewState
                       text: 'Create and track new task: ',
                       style: TextStyle(
                         fontSize: 13,
-                        color: AppTheme.getColors(context).textSecondary,
+                        color: context.colors.textSecondary,
                       ),
                       children: [
                         TextSpan(
@@ -686,7 +643,7 @@ class _QuickCaptureStandaloneViewState
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.bold,
-                            color: AppTheme.getColors(context).textPrimary,
+                            color: context.colors.textPrimary,
                           ),
                         ),
                       ],
@@ -695,11 +652,11 @@ class _QuickCaptureStandaloneViewState
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                const Text(
+                Text(
                   '↵ to create',
                   style: TextStyle(
-                    fontSize: 11,
-                    color: AppTheme.accentGreen,
+                    fontSize: 12,
+                    color: context.colors.success,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -735,12 +692,11 @@ class _StandaloneQuickChip extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
         decoration: BoxDecoration(
-          color: selected
-              ? color.withValues(alpha: 0.28)
-              : AppTheme.getColors(context).surface,
+          color:
+              selected ? color.withValues(alpha: 0.28) : context.colors.surface,
           borderRadius: BorderRadius.circular(5),
           border: Border.all(
-            color: selected ? color : AppTheme.getColors(context).divider,
+            color: selected ? color : context.colors.divider,
           ),
         ),
         child: Row(
@@ -749,17 +705,14 @@ class _StandaloneQuickChip extends StatelessWidget {
             Icon(
               icon,
               size: 11,
-              color:
-                  selected ? color : AppTheme.getColors(context).textSecondary,
+              color: selected ? color : context.colors.textSecondary,
             ),
             const SizedBox(width: 4),
             Text(
               label,
               style: TextStyle(
-                fontSize: 10,
-                color: selected
-                    ? color
-                    : AppTheme.getColors(context).textSecondary,
+                fontSize: 11,
+                color: selected ? color : context.colors.textSecondary,
                 fontWeight: selected ? FontWeight.bold : FontWeight.normal,
               ),
             ),

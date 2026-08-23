@@ -62,11 +62,21 @@ void main() {
       final now = DateTime.now().toUtc();
 
       final proj = await projectRepo.create(
-        Project(id: 'proj-1', workspaceId: wsId, name: 'Core', createdAt: now, updatedAt: now),
+        Project(
+            id: 'proj-1',
+            workspaceId: wsId,
+            name: 'Core',
+            createdAt: now,
+            updatedAt: now),
       );
 
       final cat = await categoryRepo.create(
-        Category(id: 'cat-1', workspaceId: wsId, name: 'Dev', createdAt: now, updatedAt: now),
+        Category(
+            id: 'cat-1',
+            workspaceId: wsId,
+            name: 'Dev',
+            createdAt: now,
+            updatedAt: now),
       );
 
       testTask = await workItemRepo.create(

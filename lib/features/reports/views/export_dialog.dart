@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:workpulse/core/theme/app_theme.dart';
+import 'package:workpulse/core/theme/app_colors.dart';
+import 'package:workpulse/core/theme/design_tokens.dart';
+import 'package:workpulse/core/widgets/app_dialog.dart';
+import 'package:workpulse/core/widgets/segmented_control.dart';
 import 'package:workpulse/domain/models/analytics_model.dart';
 import 'package:workpulse/domain/models/date_range.dart';
 import 'package:workpulse/features/reports/providers/reports_provider.dart';
@@ -95,7 +98,7 @@ class _ExportDialogState extends ConsumerState<ExportDialog> {
           SnackBar(
             content: Text(
                 '${_format == ExportFormat.csv ? 'CSV' : 'JSON'} exported and copied to clipboard!'),
-            backgroundColor: AppTheme.accentGreen,
+            backgroundColor: context.colors.success,
           ),
         );
       }
@@ -105,7 +108,7 @@ class _ExportDialogState extends ConsumerState<ExportDialog> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
               content: Text('Export failed: $e'),
-              backgroundColor: AppTheme.accentRed),
+              backgroundColor: context.colors.danger),
         );
       }
     }
@@ -121,247 +124,161 @@ class _ExportDialogState extends ConsumerState<ExportDialog> {
     final rangeLabel =
         '${DateFormat.yMMMd().format(range.start.toLocal())} – ${DateFormat.yMMMd().format(range.end.toLocal())}';
 
-    return Dialog(
-      backgroundColor: AppTheme.getColors(context).surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: AppTheme.dialogRadius,
-        side: BorderSide(color: AppTheme.getColors(context).divider),
+    return AppDialog(
+      title: 'Export Work Data',
+      subtitle: 'Generate clean reports and structured data backups',
+      icon: Icons.file_download_outlined,
+      width: DialogWidth.medium,
+      onSubmit: _isExporting ? null : _exportData,
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton.icon(
+          onPressed: _isExporting ? null : _exportData,
+          icon: _isExporting
+              ? const SizedBox(
+                  width: 14,
+                  height: 14,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                )
+              : Icon(
+                  _exportedContent != null ? Icons.check : Icons.copy,
+                  size: IconSizes.md,
+                ),
+          label: Text(
+            _exportedContent != null
+                ? 'Copied to Clipboard!'
+                : 'Copy to Clipboard',
+          ),
+        ),
+      ],
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          DialogField(
+            label: 'Date Range',
+            helperText: 'Selected: $rangeLabel',
+            child: AppSegmentedControl<DashboardTimeRange>(
+              fillWidth: true,
+              selected: _selectedRange,
+              onChanged: (range) {
+                if (range == DashboardTimeRange.custom) {
+                  _pickCustomRange();
+                } else {
+                  setState(() => _selectedRange = range);
+                }
+              },
+              options: [
+                for (final r in DashboardTimeRange.values)
+                  SegmentOption(value: r, label: r.label),
+              ],
+            ),
+          ),
+          const SizedBox(height: Spacing.xl),
+          DialogField(
+            label: 'Export Format',
+            child: Column(
+              children: [
+                for (final fmt in ExportFormat.values) ...[
+                  if (fmt != ExportFormat.values.first)
+                    const SizedBox(height: Spacing.sm),
+                  _FormatOption(
+                    format: fmt,
+                    isSelected: _format == fmt,
+                    onTap: () => setState(() => _format = fmt),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
       ),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 520),
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Header
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: AppTheme.primaryColor.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(Icons.file_download_outlined,
-                        size: 20, color: AppTheme.primaryColor),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Export Work Data',
-                          style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: AppTheme.getColors(context).textPrimary),
-                        ),
-                        Text(
-                          'Generate clean reports and structured data backups',
-                          style: TextStyle(
-                              fontSize: 12,
-                              color: AppTheme.getColors(context).textSecondary),
-                        ),
-                      ],
-                    ),
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.close,
-                        size: 18,
-                        color: AppTheme.getColors(context).textSecondary),
-                    onPressed: () => Navigator.of(context).pop(),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
+    );
+  }
+}
 
-              // Date Range Selection
-              Text('Date Range',
-                  style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: AppTheme.getColors(context).textSecondary)),
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: AppTheme.getColors(context).card,
-                  borderRadius: BorderRadius.circular(8),
-                  border:
-                      Border.all(color: AppTheme.getColors(context).divider),
+/// One selectable export format.
+class _FormatOption extends StatelessWidget {
+  final ExportFormat format;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _FormatOption({
+    required this.format,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    final theme = Theme.of(context);
+    final foreground = isSelected ? colors.accent : colors.textSecondary;
+
+    return Semantics(
+      selected: isSelected,
+      inMutuallyExclusiveGroup: true,
+      button: true,
+      label: '${format.title}. ${format.description}',
+      child: Material(
+        color: isSelected ? colors.accentSubtle : colors.card,
+        borderRadius: Radii.mdAll,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: Radii.mdAll,
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: Radii.mdAll,
+              border: Border.all(
+                color: isSelected ? colors.accent : colors.divider,
+                width: isSelected ? 1.5 : 1,
+              ),
+            ),
+            padding: const EdgeInsets.all(Spacing.md),
+            child: Row(
+              children: [
+                Icon(
+                  format == ExportFormat.csv
+                      ? Icons.table_chart_outlined
+                      : Icons.code,
+                  size: IconSizes.lg,
+                  color: foreground,
                 ),
-                child: Row(
-                  children: DashboardTimeRange.values.map((r) {
-                    final isSelected = _selectedRange == r;
-                    return Expanded(
-                      child: Material(
-                        color: isSelected
-                            ? AppTheme.primaryColor.withValues(alpha: 0.15)
-                            : Colors.transparent,
-                        borderRadius: BorderRadius.circular(6),
-                        child: InkWell(
-                          onTap: () {
-                            if (r == DashboardTimeRange.custom) {
-                              _pickCustomRange();
-                            } else {
-                              setState(() => _selectedRange = r);
-                            }
-                          },
-                          borderRadius: BorderRadius.circular(6),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            child: Center(
-                              child: Text(
-                                r.label,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: isSelected
-                                      ? FontWeight.bold
-                                      : FontWeight.w500,
-                                  color: isSelected
-                                      ? AppTheme.primaryColor
-                                      : AppTheme.getColors(context)
-                                          .textSecondary,
-                                ),
-                              ),
-                            ),
-                          ),
+                const SizedBox(width: Spacing.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        format.title,
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          color:
+                              isSelected ? colors.accent : colors.textPrimary,
                         ),
                       ),
-                    );
-                  }).toList(),
+                      Text(
+                        format.description,
+                        style: theme.textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                'Selected: $rangeLabel',
-                style: TextStyle(
-                    fontSize: 11,
-                    color: AppTheme.getColors(context).textSecondary),
-              ),
-              const SizedBox(height: 20),
-
-              // Format Selection
-              Text('Export Format',
-                  style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: AppTheme.getColors(context).textSecondary)),
-              const SizedBox(height: 8),
-              ...ExportFormat.values.map((fmt) {
-                final isSelected = _format == fmt;
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 8.0),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: isSelected
-                            ? AppTheme.primaryColor
-                            : AppTheme.getColors(context).divider,
-                        width: isSelected ? 1.5 : 1,
-                      ),
-                    ),
-                    child: Material(
-                      color: isSelected
-                          ? AppTheme.primaryColor.withValues(alpha: 0.1)
-                          : AppTheme.getColors(context).card,
-                      borderRadius: BorderRadius.circular(8),
-                      child: InkWell(
-                        onTap: () => setState(() => _format = fmt),
-                        borderRadius: BorderRadius.circular(8),
-                        child: Padding(
-                          padding: const EdgeInsets.all(12),
-                          child: Row(
-                            children: [
-                              Icon(
-                                fmt == ExportFormat.csv
-                                    ? Icons.table_chart_outlined
-                                    : Icons.code,
-                                size: 20,
-                                color: isSelected
-                                    ? AppTheme.primaryColor
-                                    : AppTheme.getColors(context).textSecondary,
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      fmt.title,
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        fontWeight: isSelected
-                                            ? FontWeight.bold
-                                            : FontWeight.w500,
-                                        color: isSelected
-                                            ? AppTheme.primaryColor
-                                            : AppTheme.getColors(context)
-                                                .textPrimary,
-                                      ),
-                                    ),
-                                    Text(
-                                      fmt.description,
-                                      style: TextStyle(
-                                          fontSize: 11,
-                                          color: AppTheme.getColors(context)
-                                              .textSecondary),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              if (isSelected)
-                                const Icon(Icons.check_circle,
-                                    size: 18, color: AppTheme.primaryColor),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
+                // Selection is marked with a tick as well as colour, so it is
+                // not communicated by colour alone.
+                if (isSelected)
+                  Icon(
+                    Icons.check_circle,
+                    size: IconSizes.lg,
+                    color: colors.accent,
                   ),
-                );
-              }),
-              const SizedBox(height: 20),
-
-              // Footer Actions
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  TextButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: Text('Cancel',
-                        style: TextStyle(
-                            color: AppTheme.getColors(context).textSecondary)),
-                  ),
-                  const SizedBox(width: 12),
-                  ElevatedButton.icon(
-                    onPressed: _isExporting ? null : _exportData,
-                    icon: _isExporting
-                        ? const SizedBox(
-                            width: 14,
-                            height: 14,
-                            child: CircularProgressIndicator(
-                                strokeWidth: 2, color: Colors.white))
-                        : const Icon(Icons.copy, size: 16),
-                    label: Text(_exportedContent != null
-                        ? 'Copied to Clipboard!'
-                        : 'Copy to Clipboard'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.primaryColor,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 18, vertical: 12),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8)),
-                    ),
-                  ),
-                ],
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

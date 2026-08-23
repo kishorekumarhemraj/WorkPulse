@@ -55,7 +55,9 @@ void main() {
       await dbService.close();
     });
 
-    test('taskTotalDurationProvider calculates accumulated duration from completed sessions', () async {
+    test(
+        'taskTotalDurationProvider calculates accumulated duration from completed sessions',
+        () async {
       final task = await workItemRepo.create(
         WorkItem(
           id: 'task-dur-1',
@@ -74,7 +76,9 @@ void main() {
           id: 'sess-dur-1',
           workItemId: task.id,
           startTime: now.subtract(const Duration(hours: 2)),
-          endTime: now.subtract(const Duration(hours: 2)).add(const Duration(minutes: 30)),
+          endTime: now
+              .subtract(const Duration(hours: 2))
+              .add(const Duration(minutes: 30)),
           createdAt: now.subtract(const Duration(hours: 2)),
         ),
       );
@@ -84,7 +88,9 @@ void main() {
           id: 'sess-dur-2',
           workItemId: task.id,
           startTime: now.subtract(const Duration(hours: 1)),
-          endTime: now.subtract(const Duration(hours: 1)).add(const Duration(minutes: 45)),
+          endTime: now
+              .subtract(const Duration(hours: 1))
+              .add(const Duration(minutes: 45)),
           createdAt: now.subtract(const Duration(hours: 1)),
         ),
       );
@@ -97,7 +103,8 @@ void main() {
       );
       addTearDown(container.dispose);
 
-      final duration = await container.read(taskTotalDurationProvider(task.id).future);
+      final duration =
+          await container.read(taskTotalDurationProvider(task.id).future);
       expect(duration, const Duration(minutes: 75));
     });
   });

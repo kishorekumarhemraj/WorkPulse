@@ -115,10 +115,12 @@ void main() {
 
       // Test archiving
       await projectRepo.archive('proj-1');
-      final activeProjects = await projectRepo.getAll(workspaceId: wsId, includeArchived: false);
+      final activeProjects =
+          await projectRepo.getAll(workspaceId: wsId, includeArchived: false);
       expect(activeProjects.isEmpty, isTrue);
 
-      final allProjects = await projectRepo.getAll(workspaceId: wsId, includeArchived: true);
+      final allProjects =
+          await projectRepo.getAll(workspaceId: wsId, includeArchived: true);
       expect(allProjects.length, equals(1));
       expect(allProjects.first.isArchived, isTrue);
     });
@@ -126,15 +128,22 @@ void main() {
     test('Tags & People relations and CRUD', () async {
       final now = DateTime.utc(2026, 8, 23, 10, 0);
 
-      final tag1 = Tag(id: 'tag-1', workspaceId: wsId, name: 'Architecture', createdAt: now);
-      final tag2 = Tag(id: 'tag-2', workspaceId: wsId, name: 'Deep Work', createdAt: now);
+      final tag1 = Tag(
+          id: 'tag-1', workspaceId: wsId, name: 'Architecture', createdAt: now);
+      final tag2 = Tag(
+          id: 'tag-2', workspaceId: wsId, name: 'Deep Work', createdAt: now);
       await tagRepo.create(tag1);
       await tagRepo.create(tag2);
 
       final allTags = await tagRepo.getAll(workspaceId: wsId);
       expect(allTags.length, equals(2));
 
-      final person = Person(id: 'per-1', workspaceId: wsId, name: 'Richard', email: 'r@example.com', createdAt: now);
+      final person = Person(
+          id: 'per-1',
+          workspaceId: wsId,
+          name: 'Richard',
+          email: 'r@example.com',
+          createdAt: now);
       await personRepo.create(person);
 
       final fetchedPerson = await personRepo.getById('per-1');
@@ -159,8 +168,10 @@ void main() {
         createdAt: now,
         updatedAt: now,
       ));
-      await tagRepo.create(Tag(id: 't-1', workspaceId: wsId, name: 'Deep Work', createdAt: now));
-      await personRepo.create(Person(id: 'per-1', workspaceId: wsId, name: 'Richard', createdAt: now));
+      await tagRepo.create(
+          Tag(id: 't-1', workspaceId: wsId, name: 'Deep Work', createdAt: now));
+      await personRepo.create(Person(
+          id: 'per-1', workspaceId: wsId, name: 'Richard', createdAt: now));
 
       // Create work item
       final workItem = WorkItem(
@@ -185,7 +196,8 @@ void main() {
       expect(retrieved.peopleIds, contains('per-1'));
 
       // Verify search
-      final searchResults = await workItemRepo.search('architecture', workspaceId: wsId);
+      final searchResults =
+          await workItemRepo.search('architecture', workspaceId: wsId);
       expect(searchResults.length, equals(1));
       expect(searchResults.first.id, equals('wi-1'));
 
@@ -195,7 +207,8 @@ void main() {
       expect(recent.first.id, equals('wi-1'));
     });
 
-    test('Configurable Attributes definition, options, and values lifecycle', () async {
+    test('Configurable Attributes definition, options, and values lifecycle',
+        () async {
       final now = DateTime.utc(2026, 8, 23, 10, 0);
 
       // 1. Create AttributeDefinition for Jira ID (configurable, zero hardcoded in domain)
@@ -212,7 +225,8 @@ void main() {
       );
       await attributeRepo.createDefinition(jiraDef);
 
-      final fetchedDef = await attributeRepo.getDefinitionByKey(wsId, 'jira_id');
+      final fetchedDef =
+          await attributeRepo.getDefinitionByKey(wsId, 'jira_id');
       expect(fetchedDef, isNotNull);
       expect(fetchedDef!.name, equals('Jira ID'));
       expect(fetchedDef.type, equals(AttributeType.text));
@@ -254,9 +268,26 @@ void main() {
       expect(options.first.label, equals('Development'));
 
       // 3. Attach values to WorkItem
-      await projectRepo.create(Project(id: 'p-1', workspaceId: wsId, name: 'P', createdAt: now, updatedAt: now));
-      await categoryRepo.create(Category(id: 'c-1', workspaceId: wsId, name: 'C', createdAt: now, updatedAt: now));
-      await workItemRepo.create(WorkItem(id: 'wi-1', workspaceId: wsId, name: 'Task 1', projectId: 'p-1', categoryId: 'c-1', createdAt: now, updatedAt: now));
+      await projectRepo.create(Project(
+          id: 'p-1',
+          workspaceId: wsId,
+          name: 'P',
+          createdAt: now,
+          updatedAt: now));
+      await categoryRepo.create(Category(
+          id: 'c-1',
+          workspaceId: wsId,
+          name: 'C',
+          createdAt: now,
+          updatedAt: now));
+      await workItemRepo.create(WorkItem(
+          id: 'wi-1',
+          workspaceId: wsId,
+          name: 'Task 1',
+          projectId: 'p-1',
+          categoryId: 'c-1',
+          createdAt: now,
+          updatedAt: now));
 
       final jiraVal = WorkItemAttributeValue(
         id: 'val-1',
@@ -273,12 +304,23 @@ void main() {
       expect(wiValues.first.textValue, equals('PROD-1234'));
     });
 
-    test('Session lifecycle, active session recovery, and multi-session resume', () async {
+    test('Session lifecycle, active session recovery, and multi-session resume',
+        () async {
       final now = DateTime.utc(2026, 8, 23, 10, 0);
 
       // Setup work item
-      await projectRepo.create(Project(id: 'p-1', workspaceId: wsId, name: 'WorkPulse', createdAt: now, updatedAt: now));
-      await categoryRepo.create(Category(id: 'c-1', workspaceId: wsId, name: 'Dev', createdAt: now, updatedAt: now));
+      await projectRepo.create(Project(
+          id: 'p-1',
+          workspaceId: wsId,
+          name: 'WorkPulse',
+          createdAt: now,
+          updatedAt: now));
+      await categoryRepo.create(Category(
+          id: 'c-1',
+          workspaceId: wsId,
+          name: 'Dev',
+          createdAt: now,
+          updatedAt: now));
       await workItemRepo.create(WorkItem(
         id: 'wi-1',
         workspaceId: wsId,
@@ -320,14 +362,16 @@ void main() {
       expect(active.isActive, isTrue);
 
       // End active session
-      await sessionRepo.update(session2.copyWith(endTime: DateTime.utc(2026, 8, 23, 15, 0)));
+      await sessionRepo
+          .update(session2.copyWith(endTime: DateTime.utc(2026, 8, 23, 15, 0)));
       active = await sessionRepo.getActiveSession();
       expect(active, isNull);
 
       // Verify all sessions for work item
       final itemSessions = await sessionRepo.getByWorkItemId('wi-1');
       expect(itemSessions.length, equals(2));
-      final totalMinutes = itemSessions.fold<int>(0, (sum, s) => sum + s.duration.inMinutes);
+      final totalMinutes =
+          itemSessions.fold<int>(0, (sum, s) => sum + s.duration.inMinutes);
       expect(totalMinutes, equals(75 + 60)); // 135 mins = 2h 15m
     });
 
@@ -335,10 +379,28 @@ void main() {
       final now = DateTime.utc(2026, 8, 23, 10, 0);
 
       // Setup work item & session
-      await projectRepo.create(Project(id: 'p-1', workspaceId: wsId, name: 'P', createdAt: now, updatedAt: now));
-      await categoryRepo.create(Category(id: 'c-1', workspaceId: wsId, name: 'C', createdAt: now, updatedAt: now));
-      await workItemRepo.create(WorkItem(id: 'wi-1', workspaceId: wsId, name: 'T', projectId: 'p-1', categoryId: 'c-1', createdAt: now, updatedAt: now));
-      await sessionRepo.create(Session(id: 's-1', workItemId: 'wi-1', startTime: now, createdAt: now));
+      await projectRepo.create(Project(
+          id: 'p-1',
+          workspaceId: wsId,
+          name: 'P',
+          createdAt: now,
+          updatedAt: now));
+      await categoryRepo.create(Category(
+          id: 'c-1',
+          workspaceId: wsId,
+          name: 'C',
+          createdAt: now,
+          updatedAt: now));
+      await workItemRepo.create(WorkItem(
+          id: 'wi-1',
+          workspaceId: wsId,
+          name: 'T',
+          projectId: 'p-1',
+          categoryId: 'c-1',
+          createdAt: now,
+          updatedAt: now));
+      await sessionRepo.create(Session(
+          id: 's-1', workItemId: 'wi-1', startTime: now, createdAt: now));
 
       // Add idle period
       final idle = IdlePeriod(
