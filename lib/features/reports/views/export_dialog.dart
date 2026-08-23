@@ -55,9 +55,9 @@ class _ExportDialogState extends ConsumerState<ExportDialog> {
       builder: (context, child) {
         return Theme(
           data: ThemeData.dark().copyWith(
-            colorScheme: const ColorScheme.dark(
+            colorScheme: ColorScheme.dark(
               primary: AppTheme.primaryColor,
-              surface: AppTheme.surfaceDark,
+              surface: AppTheme.getColors(context).surface,
             ),
           ),
           child: child!,
@@ -130,15 +130,15 @@ class _ExportDialogState extends ConsumerState<ExportDialog> {
         '${DateFormat.yMMMd().format(range.start.toLocal())} – ${DateFormat.yMMMd().format(range.end.toLocal())}';
 
     return Dialog(
-      backgroundColor: AppTheme.surfaceDark,
+      backgroundColor: AppTheme.getColors(context).surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: AppTheme.dividerDark),
+        side: BorderSide(color: AppTheme.getColors(context).divider),
       ),
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 520),
         child: Padding(
-          padding: const EdgeInsets.all(24.0),
+          padding: EdgeInsets.all(24.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
@@ -147,16 +147,16 @@ class _ExportDialogState extends ConsumerState<ExportDialog> {
               Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(8),
+                    padding: EdgeInsets.all(8),
                     decoration: BoxDecoration(
                       color: AppTheme.primaryColor.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Icon(Icons.file_download_outlined,
+                    child: Icon(Icons.file_download_outlined,
                         size: 20, color: AppTheme.primaryColor),
                   ),
-                  const SizedBox(width: 12),
-                  const Expanded(
+                  SizedBox(width: 12),
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -165,38 +165,38 @@ class _ExportDialogState extends ConsumerState<ExportDialog> {
                           style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
-                              color: AppTheme.textPrimaryDark),
+                              color: AppTheme.getColors(context).textPrimary),
                         ),
                         Text(
                           'Generate clean reports and structured data backups',
                           style: TextStyle(
-                              fontSize: 12, color: AppTheme.textSecondaryDark),
+                              fontSize: 12, color: AppTheme.getColors(context).textSecondary),
                         ),
                       ],
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.close,
-                        size: 18, color: AppTheme.textSecondaryDark),
+                    icon: Icon(Icons.close,
+                        size: 18, color: AppTheme.getColors(context).textSecondary),
                     onPressed: () => Navigator.of(context).pop(),
                   ),
                 ],
               ),
-              const SizedBox(height: 20),
+              SizedBox(height: 20),
 
               // Date Range Selection
-              const Text('Date Range',
+              Text('Date Range',
                   style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: AppTheme.textSecondaryDark)),
-              const SizedBox(height: 8),
+                      color: AppTheme.getColors(context).textSecondary)),
+              SizedBox(height: 8),
               Container(
-                padding: const EdgeInsets.all(4),
+                padding: EdgeInsets.all(4),
                 decoration: BoxDecoration(
-                  color: AppTheme.cardDark,
+                  color: AppTheme.getColors(context).card,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: AppTheme.dividerDark),
+                  border: Border.all(color: AppTheme.getColors(context).divider),
                 ),
                 child: Row(
                   children: DashboardTimeRange.values.map((r) {
@@ -212,7 +212,7 @@ class _ExportDialogState extends ConsumerState<ExportDialog> {
                         },
                         borderRadius: BorderRadius.circular(6),
                         child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          padding: EdgeInsets.symmetric(vertical: 8),
                           decoration: BoxDecoration(
                             color: isSelected
                                 ? AppTheme.primaryColor
@@ -229,7 +229,7 @@ class _ExportDialogState extends ConsumerState<ExportDialog> {
                                   : FontWeight.w500,
                               color: isSelected
                                   ? Colors.white
-                                  : AppTheme.textSecondaryDark,
+                                  : AppTheme.getColors(context).textSecondary,
                             ),
                           ),
                         ),
@@ -238,39 +238,39 @@ class _ExportDialogState extends ConsumerState<ExportDialog> {
                   }).toList(),
                 ),
               ),
-              const SizedBox(height: 6),
+              SizedBox(height: 6),
               Text(
                 'Selected: $rangeLabel',
-                style: const TextStyle(
-                    fontSize: 11, color: AppTheme.textSecondaryDark),
+                style: TextStyle(
+                    fontSize: 11, color: AppTheme.getColors(context).textSecondary),
               ),
-              const SizedBox(height: 20),
+              SizedBox(height: 20),
 
               // Format Selection
-              const Text('Export Format',
+              Text('Export Format',
                   style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: AppTheme.textSecondaryDark)),
-              const SizedBox(height: 8),
+                      color: AppTheme.getColors(context).textSecondary)),
+              SizedBox(height: 8),
               ...ExportFormat.values.map((fmt) {
                 final isSelected = _format == fmt;
                 return Padding(
-                  padding: const EdgeInsets.only(bottom: 8.0),
+                  padding: EdgeInsets.only(bottom: 8.0),
                   child: InkWell(
                     onTap: () => setState(() => _format = fmt),
                     borderRadius: BorderRadius.circular(8),
                     child: Container(
-                      padding: const EdgeInsets.all(12),
+                      padding: EdgeInsets.all(12),
                       decoration: BoxDecoration(
                         color: isSelected
                             ? AppTheme.primaryColor.withValues(alpha: 0.1)
-                            : AppTheme.cardDark,
+                            : AppTheme.getColors(context).card,
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(
                           color: isSelected
                               ? AppTheme.primaryColor
-                              : AppTheme.dividerDark,
+                              : AppTheme.getColors(context).divider,
                           width: isSelected ? 1.5 : 1,
                         ),
                       ),
@@ -283,9 +283,9 @@ class _ExportDialogState extends ConsumerState<ExportDialog> {
                             size: 20,
                             color: isSelected
                                 ? AppTheme.primaryColor
-                                : AppTheme.textSecondaryDark,
+                                : AppTheme.getColors(context).textSecondary,
                           ),
-                          const SizedBox(width: 12),
+                          SizedBox(width: 12),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -299,20 +299,20 @@ class _ExportDialogState extends ConsumerState<ExportDialog> {
                                         : FontWeight.w500,
                                     color: isSelected
                                         ? Colors.white
-                                        : AppTheme.textPrimaryDark,
+                                        : AppTheme.getColors(context).textPrimary,
                                   ),
                                 ),
                                 Text(
                                   fmt.description,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                       fontSize: 11,
-                                      color: AppTheme.textSecondaryDark),
+                                      color: AppTheme.getColors(context).textSecondary),
                                 ),
                               ],
                             ),
                           ),
                           if (isSelected)
-                            const Icon(Icons.check_circle,
+                            Icon(Icons.check_circle,
                                 size: 18, color: AppTheme.primaryColor),
                         ],
                       ),
@@ -320,7 +320,7 @@ class _ExportDialogState extends ConsumerState<ExportDialog> {
                   ),
                 );
               }),
-              const SizedBox(height: 20),
+              SizedBox(height: 20),
 
               // Footer Actions
               Row(
@@ -328,26 +328,26 @@ class _ExportDialogState extends ConsumerState<ExportDialog> {
                 children: [
                   TextButton(
                     onPressed: () => Navigator.of(context).pop(),
-                    child: const Text('Cancel',
-                        style: TextStyle(color: AppTheme.textSecondaryDark)),
+                    child: Text('Cancel',
+                        style: TextStyle(color: AppTheme.getColors(context).textSecondary)),
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(width: 12),
                   ElevatedButton.icon(
                     onPressed: _isExporting ? null : _exportData,
                     icon: _isExporting
-                        ? const SizedBox(
+                        ? SizedBox(
                             width: 14,
                             height: 14,
                             child: CircularProgressIndicator(
                                 strokeWidth: 2, color: Colors.white))
-                        : const Icon(Icons.copy, size: 16),
+                        : Icon(Icons.copy, size: 16),
                     label: Text(_exportedContent != null
                         ? 'Copied to Clipboard!'
                         : 'Copy to Clipboard'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppTheme.primaryColor,
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(
+                      padding: EdgeInsets.symmetric(
                           horizontal: 18, vertical: 12),
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8)),

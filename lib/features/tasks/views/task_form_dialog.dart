@@ -244,32 +244,32 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
         return KeyEventResult.ignored;
       },
       child: AlertDialog(
-        backgroundColor: AppTheme.surfaceDark,
+        backgroundColor: AppTheme.getColors(context).surface,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
-          side: const BorderSide(color: AppTheme.dividerDark, width: 1),
+          side: BorderSide(color: AppTheme.getColors(context).divider, width: 1),
         ),
-        titlePadding: const EdgeInsets.fromLTRB(24, 20, 24, 12),
-        contentPadding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
-        actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 20),
+        titlePadding: EdgeInsets.fromLTRB(24, 20, 24, 12),
+        contentPadding: EdgeInsets.fromLTRB(24, 0, 24, 16),
+        actionsPadding: EdgeInsets.fromLTRB(24, 0, 24, 20),
         title: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(8),
+              padding: EdgeInsets.all(8),
               decoration: BoxDecoration(
                 color: AppTheme.primaryColor.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.check_box_outlined,
                 color: AppTheme.primaryColor,
                 size: 20,
               ),
             ),
-            const SizedBox(width: 12),
+            SizedBox(width: 12),
             Text(
               isEditing ? 'Edit Work Item' : 'New Work Item',
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: AppTheme.textPrimaryDark),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: AppTheme.getColors(context).textPrimary),
             ),
           ],
         ),
@@ -283,15 +283,15 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Task Name
-                  const Text('Task Name', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AppTheme.textSecondaryDark)),
-                  const SizedBox(height: 6),
+                  Text('Task Name', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AppTheme.getColors(context).textSecondary)),
+                  SizedBox(height: 6),
                   TextFormField(
                     controller: _nameController,
                     autofocus: true,
-                    style: const TextStyle(color: AppTheme.textPrimaryDark, fontSize: 14),
-                    decoration: const InputDecoration(
+                    style: TextStyle(color: AppTheme.getColors(context).textPrimary, fontSize: 14),
+                    decoration: InputDecoration(
                       hintText: 'e.g. Design auth flow, Write repository tests',
-                      hintStyle: TextStyle(color: AppTheme.textSecondaryDark),
+                      hintStyle: TextStyle(color: AppTheme.getColors(context).textSecondary),
                     ),
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
@@ -301,7 +301,7 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
                     },
                     onFieldSubmitted: (_) => _submit(),
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16),
 
                   // Project & Category Dropdowns in a row
                   Row(
@@ -314,20 +314,20 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                const Text('Project', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AppTheme.textSecondaryDark)),
+                                Text('Project', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AppTheme.getColors(context).textSecondary)),
                                 InkWell(
                                   onTap: () async {
                                     final p = await ProjectFormDialog.show(context);
                                     if (p != null) setState(() => _selectedProjectId = p.id);
                                   },
-                                  child: const Text('+ New', style: TextStyle(fontSize: 12, color: AppTheme.primaryColor, fontWeight: FontWeight.w500)),
+                                  child: Text('+ New', style: TextStyle(fontSize: 12, color: AppTheme.primaryColor, fontWeight: FontWeight.w500)),
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 6),
+                            SizedBox(height: 6),
                             projectsAsync.when(
-                              loading: () => const SizedBox(height: 38, child: Align(alignment: Alignment.centerLeft, child: Text('Loading projects...', style: TextStyle(fontSize: 12, color: AppTheme.textSecondaryDark)))),
-                              error: (_, __) => const Text('Error loading projects'),
+                              loading: () => SizedBox(height: 38, child: Align(alignment: Alignment.centerLeft, child: Text('Loading projects...', style: TextStyle(fontSize: 12, color: AppTheme.getColors(context).textSecondary)))),
+                              error: (_, __) => Text('Error loading projects'),
                               data: (projects) {
                                 return DropdownButtonFormField<String>(
                                   initialValue: projects.any((p) => p.id == _selectedProjectId) ? _selectedProjectId : (projects.isNotEmpty ? projects.first.id : null),
@@ -344,7 +344,7 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
                                               shape: BoxShape.circle,
                                             ),
                                           ),
-                                          const SizedBox(width: 8),
+                                          SizedBox(width: 8),
                                           Text(p.name, overflow: TextOverflow.ellipsis),
                                         ],
                                       ),
@@ -352,14 +352,14 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
                                   }).toList(),
                                   onChanged: (val) => setState(() => _selectedProjectId = val),
                                   decoration: const InputDecoration(contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8)),
-                                  dropdownColor: AppTheme.surfaceDark,
+                                  dropdownColor: AppTheme.getColors(context).surface,
                                 );
                               },
                             ),
                           ],
                         ),
                       ),
-                      const SizedBox(width: 16),
+                      SizedBox(width: 16),
 
                       // Category Dropdown
                       Expanded(
@@ -369,20 +369,20 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                const Text('Category', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AppTheme.textSecondaryDark)),
+                                Text('Category', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AppTheme.getColors(context).textSecondary)),
                                 InkWell(
                                   onTap: () async {
                                     final c = await CategoryFormDialog.show(context);
                                     if (c != null) setState(() => _selectedCategoryId = c.id);
                                   },
-                                  child: const Text('+ New', style: TextStyle(fontSize: 12, color: AppTheme.primaryColor, fontWeight: FontWeight.w500)),
+                                  child: Text('+ New', style: TextStyle(fontSize: 12, color: AppTheme.primaryColor, fontWeight: FontWeight.w500)),
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 6),
+                            SizedBox(height: 6),
                             categoriesAsync.when(
-                              loading: () => const SizedBox(height: 38, child: Align(alignment: Alignment.centerLeft, child: Text('Loading categories...', style: TextStyle(fontSize: 12, color: AppTheme.textSecondaryDark)))),
-                              error: (_, __) => const Text('Error loading categories'),
+                              loading: () => SizedBox(height: 38, child: Align(alignment: Alignment.centerLeft, child: Text('Loading categories...', style: TextStyle(fontSize: 12, color: AppTheme.getColors(context).textSecondary)))),
+                              error: (_, __) => Text('Error loading categories'),
                               data: (categories) {
                                 return DropdownButtonFormField<String>(
                                   initialValue: categories.any((c) => c.id == _selectedCategoryId) ? _selectedCategoryId : (categories.isNotEmpty ? categories.first.id : null),
@@ -392,7 +392,7 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
                                       child: Row(
                                         children: [
                                           Icon(IconUtils.getIcon(c.iconName), size: 14, color: AppTheme.primaryColor),
-                                          const SizedBox(width: 8),
+                                          SizedBox(width: 8),
                                           Text(c.name, overflow: TextOverflow.ellipsis),
                                         ],
                                       ),
@@ -400,7 +400,7 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
                                   }).toList(),
                                   onChanged: (val) => setState(() => _selectedCategoryId = val),
                                   decoration: const InputDecoration(contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8)),
-                                  dropdownColor: AppTheme.surfaceDark,
+                                  dropdownColor: AppTheme.getColors(context).surface,
                                 );
                               },
                             ),
@@ -409,13 +409,13 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16),
 
                   // Tags Multi-select
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Tags', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AppTheme.textSecondaryDark)),
+                      Text('Tags', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AppTheme.getColors(context).textSecondary)),
                       InkWell(
                         onTap: () async {
                           final t = await TagFormDialog.show(context);
@@ -423,17 +423,17 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
                             setState(() => _selectedTagIds.add(t.id));
                           }
                         },
-                        child: const Text('+ New Tag', style: TextStyle(fontSize: 12, color: AppTheme.primaryColor, fontWeight: FontWeight.w500)),
+                        child: Text('+ New Tag', style: TextStyle(fontSize: 12, color: AppTheme.primaryColor, fontWeight: FontWeight.w500)),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 6),
+                  SizedBox(height: 6),
                   tagsAsync.when(
                     loading: () => const SizedBox.shrink(),
                     error: (_, __) => const SizedBox.shrink(),
                     data: (tags) {
                       if (tags.isEmpty) {
-                        return const Text('No tags created yet', style: TextStyle(fontSize: 12, color: AppTheme.textSecondaryDark));
+                        return Text('No tags created yet', style: TextStyle(fontSize: 12, color: AppTheme.getColors(context).textSecondary));
                       }
                       return Wrap(
                         spacing: 8,
@@ -459,15 +459,15 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
                               decoration: BoxDecoration(color: color, shape: BoxShape.circle),
                             ),
                             selectedColor: color.withValues(alpha: 0.3),
-                            backgroundColor: AppTheme.cardDark,
+                            backgroundColor: AppTheme.getColors(context).card,
                             labelStyle: TextStyle(
                               fontSize: 12,
-                              color: isSelected ? Colors.white : AppTheme.textSecondaryDark,
+                              color: isSelected ? Colors.white : AppTheme.getColors(context).textSecondary,
                             ),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(6),
                               side: BorderSide(
-                                color: isSelected ? color : AppTheme.dividerDark,
+                                color: isSelected ? color : AppTheme.getColors(context).divider,
                               ),
                             ),
                           );
@@ -475,14 +475,14 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
                       );
                     },
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16),
 
                   // People Multi-select
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Flexible(
-                        child: Text('Assigned People', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AppTheme.textSecondaryDark), overflow: TextOverflow.ellipsis),
+                      Flexible(
+                        child: Text('Assigned People', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AppTheme.getColors(context).textSecondary), overflow: TextOverflow.ellipsis),
                       ),
                       InkWell(
                         onTap: () async {
@@ -491,17 +491,17 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
                             setState(() => _selectedPeopleIds.add(p.id));
                           }
                         },
-                        child: const Text('+ Add Person', style: TextStyle(fontSize: 12, color: AppTheme.primaryColor, fontWeight: FontWeight.w500)),
+                        child: Text('+ Add Person', style: TextStyle(fontSize: 12, color: AppTheme.primaryColor, fontWeight: FontWeight.w500)),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 6),
+                  SizedBox(height: 6),
                   peopleAsync.when(
                     loading: () => const SizedBox.shrink(),
                     error: (_, __) => const SizedBox.shrink(),
                     data: (people) {
                       if (people.isEmpty) {
-                        return const Text('No people added yet', style: TextStyle(fontSize: 12, color: AppTheme.textSecondaryDark));
+                        return Text('No people added yet', style: TextStyle(fontSize: 12, color: AppTheme.getColors(context).textSecondary));
                       }
                       return Wrap(
                         spacing: 8,
@@ -520,17 +520,17 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
                                 }
                               });
                             },
-                            avatar: const Icon(Icons.person, size: 14),
+                            avatar: Icon(Icons.person, size: 14),
                             selectedColor: AppTheme.primaryColor.withValues(alpha: 0.3),
-                            backgroundColor: AppTheme.cardDark,
+                            backgroundColor: AppTheme.getColors(context).card,
                             labelStyle: TextStyle(
                               fontSize: 12,
-                              color: isSelected ? Colors.white : AppTheme.textSecondaryDark,
+                              color: isSelected ? Colors.white : AppTheme.getColors(context).textSecondary,
                             ),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(6),
                               side: BorderSide(
-                                color: isSelected ? AppTheme.primaryColor : AppTheme.dividerDark,
+                                color: isSelected ? AppTheme.primaryColor : AppTheme.getColors(context).divider,
                               ),
                             ),
                           );
@@ -546,7 +546,7 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
                       if (taskDefs.isEmpty) return const SizedBox.shrink();
 
                       return Padding(
-                        padding: const EdgeInsets.only(bottom: 16),
+                        padding: EdgeInsets.only(bottom: 16),
                         child: DynamicAttributeFields(
                           definitions: taskDefs,
                           values: _attributeValues,
@@ -561,15 +561,15 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
                   ),
 
                   // Notes
-                  const Text('Notes (Optional)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AppTheme.textSecondaryDark)),
-                  const SizedBox(height: 6),
+                  Text('Notes (Optional)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AppTheme.getColors(context).textSecondary)),
+                  SizedBox(height: 6),
                   TextFormField(
                     controller: _notesController,
                     maxLines: 3,
-                    style: const TextStyle(color: AppTheme.textPrimaryDark, fontSize: 13),
-                    decoration: const InputDecoration(
+                    style: TextStyle(color: AppTheme.getColors(context).textPrimary, fontSize: 13),
+                    decoration: InputDecoration(
                       hintText: 'Additional details, ticket links, context...',
-                      hintStyle: TextStyle(color: AppTheme.textSecondaryDark),
+                      hintStyle: TextStyle(color: AppTheme.getColors(context).textSecondary),
                     ),
                   ),
                 ],
@@ -580,7 +580,7 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
         actions: [
           TextButton(
             onPressed: _isSubmitting ? null : () => Navigator.of(context).pop(),
-            child: const Text('Cancel', style: TextStyle(color: AppTheme.textSecondaryDark)),
+            child: Text('Cancel', style: TextStyle(color: AppTheme.getColors(context).textSecondary)),
           ),
           ElevatedButton(
             onPressed: _isSubmitting ? null : _submit,
@@ -588,10 +588,10 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
               backgroundColor: AppTheme.primaryColor,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             ),
             child: _isSubmitting
-                ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                ? SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                 : Text(isEditing ? 'Save Changes' : 'Create Task'),
           ),
         ],

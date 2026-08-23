@@ -132,15 +132,15 @@ class _SessionEditDialogState extends ConsumerState<SessionEditDialog> {
     final dateFormat = DateFormat('yyyy-MM-dd HH:mm');
 
     return Dialog(
-      backgroundColor: AppTheme.surfaceDark,
+      backgroundColor: AppTheme.getColors(context).surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: AppTheme.dividerDark),
+        side: BorderSide(color: AppTheme.getColors(context).divider),
       ),
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 500, maxHeight: 620),
         child: Padding(
-          padding: const EdgeInsets.all(24.0),
+          padding: EdgeInsets.all(24.0),
           child: Form(
             key: _formKey,
             child: Column(
@@ -150,19 +150,19 @@ class _SessionEditDialogState extends ConsumerState<SessionEditDialog> {
                 // Header
                 Row(
                   children: [
-                    const Icon(Icons.edit_calendar, size: 20, color: AppTheme.primaryColor),
-                    const SizedBox(width: 10),
+                    Icon(Icons.edit_calendar, size: 20, color: AppTheme.primaryColor),
+                    SizedBox(width: 10),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
+                          Text(
                             'Edit Session',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.textPrimaryDark),
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.getColors(context).textPrimary),
                           ),
                           Text(
                             widget.record.workItem.name,
-                            style: const TextStyle(fontSize: 12, color: AppTheme.textSecondaryDark),
+                            style: TextStyle(fontSize: 12, color: AppTheme.getColors(context).textSecondary),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -170,12 +170,12 @@ class _SessionEditDialogState extends ConsumerState<SessionEditDialog> {
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.close, size: 18, color: AppTheme.textSecondaryDark),
+                      icon: Icon(Icons.close, size: 18, color: AppTheme.getColors(context).textSecondary),
                       onPressed: () => Navigator.of(context).pop(),
                     ),
                   ],
                 ),
-                const SizedBox(height: 20),
+                SizedBox(height: 20),
 
                 Flexible(
                   child: SingleChildScrollView(
@@ -183,83 +183,83 @@ class _SessionEditDialogState extends ConsumerState<SessionEditDialog> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // Start Time Field
-                        const Text('Start Time', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppTheme.textSecondaryDark)),
-                        const SizedBox(height: 6),
+                        Text('Start Time', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppTheme.getColors(context).textSecondary)),
+                        SizedBox(height: 6),
                         InkWell(
                           onTap: _pickStartTime,
                           borderRadius: BorderRadius.circular(8),
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                             decoration: BoxDecoration(
-                              color: AppTheme.cardDark,
+                              color: AppTheme.getColors(context).card,
                               borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: AppTheme.dividerDark),
+                              border: Border.all(color: AppTheme.getColors(context).divider),
                             ),
                             child: Row(
                               children: [
-                                const Icon(Icons.access_time, size: 16, color: AppTheme.primaryColor),
-                                const SizedBox(width: 10),
-                                Text(dateFormat.format(_startTime), style: const TextStyle(fontSize: 13, color: AppTheme.textPrimaryDark)),
+                                Icon(Icons.access_time, size: 16, color: AppTheme.primaryColor),
+                                SizedBox(width: 10),
+                                Text(dateFormat.format(_startTime), style: TextStyle(fontSize: 13, color: AppTheme.getColors(context).textPrimary)),
                                 const Spacer(),
-                                const Text('Change', style: TextStyle(fontSize: 11, color: AppTheme.primaryColor)),
+                                Text('Change', style: TextStyle(fontSize: 11, color: AppTheme.primaryColor)),
                               ],
                             ),
                           ),
                         ),
-                        const SizedBox(height: 16),
+                        SizedBox(height: 16),
 
                         // End Time Field
-                        const Text('End Time', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppTheme.textSecondaryDark)),
-                        const SizedBox(height: 6),
+                        Text('End Time', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppTheme.getColors(context).textSecondary)),
+                        SizedBox(height: 6),
                         InkWell(
                           onTap: _pickEndTime,
                           borderRadius: BorderRadius.circular(8),
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                             decoration: BoxDecoration(
-                              color: AppTheme.cardDark,
+                              color: AppTheme.getColors(context).card,
                               borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: AppTheme.dividerDark),
+                              border: Border.all(color: AppTheme.getColors(context).divider),
                             ),
                             child: Row(
                               children: [
-                                const Icon(Icons.check_circle_outline, size: 16, color: AppTheme.accentGreen),
-                                const SizedBox(width: 10),
+                                Icon(Icons.check_circle_outline, size: 16, color: AppTheme.accentGreen),
+                                SizedBox(width: 10),
                                 Text(
                                   _endTime != null ? dateFormat.format(_endTime!) : 'In Progress',
-                                  style: TextStyle(fontSize: 13, color: _endTime != null ? AppTheme.textPrimaryDark : AppTheme.accentGreen),
+                                  style: TextStyle(fontSize: 13, color: _endTime != null ? AppTheme.getColors(context).textPrimary : AppTheme.accentGreen),
                                 ),
                                 const Spacer(),
-                                const Text('Change', style: TextStyle(fontSize: 11, color: AppTheme.primaryColor)),
+                                Text('Change', style: TextStyle(fontSize: 11, color: AppTheme.primaryColor)),
                               ],
                             ),
                           ),
                         ),
-                        const SizedBox(height: 16),
+                        SizedBox(height: 16),
 
                         // Session Notes
-                        const Text('Session Notes', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppTheme.textSecondaryDark)),
-                        const SizedBox(height: 6),
+                        Text('Session Notes', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppTheme.getColors(context).textSecondary)),
+                        SizedBox(height: 6),
                         TextFormField(
                           controller: _notesController,
                           maxLines: 2,
-                          style: const TextStyle(fontSize: 13, color: AppTheme.textPrimaryDark),
+                          style: TextStyle(fontSize: 13, color: AppTheme.getColors(context).textPrimary),
                           decoration: InputDecoration(
                             hintText: 'What did you work on during this block?',
-                            hintStyle: const TextStyle(fontSize: 12, color: AppTheme.textSecondaryDark),
+                            hintStyle: TextStyle(fontSize: 12, color: AppTheme.getColors(context).textSecondary),
                             filled: true,
-                            fillColor: AppTheme.cardDark,
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AppTheme.dividerDark)),
+                            fillColor: AppTheme.getColors(context).card,
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: AppTheme.getColors(context).divider)),
                           ),
                         ),
 
                         // Custom Session Attributes
                         if (sessionDefs.isNotEmpty) ...[
-                          const SizedBox(height: 20),
-                          const Divider(color: AppTheme.dividerDark),
-                          const SizedBox(height: 10),
-                          const Text('Session Custom Attributes', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.textPrimaryDark)),
-                          const SizedBox(height: 12),
+                          SizedBox(height: 20),
+                          Divider(color: AppTheme.getColors(context).divider),
+                          SizedBox(height: 10),
+                          Text('Session Custom Attributes', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.getColors(context).textPrimary)),
+                          SizedBox(height: 12),
                           DynamicAttributeFields(
                             definitions: sessionDefs,
                             values: _sessionAttributeValues,
@@ -270,7 +270,7 @@ class _SessionEditDialogState extends ConsumerState<SessionEditDialog> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 20),
+                SizedBox(height: 20),
 
                 // Footer Actions
                 Row(
@@ -278,20 +278,20 @@ class _SessionEditDialogState extends ConsumerState<SessionEditDialog> {
                   children: [
                     TextButton(
                       onPressed: () => Navigator.of(context).pop(),
-                      child: const Text('Cancel', style: TextStyle(color: AppTheme.textSecondaryDark)),
+                      child: Text('Cancel', style: TextStyle(color: AppTheme.getColors(context).textSecondary)),
                     ),
-                    const SizedBox(width: 12),
+                    SizedBox(width: 12),
                     ElevatedButton(
                       onPressed: _isSubmitting ? null : _submit,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppTheme.primaryColor,
                         foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                        padding: EdgeInsets.symmetric(horizontal: 18, vertical: 10),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       ),
                       child: _isSubmitting
-                          ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                          : const Text('Save Changes'),
+                          ? SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                          : Text('Save Changes'),
                     ),
                   ],
                 ),

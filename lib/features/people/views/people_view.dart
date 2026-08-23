@@ -24,7 +24,7 @@ class _PeopleViewState extends ConsumerState<PeopleView> {
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: Padding(
-        padding: const EdgeInsets.all(24.0),
+        padding: EdgeInsets.all(24.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -32,37 +32,37 @@ class _PeopleViewState extends ConsumerState<PeopleView> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Expanded(
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         'People',
-                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppTheme.textPrimaryDark),
+                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppTheme.getColors(context).textPrimary),
                       ),
                       SizedBox(height: 4),
                       Text(
                         'Team members, clients, and collaborators you work with',
-                        style: TextStyle(fontSize: 13, color: AppTheme.textSecondaryDark),
+                        style: TextStyle(fontSize: 13, color: AppTheme.getColors(context).textSecondary),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(width: 16),
+                SizedBox(width: 16),
                 ElevatedButton.icon(
                   onPressed: () => PersonFormDialog.show(context),
-                  icon: const Icon(Icons.add, size: 18),
-                  label: const Text('Add Person'),
+                  icon: Icon(Icons.add, size: 18),
+                  label: Text('Add Person'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.primaryColor,
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: 20),
 
             // Search bar
             SizedBox(
@@ -71,29 +71,29 @@ class _PeopleViewState extends ConsumerState<PeopleView> {
                 onChanged: (value) => setState(() => _searchQuery = value.trim().toLowerCase()),
                 decoration: InputDecoration(
                   hintText: 'Search people...',
-                  prefixIcon: const Icon(Icons.search, size: 18, color: AppTheme.textSecondaryDark),
+                  prefixIcon: Icon(Icons.search, size: 18, color: AppTheme.getColors(context).textSecondary),
                   filled: true,
-                  fillColor: AppTheme.surfaceDark,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 12),
+                  fillColor: AppTheme.getColors(context).surface,
+                  contentPadding: EdgeInsets.symmetric(vertical: 0, horizontal: 12),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(color: AppTheme.dividerDark),
+                    borderSide: BorderSide(color: AppTheme.getColors(context).divider),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(color: AppTheme.dividerDark),
+                    borderSide: BorderSide(color: AppTheme.getColors(context).divider),
                   ),
                 ),
               ),
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: 20),
 
             // People List
             Expanded(
               child: peopleAsync.when(
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (error, _) => Center(
-                  child: Text('Error loading people: $error', style: const TextStyle(color: AppTheme.accentRed)),
+                  child: Text('Error loading people: $error', style: TextStyle(color: AppTheme.accentRed)),
                 ),
                 data: (people) {
                   final filtered = people.where((p) {
@@ -107,18 +107,18 @@ class _PeopleViewState extends ConsumerState<PeopleView> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.person_off_outlined, size: 48, color: AppTheme.textSecondaryDark.withValues(alpha: 0.5)),
-                          const SizedBox(height: 12),
+                          Icon(Icons.person_off_outlined, size: 48, color: AppTheme.getColors(context).textSecondary.withValues(alpha: 0.5)),
+                          SizedBox(height: 12),
                           Text(
                             _searchQuery.isEmpty ? 'No people added yet' : 'No matching people',
-                            style: const TextStyle(fontSize: 16, color: AppTheme.textSecondaryDark),
+                            style: TextStyle(fontSize: 16, color: AppTheme.getColors(context).textSecondary),
                           ),
                           if (_searchQuery.isEmpty) ...[
-                            const SizedBox(height: 12),
+                            SizedBox(height: 12),
                             OutlinedButton.icon(
                               onPressed: () => PersonFormDialog.show(context),
-                              icon: const Icon(Icons.add, size: 16),
-                              label: const Text('Add First Person'),
+                              icon: Icon(Icons.add, size: 16),
+                              label: Text('Add First Person'),
                               style: OutlinedButton.styleFrom(foregroundColor: AppTheme.primaryColor),
                             ),
                           ],
@@ -171,11 +171,11 @@ class _PersonCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return Container(
       decoration: BoxDecoration(
-        color: AppTheme.surfaceDark,
+        color: AppTheme.getColors(context).surface,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppTheme.dividerDark, width: 1),
+        border: Border.all(color: AppTheme.getColors(context).divider, width: 1),
       ),
-      padding: const EdgeInsets.all(14),
+      padding: EdgeInsets.all(14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -186,29 +186,29 @@ class _PersonCard extends ConsumerWidget {
                 backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.2),
                 child: Text(
                   _getInitials(person.name),
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: AppTheme.primaryColor,
                     fontSize: 13,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
-              const SizedBox(width: 10),
+              SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       person.name,
-                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppTheme.textPrimaryDark),
+                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppTheme.getColors(context).textPrimary),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                     if (person.email != null) ...[
-                      const SizedBox(height: 2),
+                      SizedBox(height: 2),
                       Text(
                         person.email!,
-                        style: const TextStyle(fontSize: 11, color: AppTheme.textSecondaryDark),
+                        style: TextStyle(fontSize: 11, color: AppTheme.getColors(context).textSecondary),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -217,8 +217,8 @@ class _PersonCard extends ConsumerWidget {
                 ),
               ),
               PopupMenuButton<String>(
-                icon: const Icon(Icons.more_vert, size: 18, color: AppTheme.textSecondaryDark),
-                color: AppTheme.surfaceDark,
+                icon: Icon(Icons.more_vert, size: 18, color: AppTheme.getColors(context).textSecondary),
+                color: AppTheme.getColors(context).surface,
                 onSelected: (value) async {
                   if (value == 'edit') {
                     await PersonFormDialog.show(context, person: person);
@@ -226,15 +226,15 @@ class _PersonCard extends ConsumerWidget {
                     final confirm = await showDialog<bool>(
                       context: context,
                       builder: (ctx) => AlertDialog(
-                        backgroundColor: AppTheme.surfaceDark,
-                        title: const Text('Delete Person', style: TextStyle(color: AppTheme.textPrimaryDark)),
+                        backgroundColor: AppTheme.getColors(context).surface,
+                        title: Text('Delete Person', style: TextStyle(color: AppTheme.getColors(context).textPrimary)),
                         content: Text('Are you sure you want to remove "${person.name}"?'),
                         actions: [
-                          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+                          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('Cancel')),
                           ElevatedButton(
                             onPressed: () => Navigator.pop(ctx, true),
                             style: ElevatedButton.styleFrom(backgroundColor: AppTheme.accentRed, foregroundColor: Colors.white),
-                            child: const Text('Delete'),
+                            child: Text('Delete'),
                           ),
                         ],
                       ),
@@ -245,11 +245,11 @@ class _PersonCard extends ConsumerWidget {
                   }
                 },
                 itemBuilder: (context) => [
-                  const PopupMenuItem(
+                  PopupMenuItem(
                     value: 'edit',
                     child: Row(
                       children: [
-                        Icon(Icons.edit_outlined, size: 16, color: AppTheme.textPrimaryDark),
+                        Icon(Icons.edit_outlined, size: 16, color: AppTheme.getColors(context).textPrimary),
                         SizedBox(width: 8),
                         Text('Edit'),
                       ],
@@ -271,14 +271,14 @@ class _PersonCard extends ConsumerWidget {
           ),
           const Spacer(),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
             decoration: BoxDecoration(
-              color: AppTheme.cardDark,
+              color: AppTheme.getColors(context).card,
               borderRadius: BorderRadius.circular(10),
             ),
             child: Text(
               '$taskCount tasks assigned',
-              style: const TextStyle(fontSize: 11, color: AppTheme.textSecondaryDark),
+              style: TextStyle(fontSize: 11, color: AppTheme.getColors(context).textSecondary),
             ),
           ),
         ],

@@ -121,10 +121,10 @@ class _MainShellViewState extends ConsumerState<MainShellView> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          backgroundColor: AppTheme.surfaceDark,
-          title: const Text(
+          backgroundColor: AppTheme.getColors(context).surface,
+          title: Text(
             'Quick Capture Shortcut',
-            style: TextStyle(color: AppTheme.textPrimaryDark),
+            style: TextStyle(color: AppTheme.getColors(context).textPrimary),
           ),
           content: SizedBox(
             width: 360,
@@ -132,18 +132,18 @@ class _MainShellViewState extends ConsumerState<MainShellView> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'Press the keys you want to use.',
-                  style: TextStyle(color: AppTheme.textSecondaryDark),
+                  style: TextStyle(color: AppTheme.getColors(context).textSecondary),
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.all(14),
+                  padding: EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: AppTheme.cardDark,
+                    color: AppTheme.getColors(context).card,
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: AppTheme.dividerDark),
+                    border: Border.all(color: AppTheme.getColors(context).divider),
                   ),
                   child: HotKeyRecorder(
                     initalHotKey: currentHotKey,
@@ -158,11 +158,11 @@ class _MainShellViewState extends ConsumerState<MainShellView> {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancel'),
+              child: Text('Cancel'),
             ),
             ElevatedButton(
               onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Save Shortcut'),
+              child: Text('Save Shortcut'),
             ),
           ],
         );
@@ -181,11 +181,11 @@ class _MainShellViewState extends ConsumerState<MainShellView> {
   Widget build(BuildContext context) {
     final activeTab = ref.watch(activeNavTabProvider);
     final workspaceAsync = ref.watch(currentWorkspaceProvider);
-    final settings = ref.watch(appSettingsProvider).valueOrNull;
+    final settings = ref.watch(appSettingsProvider).value;
 
     ref.listen<AsyncValue<AppSettings>>(appSettingsProvider, (previous, next) {
-      final previousHotKey = previous?.valueOrNull?.quickCaptureHotKey;
-      final nextHotKey = next.valueOrNull?.quickCaptureHotKey;
+      final previousHotKey = previous?.value?.quickCaptureHotKey;
+      final nextHotKey = next.value?.quickCaptureHotKey;
       if (nextHotKey != null &&
           previousHotKey?.debugName != nextHotKey.debugName) {
         _registerQuickCaptureHotKey(nextHotKey);
@@ -208,22 +208,22 @@ class _MainShellViewState extends ConsumerState<MainShellView> {
     });
 
     return Scaffold(
-      backgroundColor: AppTheme.backgroundDark,
+      backgroundColor: AppTheme.getColors(context).background,
       body: workspaceAsync.when(
-        loading: () => const Center(
+        loading: () => Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               CircularProgressIndicator(),
               SizedBox(height: 16),
               Text('Initializing WorkPulse...',
-                  style: TextStyle(color: AppTheme.textSecondaryDark)),
+                  style: TextStyle(color: AppTheme.getColors(context).textSecondary)),
             ],
           ),
         ),
         error: (error, stack) => Center(
           child: Text('Initialization error: $error',
-              style: const TextStyle(color: AppTheme.accentRed)),
+              style: TextStyle(color: AppTheme.accentRed)),
         ),
         data: (workspace) {
           return Column(
@@ -234,11 +234,11 @@ class _MainShellViewState extends ConsumerState<MainShellView> {
                     // Sidebar
                     Container(
                       width: 220,
-                      decoration: const BoxDecoration(
-                        color: AppTheme.surfaceDark,
+                      decoration: BoxDecoration(
+                        color: AppTheme.getColors(context).surface,
                         border: Border(
                           right:
-                              BorderSide(color: AppTheme.dividerDark, width: 1),
+                              BorderSide(color: AppTheme.getColors(context).divider, width: 1),
                         ),
                       ),
                       child: Column(
@@ -246,31 +246,31 @@ class _MainShellViewState extends ConsumerState<MainShellView> {
                         children: [
                           // App Brand Header
                           Padding(
-                            padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
+                            padding: EdgeInsets.fromLTRB(16, 20, 16, 16),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Row(
                                   children: [
                                     Container(
-                                      padding: const EdgeInsets.all(6),
+                                      padding: EdgeInsets.all(6),
                                       decoration: BoxDecoration(
                                         color: AppTheme.primaryColor
                                             .withValues(alpha: 0.2),
                                         borderRadius: BorderRadius.circular(8),
                                       ),
-                                      child: const Icon(Icons.timer_outlined,
+                                      child: Icon(Icons.timer_outlined,
                                           color: AppTheme.primaryColor,
                                           size: 20),
                                     ),
-                                    const SizedBox(width: 10),
-                                    const Expanded(
+                                    SizedBox(width: 10),
+                                    Expanded(
                                       child: Text(
                                         AppConstants.appName,
                                         style: TextStyle(
                                           fontSize: 17,
                                           fontWeight: FontWeight.bold,
-                                          color: AppTheme.textPrimaryDark,
+                                          color: AppTheme.getColors(context).textPrimary,
                                           letterSpacing: -0.3,
                                         ),
                                         overflow: TextOverflow.ellipsis,
@@ -278,45 +278,45 @@ class _MainShellViewState extends ConsumerState<MainShellView> {
                                     ),
                                   ],
                                 ),
-                                const SizedBox(height: 12),
+                                SizedBox(height: 12),
                                 // Workspace Indicator
                                 Container(
-                                  padding: const EdgeInsets.symmetric(
+                                  padding: EdgeInsets.symmetric(
                                       horizontal: 8, vertical: 4),
                                   decoration: BoxDecoration(
-                                    color: AppTheme.cardDark,
+                                    color: AppTheme.getColors(context).card,
                                     borderRadius: BorderRadius.circular(6),
                                     border:
-                                        Border.all(color: AppTheme.dividerDark),
+                                        Border.all(color: AppTheme.getColors(context).divider),
                                   ),
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      const Icon(Icons.workspaces_outlined,
+                                      Icon(Icons.workspaces_outlined,
                                           size: 12,
-                                          color: AppTheme.textSecondaryDark),
-                                      const SizedBox(width: 6),
+                                          color: AppTheme.getColors(context).textSecondary),
+                                      SizedBox(width: 6),
                                       Flexible(
                                         child: Text(
                                           workspace.name,
-                                          style: const TextStyle(
+                                          style: TextStyle(
                                               fontSize: 11,
                                               fontWeight: FontWeight.w500,
                                               color:
-                                                  AppTheme.textSecondaryDark),
+                                                  AppTheme.getColors(context).textSecondary),
                                           overflow: TextOverflow.ellipsis,
                                         ),
                                       ),
                                     ],
                                   ),
                                 ),
-                                const SizedBox(height: 12),
+                                SizedBox(height: 12),
                                 // Quick Capture Shortcut Button
                                 InkWell(
                                   onTap: _showQuickCapture,
                                   borderRadius: BorderRadius.circular(8),
                                   child: Container(
-                                    padding: const EdgeInsets.symmetric(
+                                    padding: EdgeInsets.symmetric(
                                         horizontal: 10, vertical: 7),
                                     decoration: BoxDecoration(
                                       color: AppTheme.primaryColor
@@ -328,25 +328,25 @@ class _MainShellViewState extends ConsumerState<MainShellView> {
                                     ),
                                     child: Row(
                                       children: [
-                                        const Icon(Icons.flash_on,
+                                        Icon(Icons.flash_on,
                                             size: 15,
                                             color: AppTheme.primaryColor),
-                                        const SizedBox(width: 8),
-                                        const Expanded(
+                                        SizedBox(width: 8),
+                                        Expanded(
                                           child: Text(
                                             'Quick Capture',
                                             style: TextStyle(
                                                 fontSize: 12,
                                                 fontWeight: FontWeight.w600,
                                                 color:
-                                                    AppTheme.textPrimaryDark),
+                                                    AppTheme.getColors(context).textPrimary),
                                           ),
                                         ),
                                         Container(
-                                          padding: const EdgeInsets.symmetric(
+                                          padding: EdgeInsets.symmetric(
                                               horizontal: 5, vertical: 2),
                                           decoration: BoxDecoration(
-                                            color: AppTheme.surfaceDark,
+                                            color: AppTheme.getColors(context).surface,
                                             borderRadius:
                                                 BorderRadius.circular(4),
                                           ),
@@ -359,7 +359,7 @@ class _MainShellViewState extends ConsumerState<MainShellView> {
                                                 fontSize: 10,
                                                 fontWeight: FontWeight.bold,
                                                 color:
-                                                    AppTheme.textSecondaryDark),
+                                                    AppTheme.getColors(context).textSecondary),
                                           ),
                                         ),
                                       ],
@@ -369,14 +369,14 @@ class _MainShellViewState extends ConsumerState<MainShellView> {
                               ],
                             ),
                           ),
-                          const Divider(color: AppTheme.dividerDark, height: 1),
-                          const SizedBox(height: 8),
+                          Divider(color: AppTheme.getColors(context).divider, height: 1),
+                          SizedBox(height: 8),
 
                           // Navigation Items
                           Expanded(
                             child: ListView(
                               padding:
-                                  const EdgeInsets.symmetric(horizontal: 8),
+                                  EdgeInsets.symmetric(horizontal: 8),
                               children: [
                                 _SidebarNavItem(
                                   icon: Icons.space_dashboard_outlined,
@@ -470,22 +470,22 @@ class _MainShellViewState extends ConsumerState<MainShellView> {
                           ),
 
                           Padding(
-                            padding: const EdgeInsets.all(16.0),
+                            padding: EdgeInsets.all(16.0),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
                                 Row(
                                   children: [
-                                    const Icon(Icons.light_mode_outlined,
+                                    Icon(Icons.light_mode_outlined,
                                         size: 15,
-                                        color: AppTheme.textSecondaryDark),
-                                    const SizedBox(width: 8),
-                                    const Expanded(
+                                        color: AppTheme.getColors(context).textSecondary),
+                                    SizedBox(width: 8),
+                                    Expanded(
                                       child: Text(
                                         'Light Mode',
                                         style: TextStyle(
                                             fontSize: 12,
-                                            color: AppTheme.textSecondaryDark),
+                                            color: AppTheme.getColors(context).textSecondary),
                                       ),
                                     ),
                                     Switch(
@@ -505,13 +505,13 @@ class _MainShellViewState extends ConsumerState<MainShellView> {
                                     ),
                                   ],
                                 ),
-                                const SizedBox(height: 6),
+                                SizedBox(height: 6),
                                 OutlinedButton.icon(
                                   onPressed: settings == null
                                       ? null
                                       : () => _showShortcutRecorder(
                                           settings.quickCaptureHotKey),
-                                  icon: const Icon(Icons.keyboard_outlined,
+                                  icon: Icon(Icons.keyboard_outlined,
                                       size: 15),
                                   label: Text(
                                     settings == null
@@ -521,18 +521,18 @@ class _MainShellViewState extends ConsumerState<MainShellView> {
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                   style: OutlinedButton.styleFrom(
-                                    foregroundColor: AppTheme.textSecondaryDark,
-                                    side: const BorderSide(
-                                        color: AppTheme.dividerDark),
-                                    textStyle: const TextStyle(fontSize: 12),
+                                    foregroundColor: AppTheme.getColors(context).textSecondary,
+                                    side: BorderSide(
+                                        color: AppTheme.getColors(context).divider),
+                                    textStyle: TextStyle(fontSize: 12),
                                   ),
                                 ),
-                                const SizedBox(height: 10),
-                                const Text(
+                                SizedBox(height: 10),
+                                Text(
                                   'v${AppConstants.appVersion} • macOS',
                                   style: TextStyle(
                                       fontSize: 11,
-                                      color: AppTheme.textSecondaryDark),
+                                      color: AppTheme.getColors(context).textSecondary),
                                 ),
                               ],
                             ),
@@ -587,12 +587,12 @@ class _SidebarNavItem extends ConsumerWidget {
     final count = countProvider != null ? ref.watch(countProvider!) : null;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2.0),
+      padding: EdgeInsets.symmetric(vertical: 2.0),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(6),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
           decoration: BoxDecoration(
             color: isSelected
                 ? AppTheme.primaryColor.withValues(alpha: 0.15)
@@ -606,9 +606,9 @@ class _SidebarNavItem extends ConsumerWidget {
                 size: 18,
                 color: isSelected
                     ? AppTheme.primaryColor
-                    : AppTheme.textSecondaryDark,
+                    : AppTheme.getColors(context).textSecondary,
               ),
-              const SizedBox(width: 10),
+              SizedBox(width: 10),
               Expanded(
                 child: Text(
                   label,
@@ -617,18 +617,18 @@ class _SidebarNavItem extends ConsumerWidget {
                     fontWeight:
                         isSelected ? FontWeight.w600 : FontWeight.normal,
                     color:
-                        isSelected ? Colors.white : AppTheme.textSecondaryDark,
+                        isSelected ? Colors.white : AppTheme.getColors(context).textSecondary,
                   ),
                 ),
               ),
               if (count != null && count > 0)
                 Container(
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
                     color: isSelected
                         ? AppTheme.primaryColor.withValues(alpha: 0.2)
-                        : AppTheme.cardDark,
+                        : AppTheme.getColors(context).card,
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Text(
@@ -638,7 +638,7 @@ class _SidebarNavItem extends ConsumerWidget {
                       fontWeight: FontWeight.w500,
                       color: isSelected
                           ? AppTheme.primaryColor
-                          : AppTheme.textSecondaryDark,
+                          : AppTheme.getColors(context).textSecondary,
                     ),
                   ),
                 ),
