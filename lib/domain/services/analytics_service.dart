@@ -1,13 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:workpulse/domain/models/analytics_model.dart';
 import 'package:workpulse/domain/models/attribute_model.dart';
-import 'package:workpulse/domain/models/category_model.dart';
 import 'package:workpulse/domain/models/idle_period_model.dart';
-import 'package:workpulse/domain/models/person_model.dart';
-import 'package:workpulse/domain/models/project_model.dart';
 import 'package:workpulse/domain/models/session_model.dart';
-import 'package:workpulse/domain/models/tag_model.dart';
-import 'package:workpulse/domain/models/work_item_model.dart';
 import 'package:workpulse/domain/repositories/attribute_repository.dart';
 import 'package:workpulse/domain/repositories/category_repository.dart';
 import 'package:workpulse/domain/repositories/idle_period_repository.dart';
@@ -50,19 +45,18 @@ class AnalyticsService {
     required DateTimeRange range,
   }) async {
     // 1. Fetch sessions in date range
-    final allSessions = await _sessionRepository.getSessionsByDateRange(
-      workspaceId: workspaceId,
-      startDate: range.start,
-      endDate: range.end,
+    final allSessions = await _sessionRepository.getByDateRange(
+      range.start,
+      range.end,
     );
 
     // 2. Fetch context entities
-    final allWorkItems = await _workItemRepository.getAll(workspaceId);
-    final allProjects = await _projectRepository.getAll(workspaceId);
-    final allCategories = await _categoryRepository.getAll(workspaceId);
-    final allTags = await _tagRepository.getAll(workspaceId);
-    final allPeople = await _personRepository.getAll(workspaceId);
-    final allDefinitions = await _attributeRepository.getDefinitions(workspaceId);
+    final allWorkItems = await _workItemRepository.getAll(workspaceId: workspaceId);
+    final allProjects = await _projectRepository.getAll(workspaceId: workspaceId);
+    final allCategories = await _categoryRepository.getAll(workspaceId: workspaceId);
+    final allTags = await _tagRepository.getAll(workspaceId: workspaceId);
+    final allPeople = await _personRepository.getAll(workspaceId: workspaceId);
+    final allDefinitions = await _attributeRepository.getDefinitions(workspaceId: workspaceId);
 
     final workItemMap = {for (final w in allWorkItems) w.id: w};
     final projectMap = {for (final p in allProjects) p.id: p};
@@ -102,7 +96,7 @@ class AnalyticsService {
       totalActive += netActive;
     }
 
-    final uniqueWorkItemIds = allSessions.map((s) => s.workItemId).toSet();
+    final uniqueWorkItemIds = allSessions.map((Session s) => s.workItemId).toSet();
 
     final summary = AnalyticsSummary(
       totalTrackedDuration: totalTracked,
@@ -267,13 +261,13 @@ class AnalyticsService {
       final groupLabels = <String, String>{};
       final groupColors = <String, String?>{};
 
-      final options = await _attributeRepository.getOptionsForDefinition(def.id);
+      final options = await _attributeRepository.getOptions(def.id);
       final optionMap = {for (final o in options) o.id: o};
 
       for (final s in allSessions) {
         final dur = sessionActiveDurations[s.id] ?? Duration.zero;
-        final itemValues = await _attributeRepository.getValuesForWorkItem(s.workItemId);
-        final attrVal = itemValues.where((v) => v.attributeDefinitionId == def.id).firstOrNull;
+        final itemValues = await _attributeRepository.getWorkItemValues(s.workItemId);
+        final attrVal = itemValues.where((WorkItemAttributeValue v) => v.attributeDefinitionId == def.id).firstOrNull;
 
         if (attrVal != null) {
           String key;

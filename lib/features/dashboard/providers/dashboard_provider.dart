@@ -47,8 +47,8 @@ final dashboardDataProvider = FutureProvider<DashboardData>((ref) async {
   final customRange = ref.watch(customDateRangeProvider);
   final analyticsService = ref.watch(analyticsServiceProvider);
 
-  // Invalidate when timer state changes to keep dashboard live
-  ref.watch(timerProvider);
+  // Invalidate when active session starts/stops/switches
+  ref.watch(timerProvider.select((s) => s.value?.activeSession?.id));
 
   final calculatedRange = timeRange.toDateTimeRange(customRange: customRange);
 
