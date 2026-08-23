@@ -59,7 +59,7 @@ class SqliteProjectRepository implements ProjectRepository {
       );
       return project;
     } catch (e) {
-      throw DatabaseException('Failed to create project: $e');
+      throw AppDatabaseException('Failed to create project: $e');
     }
   }
 
