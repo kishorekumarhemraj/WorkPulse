@@ -13,7 +13,7 @@ final trayServiceProvider = Provider<TrayService>((ref) {
 });
 
 final windowServiceProvider = Provider<WindowService>((ref) {
-  return DesktopWindowService();
+  return DesktopWindowService.instance;
 });
 
 final trayCoordinatorProvider = Provider<TrayCoordinator>((ref) {
@@ -46,7 +46,7 @@ class TrayCoordinator {
         _trayService = trayService,
         _windowService = windowService {
     _trayService.setTrayClickListener(() {
-      _windowService.show();
+      _windowService.openDashboard();
     });
 
     _trayService.setMenuItemClickListener(_handleMenuItemClick);
@@ -134,11 +134,11 @@ class TrayCoordinator {
 
     switch (key) {
       case 'show_window':
-        _windowService.show();
+        _windowService.openDashboard();
         break;
       case 'quick_capture':
         onQuickCaptureRequested?.call();
-        _windowService.show();
+        _windowService.openQuickCapture();
         break;
       case 'stop_timer':
         _ref.read(timerProvider.notifier).stopTimer();

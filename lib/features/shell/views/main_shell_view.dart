@@ -63,7 +63,6 @@ class MainShellView extends ConsumerStatefulWidget {
 class _MainShellViewState extends ConsumerState<MainShellView> {
   late final HotKeyService _hotKeyService;
   late final WindowService _windowService;
-  bool _isQuickCaptureOpen = false;
 
   @override
   void initState() {
@@ -101,17 +100,7 @@ class _MainShellViewState extends ConsumerState<MainShellView> {
   }
 
   Future<void> _showQuickCapture() async {
-    if (!mounted || _isQuickCaptureOpen) return;
-
-    _isQuickCaptureOpen = true;
-    await _windowService.show();
-    if (!mounted) {
-      _isQuickCaptureOpen = false;
-      return;
-    }
-
-    await QuickCaptureDialog.show(context);
-    _isQuickCaptureOpen = false;
+    await _windowService.openQuickCapture();
   }
 
   Future<void> _showShortcutRecorder(HotKey currentHotKey) async {
