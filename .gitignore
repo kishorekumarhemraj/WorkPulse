@@ -1,0 +1,63 @@
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.build/
+.buildlog/
+.history
+.svn/
+.swiftpm/
+migrate_working_dir/
+
+# IntelliJ IDEA / Android Studio
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# VS Code
+.vscode/
+
+# Flutter / Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+/build/
+
+# Local SQLite databases & backups
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+/storage/
+*.local
+
+# macOS specific
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.Spotlight-V100
+.Trashes
+
+# macOS / Xcode / CocoaPods
+macos/Flutter/ephemeral/
+macos/Pods/
+macos/.symlinks/
+macos/Podfile.lock
+*.xcworkspace
+*.xcuserdata
+DerivedData/
+
+# Coverage / Test artifacts
+coverage/
+*.lcov
+test_driver/screenshots/

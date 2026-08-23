@@ -1,0 +1,219 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:workpulse/core/theme/app_theme.dart';
+import 'package:workpulse/core/theme/color_utils.dart';
+import 'package:workpulse/features/tags/providers/tags_provider.dart';
+import 'package:workpulse/features/tags/views/tag_form_dialog.dart';
+import 'package:workpulse/features/tasks/providers/work_items_provider.dart';
+
+class TagsView extends ConsumerStatefulWidget {
+  const TagsView({super.key});
+
+  @override
+  ConsumerState<TagsView> createState() => _TagsViewState();
+}
+
+class _TagsViewState extends ConsumerState<TagsView> {
+  String _searchQuery = '';
+
+  @override
+  Widget build(BuildContext context) {
+    final tagsAsync = ref.watch(tagsProvider);
+    final workItemsAsync = ref.watch(workItemsProvider);
+
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: Padding(
+        padding: EdgeInsets.all(24.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header bar
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Tags',
+                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppTheme.getColors(context).textPrimary),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        'Flexible labels to categorize and filter your work items',
+                        style: TextStyle(fontSize: 13, color: AppTheme.getColors(context).textSecondary),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(width: 16),
+                ElevatedButton.icon(
+                  onPressed: () => TagFormDialog.show(context),
+                  icon: Icon(Icons.add, size: 18),
+                  label: Text('New Tag'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primaryColor,
+                    foregroundColor: Colors.white,
+                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 20),
+
+            // Search bar
+            SizedBox(
+              width: 320,
+              child: TextField(
+                onChanged: (value) => setState(() => _searchQuery = value.trim().toLowerCase()),
+                decoration: InputDecoration(
+                  hintText: 'Search tags...',
+                  prefixIcon: Icon(Icons.search, size: 18, color: AppTheme.getColors(context).textSecondary),
+                  filled: true,
+                  fillColor: AppTheme.getColors(context).surface,
+                  contentPadding: EdgeInsets.symmetric(vertical: 0, horizontal: 12),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: AppTheme.getColors(context).divider),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: AppTheme.getColors(context).divider),
+                  ),
+                ),
+              ),
+            ),
+            SizedBox(height: 20),
+
+            // Tags List
+            Expanded(
+              child: tagsAsync.when(
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (error, _) => Center(
+                  child: Text('Error loading tags: $error', style: TextStyle(color: AppTheme.accentRed)),
+                ),
+                data: (tags) {
+                  final filtered = tags.where((t) {
+                    if (_searchQuery.isEmpty) return true;
+                    return t.name.toLowerCase().contains(_searchQuery);
+                  }).toList();
+
+                  if (filtered.isEmpty) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.label_off_outlined, size: 48, color: AppTheme.getColors(context).textSecondary.withValues(alpha: 0.5)),
+                          SizedBox(height: 12),
+                          Text(
+                            _searchQuery.isEmpty ? 'No tags created yet' : 'No matching tags',
+                            style: TextStyle(fontSize: 16, color: AppTheme.getColors(context).textSecondary),
+                          ),
+                          if (_searchQuery.isEmpty) ...[
+                            SizedBox(height: 12),
+                            OutlinedButton.icon(
+                              onPressed: () => TagFormDialog.show(context),
+                              icon: Icon(Icons.add, size: 16),
+                              label: Text('Create First Tag'),
+                              style: OutlinedButton.styleFrom(foregroundColor: AppTheme.primaryColor),
+                            ),
+                          ],
+                        ],
+                      ),
+                    );
+                  }
+
+                  return Wrap(
+                    spacing: 12,
+                    runSpacing: 12,
+                    children: filtered.map((tag) {
+                      final color = ColorUtils.parseHex(tag.colorHex);
+                      final taskCount = workItemsAsync.value?.where((w) => w.tagIds.contains(tag.id)).length ?? 0;
+
+                      return Container(
+                        decoration: BoxDecoration(
+                          color: AppTheme.getColors(context).surface,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: AppTheme.getColors(context).divider),
+                        ),
+                        padding: EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 10,
+                              height: 10,
+                              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+                            ),
+                            SizedBox(width: 8),
+                            Text(
+                              tag.name,
+                              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: AppTheme.getColors(context).textPrimary),
+                            ),
+                            SizedBox(width: 10),
+                            Container(
+                              padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: AppTheme.getColors(context).card,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Text(
+                                '$taskCount',
+                                style: TextStyle(fontSize: 11, color: AppTheme.getColors(context).textSecondary),
+                              ),
+                            ),
+                            SizedBox(width: 8),
+                            InkWell(
+                              onTap: () => TagFormDialog.show(context, tag: tag),
+                              borderRadius: BorderRadius.circular(4),
+                              child: Padding(
+                                padding: EdgeInsets.all(2.0),
+                                child: Icon(Icons.edit_outlined, size: 15, color: AppTheme.getColors(context).textSecondary),
+                              ),
+                            ),
+                            SizedBox(width: 4),
+                            InkWell(
+                              onTap: () async {
+                                final confirm = await showDialog<bool>(
+                                  context: context,
+                                  builder: (ctx) => AlertDialog(
+                                    backgroundColor: AppTheme.getColors(context).surface,
+                                    title: Text('Delete Tag', style: TextStyle(color: AppTheme.getColors(context).textPrimary)),
+                                    content: Text('Are you sure you want to delete tag "${tag.name}"?'),
+                                    actions: [
+                                      TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('Cancel')),
+                                      ElevatedButton(
+                                        onPressed: () => Navigator.pop(ctx, true),
+                                        style: ElevatedButton.styleFrom(backgroundColor: AppTheme.accentRed, foregroundColor: Colors.white),
+                                        child: Text('Delete'),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                                if (confirm == true) {
+                                  await ref.read(tagsProvider.notifier).deleteTag(tag.id);
+                                }
+                              },
+                              borderRadius: BorderRadius.circular(4),
+                              child: Padding(
+                                padding: EdgeInsets.all(2.0),
+                                child: Icon(Icons.close, size: 15, color: AppTheme.accentRed),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
