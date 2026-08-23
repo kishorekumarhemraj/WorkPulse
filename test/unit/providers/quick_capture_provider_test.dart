@@ -148,6 +148,10 @@ void main() {
       await container.read(workItemsProvider.future);
       await container.read(timerProvider.future);
 
+      // quickCaptureProvider is autoDispose; in the real app the
+      // QuickCaptureDialog widget's ref.watch keeps it alive across the
+      // await below. Simulate that here so it isn't disposed mid-flight.
+      container.listen(quickCaptureProvider, (_, __) {});
       final notifier = container.read(quickCaptureProvider.notifier);
       await notifier.startExistingTask(existingTask);
 
@@ -164,6 +168,10 @@ void main() {
       await container.read(workItemsProvider.future);
       await container.read(timerProvider.future);
 
+      // quickCaptureProvider is autoDispose; in the real app the
+      // QuickCaptureDialog widget's ref.watch keeps it alive across the
+      // awaits below. Simulate that here so it isn't disposed mid-flight.
+      container.listen(quickCaptureProvider, (_, __) {});
       final notifier = container.read(quickCaptureProvider.notifier);
       notifier.setProject(defaultProject.id);
       notifier.setCategory(defaultCategory.id);
