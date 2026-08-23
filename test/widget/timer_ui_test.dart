@@ -154,6 +154,7 @@ void main() {
           overrides: [
             currentWorkspaceProvider.overrideWith(() => _FakeWorkspaceNotifier(testWorkspace)),
             projectsProvider.overrideWith(() => _FakeProjectsNotifier([testProject])),
+            workItemsProvider.overrideWith(() => _FakeWorkItemsNotifier([testTaskA, testTaskB])),
             timerProvider.overrideWith(() => fakeTimer),
           ],
           child: const MaterialApp(

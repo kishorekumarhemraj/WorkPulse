@@ -649,6 +649,9 @@ class _WorkItemCard extends ConsumerWidget {
               if (value == 'edit') {
                 await TaskFormDialog.show(context, workItem: item);
               } else if (value == 'archive') {
+                if (isItemActive) {
+                  await ref.read(timerProvider.notifier).stopTimer();
+                }
                 await ref.read(workItemsProvider.notifier).archiveWorkItem(item.id);
               } else if (value == 'unarchive') {
                 await ref.read(workItemsProvider.notifier).unarchiveWorkItem(item.id);
@@ -670,6 +673,9 @@ class _WorkItemCard extends ConsumerWidget {
                   ),
                 );
                 if (confirm == true) {
+                  if (isItemActive) {
+                    await ref.read(timerProvider.notifier).stopTimer();
+                  }
                   await ref.read(workItemsProvider.notifier).deleteWorkItem(item.id);
                 }
               }

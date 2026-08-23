@@ -4,6 +4,7 @@ import 'package:workpulse/core/theme/app_theme.dart';
 import 'package:workpulse/core/theme/color_utils.dart';
 import 'package:workpulse/domain/services/timer_service.dart';
 import 'package:workpulse/features/projects/providers/projects_provider.dart';
+import 'package:workpulse/features/tasks/providers/work_items_provider.dart';
 import 'package:workpulse/features/timer/providers/timer_provider.dart';
 
 class ActiveTimerBar extends ConsumerWidget {
@@ -13,12 +14,13 @@ class ActiveTimerBar extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final timerState = ref.watch(timerProvider).value;
     final projects = ref.watch(projectsProvider).value ?? [];
+    final workItems = ref.watch(workItemsProvider).value ?? [];
 
     if (timerState == null || !timerState.isRunning || timerState.activeWorkItem == null) {
       return const SizedBox.shrink();
     }
 
-    final activeItem = timerState.activeWorkItem!;
+    final activeItem = workItems.where((w) => w.id == timerState.activeWorkItem!.id).firstOrNull ?? timerState.activeWorkItem!;
     final project = projects.where((p) => p.id == activeItem.projectId).firstOrNull;
     final projectColor = ColorUtils.parseHex(project?.colorHex);
     final formattedTime = TimerService.formatDuration(timerState.elapsed, includeSeconds: true);
