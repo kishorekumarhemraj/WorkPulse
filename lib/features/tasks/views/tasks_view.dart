@@ -34,7 +34,7 @@ class TasksView extends ConsumerWidget {
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: Padding(
-        padding: const EdgeInsets.all(24.0),
+        padding: EdgeInsets.all(24.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -42,37 +42,37 @@ class TasksView extends ConsumerWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Expanded(
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         'Work Items',
-                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppTheme.textPrimaryDark),
+                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppTheme.getColors(context).textPrimary),
                       ),
                       SizedBox(height: 4),
                       Text(
                         'Tracked tasks, issues, and activities across all projects',
-                        style: TextStyle(fontSize: 13, color: AppTheme.textSecondaryDark),
+                        style: TextStyle(fontSize: 13, color: AppTheme.getColors(context).textSecondary),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(width: 16),
+                SizedBox(width: 16),
                 ElevatedButton.icon(
                   onPressed: () => TaskFormDialog.show(context),
-                  icon: const Icon(Icons.add, size: 18),
-                  label: const Text('New Task'),
+                  icon: Icon(Icons.add, size: 18),
+                  label: Text('New Task'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.primaryColor,
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: 20),
 
             // Filter and Search Toolbar
             Wrap(
@@ -88,17 +88,17 @@ class TasksView extends ConsumerWidget {
                     onChanged: (val) => ref.read(workItemFilterProvider.notifier).setSearchQuery(val),
                     decoration: InputDecoration(
                       hintText: 'Search tasks...',
-                      prefixIcon: const Icon(Icons.search, size: 16, color: AppTheme.textSecondaryDark),
+                      prefixIcon: Icon(Icons.search, size: 16, color: AppTheme.getColors(context).textSecondary),
                       filled: true,
-                      fillColor: AppTheme.surfaceDark,
-                      contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 10),
+                      fillColor: AppTheme.getColors(context).surface,
+                      contentPadding: EdgeInsets.symmetric(vertical: 0, horizontal: 10),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
-                        borderSide: const BorderSide(color: AppTheme.dividerDark),
+                        borderSide: BorderSide(color: AppTheme.getColors(context).divider),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
-                        borderSide: const BorderSide(color: AppTheme.dividerDark),
+                        borderSide: BorderSide(color: AppTheme.getColors(context).divider),
                       ),
                     ),
                   ),
@@ -111,20 +111,20 @@ class TasksView extends ConsumerWidget {
                   data: (projects) {
                     return Container(
                       height: 36,
-                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      padding: EdgeInsets.symmetric(horizontal: 10),
                       decoration: BoxDecoration(
-                        color: AppTheme.surfaceDark,
+                        color: AppTheme.getColors(context).surface,
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(
-                          color: filter.projectId != null ? AppTheme.primaryColor : AppTheme.dividerDark,
+                          color: filter.projectId != null ? AppTheme.primaryColor : AppTheme.getColors(context).divider,
                         ),
                       ),
                       child: DropdownButtonHideUnderline(
                         child: DropdownButton<String?>(
                           value: filter.projectId,
-                          hint: const Text('All Projects', style: TextStyle(fontSize: 13, color: AppTheme.textSecondaryDark)),
-                          icon: const Icon(Icons.arrow_drop_down, size: 18, color: AppTheme.textSecondaryDark),
-                          dropdownColor: AppTheme.surfaceDark,
+                          hint: Text('All Projects', style: TextStyle(fontSize: 13, color: AppTheme.getColors(context).textSecondary)),
+                          icon: Icon(Icons.arrow_drop_down, size: 18, color: AppTheme.getColors(context).textSecondary),
+                          dropdownColor: AppTheme.getColors(context).surface,
                           items: [
                             const DropdownMenuItem<String?>(
                               value: null,
@@ -140,8 +140,8 @@ class TasksView extends ConsumerWidget {
                                         height: 8,
                                         decoration: BoxDecoration(color: ColorUtils.parseHex(p.colorHex), shape: BoxShape.circle),
                                       ),
-                                      const SizedBox(width: 6),
-                                      Text(p.name, style: const TextStyle(fontSize: 13)),
+                                      SizedBox(width: 6),
+                                      Text(p.name, style: TextStyle(fontSize: 13)),
                                     ],
                                   ),
                                 )),
@@ -160,20 +160,20 @@ class TasksView extends ConsumerWidget {
                   data: (categories) {
                     return Container(
                       height: 36,
-                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      padding: EdgeInsets.symmetric(horizontal: 10),
                       decoration: BoxDecoration(
-                        color: AppTheme.surfaceDark,
+                        color: AppTheme.getColors(context).surface,
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(
-                          color: filter.categoryId != null ? AppTheme.primaryColor : AppTheme.dividerDark,
+                          color: filter.categoryId != null ? AppTheme.primaryColor : AppTheme.getColors(context).divider,
                         ),
                       ),
                       child: DropdownButtonHideUnderline(
                         child: DropdownButton<String?>(
                           value: filter.categoryId,
-                          hint: const Text('All Categories', style: TextStyle(fontSize: 13, color: AppTheme.textSecondaryDark)),
-                          icon: const Icon(Icons.arrow_drop_down, size: 18, color: AppTheme.textSecondaryDark),
-                          dropdownColor: AppTheme.surfaceDark,
+                          hint: Text('All Categories', style: TextStyle(fontSize: 13, color: AppTheme.getColors(context).textSecondary)),
+                          icon: Icon(Icons.arrow_drop_down, size: 18, color: AppTheme.getColors(context).textSecondary),
+                          dropdownColor: AppTheme.getColors(context).surface,
                           items: [
                             const DropdownMenuItem<String?>(
                               value: null,
@@ -185,8 +185,8 @@ class TasksView extends ConsumerWidget {
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       Icon(IconUtils.getIcon(c.iconName), size: 14, color: AppTheme.primaryColor),
-                                      const SizedBox(width: 6),
-                                      Text(c.name, style: const TextStyle(fontSize: 13)),
+                                      SizedBox(width: 6),
+                                      Text(c.name, style: TextStyle(fontSize: 13)),
                                     ],
                                   ),
                                 )),
@@ -206,20 +206,20 @@ class TasksView extends ConsumerWidget {
                     if (tags.isEmpty) return const SizedBox.shrink();
                     return Container(
                       height: 36,
-                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      padding: EdgeInsets.symmetric(horizontal: 10),
                       decoration: BoxDecoration(
-                        color: AppTheme.surfaceDark,
+                        color: AppTheme.getColors(context).surface,
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(
-                          color: filter.tagId != null ? AppTheme.primaryColor : AppTheme.dividerDark,
+                          color: filter.tagId != null ? AppTheme.primaryColor : AppTheme.getColors(context).divider,
                         ),
                       ),
                       child: DropdownButtonHideUnderline(
                         child: DropdownButton<String?>(
                           value: filter.tagId,
-                          hint: const Text('All Tags', style: TextStyle(fontSize: 13, color: AppTheme.textSecondaryDark)),
-                          icon: const Icon(Icons.arrow_drop_down, size: 18, color: AppTheme.textSecondaryDark),
-                          dropdownColor: AppTheme.surfaceDark,
+                          hint: Text('All Tags', style: TextStyle(fontSize: 13, color: AppTheme.getColors(context).textSecondary)),
+                          icon: Icon(Icons.arrow_drop_down, size: 18, color: AppTheme.getColors(context).textSecondary),
+                          dropdownColor: AppTheme.getColors(context).surface,
                           items: [
                             const DropdownMenuItem<String?>(
                               value: null,
@@ -235,8 +235,8 @@ class TasksView extends ConsumerWidget {
                                         height: 8,
                                         decoration: BoxDecoration(color: ColorUtils.parseHex(t.colorHex), shape: BoxShape.circle),
                                       ),
-                                      const SizedBox(width: 6),
-                                      Text(t.name, style: const TextStyle(fontSize: 13)),
+                                      SizedBox(width: 6),
+                                      Text(t.name, style: TextStyle(fontSize: 13)),
                                     ],
                                   ),
                                 )),
@@ -250,19 +250,19 @@ class TasksView extends ConsumerWidget {
 
                 // Archived Toggle Filter
                 FilterChip(
-                  label: const Text('Include Archived'),
+                  label: Text('Include Archived'),
                   selected: filter.includeArchived,
                   onSelected: (_) => ref.read(workItemFilterProvider.notifier).toggleIncludeArchived(),
-                  backgroundColor: AppTheme.surfaceDark,
+                  backgroundColor: AppTheme.getColors(context).surface,
                   selectedColor: AppTheme.accentOrange.withValues(alpha: 0.2),
                   labelStyle: TextStyle(
                     fontSize: 12,
-                    color: filter.includeArchived ? AppTheme.accentOrange : AppTheme.textSecondaryDark,
+                    color: filter.includeArchived ? AppTheme.accentOrange : AppTheme.getColors(context).textSecondary,
                   ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                     side: BorderSide(
-                      color: filter.includeArchived ? AppTheme.accentOrange : AppTheme.dividerDark,
+                      color: filter.includeArchived ? AppTheme.accentOrange : AppTheme.getColors(context).divider,
                     ),
                   ),
                 ),
@@ -271,20 +271,20 @@ class TasksView extends ConsumerWidget {
                 if (filter.hasActiveFilters)
                   TextButton.icon(
                     onPressed: () => ref.read(workItemFilterProvider.notifier).reset(),
-                    icon: const Icon(Icons.clear, size: 14),
-                    label: const Text('Clear Filters', style: TextStyle(fontSize: 12)),
+                    icon: Icon(Icons.clear, size: 14),
+                    label: Text('Clear Filters', style: TextStyle(fontSize: 12)),
                     style: TextButton.styleFrom(foregroundColor: AppTheme.accentRed),
                   ),
               ],
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
 
             // Work Items List
             Expanded(
               child: workItemsAsync.when(
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (error, _) => Center(
-                  child: Text('Error loading tasks: $error', style: const TextStyle(color: AppTheme.accentRed)),
+                  child: Text('Error loading tasks: $error', style: TextStyle(color: AppTheme.accentRed)),
                 ),
                 data: (workItems) {
                   if (workItems.isEmpty) {
@@ -292,23 +292,23 @@ class TasksView extends ConsumerWidget {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.assignment_outlined, size: 48, color: AppTheme.textSecondaryDark.withValues(alpha: 0.5)),
-                          const SizedBox(height: 12),
+                          Icon(Icons.assignment_outlined, size: 48, color: AppTheme.getColors(context).textSecondary.withValues(alpha: 0.5)),
+                          SizedBox(height: 12),
                           Text(
                             filter.hasActiveFilters ? 'No tasks match current filters' : 'No tasks created yet',
-                            style: const TextStyle(fontSize: 16, color: AppTheme.textSecondaryDark),
+                            style: TextStyle(fontSize: 16, color: AppTheme.getColors(context).textSecondary),
                           ),
-                          const SizedBox(height: 12),
+                          SizedBox(height: 12),
                           if (filter.hasActiveFilters)
                             OutlinedButton(
                               onPressed: () => ref.read(workItemFilterProvider.notifier).reset(),
-                              child: const Text('Reset Filters'),
+                              child: Text('Reset Filters'),
                             )
                           else
                             OutlinedButton.icon(
                               onPressed: () => TaskFormDialog.show(context),
-                              icon: const Icon(Icons.add, size: 16),
-                              label: const Text('Create First Task'),
+                              icon: Icon(Icons.add, size: 16),
+                              label: Text('Create First Task'),
                               style: OutlinedButton.styleFrom(foregroundColor: AppTheme.primaryColor),
                             ),
                         ],
@@ -328,7 +328,7 @@ class TasksView extends ConsumerWidget {
 
                   return ListView.separated(
                     itemCount: workItems.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 10),
+                    separatorBuilder: (_, __) => SizedBox(height: 10),
                     itemBuilder: (context, index) {
                       final item = workItems[index];
                       final project = projectMap[item.projectId];
@@ -379,12 +379,12 @@ class _WorkItemCard extends ConsumerWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: AppTheme.surfaceDark,
+        color: AppTheme.getColors(context).surface,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
           color: isItemActive
               ? AppTheme.accentGreen.withValues(alpha: 0.8)
-              : (item.isArchived ? AppTheme.dividerDark.withValues(alpha: 0.5) : AppTheme.dividerDark),
+              : (item.isArchived ? AppTheme.getColors(context).divider.withValues(alpha: 0.5) : AppTheme.getColors(context).divider),
           width: isItemActive ? 1.5 : 1,
         ),
         boxShadow: isItemActive
@@ -397,7 +397,7 @@ class _WorkItemCard extends ConsumerWidget {
               ]
             : null,
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -410,7 +410,7 @@ class _WorkItemCard extends ConsumerWidget {
               borderRadius: BorderRadius.circular(2),
             ),
           ),
-          const SizedBox(width: 14),
+          SizedBox(width: 14),
 
           // Main Info
           Expanded(
@@ -425,21 +425,21 @@ class _WorkItemCard extends ConsumerWidget {
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
-                          color: item.isArchived ? AppTheme.textSecondaryDark : AppTheme.textPrimaryDark,
+                          color: item.isArchived ? AppTheme.getColors(context).textSecondary : AppTheme.getColors(context).textPrimary,
                           decoration: item.isArchived ? TextDecoration.lineThrough : null,
                         ),
                       ),
                     ),
                     if (isItemActive)
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        margin: const EdgeInsets.only(right: 8),
+                        padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        margin: EdgeInsets.only(right: 8),
                         decoration: BoxDecoration(
                           color: AppTheme.accentGreen.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(4),
                           border: Border.all(color: AppTheme.accentGreen.withValues(alpha: 0.5)),
                         ),
-                        child: const Row(
+                        child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(Icons.timer, size: 11, color: AppTheme.accentGreen),
@@ -453,13 +453,13 @@ class _WorkItemCard extends ConsumerWidget {
                       ),
                     if (item.isArchived)
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        margin: const EdgeInsets.only(right: 8),
+                        padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        margin: EdgeInsets.only(right: 8),
                         decoration: BoxDecoration(
                           color: AppTheme.accentOrange.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(4),
                         ),
-                        child: const Text(
+                        child: Text(
                           'ARCHIVED',
                           style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.accentOrange),
                         ),
@@ -467,15 +467,15 @@ class _WorkItemCard extends ConsumerWidget {
                   ],
                 ),
                 if (item.notes != null && item.notes!.isNotEmpty) ...[
-                  const SizedBox(height: 4),
+                  SizedBox(height: 4),
                   Text(
                     item.notes!,
-                    style: const TextStyle(fontSize: 12, color: AppTheme.textSecondaryDark),
+                    style: TextStyle(fontSize: 12, color: AppTheme.getColors(context).textSecondary),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ],
-                const SizedBox(height: 10),
+                SizedBox(height: 10),
 
                 // Meta badges: Project, Category, Tags, People
                 Wrap(
@@ -486,7 +486,7 @@ class _WorkItemCard extends ConsumerWidget {
                     // Project Badge
                     if (project != null)
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                         decoration: BoxDecoration(
                           color: projectColor.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(6),
@@ -496,7 +496,7 @@ class _WorkItemCard extends ConsumerWidget {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(Icons.folder_outlined, size: 12, color: projectColor),
-                            const SizedBox(width: 4),
+                            SizedBox(width: 4),
                             Text(
                               project!.name,
                               style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: projectColor),
@@ -508,19 +508,19 @@ class _WorkItemCard extends ConsumerWidget {
                     // Category Badge
                     if (category != null)
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                         decoration: BoxDecoration(
-                          color: AppTheme.cardDark,
+                          color: AppTheme.getColors(context).card,
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(IconUtils.getIcon(category!.iconName), size: 12, color: AppTheme.textSecondaryDark),
-                            const SizedBox(width: 4),
+                            Icon(IconUtils.getIcon(category!.iconName), size: 12, color: AppTheme.getColors(context).textSecondary),
+                            SizedBox(width: 4),
                             Text(
                               category!.name,
-                              style: const TextStyle(fontSize: 11, color: AppTheme.textSecondaryDark),
+                              style: TextStyle(fontSize: 11, color: AppTheme.getColors(context).textSecondary),
                             ),
                           ],
                         ),
@@ -530,7 +530,7 @@ class _WorkItemCard extends ConsumerWidget {
                     ...tags.map((t) {
                       final tagColor = ColorUtils.parseHex(t.colorHex);
                       return Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
                           color: tagColor.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(4),
@@ -539,7 +539,7 @@ class _WorkItemCard extends ConsumerWidget {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Container(width: 6, height: 6, decoration: BoxDecoration(color: tagColor, shape: BoxShape.circle)),
-                            const SizedBox(width: 4),
+                            SizedBox(width: 4),
                             Text(
                               t.name,
                               style: TextStyle(fontSize: 11, color: tagColor, fontWeight: FontWeight.w500),
@@ -552,19 +552,19 @@ class _WorkItemCard extends ConsumerWidget {
                     // People
                     ...people.map((p) {
                       return Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: AppTheme.cardDark,
+                          color: AppTheme.getColors(context).card,
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(Icons.person, size: 11, color: AppTheme.textSecondaryDark),
-                            const SizedBox(width: 4),
+                            Icon(Icons.person, size: 11, color: AppTheme.getColors(context).textSecondary),
+                            SizedBox(width: 4),
                             Text(
                               p.name,
-                              style: const TextStyle(fontSize: 11, color: AppTheme.textSecondaryDark),
+                              style: TextStyle(fontSize: 11, color: AppTheme.getColors(context).textSecondary),
                             ),
                           ],
                         ),
@@ -579,23 +579,23 @@ class _WorkItemCard extends ConsumerWidget {
                             ? TimerService.formatDuration(timerState.elapsed, includeSeconds: true)
                             : TimerService.formatDuration(dur, compact: true);
                         return Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
-                            color: isItemActive ? AppTheme.accentGreen.withValues(alpha: 0.15) : AppTheme.cardDark,
+                            color: isItemActive ? AppTheme.accentGreen.withValues(alpha: 0.15) : AppTheme.getColors(context).card,
                             borderRadius: BorderRadius.circular(4),
                             border: isItemActive ? Border.all(color: AppTheme.accentGreen.withValues(alpha: 0.4)) : null,
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(Icons.schedule, size: 11, color: isItemActive ? AppTheme.accentGreen : AppTheme.textSecondaryDark),
-                              const SizedBox(width: 4),
+                              Icon(Icons.schedule, size: 11, color: isItemActive ? AppTheme.accentGreen : AppTheme.getColors(context).textSecondary),
+                              SizedBox(width: 4),
                               Text(
                                 formatted,
                                 style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: isItemActive ? FontWeight.bold : FontWeight.normal,
-                                  color: isItemActive ? AppTheme.accentGreen : AppTheme.textSecondaryDark,
+                                  color: isItemActive ? AppTheme.accentGreen : AppTheme.getColors(context).textSecondary,
                                 ),
                               ),
                             ],
@@ -638,13 +638,13 @@ class _WorkItemCard extends ConsumerWidget {
                 }
               },
             ),
-            const SizedBox(width: 4),
+            SizedBox(width: 4),
           ],
 
           // Actions Popup Menu
           PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert, size: 18, color: AppTheme.textSecondaryDark),
-            color: AppTheme.surfaceDark,
+            icon: Icon(Icons.more_vert, size: 18, color: AppTheme.getColors(context).textSecondary),
+            color: AppTheme.getColors(context).surface,
             onSelected: (value) async {
               if (value == 'edit') {
                 await TaskFormDialog.show(context, workItem: item);
@@ -659,15 +659,15 @@ class _WorkItemCard extends ConsumerWidget {
                 final confirm = await showDialog<bool>(
                   context: context,
                   builder: (ctx) => AlertDialog(
-                    backgroundColor: AppTheme.surfaceDark,
-                    title: const Text('Delete Task', style: TextStyle(color: AppTheme.textPrimaryDark)),
+                    backgroundColor: AppTheme.getColors(context).surface,
+                    title: Text('Delete Task', style: TextStyle(color: AppTheme.getColors(context).textPrimary)),
                     content: Text('Are you sure you want to permanently delete task "${item.name}"?'),
                     actions: [
-                      TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+                      TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('Cancel')),
                       ElevatedButton(
                         onPressed: () => Navigator.pop(ctx, true),
                         style: ElevatedButton.styleFrom(backgroundColor: AppTheme.accentRed, foregroundColor: Colors.white),
-                        child: const Text('Delete'),
+                        child: Text('Delete'),
                       ),
                     ],
                   ),
@@ -681,33 +681,33 @@ class _WorkItemCard extends ConsumerWidget {
               }
             },
             itemBuilder: (context) => [
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'edit',
                 child: Row(
                   children: [
-                    Icon(Icons.edit_outlined, size: 16, color: AppTheme.textPrimaryDark),
+                    Icon(Icons.edit_outlined, size: 16, color: AppTheme.getColors(context).textPrimary),
                     SizedBox(width: 8),
                     Text('Edit'),
                   ],
                 ),
               ),
               if (item.isArchived)
-                const PopupMenuItem(
+                PopupMenuItem(
                   value: 'unarchive',
                   child: Row(
                     children: [
-                      Icon(Icons.unarchive_outlined, size: 16, color: AppTheme.textPrimaryDark),
+                      Icon(Icons.unarchive_outlined, size: 16, color: AppTheme.getColors(context).textPrimary),
                       SizedBox(width: 8),
                       Text('Unarchive'),
                     ],
                   ),
                 )
               else
-                const PopupMenuItem(
+                PopupMenuItem(
                   value: 'archive',
                   child: Row(
                     children: [
-                      Icon(Icons.archive_outlined, size: 16, color: AppTheme.textPrimaryDark),
+                      Icon(Icons.archive_outlined, size: 16, color: AppTheme.getColors(context).textPrimary),
                       SizedBox(width: 8),
                       Text('Archive'),
                     ],

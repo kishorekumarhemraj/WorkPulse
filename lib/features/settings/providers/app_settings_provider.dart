@@ -115,6 +115,7 @@ String hotKeyLabel(HotKey hotKey) {
         HotKeyModifier.shift => '⇧',
         HotKeyModifier.fn => 'fn',
         HotKeyModifier.capsLock => '⇪',
+        _ => '',
       },
     hotKey.physicalKey.keyLabel == '␣' ? 'Space' : hotKey.physicalKey.keyLabel,
   ];

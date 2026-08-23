@@ -25,7 +25,7 @@ class _CategoriesViewState extends ConsumerState<CategoriesView> {
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: Padding(
-        padding: const EdgeInsets.all(24.0),
+        padding: EdgeInsets.all(24.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -33,37 +33,37 @@ class _CategoriesViewState extends ConsumerState<CategoriesView> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Expanded(
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         'Categories',
-                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppTheme.textPrimaryDark),
+                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppTheme.getColors(context).textPrimary),
                       ),
                       SizedBox(height: 4),
                       Text(
                         'Functional classifications for your tracked time and work',
-                        style: TextStyle(fontSize: 13, color: AppTheme.textSecondaryDark),
+                        style: TextStyle(fontSize: 13, color: AppTheme.getColors(context).textSecondary),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(width: 16),
+                SizedBox(width: 16),
                 ElevatedButton.icon(
                   onPressed: () => CategoryFormDialog.show(context),
-                  icon: const Icon(Icons.add, size: 18),
-                  label: const Text('New Category'),
+                  icon: Icon(Icons.add, size: 18),
+                  label: Text('New Category'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.primaryColor,
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: 20),
 
             // Search bar
             SizedBox(
@@ -72,29 +72,29 @@ class _CategoriesViewState extends ConsumerState<CategoriesView> {
                 onChanged: (value) => setState(() => _searchQuery = value.trim().toLowerCase()),
                 decoration: InputDecoration(
                   hintText: 'Search categories...',
-                  prefixIcon: const Icon(Icons.search, size: 18, color: AppTheme.textSecondaryDark),
+                  prefixIcon: Icon(Icons.search, size: 18, color: AppTheme.getColors(context).textSecondary),
                   filled: true,
-                  fillColor: AppTheme.surfaceDark,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 12),
+                  fillColor: AppTheme.getColors(context).surface,
+                  contentPadding: EdgeInsets.symmetric(vertical: 0, horizontal: 12),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(color: AppTheme.dividerDark),
+                    borderSide: BorderSide(color: AppTheme.getColors(context).divider),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(color: AppTheme.dividerDark),
+                    borderSide: BorderSide(color: AppTheme.getColors(context).divider),
                   ),
                 ),
               ),
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: 20),
 
             // Categories List
             Expanded(
               child: categoriesAsync.when(
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (error, _) => Center(
-                  child: Text('Error loading categories: $error', style: const TextStyle(color: AppTheme.accentRed)),
+                  child: Text('Error loading categories: $error', style: TextStyle(color: AppTheme.accentRed)),
                 ),
                 data: (categories) {
                   final filtered = categories.where((c) {
@@ -108,18 +108,18 @@ class _CategoriesViewState extends ConsumerState<CategoriesView> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.folder_open_outlined, size: 48, color: AppTheme.textSecondaryDark.withValues(alpha: 0.5)),
-                          const SizedBox(height: 12),
+                          Icon(Icons.folder_open_outlined, size: 48, color: AppTheme.getColors(context).textSecondary.withValues(alpha: 0.5)),
+                          SizedBox(height: 12),
                           Text(
                             _searchQuery.isEmpty ? 'No categories found' : 'No matching categories',
-                            style: const TextStyle(fontSize: 16, color: AppTheme.textSecondaryDark),
+                            style: TextStyle(fontSize: 16, color: AppTheme.getColors(context).textSecondary),
                           ),
                           if (_searchQuery.isEmpty) ...[
-                            const SizedBox(height: 12),
+                            SizedBox(height: 12),
                             OutlinedButton.icon(
                               onPressed: () => CategoryFormDialog.show(context),
-                              icon: const Icon(Icons.add, size: 16),
-                              label: const Text('Create First Category'),
+                              icon: Icon(Icons.add, size: 16),
+                              label: Text('Create First Category'),
                               style: OutlinedButton.styleFrom(foregroundColor: AppTheme.primaryColor),
                             ),
                           ],
@@ -162,18 +162,18 @@ class _CategoryCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return Container(
       decoration: BoxDecoration(
-        color: AppTheme.surfaceDark,
+        color: AppTheme.getColors(context).surface,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppTheme.dividerDark, width: 1),
+        border: Border.all(color: AppTheme.getColors(context).divider, width: 1),
       ),
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(6),
+                padding: EdgeInsets.all(6),
                 decoration: BoxDecoration(
                   color: AppTheme.primaryColor.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(6),
@@ -184,18 +184,18 @@ class _CategoryCard extends ConsumerWidget {
                   color: AppTheme.primaryColor,
                 ),
               ),
-              const SizedBox(width: 10),
+              SizedBox(width: 10),
               Expanded(
                 child: Text(
                   category.name,
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppTheme.textPrimaryDark),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppTheme.getColors(context).textPrimary),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
               PopupMenuButton<String>(
-                icon: const Icon(Icons.more_vert, size: 18, color: AppTheme.textSecondaryDark),
-                color: AppTheme.surfaceDark,
+                icon: Icon(Icons.more_vert, size: 18, color: AppTheme.getColors(context).textSecondary),
+                color: AppTheme.getColors(context).surface,
                 onSelected: (value) async {
                   if (value == 'edit') {
                     await CategoryFormDialog.show(context, category: category);
@@ -205,15 +205,15 @@ class _CategoryCard extends ConsumerWidget {
                     final confirm = await showDialog<bool>(
                       context: context,
                       builder: (ctx) => AlertDialog(
-                        backgroundColor: AppTheme.surfaceDark,
-                        title: const Text('Delete Category', style: TextStyle(color: AppTheme.textPrimaryDark)),
+                        backgroundColor: AppTheme.getColors(context).surface,
+                        title: Text('Delete Category', style: TextStyle(color: AppTheme.getColors(context).textPrimary)),
                         content: Text('Are you sure you want to delete "${category.name}"? This action cannot be undone.'),
                         actions: [
-                          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+                          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('Cancel')),
                           ElevatedButton(
                             onPressed: () => Navigator.pop(ctx, true),
                             style: ElevatedButton.styleFrom(backgroundColor: AppTheme.accentRed, foregroundColor: Colors.white),
-                            child: const Text('Delete'),
+                            child: Text('Delete'),
                           ),
                         ],
                       ),
@@ -224,21 +224,21 @@ class _CategoryCard extends ConsumerWidget {
                   }
                 },
                 itemBuilder: (context) => [
-                  const PopupMenuItem(
+                  PopupMenuItem(
                     value: 'edit',
                     child: Row(
                       children: [
-                        Icon(Icons.edit_outlined, size: 16, color: AppTheme.textPrimaryDark),
+                        Icon(Icons.edit_outlined, size: 16, color: AppTheme.getColors(context).textPrimary),
                         SizedBox(width: 8),
                         Text('Edit'),
                       ],
                     ),
                   ),
-                  const PopupMenuItem(
+                  PopupMenuItem(
                     value: 'archive',
                     child: Row(
                       children: [
-                        Icon(Icons.archive_outlined, size: 16, color: AppTheme.textPrimaryDark),
+                        Icon(Icons.archive_outlined, size: 16, color: AppTheme.getColors(context).textPrimary),
                         SizedBox(width: 8),
                         Text('Archive'),
                       ],
@@ -258,38 +258,38 @@ class _CategoryCard extends ConsumerWidget {
               ),
             ],
           ),
-          const SizedBox(height: 6),
+          SizedBox(height: 6),
           Expanded(
             child: Text(
               category.description ?? 'No description provided.',
               style: TextStyle(
                 fontSize: 12,
-                color: category.description != null ? AppTheme.textSecondaryDark : AppTheme.textSecondaryDark.withValues(alpha: 0.5),
+                color: category.description != null ? AppTheme.getColors(context).textSecondary : AppTheme.getColors(context).textSecondary.withValues(alpha: 0.5),
               ),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
           ),
-          const Divider(color: AppTheme.dividerDark, height: 16),
+          Divider(color: AppTheme.getColors(context).divider, height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: AppTheme.cardDark,
+                  color: AppTheme.getColors(context).card,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
                   '$taskCount tasks',
-                  style: const TextStyle(fontSize: 11, color: AppTheme.textSecondaryDark, fontWeight: FontWeight.w500),
+                  style: TextStyle(fontSize: 11, color: AppTheme.getColors(context).textSecondary, fontWeight: FontWeight.w500),
                 ),
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: 8),
               Flexible(
                 child: Text(
                   'Updated ${_formatDate(category.updatedAt)}',
-                  style: const TextStyle(fontSize: 11, color: AppTheme.textSecondaryDark),
+                  style: TextStyle(fontSize: 11, color: AppTheme.getColors(context).textSecondary),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),

@@ -52,7 +52,7 @@ class WorkPulseApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final settings = ref.watch(appSettingsProvider).valueOrNull;
+    final settings = ref.watch(appSettingsProvider).value;
 
     return MaterialApp(
       title: AppConstants.appName,
