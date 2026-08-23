@@ -1,242 +1,536 @@
-# WorkPulse
+# WorkPulse — Product & Technical Specification
 
-## Implementation-Ready Product & Technical Specification
-
-**Version:** V1.0  
-**Platform:** macOS initially  
+**Document:** `docs/WORKPULSE_SPEC.md`  
+**Version:** 1.0  
+**Status:** Implementation baseline  
+**Initial platform:** macOS  
 **Framework:** Flutter / Dart  
 **Database:** SQLite  
-**State Management:** Riverpod  
-**Future Platform:** Windows
+**State management:** Riverpod  
+**Future platform:** Windows
 
 ---
 
-# 1. Product Definition
+## 1. Product Vision
 
-**WorkPulse** is a privacy-conscious, offline-first productivity and work-awareness application.
+**WorkPulse** is a privacy-conscious productivity and work-awareness application that helps users understand how they spend their working time.
 
-It allows a user to intentionally record:
+The user intentionally records:
 
 - What they are working on
-- Which project it belongs to
-- Which category it belongs to
-- Tags
+- Which project it relates to
+- How the work is categorised
+- Relevant tags
 - People involved
-- Jira/reference metadata
+- Optional organisation-specific metadata
 - Individual work sessions
 - Time spent on those sessions
-- Periods of inactivity during sessions
+- Periods of inactivity
 
-The purpose is to help the user understand and improve how they spend their working time.
+The application should feel like a **personal productivity utility**, not a timesheet or employee-monitoring system.
 
-WorkPulse must **not** behave like employee surveillance software.
-
-### Product positioning
+### Positioning
 
 > **WorkPulse — Understand your work. Improve your flow.**
 
 ---
 
-# 2. Product Principles
+## 2. Core Product Principles
 
-## 2.1 Fast
+### Fast
 
-The user should be able to start working on a task in seconds.
+Starting or switching work should take seconds.
 
-## 2.2 Minimal distraction
+### Low distraction
 
-The primary interaction is a small keyboard-driven Quick Capture window.
+The primary interaction is a small keyboard-driven floating window.
 
-## 2.3 Intentional tracking
+### Intentional
 
-The user explicitly starts tracking a task.
+The user explicitly starts tracking a work item.
 
-## 2.4 Privacy conscious
+### Privacy-conscious
 
-WorkPulse does not perform screen monitoring, keystroke logging, or application surveillance.
+No screen recording, keystroke logging, browser monitoring, or application surveillance.
 
-## 2.5 Local first
+### Offline-first
 
-Core functionality works without internet connectivity.
+Core functionality requires no network connection.
 
-## 2.6 Extensible
+### Configurable
 
-The architecture should support future Windows support and optional integrations without requiring a rewrite.
+Organisation-specific concepts must not be hardcoded into the application.
 
----
+### Extensible
 
-# 3. Technology Stack
-
-## Application
-
-- Flutter
-- Dart
-
-## UI
-
-- Flutter / Material 3 where appropriate
-- Custom lightweight desktop styling for Quick Capture
-
-## State management
-
-- Riverpod
-
-## Persistence
-
-- SQLite
-
-Use a well-supported Flutter SQLite package.
-
-The persistence layer must be abstracted behind repositories.
-
-## Platform integration
-
-Platform-specific services should be isolated behind interfaces.
-
-### macOS V1
-
-Native macOS implementation where required.
-
-### Windows
-
-Not implemented in V1, but interfaces must allow a Windows implementation later.
+The architecture must support Windows and future integrations without redesigning the core domain.
 
 ---
 
-# 4. High-Level Architecture
+## 3. Important Terminology
+
+Internally, the core domain should use **WorkItem** rather than assuming everything is a conventional "task".
+
+A WorkItem could represent:
+
+- Software development
+- Architecture work
+- A meeting
+- A customer call
+- Planning
+- Research
+- Code review
+- Documentation
+- Administration
+
+The UI may use **Task** where that is more natural for users.
+
+Conceptually:
 
 ```text
-WorkPulse
-│
-├── Presentation
-│   ├── Quick Capture
-│   ├── Menu Bar
-│   ├── Dashboard
-│   ├── Tasks
-│   ├── Projects
-│   ├── Categories
-│   └── Settings
-│
-├── Application
-│   ├── Task Service
-│   ├── Session Service
-│   ├── Timer Service
-│   ├── Idle Service
-│   ├── Reporting Service
-│   └── Search Service
-│
-├── Domain
-│   ├── Task
-│   ├── Session
-│   ├── Project
-│   ├── Category
-│   ├── Tag
-│   ├── Person
-│   └── Idle Period
-│
-├── Persistence
-│   ├── SQLite
-│   └── Repositories
-│
-└── Platform
-    ├── Global Shortcut
-    ├── Window
-    ├── Menu Bar
-    ├── Notifications
-    ├── Startup
-    └── Idle Detection
+WorkItem
+   │
+   ├── Project
+   ├── Category
+   ├── Tags
+   ├── People
+   ├── Custom Attributes
+   │
+   └── Sessions
+          └── Idle Periods
 ```
-
-Business logic must not directly depend on macOS APIs.
 
 ---
 
-# 5. Platform Abstraction
+## 4. Core Domain Model
 
-Create interfaces for all OS-specific functionality.
+The following are **first-class WorkPulse concepts**:
+
+```text
+Workspace
+WorkItem
+Project
+Category
+Tag
+Person
+Session
+IdlePeriod
+AttributeDefinition
+AttributeOption
+```
+
+The following are **not** first-class concepts:
+
+```text
+Jira
+Azure DevOps
+ServiceNow
+Customer
+Release
+Environment
+Ticket
+```
+
+Those are examples of configurable attributes.
+
+---
+
+## 5. WorkItem
+
+A WorkItem represents something the user spends time working on.
 
 Example:
 
-```dart
-abstract class GlobalShortcutService {
-  Future<void> register();
-  Future<void> unregister();
-}
+```text
+Architecture proposal
 ```
 
-```dart
-abstract class WindowService {
-  Future<void> showQuickCapture();
-  Future<void> hideQuickCapture();
-  Future<void> focusQuickCapture();
-}
+A WorkItem contains:
+
+```text
+id
+name
+projectId
+categoryId
+status
+notes
+createdAt
+updatedAt
+lastWorkedAt
+archivedAt
 ```
 
-```dart
-abstract class SystemTrayService {
-  Future<void> initialize();
-  Future<void> update();
-}
-```
+It can have relationships to:
 
-```dart
-abstract class NotificationService {
-  Future<void> show({
-    required String title,
-    required String message,
-  });
-}
+```text
+Tags
+People
+Custom Attributes
+Sessions
 ```
-
-```dart
-abstract class SystemActivityService {
-  Future<DateTime?> getLastUserActivity();
-}
-```
-
-The application layer should depend on these abstractions rather than platform implementations.
 
 ---
 
-# 6. Application Lifecycle
+## 6. WorkItem Lifecycle
 
-When WorkPulse starts:
+Stopping a timer does **not** complete the WorkItem.
 
-1. Initialize SQLite.
-2. Run database migrations.
-3. Load application settings.
-4. Initialize platform services.
-5. Initialize menu-bar integration.
-6. Register global keyboard shortcut.
-7. Recover any active session.
-8. Start idle detection if a session is active.
-9. Keep WorkPulse primarily running as a background/menu-bar application.
+These are independent concepts.
 
-The Dashboard should **not** automatically open.
+### WorkItem status
 
-The Quick Capture window should only appear when requested.
+```text
+Active
+Completed
+Archived
+```
 
----
+### Session status
 
-# 7. Quick Capture
+```text
+Running
+Completed
+```
 
-Quick Capture is the most important UX component.
-
-It should behave like a lightweight command palette.
-
-Conceptually similar to:
-
-- Spotlight
-- Raycast
-- Alfred
-
-but focused specifically on WorkPulse tasks.
+A WorkItem may have many sessions.
 
 ---
 
-# 8. Global Shortcut
+## 7. Project
 
-Default suggestion:
+Projects are first-class entities.
+
+Examples:
+
+```text
+OpenText Platform
+AI Productivity
+Internal Engineering
+Open Source
+```
+
+Project:
+
+```text
+id
+name
+description
+createdAt
+updatedAt
+archivedAt
+```
+
+Projects should be archived rather than deleted when historical sessions reference them.
+
+---
+
+## 8. Category
+
+Categories are independent classifications.
+
+Examples:
+
+```text
+Engineering
+Architecture
+Meeting
+Planning
+Documentation
+Support
+Research
+```
+
+A category does **not** belong to a project.
+
+This enables reporting such as:
+
+> How much time did I spend on Architecture across all projects?
+
+Category:
+
+```text
+id
+name
+description
+createdAt
+updatedAt
+archivedAt
+```
+
+---
+
+## 9. Tags
+
+Tags are reusable and many-to-many.
+
+Examples:
+
+```text
+Deep Work
+Meeting
+Call
+Customer
+Internal
+Urgent
+Review
+```
+
+Tags remain first-class concepts because they have different semantics from arbitrary attributes.
+
+---
+
+## 10. People
+
+People are reusable entities.
+
+A person can be associated with a WorkItem and/or individual Session.
+
+Example:
+
+```text
+Architecture proposal
+People:
+Richard
+John
+```
+
+A session can also have its own people associations.
+
+---
+
+## 11. Configurable Attributes
+
+This is a fundamental architectural requirement.
+
+> **Organisation-specific or workflow-specific information must never be hardcoded into the WorkPulse domain model.**
+
+Examples:
+
+```text
+Jira ID
+Customer
+Release
+Environment
+Ticket
+Team
+Cost Centre
+Work Type
+Billable
+Reference
+```
+
+are configurable attributes.
+
+A user with no Jira configuration should never see "Jira" anywhere in WorkPulse.
+
+---
+
+## 12. Attribute Definition
+
+```text
+AttributeDefinition
+
+id
+key
+name
+description
+type
+scope
+required
+enabled
+searchable
+reportable
+showInQuickCapture
+showInTaskDetails
+displayOrder
+createdAt
+updatedAt
+archivedAt
+```
+
+### Key
+
+Stable internal identifier.
+
+Example:
+
+```text
+jira_id
+```
+
+### Name
+
+User-facing name.
+
+Example:
+
+```text
+Jira ID
+```
+
+The user can rename the display name without changing the internal key.
+
+---
+
+## 13. Attribute Scope
+
+V1 should support:
+
+```text
+TASK
+SESSION
+```
+
+The initial UI may expose custom attributes primarily at the WorkItem/Task level.
+
+This leaves room for future attributes such as:
+
+```text
+Meeting Type → Session
+Customer → WorkItem
+Environment → WorkItem
+```
+
+---
+
+## 14. Attribute Types
+
+V1 supports:
+
+### Text
+
+```text
+Jira ID
+Customer
+Reference
+Ticket
+```
+
+### Number
+
+```text
+Story Points
+Cost Centre
+```
+
+### Boolean
+
+```text
+Billable
+Customer Facing
+```
+
+### Single Select
+
+```text
+Environment
+
+Development
+Testing
+Staging
+Production
+```
+
+### Multi Select
+
+```text
+Teams
+
+Platform
+Security
+Mobile
+```
+
+### Date
+
+```text
+Release Date
+```
+
+Do not introduce additional types until there is a real use case.
+
+---
+
+## 15. Attribute Values
+
+Do **not** store all custom metadata as an unstructured JSON blob.
+
+Use a typed value model.
+
+Recommended:
+
+```text
+attribute_definitions
+attribute_options
+work_item_attribute_values
+session_attribute_values
+```
+
+This allows proper:
+
+- Searching
+- Filtering
+- Reporting
+- Validation
+- Indexing
+- Schema evolution
+
+---
+
+## 16. Attribute Lifecycle
+
+Attributes must support:
+
+```text
+Enabled
+Archived
+```
+
+Deleting an attribute must **not delete historical values**.
+
+An archived attribute stops appearing for new work while historical data remains intact.
+
+---
+
+## 17. Attribute Type Changes
+
+Arbitrary type changes should **not** be supported in V1.
+
+For example, a Text attribute should not be converted directly to Single Select.
+
+Instead:
+
+1. Archive old attribute.
+2. Create new attribute.
+
+This avoids dangerous historical data conversions.
+
+---
+
+## 18. Required Attributes
+
+Attributes can be:
+
+```text
+Required
+Optional
+```
+
+Required means:
+
+> A new WorkItem cannot be started without providing that attribute.
+
+Historical WorkItems are never invalidated when a new attribute becomes required.
+
+---
+
+## 19. Quick Capture
+
+Quick Capture is the most important UX.
+
+It should behave like a command palette rather than a conventional application form.
+
+Default shortcut:
 
 ```text
 Option + Space
@@ -244,271 +538,253 @@ Option + Space
 
 The shortcut must be configurable.
 
-It must work while the user is working in another application.
-
-Invoking the shortcut should:
-
-1. Bring Quick Capture to the foreground.
-2. Give it keyboard focus.
-3. Display the current task if one is active.
-4. Otherwise display recent tasks / task creation UI.
-
 ---
 
-# 9. Quick Capture Window
+## 20. Quick Capture Window
 
-The window should be:
+Requirements:
 
 - Small
 - Floating
 - Keyboard-first
-- Focused
+- Fast
 - Non-distracting
-- Fast to display
-- Dismissible with Escape
-- Automatically hidden after an action
 - Always-on-top while active
-- Visually consistent with macOS
-
-The application should avoid opening a normal full-size window for this interaction.
+- Escape to dismiss
+- Returns focus to previous application
+- Does not open a full-size application window
 
 ---
 
-# 10. New Task UI
+## 21. New WorkItem UI
 
-When creating a new task, the UI has two conceptual levels.
+The UI has two levels.
 
-## Primary information
+### First line
 
-The first line receives immediate keyboard focus:
+Primary task/work description:
 
 ```text
-┌──────────────────────────────────────────────┐
-│ 🔎  What are you working on?                 │
-│                                              │
-│ Fix authentication timeout                   │
-├──────────────────────────────────────────────┤
-│ Project   [ OpenText Platform       ▼ ]      │
-│ Category  [ Engineering             ▼ ]      │
-│ Tags      [ API, Bug                + ]      │
-│ People    [ Richard                 + ]      │
-│ Jira      [ PLAT-1234                 ]      │
-│                                              │
-│                     [ Cancel ] [ Start ]     │
-└──────────────────────────────────────────────┘
+What are you working on?
+
+Fix authentication timeout
 ```
 
-The first line must have primary focus.
+This field receives immediate keyboard focus.
 
-The secondary fields should be accessible through:
+### Second section
 
-- Tab
-- Shift+Tab
-- Arrow keys where appropriate
-- Mouse
+Secondary context:
 
-Project and Category are mandatory before starting a new task.
+```text
+Project    [ OpenText Platform ▼ ]
+Category   [ Engineering      ▼ ]
 
-Tags, people and Jira ID are optional.
+Tags       [ Bug, API         + ]
+People     [ Richard          + ]
+Jira ID    [ PLAT-1234          ]
+```
+
+The actual secondary fields are **configuration-driven**.
 
 ---
 
-# 11. Task Creation Workflow
+## 22. Quick Capture Attribute Visibility
 
-Example:
+Every configurable attribute can specify:
 
 ```text
-⌥ Space
-↓
-Type task
-↓
-Select project
-↓
-Select category
-↓
-Optional metadata
-↓
+showInQuickCapture
+```
+
+This prevents a 15-field configuration from turning Quick Capture into a giant form.
+
+Recommended UX:
+
+> Keep Quick Capture to roughly 3–5 secondary fields.
+
+WorkPulse may warn the user if they configure substantially more.
+
+Other metadata remains available in WorkItem Details.
+
+---
+
+## 23. New WorkItem Flow
+
+```text
+Option + Space
+       ↓
+Enter work description
+       ↓
+Select Project
+       ↓
+Select Category
+       ↓
+Optional configured metadata
+       ↓
 Start
 ```
 
-The UI must minimise the number of keystrokes required.
+Project and Category are mandatory in the initial configuration.
 
-If the user enters a new project/category name, the application may provide an option to create it inline.
-
----
-
-# 12. Existing Task Workflow
-
-Quick Capture must also act as a task search/resume interface.
-
-Example:
-
-```text
-┌──────────────────────────────────────────────┐
-│ 🔎 architecture                              │
-├──────────────────────────────────────────────┤
-│ Architecture proposal       2h 50m           │
-│ API architecture review     1h 20m           │
-│ Architecture documentation  3h 10m           │
-└──────────────────────────────────────────────┘
-```
-
-Search should cover:
-
-- Task name
-- Project
-- Category
-- Tags
-- People
-- Jira ID
+Tags, People and Custom Attributes are optional unless configured as required.
 
 ---
 
-# 13. Recent Tasks
+## 24. Existing WorkItem Search
 
-When no search query exists, display:
+Quick Capture also searches existing WorkItems.
 
-1. Currently active task
-2. Recently used tasks
-3. Frequently used tasks
-4. New Task
-
-Example:
+Search across:
 
 ```text
-Current
-▶ Architecture proposal       01:23:42
-
-Recent
-  Production issue             1h 25m
-  API redesign                 4h 12m
-  AI strategy                  2h 40m
-
-+ New Task
+WorkItem name
+Project
+Category
+Tags
+People
+Custom attributes marked searchable
 ```
 
 ---
 
-# 14. One Active Task Rule
+## 25. Current WorkItem
 
-Only **one active session** is permitted at any time.
+When a session is active, Quick Capture should prominently display it.
 
-WorkPulse must never intentionally run two active timers simultaneously.
+```text
+CURRENT
 
-This simplifies:
+Architecture proposal
+01:23:42
+```
 
-- UX
-- Reporting
-- Data integrity
-- Idle handling
-- Session management
+The user can:
+
+```text
+Stop
+Switch
+Open Details
+```
 
 ---
 
-# 15. Starting a Session
+## 26. Task Switching
 
-Starting a task creates a new Session.
+There can be only **one active session**.
 
-A session contains:
+If the user selects another WorkItem, WorkPulse asks for confirmation.
+
+### Cancel
+
+Current session remains active.
+
+### Confirm
+
+1. End current session.
+2. Persist it.
+3. Start new session.
+4. Set new WorkItem as current.
+5. Close Quick Capture.
+
+---
+
+## 27. Session
+
+A Session represents one continuous period of tracking a WorkItem.
 
 ```text
+Session
+
 id
-taskId
+workItemId
 startTime
 endTime
 createdAt
 ```
 
-The timer displayed to the user is calculated from timestamps.
+Duration is derived from timestamps.
 
-Do not treat an incrementing counter as the authoritative duration.
+Never use an incrementing timer counter as the authoritative data source.
 
 ---
 
-# 16. Stopping a Session
+## 28. Resuming Work
 
-The user selects Stop.
+Selecting a previously used WorkItem creates a **new Session**.
 
-The application:
+Example:
+
+```text
+Architecture proposal
+
+Session 1    09:00–10:15    1h 15m
+Session 2    14:00–14:45      45m
+Session 3    16:30–17:20      50m
+
+Total                       2h 50m
+```
+
+Sessions remain individually visible.
+
+---
+
+## 29. Stopping
+
+Stopping:
 
 1. Records end timestamp.
-2. Calculates duration.
-3. Persists the session.
-4. Removes the active session.
-5. Updates menu-bar state.
-6. Returns to the previous application.
+2. Persists session.
+3. Clears active session.
+4. Updates menu bar.
+5. Returns to previous application.
 
-There must be **no mandatory post-stop prompt**.
-
-The user should be able to continue working immediately.
+There is **no mandatory post-stop question**.
 
 ---
 
-# 17. Task Switching
+## 30. Start vs Save
 
-If the user selects another task while a task is active:
+WorkItem creation and time tracking are separate.
 
-Do **not** switch immediately.
-
-Show confirmation.
-
-Example:
+Task Details should eventually support:
 
 ```text
-┌────────────────────────────────────────┐
-│ Switch task?                           │
-│                                        │
-│ Current                                │
-│ Architecture proposal   01:23:42       │
-│                                        │
-│ Switch to                              │
-│ Production issue                      │
-│                                        │
-│       [ Cancel ]     [ Switch ]        │
-└────────────────────────────────────────┘
+Save
+Save & Start
 ```
 
-If confirmed:
-
-1. End current session.
-2. Persist current session.
-3. Start a new session.
-4. Set new task as active.
-5. Close Quick Capture.
-
-If cancelled:
-
-- Continue current session unchanged.
-
----
-
-# 18. Resume
-
-Selecting a previously stopped task creates a new session.
-
-Example:
+Quick Capture remains focused on:
 
 ```text
-Task: Architecture proposal
-
-Session 1    10:00 → 11:15    1h 15m
-Session 2    14:00 → 14:45      45m
-Session 3    16:30 → 17:20      50m
-
-Total                         2h 50m
+Start
 ```
-
-Sessions must remain individually visible in reporting/history.
 
 ---
 
-# 19. Idle Detection
+## 31. Idle Detection
 
-WorkPulse should detect user inactivity.
+WorkPulse should detect inactivity.
 
-However, it must **not silently modify tracked time**.
+Default suggestion:
 
-When an idle period is detected, WorkPulse should notify the user.
+```text
+10 minutes
+```
+
+The threshold must be configurable.
+
+Important:
+
+> Idle detection does not mean WorkPulse assumes the user wasn't working.
+
+It only indicates:
+
+> No detectable keyboard/mouse interaction occurred for the configured period.
+
+---
+
+## 32. Idle Prompt
 
 Example:
 
@@ -522,353 +798,23 @@ What happened?
 [ Stop Session ]
 ```
 
-The user chooses the action.
+No action should silently destroy tracked time.
 
 ---
 
-# 20. Idle Period Model
-
-An idle period should be associated with the active session.
-
-Example:
+## 33. Idle Period
 
 ```text
-Session
-09:00 → 12:00
+IdlePeriod
 
-Idle
-10:15 → 10:45
-```
-
-The system should retain the information needed to calculate:
-
-- Gross session duration
-- Idle duration
-- Active/adjusted duration
-
-Do not automatically delete or modify the original session timestamps.
-
----
-
-# 21. Task
-
-A Task contains:
-
-```text
 id
-name
-projectId
-categoryId
-jiraId
-notes
-createdAt
-updatedAt
-lastWorkedAt
-```
-
-Tags and people should be represented through relationships rather than hard-coded fields.
-
----
-
-# 22. Project
-
-A Project contains:
-
-```text
-id
-name
-description
-createdAt
-updatedAt
-archivedAt
-```
-
-Projects are independent from categories.
-
----
-
-# 23. Category
-
-A Category contains:
-
-```text
-id
-name
-description
-createdAt
-updatedAt
-archivedAt
-```
-
-Categories are independent from projects.
-
-Example:
-
-```text
-Project: OpenText Platform
-Category: Architecture
-```
-
-and:
-
-```text
-Project: AI Productivity
-Category: Architecture
-```
-
-This allows cross-project reporting by category.
-
----
-
-# 24. Tags
-
-Tags are reusable.
-
-Example:
-
-- Deep Work
-- Meeting
-- Call
-- Customer
-- Internal
-- Urgent
-- Architecture
-- Review
-
-A many-to-many relationship should exist between Tasks and Tags.
-
----
-
-# 25. People
-
-People are reusable entities.
-
-A person can be associated with:
-
-- A task
-- A specific session
-
-Because the user selected **session-level and task-level people**, support both.
-
-Example:
-
-```text
-Task
-API redesign
-
-Task People:
-Richard
-John
-
-Session 1:
-Richard
-
-Session 2:
-John
-Sarah
-```
-
-This allows more accurate reporting later.
-
----
-
-# 26. Jira Metadata
-
-V1 does not require Jira API integration.
-
-Task metadata:
-
-```text
-Jira ID: PLAT-1234
-```
-
-The Jira ID must be:
-
-- Searchable
-- Displayed in task details
-- Included in reports
-- Included in exports
-
-Optionally support a configurable Jira base URL for generating a link.
-
-No network request should be necessary to use the Jira field.
-
----
-
-# 27. Menu Bar
-
-WorkPulse should primarily operate from the macOS menu bar.
-
-Example:
-
-```text
-WorkPulse    ⏱ 01:23:42
-```
-
-Menu:
-
-```text
-Current Task
-Architecture proposal
-01:23:42
-
-Stop
-Switch Task
-Quick Capture
-
-Dashboard
-Tasks
-Reports
-
-Settings
-Quit
-```
-
-The menu-bar implementation must be isolated behind the platform abstraction.
-
----
-
-# 28. Dashboard
-
-V1 dashboard should be implemented entirely in Flutter.
-
-Do **not** start a local web server in V1.
-
-The Dashboard should be accessible from:
-
-- Menu-bar menu
-- Quick Capture
-- Main WorkPulse window
-
----
-
-# 29. Dashboard Views
-
-## Today
-
-Display:
-
-- Total tracked time
-- Active/adjusted time where available
-- Time by project
-- Time by category
-- Time by task
-- Session count
-- Task-switch count
-
-## This Week
-
-Display the same metrics across the current week.
-
-## Custom Range
-
-Allow:
-
-- Start date
-- End date
-
----
-
-# 30. Reporting
-
-Reports should support grouping by:
-
-### Project
-
-```text
-OpenText Platform       18h 42m
-AI Productivity          7h 20m
-```
-
-### Category
-
-```text
-Engineering              15h
-Architecture              6h
-Meetings                  8h
-```
-
-### Task
-
-```text
-Architecture proposal    2h 50m
-API redesign              4h 12m
-```
-
-### Person
-
-```text
-Richard                   3h 20m
-John                      2h 15m
-```
-
-### Tag
-
-```text
-Deep Work                12h
-Meeting                   7h
-```
-
----
-
-# 31. Productivity Metrics
-
-The application may calculate:
-
-- Longest session
-- Average session duration
-- Number of sessions
-- Task switches
-- Deep-work time
-- Meeting time
-- Call time
-- Idle time
-- Most productive day
-- Most productive period
-
-Do not make assumptions that a particular activity is "productive" unless the user has classified it accordingly.
-
----
-
-# 32. Data Model
-
-Recommended SQLite schema:
-
-```text
-projects
-categories
-tags
-people
-tasks
-task_tags
-task_people
-sessions
-session_people
-idle_periods
-settings
-```
-
-### sessions
-
-```text
-id
-task_id
-start_time
-end_time
-created_at
-```
-
-### idle_periods
-
-```text
-id
-session_id
-start_time
-end_time
+sessionId
+startTime
+endTime
 resolution
 ```
 
-Where `resolution` may contain:
+Resolution:
 
 ```text
 keep_tracking
@@ -876,317 +822,724 @@ mark_idle
 stop_session
 ```
 
----
-
-# 33. Active Session Recovery
-
-When WorkPulse launches:
-
-1. Check for an unfinished session.
-2. If none exists, continue normally.
-3. If one exists, recover it.
-4. Recalculate elapsed time from timestamps.
-5. Restart idle detection.
-6. Display the active task in the menu bar.
-
-The application must not lose an active session because of:
-
-- Application crash
-- Force quit
-- System restart
-- Mac sleep
-- Mac wake
+Raw session timestamps should remain unchanged.
 
 ---
 
-# 34. Sleep/Wake
+## 34. System Sleep
 
-Timers must be timestamp-based.
+System sleep should be treated differently from normal inactivity.
+
+WorkPulse should record sleep/wake information rather than automatically assuming the entire period was user idle.
+
+The user can resolve the period appropriately.
+
+---
+
+## 35. Gross vs Active Time
+
+WorkPulse should distinguish:
+
+### Gross tracked time
+
+```text
+Session end - Session start
+```
+
+### Idle time
+
+Time explicitly classified as idle.
+
+### Active/adjusted time
+
+```text
+Gross time - Idle time
+```
 
 Example:
 
 ```text
-Start:       09:00
-Mac sleeps:  10:00
-Wake:        11:30
+Tracked: 8h 20m
+Idle:      45m
+Active:   7h 35m
 ```
 
-The session should reflect the actual elapsed wall-clock interval.
-
-Idle detection can subsequently ask the user how the inactive period should be classified.
+The raw session timestamps remain the source of truth.
 
 ---
 
-# 35. Historical Editing
+## 36. Crash Recovery
+
+If WorkPulse crashes while a session is active:
+
+1. Preserve the session.
+2. Recover it on next launch.
+3. Recalculate duration from timestamps.
+4. Mark any application-unavailable interval as **unverified** where necessary.
+
+Do not silently fabricate user activity.
+
+---
+
+## 37. Time, Timezones and Day Boundaries
+
+Persist timestamps using a timezone-safe representation.
+
+Prefer UTC internally and localise for display.
+
+Handle:
+
+- Timezone changes
+- DST
+- Manual clock changes
+- Sleep/wake
+- Day boundaries
+
+A session can span multiple days.
+
+Example:
+
+```text
+23:50 → 01:20
+```
+
+Reporting must allocate:
+
+```text
+Day 1: 10 minutes
+Day 2: 1h 20m
+```
+
+---
+
+## 38. Historical Editing
 
 Users can edit historical sessions.
 
-Support:
+Editable:
 
-- Start time
-- End time
-- Task
+- Start
+- End
+- WorkItem
 - Project
 - Category
 - Tags
 - People
-- Jira ID
+- Custom attributes
 
-Users can delete sessions.
-
-Historical edits must recalculate reporting results.
+Changes must immediately affect reporting.
 
 ---
 
-# 36. Search
+## 39. Deletion Policy
 
-Global search should cover:
+Referenced entities should normally be archived.
 
-- Tasks
+Examples:
+
+```text
+Delete Project
+      ↓
+Archive Project
+```
+
+Historical sessions remain intact.
+
+Permanent deletion should be a separate destructive operation.
+
+The same principle applies to:
+
+- WorkItems
 - Projects
 - Categories
 - Tags
 - People
-- Jira IDs
-
-Search should be fast enough to support Quick Capture interaction without noticeable delay.
+- Attributes
 
 ---
 
-# 37. Export
+## 40. Menu Bar
 
-V1 should support:
+WorkPulse primarily operates from the macOS menu bar.
 
-- CSV
-- JSON
-
-CSV:
+Example:
 
 ```text
-Date
-Project
-Category
-Task
-Tags
-People
-Jira ID
-Session Start
-Session End
-Duration
-Idle Duration
+◉ Architecture proposal   01:23:42
+```
+
+Menu:
+
+```text
+Current Work
+Architecture proposal
+01:23:42
+
+Stop
+Switch Work
+Quick Capture
+
+Dashboard
+WorkItems
+Reports
+
+Settings
+
+Quit
 ```
 
 ---
 
-# 38. Backup
+## 41. Dashboard
 
-Full backup/restore is **not required for V1**.
+V1 uses a **Flutter desktop dashboard**.
 
-The architecture should not prevent it from being added later.
+No localhost web server in V1.
 
-The database should remain portable enough that a future backup feature can package:
+Dashboard accessible from:
 
-- Database
-- Settings
-- Metadata
+- Menu bar
+- Quick Capture
+- Main WorkPulse window
 
 ---
 
-# 39. Network Policy
+## 42. Dashboard Views
 
-WorkPulse does **not** require strict zero-network behaviour.
+### Today
 
-However:
+- Total tracked time
+- Active time
+- Idle time
+- Time by project
+- Time by category
+- Time by WorkItem
+- Session count
+- Task switches
 
-> Core tracking functionality must never require network access.
+### This Week
 
-Future optional functionality may include:
+Same metrics across the week.
+
+### Custom Range
+
+User-selectable date range.
+
+---
+
+## 43. Reporting
+
+Reports can group by first-class dimensions:
+
+```text
+Project
+Category
+WorkItem
+Person
+Tag
+```
+
+and configurable attributes marked:
+
+```text
+reportable = true
+```
+
+The reporting engine must not contain Jira-specific code.
+
+---
+
+## 44. Search
+
+Global search should support:
+
+- WorkItems
+- Projects
+- Categories
+- Tags
+- People
+- Searchable custom attributes
+
+Search should remain local and fast.
+
+---
+
+## 45. Workspace Configuration
+
+First launch should provide a lightweight setup experience.
+
+Default:
+
+```text
+Projects       Enabled
+Categories     Enabled
+Tags           Enabled
+People         Enabled
+Custom fields  None
+```
+
+Users can configure their workflow later.
+
+---
+
+## 46. Workflow Settings
+
+Settings should contain:
+
+```text
+General
+Tracking
+Quick Capture
+Workflow
+Attributes
+Projects
+Categories
+Tags
+People
+Data
+```
+
+Workflow configuration should be understandable to normal users.
+
+Avoid database/schema terminology in the UI.
+
+---
+
+## 47. Attribute Configuration UI
+
+Example:
+
+```text
+Workflow → Attributes
+
+Name          Type          Required   Quick Capture
+
+Jira ID       Text          No         ✓
+Customer      Text          No         ✓
+Environment   Select        No         ✓
+Release       Text          No         —
+Billable      Boolean       No         ✓
+
+                       + Add Attribute
+```
+
+---
+
+## 48. Select Options
+
+Single/Multi-select attributes support configurable options.
+
+Example:
+
+```text
+Environment
+
+Development
+Testing
+Staging
+Production
+
++ Add Option
+```
+
+---
+
+## 49. Data Model
+
+Recommended SQLite entities:
+
+```text
+workspaces
+
+projects
+categories
+tags
+people
+
+work_items
+work_item_tags
+work_item_people
+
+sessions
+session_people
+
+idle_periods
+
+attribute_definitions
+attribute_options
+work_item_attribute_values
+session_attribute_values
+
+settings
+```
+
+Potential future entities:
+
+```text
+system_events
+workspace_profiles
+sync_metadata
+```
+
+---
+
+## 50. Stable IDs
+
+All major entities should use stable UUIDs.
+
+This prepares the application for future:
+
+- Backup
+- Import/export
+- Synchronisation
+- Cross-device support
+
+without implementing those capabilities now.
+
+---
+
+## 51. Workspace Readiness
+
+V1 may have only one workspace.
+
+However, data structures should avoid making multiple workspaces impossible later.
+
+Prefer:
+
+```text
+workspace_id
+```
+
+on relevant entities.
+
+Do **not** build multi-workspace UI in V1.
+
+---
+
+## 52. Database Migrations
+
+Every schema change must use an explicit migration.
+
+Never modify an existing production schema destructively.
+
+Maintain:
+
+```text
+schema_version
+```
+
+and migration history.
+
+The application must support upgrading from previous versions.
+
+---
+
+## 53. Network Policy
+
+Core WorkPulse functionality requires no network.
+
+V1 should make:
+
+```text
+No outbound network requests
+```
+
+The architecture may support optional future features such as:
 
 - Jira integration
 - Cloud backup
 - Sync
 - AI services
-- Remote dashboards
+- Remote dashboard
 
-Any such functionality must be:
+but these must be:
 
 - Explicitly enabled
-- Clearly visible
+- Separate from core functionality
 - Disabled by default
-- Independent from core tracking
-
-V1 should make **no network requests**.
+- Non-essential to tracking
 
 ---
 
-# 40. No Surveillance
+## 54. Privacy / No Surveillance
 
-WorkPulse V1 must NOT implement:
+WorkPulse must not implement:
 
 - Screen recording
 - Screenshots
 - Keystroke logging
 - Webcam monitoring
 - Microphone monitoring
-- Application usage tracking
-- Browser history tracking
-- Hidden background activity collection
+- Browser history collection
+- Application usage monitoring
+- Communication monitoring
 
-Idle detection should only determine whether the user appears inactive for the purpose of asking how to classify the current session.
+Idle detection is limited to determining lack of detectable user input for the purpose of prompting the user.
 
 ---
 
-# 41. Flutter Project Structure
+## 55. Export
 
-Recommended structure:
+V1 should support:
+
+### CSV
+
+Include:
 
 ```text
-lib/
+Date
+Project
+Category
+WorkItem
+Tags
+People
+Session Start
+Session End
+Duration
+Idle Duration
+Active Duration
+Custom Attributes
+```
+
+### JSON
+
+Include the complete structured WorkPulse data needed to reconstruct the records.
+
+---
+
+## 56. Backup / Restore
+
+Full backup/restore is **not required in V1**.
+
+However, the architecture must not prevent it later.
+
+Stable IDs and versioned schema are mandatory foundations.
+
+---
+
+## 57. Import
+
+Import is not required in V1.
+
+Future import could support:
+
+- CSV
+- JSON
+- Migration from other time-tracking applications
+
+---
+
+## 58. Future Profiles
+
+Future versions may support workflow profiles.
+
+Example:
+
+### Engineering
+
+```text
+Project
+Category
+Jira ID
+Environment
+People
+Tags
+```
+
+### Consulting
+
+```text
+Client
+Engagement
+Work Type
+People
+Reference
+```
+
+### Leadership
+
+```text
+Project
+Category
+Meeting Type
+People
+```
+
+Do not implement profiles in V1.
+
+---
+
+## 59. Platform Architecture
+
+Shared Flutter application:
+
+```text
+                 Flutter Application
+                         │
+             ┌───────────┴───────────┐
+             │                       │
+          macOS                   Windows
+             │                       │
+      Native services          Native services
+```
+
+Platform-specific:
+
+- Global shortcut
+- Menu/system tray
+- Window management
+- Notifications
+- Startup
+- Idle detection
+
+Shared:
+
+- Domain
+- UI
+- SQLite
+- State management
+- Timer logic
+- Sessions
+- Reporting
+- Search
+- Export
+
+---
+
+## 60. Project Structure
+
+```text
+workpulse/
 │
-├── core/
-│   ├── database/
-│   ├── errors/
-│   ├── routing/
-│   ├── theme/
-│   ├── utils/
-│   └── platform/
+├── README.md
+├── LICENSE
 │
-├── domain/
-│   ├── models/
-│   ├── repositories/
-│   └── services/
+├── docs/
+│   ├── WORKPULSE_SPEC.md
+│   ├── ARCHITECTURE.md
+│   └── DEVELOPMENT.md
 │
-├── data/
-│   ├── database/
-│   ├── repositories/
-│   └── migrations/
+├── lib/
+│   ├── core/
+│   │   ├── database/
+│   │   ├── errors/
+│   │   ├── theme/
+│   │   ├── utils/
+│   │   └── platform/
+│   │
+│   ├── domain/
+│   │   ├── models/
+│   │   ├── repositories/
+│   │   └── services/
+│   │
+│   ├── data/
+│   │   ├── database/
+│   │   ├── migrations/
+│   │   └── repositories/
+│   │
+│   ├── features/
+│   │   ├── quick_capture/
+│   │   ├── work_items/
+│   │   ├── sessions/
+│   │   ├── projects/
+│   │   ├── categories/
+│   │   ├── tags/
+│   │   ├── people/
+│   │   ├── attributes/
+│   │   ├── dashboard/
+│   │   ├── reports/
+│   │   └── settings/
+│   │
+│   └── main.dart
 │
-├── features/
-│   ├── quick_capture/
-│   ├── timer/
-│   ├── sessions/
-│   ├── tasks/
-│   ├── projects/
-│   ├── categories/
-│   ├── tags/
-│   ├── people/
-│   ├── dashboard/
-│   ├── reports/
-│   └── settings/
-│
-└── main.dart
+└── test/
 ```
 
 ---
 
-# 42. State Management
+## 61. State Management
 
 Use Riverpod.
 
-Important application states include:
+Timer state must have a single authoritative source.
+
+Suggested states:
 
 ```text
-NoActiveTask
-StartingTask
-TaskActive
-StoppingTask
+NoActiveSession
+StartingSession
+SessionActive
 SwitchConfirmation
+StoppingSession
 IdleDetected
 ResolvingIdle
 ```
 
-The timer state must have a single source of truth.
-
 ---
 
-# 43. Timer State Machine
-
-Recommended state machine:
+## 62. Timer State Machine
 
 ```text
-                    ┌──────────────┐
-                    │              │
-                    ▼              │
-              ┌───────────┐       │
-              │   IDLE    │       │
-              └─────┬─────┘       │
-                    │ Start       │
-                    ▼             │
-              ┌───────────┐       │
-              │  ACTIVE   │───────┘
-              └─────┬─────┘
-                    │
-            inactivity detected
-                    │
-                    ▼
-              ┌───────────┐
-              │IDLE PROMPT│
-              └─────┬─────┘
-             ┌──────┼──────┐
-             │      │      │
-             ▼      ▼      ▼
-           Keep   Mark   Stop
-          Tracking Idle  Session
-             │      │      │
-             └──┬───┘      ▼
-                │        IDLE
-                ▼
-              ACTIVE
-```
-
-Task switching:
-
-```text
-ACTIVE Task A
-      │
-      ▼
-Select Task B
-      │
-      ▼
-Switch Confirmation
-      │
-      ├── Cancel → Task A remains ACTIVE
-      │
-      └── Confirm
-             │
-             ▼
-       End Session A
-             │
-             ▼
-       Start Session B
+                 ┌──────────────┐
+                 │              │
+                 ▼              │
+             ┌───────┐         │
+             │  NONE │         │
+             └───┬───┘         │
+                 │ Start       │
+                 ▼             │
+             ┌────────┐        │
+             │ ACTIVE │────────┘
+             └───┬────┘
+                 │
+         inactivity detected
+                 │
+                 ▼
+          ┌─────────────┐
+          │ IDLE PROMPT │
+          └──────┬──────┘
+            ┌────┼─────┐
+            │    │     │
+            ▼    ▼     ▼
+          Keep  Idle  Stop
+            │    │     │
+            └─┬──┘     ▼
+              │       NONE
+              ▼
+            ACTIVE
 ```
 
 ---
 
-# 44. Quick Capture State Machine
+## 63. Quick Capture State Machine
 
 ```text
 Closed
-  │
-  │ Global Shortcut
-  ▼
+   │
+   │ Shortcut
+   ▼
 Opened
-  │
-  ├── Search Existing Task
-  │        │
-  │        └── Select → Switch/Resume
-  │
-  └── Create New Task
+   │
+   ├── Search existing
+   │       │
+   │       └── Select
+   │
+   └── Create new
            │
            ▼
-      Task Name
+       WorkItem name
            │
            ▼
-      Project
+        Project
            │
            ▼
-      Category
+        Category
            │
            ▼
-      Optional Metadata
+     Configured metadata
            │
            ▼
-         Start
+          Start
            │
            ▼
          Closed
@@ -1194,98 +1547,92 @@ Opened
 
 ---
 
-# 45. Keyboard UX
+## 64. Keyboard UX
 
-Primary keyboard interactions:
+Primary controls:
 
 ```text
-Global Shortcut
-    Open Quick Capture
+Option + Space
+Open Quick Capture
 
 Enter
-    Primary action
+Primary action
 
 Escape
-    Close/cancel
+Close/cancel
 
 Tab
-    Next field
+Next field
 
 Shift + Tab
-    Previous field
+Previous field
 
 Arrow Up/Down
-    Navigate search results
-
-Cmd/Ctrl + Enter
-    Optional alternative Start action
+Navigate results
 ```
 
-Exact shortcuts should be configurable where appropriate.
+Shortcut configuration should be supported.
 
 ---
 
-# 46. Performance Requirements
+## 65. Performance
 
-Quick Capture should appear in:
+Quick Capture target:
 
-**<300 ms perceived response time** under normal conditions.
+> **<300 ms perceived response time** under normal conditions.
 
-Database searches should feel instantaneous for normal personal datasets.
+Local search should feel instantaneous for a normal personal dataset.
 
 Avoid loading the entire database into memory.
 
-Use indexed database queries where appropriate.
-
-The background application should consume minimal CPU when no active operation is occurring.
+Background CPU usage should be minimal when no active session is running.
 
 ---
 
-# 47. Testing Requirements
+## 66. Testing
 
-## Unit tests
+### Unit tests
 
-Test:
+Cover:
 
 - Session duration
 - Task switching
 - Resume
-- Idle periods
-- Date boundaries
+- Idle handling
 - Sleep/wake
+- Midnight crossing
+- Timezone behaviour
 - Reporting
 - Aggregation
+- Attribute validation
 - Search
 
-## Repository tests
+### Repository tests
 
-Test:
+Cover:
 
-- Task CRUD
-- Project CRUD
-- Category CRUD
-- Tag relationships
-- People relationships
+- CRUD
+- Relationships
 - Session lifecycle
-- Idle lifecycle
+- Attribute lifecycle
+- Archiving
 
-## Widget tests
+### Widget tests
 
-Test:
+Cover:
 
 - Quick Capture
-- New task
-- Existing task search
+- New WorkItem
+- Search
 - Keyboard navigation
 - Switch confirmation
 - Idle prompt
+- Configurable attributes
 
-## Integration tests
-
-At minimum:
+### Integration test
 
 ```text
-Create Task
+Create WorkItem
 → Start
 → Stop
 → Resume
@@ -1293,384 +1640,270 @@ Create Task
 → Report
 ```
 
-and:
-
-```text
-Task A active
-→ Select Task B
-→ Cancel
-→ Task A remains active
-```
-
-and:
-
-```text
-Task A active
-→ Select Task B
-→ Confirm
-→ Task A stopped
-→ Task B started
-```
+Also test task-switch cancel and confirmed switching.
 
 ---
 
-# 48. Development Strategy for AI Coding
+## 67. AI Coding Agent Rules
 
-Do NOT ask an AI coding agent to generate the complete application in one step.
+The AI coding agent must:
 
-Build in vertical slices.
+1. Implement incrementally.
+2. Complete one vertical slice before starting the next.
+3. Never implement future functionality without explicit instruction.
+4. Keep domain logic independent from widgets.
+5. Keep database access behind repositories.
+6. Isolate platform-specific code.
+7. Use database migrations.
+8. Use stable UUIDs.
+9. Write tests alongside business logic.
+10. Never silently modify historical time.
+11. Never silently discard idle periods.
+12. Never allow multiple active sessions.
+13. Keep Quick Capture keyboard-first.
+14. Avoid unnecessary abstractions.
+15. Maintain Apple Silicon compatibility.
+16. Preserve the Windows migration path.
+17. Document significant architectural decisions.
+18. Do not hardcode organisation-specific fields.
+19. Do not introduce network dependencies into core functionality.
 
-## Sprint 1 — Project foundation
+---
 
-Implement:
+## 68. V1 Development Sequence
+
+### Phase 1 — Foundation
 
 - Flutter project
-- Architecture
 - Riverpod
 - SQLite
-- Database migrations
-- Basic domain models
+- Migrations
+- Domain models
+- Repository architecture
 
-Deliverable:
+### Phase 2 — Work Management
 
-> Application launches and can persist data.
-
----
-
-## Sprint 2 — Tasks
-
-Implement:
-
+- WorkItems
 - Projects
 - Categories
-- Tasks
-- Task search
-- Basic CRUD
+- Tags
+- People
+- Search
 
-Deliverable:
+### Phase 3 — Tracking
 
-> User can create and search tasks.
-
----
-
-## Sprint 3 — Timer
-
-Implement:
-
-- Active session
+- Sessions
 - Start
 - Stop
 - Resume
-- One-active-task rule
+- One active session
 - Timestamp-based duration
 
-Deliverable:
-
-> Core time tracking works reliably.
-
----
-
-## Sprint 4 — Quick Capture
-
-Implement:
+### Phase 4 — Quick Capture
 
 - Floating window
 - Global shortcut
 - Keyboard navigation
-- New task flow
-- Existing task flow
+- New WorkItem
+- Existing WorkItem search
 
-Deliverable:
+### Phase 5 — Switching
 
-> User can start/resume a task without leaving their current application.
-
----
-
-## Sprint 5 — Task Switching
-
-Implement:
-
-- Task selection
+- Task switching
 - Confirmation
-- Stop current session
-- Start new session
+- Session transition
 
-Deliverable:
+### Phase 6 — Configurable Attributes
 
-> Fast, safe task switching.
+- Attribute definitions
+- Attribute types
+- Options
+- Validation
+- Quick Capture visibility
+- Searchability
+- Reporting metadata
 
----
+### Phase 7 — Idle
 
-## Sprint 6 — Metadata
-
-Implement:
-
-- Tags
-- People
-- Jira ID
-- Task-level people
-- Session-level people
-
-Deliverable:
-
-> Tasks contain useful context.
-
----
-
-## Sprint 7 — Idle Detection
-
-Implement:
-
-- Inactivity detection
+- Activity detection
 - Idle prompt
-- Keep tracking
-- Mark idle
-- Stop
+- Idle resolution
+- Sleep/wake handling
 
-Deliverable:
-
-> Inactivity is handled without silently changing data.
-
----
-
-## Sprint 8 — macOS Integration
-
-Implement:
+### Phase 8 — macOS Integration
 
 - Menu bar
-- Startup
 - Notifications
+- Startup
 - Window management
 - Global shortcut
 
-Deliverable:
-
-> WorkPulse behaves like a proper macOS utility.
-
----
-
-## Sprint 9 — Dashboard
-
-Implement:
+### Phase 9 — Dashboard
 
 - Today
 - Week
-- Project breakdown
-- Category breakdown
-- Task breakdown
-- Session history
-
-Deliverable:
-
-> User can understand where their time is going.
-
----
-
-## Sprint 10 — Reports & Export
-
-Implement:
-
-- Charts
-- People reporting
+- Custom range
+- Project
+- Category
+- WorkItem
+- People
 - Tags
+
+### Phase 10 — Export & Hardening
+
 - CSV
 - JSON
-
-Deliverable:
-
-> User can analyse and export their data.
+- Historical editing
+- Recovery
+- Performance
+- Migration testing
+- Packaging
 
 ---
 
-# 49. Explicitly Out of Scope for V1
+## 69. Explicit V1 Non-Goals
 
-Do NOT implement:
+Do not implement:
 
-- Cloud synchronization
-- User accounts
+- Cloud sync
+- Accounts
 - Authentication
-- Online database
-- Local web dashboard
+- Cloud database
+- Cloud dependency
+- Web dashboard
+- Localhost server
 - Jira API
+- Azure DevOps integration
+- ServiceNow integration
 - Calendar integration
 - Slack integration
 - Teams integration
-- AI-generated insights
+- AI-generated summaries
 - Automatic task classification
 - Automatic application categorisation
 - Screen monitoring
-- Screenshot capture
+- Screenshots
 - Keystroke logging
-- Multi-user support
+- Browser monitoring
 - Windows support
+- Multi-workspace UI
+- Workflow profiles
+- Backup/restore UI
 
-The architecture should allow these later, but V1 should not contain them.
-
----
-
-# 50. Future Windows Architecture
-
-When Windows support begins, the expected architecture is:
-
-```text
-                 Shared Flutter Application
-                          │
-              ┌───────────┴───────────┐
-              │                       │
-           macOS                   Windows
-              │                       │
-       Native Platform          Native Platform
-          Services                 Services
-```
-
-The following should have platform-specific implementations:
-
-- Global shortcut
-- System tray
-- Window management
-- Startup
-- Notifications
-- Idle detection
-
-The following should remain shared:
-
-- UI
-- Domain
-- Database
-- Timer
-- Sessions
-- Reporting
-- Search
-- Analytics
-- Export
+The architecture should allow these later.
 
 ---
 
-# 51. Definition of Done for V1
+## 70. V1 Definition of Done
 
-V1 is successful when a user can:
+A user can:
 
-1. Install WorkPulse on a Mac.
-2. Start it as a menu-bar application.
-3. Press a global shortcut from any application.
-4. Create a task.
-5. Select a project.
-6. Select a category.
-7. Add optional metadata.
+1. Install WorkPulse on macOS.
+2. Launch it as a menu-bar utility.
+3. Invoke Quick Capture from any application.
+4. Create a WorkItem.
+5. Select a Project.
+6. Select a Category.
+7. Add configured metadata.
 8. Start tracking.
 9. Return immediately to their previous application.
 10. Reopen Quick Capture.
-11. Search existing tasks.
-12. Select another task.
+11. Search existing WorkItems.
+12. Select another WorkItem.
 13. Receive a switch confirmation.
-14. Confirm or cancel the switch.
-15. Stop a task without a follow-up prompt.
-16. Resume a task later.
-17. See every session separately.
-18. Handle inactivity through an explicit user choice.
-19. View daily/weekly reports.
-20. Search historical work.
-21. Export data.
-22. Use all core functionality without internet access.
-23. Recover correctly after application restart or Mac sleep/wake.
+14. Confirm or cancel.
+15. Stop without a mandatory follow-up.
+16. Resume the WorkItem later.
+17. See each session separately.
+18. Detect inactivity.
+19. Resolve idle periods explicitly.
+20. Recover after application restart.
+21. Handle Mac sleep/wake.
+22. View daily and weekly reports.
+23. Search historical work.
+24. Edit historical sessions.
+25. Archive old WorkItems/projects/categories.
+26. Configure custom attributes.
+27. Search and report using configured attributes.
+28. Export their data.
+29. Use core functionality without internet access.
 
 ---
 
-# 52. Primary UX Success Criterion
+## 71. Critical Architectural Rules
 
-WorkPulse must never feel like a timesheet application.
+### Rule 1
 
-The ideal workflow is:
+**Jira must not appear anywhere in the core domain model.**
 
-```text
-⌥ Space
-     ↓
-Type / select
-     ↓
-Choose project + category
-     ↓
-Enter
-     ↓
-Back to work
-```
+### Rule 2
 
-For an existing task:
+**Organisation-specific metadata must be configurable.**
 
-```text
-⌥ Space
-     ↓
-Search/select
-     ↓
-Confirm switch if required
-     ↓
-Back to work
-```
+### Rule 3
 
-The interaction should take **seconds**, not minutes.
+**Quick Capture must remain fast even when the metadata model becomes complex.**
 
----
+### Rule 4
 
-# 53. AI Agent Guardrails
+**One and only one session may be active.**
 
-When implementing WorkPulse, the coding agent must:
+### Rule 5
 
-1. Implement one sprint at a time.
-2. Do not implement future features unless explicitly requested.
-3. Do not introduce cloud dependencies.
-4. Keep platform-specific code isolated.
-5. Keep domain logic independent of Flutter widgets.
-6. Keep database access behind repositories.
-7. Write tests for business logic.
-8. Use migrations for database schema changes.
-9. Never silently alter historical tracking data.
-10. Never silently discard idle time.
-11. Never allow multiple active sessions.
-12. Keep Quick Capture keyboard-first.
-13. Prefer simple solutions over unnecessary abstractions.
-14. Maintain Apple Silicon compatibility.
-15. Preserve a clear path to Windows support.
-16. Document significant architectural decisions.
+**Raw session timestamps are the source of truth.**
+
+### Rule 6
+
+**Historical data must never be silently destroyed by configuration changes.**
+
+### Rule 7
+
+**Stopping a session does not complete the WorkItem.**
+
+### Rule 8
+
+**Core functionality must not depend on network connectivity.**
+
+### Rule 9
+
+**Platform-specific code must be isolated behind interfaces.**
+
+### Rule 10
+
+**The database must be migration-based and use stable IDs.**
 
 ---
 
-# 54. Final Technical Direction
-
-The V1 architecture is:
+## 72. Target Architecture
 
 ```text
-             ┌───────────────────────┐
-             │       WorkPulse       │
-             │       Flutter         │
-             └───────────┬───────────┘
-                         │
-             ┌───────────▼───────────┐
-             │       Riverpod        │
-             │    Application State  │
-             └───────────┬───────────┘
-                         │
-             ┌───────────▼───────────┐
-             │      Domain Layer     │
-             │ Tasks / Sessions / etc│
-             └───────────┬───────────┘
-                         │
-             ┌───────────▼───────────┐
-             │      Repository       │
-             │         Layer         │
-             └───────────┬───────────┘
-                         │
-             ┌───────────▼───────────┐
-             │        SQLite         │
-             └───────────────────────┘
-
-              Platform Abstraction
+                         WorkPulse
+                            │
+              ┌─────────────┴─────────────┐
+              │                           │
+        Work Management              Time Tracking
+              │                           │
+       ┌──────┼───────┐             ┌─────┴─────┐
+       │      │       │             │           │
+    Project Category WorkItem     Session      Idle
                      │
-          ┌──────────┴──────────┐
-          │                     │
-       macOS V1             Windows Later
+          ┌──────────┼──────────────┐
+          │          │              │
+        Tags       People       Attributes
+                                   │
+                          User-defined schema
+                                   │
+                    ┌──────────────┼──────────────┐
+                    │              │              │
+                  Text          Select        Multi-select
 ```
 
-The **critical V1 experience** is the Quick Capture workflow. Everything else should support that experience rather than compete with it.
+---
 
-The application should feel like:
+## 73. Product Definition
 
-> **A tiny productivity pulse sitting quietly in your menu bar, available whenever you need it.**
+WorkPulse is not merely a local Toggl replacement.
+
+> **WorkPulse is a local-first work-awareness system where time sessions are attached to work items and the context surrounding those work items can be configured to match the user's workflow.**
+
+The timer is one dimension of the work record, not the entire product.
