@@ -208,18 +208,16 @@ class DesktopWindowService with WindowListener implements WindowService {
 
         targetDisplay ??= await screenRetriever.getPrimaryDisplay();
 
-        if (targetDisplay != null) {
-          final screenWidth =
-              targetDisplay.visibleSize?.width ?? targetDisplay.size.width;
-          final screenHeight =
-              targetDisplay.visibleSize?.height ?? targetDisplay.size.height;
-          final screenX = targetDisplay.visiblePosition?.dx ?? 0.0;
-          final screenY = targetDisplay.visiblePosition?.dy ?? 0.0;
+        final screenWidth =
+            targetDisplay.visibleSize?.width ?? targetDisplay.size.width;
+        final screenHeight =
+            targetDisplay.visibleSize?.height ?? targetDisplay.size.height;
+        final screenX = targetDisplay.visiblePosition?.dx ?? 0.0;
+        final screenY = targetDisplay.visiblePosition?.dy ?? 0.0;
 
-          final x = screenX + (screenWidth - targetWidth) / 2;
-          final y = screenY + (screenHeight - targetHeight) / 3;
-          await windowManager.setPosition(Offset(x, y));
-        }
+        final x = screenX + (screenWidth - targetWidth) / 2;
+        final y = screenY + (screenHeight - targetHeight) / 3;
+        await windowManager.setPosition(Offset(x, y));
       } catch (e) {
         debugPrint('ScreenRetriever positioning error: $e');
         await windowManager.center();
