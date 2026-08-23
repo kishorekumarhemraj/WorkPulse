@@ -7,6 +7,7 @@ import 'package:workpulse/features/attributes/providers/attribute_definitions_pr
 import 'package:workpulse/features/attributes/views/attribute_definitions_view.dart';
 import 'package:workpulse/features/categories/providers/categories_provider.dart';
 import 'package:workpulse/features/categories/views/categories_view.dart';
+import 'package:workpulse/features/dashboard/views/dashboard_view.dart';
 import 'package:workpulse/features/idle/providers/idle_provider.dart';
 import 'package:workpulse/features/idle/views/idle_prompt_dialog.dart';
 import 'package:workpulse/features/people/providers/people_provider.dart';
@@ -25,6 +26,7 @@ import 'package:workpulse/features/tray/providers/tray_provider.dart';
 import 'package:workpulse/features/workspace/providers/workspace_provider.dart';
 
 enum ShellNavTab {
+  dashboard,
   tasks,
   projects,
   categories,
@@ -238,6 +240,12 @@ class _MainShellViewState extends ConsumerState<MainShellView> {
                         padding: const EdgeInsets.symmetric(horizontal: 8),
                         children: [
                           _SidebarNavItem(
+                            icon: Icons.space_dashboard_outlined,
+                            label: 'Dashboard',
+                            isSelected: activeTab == ShellNavTab.dashboard,
+                            onTap: () => ref.read(activeNavTabProvider.notifier).setTab(ShellNavTab.dashboard),
+                          ),
+                          _SidebarNavItem(
                             icon: Icons.check_circle_outline,
                             label: 'Work Items',
                             isSelected: activeTab == ShellNavTab.tasks,
@@ -298,6 +306,7 @@ class _MainShellViewState extends ConsumerState<MainShellView> {
               // Content Viewport
               Expanded(
                 child: switch (activeTab) {
+                  ShellNavTab.dashboard => const DashboardView(),
                   ShellNavTab.tasks => const TasksView(),
                   ShellNavTab.projects => const ProjectsView(),
                   ShellNavTab.categories => const CategoriesView(),
@@ -322,20 +331,20 @@ class _SidebarNavItem extends ConsumerWidget {
   final IconData icon;
   final String label;
   final bool isSelected;
-  final Provider<int?> countProvider;
+  final Provider<int?>? countProvider;
   final VoidCallback onTap;
 
   const _SidebarNavItem({
     required this.icon,
     required this.label,
     required this.isSelected,
-    required this.countProvider,
+    this.countProvider,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final count = ref.watch(countProvider);
+    final count = countProvider != null ? ref.watch(countProvider!) : null;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2.0),
