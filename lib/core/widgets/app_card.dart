@@ -92,25 +92,31 @@ class AppCard extends StatelessWidget {
               // The card paints its own hover fill above, so suppress the
               // default ink highlight and keep only the ripple.
               hoverColor: Colors.transparent,
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  if (leadingStripe != null)
-                    Container(
-                      width: 3,
-                      decoration: BoxDecoration(
-                        color: leadingStripe,
-                        borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(radius),
-                          bottomLeft: Radius.circular(radius),
-                        ),
+              // Without a stripe there is no Row at all: a stretch Row needs a
+              // bounded height, which a card laid out inside a scroll view or
+              // a shrink-wrapping Wrap does not have.
+              child: leadingStripe == null
+                  ? Padding(padding: padding, child: child)
+                  : IntrinsicHeight(
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Container(
+                            width: 3,
+                            decoration: BoxDecoration(
+                              color: leadingStripe,
+                              borderRadius: BorderRadius.only(
+                                topLeft: Radius.circular(radius),
+                                bottomLeft: Radius.circular(radius),
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            child: Padding(padding: padding, child: child),
+                          ),
+                        ],
                       ),
                     ),
-                  Expanded(
-                    child: Padding(padding: padding, child: child),
-                  ),
-                ],
-              ),
             ),
           ),
         );

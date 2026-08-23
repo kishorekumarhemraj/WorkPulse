@@ -121,12 +121,18 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      expect(find.text('Time Log & History'), findsOneWidget);
+      expect(find.text('Time Log'), findsOneWidget);
       expect(find.text('Export Data'), findsOneWidget);
       expect(find.text('Build Export & Hardening Feature'), findsOneWidget);
       expect(find.text('WorkPulse Core'), findsOneWidget);
       expect(find.text('Engineering'), findsOneWidget);
       expect(find.text('01:00:00'), findsOneWidget);
+
+      // Sessions are grouped under a day header carrying that day's total,
+      // and the range total is summarised above the list, so the date is no
+      // longer repeated on every row.
+      expect(find.text('Range total'), findsOneWidget);
+      expect(find.text('1 session across 1 day'), findsOneWidget);
     });
 
     testWidgets(
