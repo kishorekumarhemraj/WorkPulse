@@ -34,7 +34,8 @@ class _CategoryFormDialogState extends ConsumerState<CategoryFormDialog> {
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.category?.name ?? '');
-    _descController = TextEditingController(text: widget.category?.description ?? '');
+    _descController =
+        TextEditingController(text: widget.category?.description ?? '');
     _selectedIconName = widget.category?.iconName ?? 'folder';
   }
 
@@ -51,26 +52,30 @@ class _CategoryFormDialogState extends ConsumerState<CategoryFormDialog> {
     setState(() => _isSubmitting = true);
     try {
       if (widget.category == null) {
-        final created = await ref.read(categoriesProvider.notifier).createCategory(
-              name: _nameController.text.trim(),
-              description: _descController.text.trim(),
-              iconName: _selectedIconName,
-            );
+        final created =
+            await ref.read(categoriesProvider.notifier).createCategory(
+                  name: _nameController.text.trim(),
+                  description: _descController.text.trim(),
+                  iconName: _selectedIconName,
+                );
         if (mounted) Navigator.of(context).pop(created);
       } else {
-        final updated = await ref.read(categoriesProvider.notifier).updateCategory(
-              widget.category!.copyWith(
-                name: _nameController.text.trim(),
-                description: _descController.text.trim(),
-                iconName: _selectedIconName,
-              ),
-            );
+        final updated =
+            await ref.read(categoriesProvider.notifier).updateCategory(
+                  widget.category!.copyWith(
+                    name: _nameController.text.trim(),
+                    description: _descController.text.trim(),
+                    iconName: _selectedIconName,
+                  ),
+                );
         if (mounted) Navigator.of(context).pop(updated);
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to save category: $e'), backgroundColor: AppTheme.accentRed),
+          SnackBar(
+              content: Text('Failed to save category: $e'),
+              backgroundColor: AppTheme.accentRed),
         );
       }
     } finally {
@@ -85,7 +90,8 @@ class _CategoryFormDialogState extends ConsumerState<CategoryFormDialog> {
     return Focus(
       autofocus: true,
       onKeyEvent: (node, event) {
-        if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.escape) {
+        if (event is KeyDownEvent &&
+            event.logicalKey == LogicalKeyboardKey.escape) {
           Navigator.of(context).pop();
           return KeyEventResult.handled;
         }
@@ -95,7 +101,8 @@ class _CategoryFormDialogState extends ConsumerState<CategoryFormDialog> {
         backgroundColor: AppTheme.getColors(context).surface,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
-          side: BorderSide(color: AppTheme.getColors(context).divider, width: 1),
+          side:
+              BorderSide(color: AppTheme.getColors(context).divider, width: 1),
         ),
         titlePadding: const EdgeInsets.fromLTRB(24, 20, 24, 12),
         contentPadding: const EdgeInsets.fromLTRB(24, 0, 24, 20),
@@ -117,7 +124,10 @@ class _CategoryFormDialogState extends ConsumerState<CategoryFormDialog> {
             const SizedBox(width: 12),
             Text(
               isEditing ? 'Edit Category' : 'New Category',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: AppTheme.getColors(context).textPrimary),
+              style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.getColors(context).textPrimary),
             ),
           ],
         ),
@@ -130,15 +140,22 @@ class _CategoryFormDialogState extends ConsumerState<CategoryFormDialog> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Category Name', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AppTheme.getColors(context).textSecondary)),
+                  Text('Category Name',
+                      style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          color: AppTheme.getColors(context).textSecondary)),
                   const SizedBox(height: 6),
                   TextFormField(
                     controller: _nameController,
                     autofocus: true,
-                    style: TextStyle(color: AppTheme.getColors(context).textPrimary, fontSize: 14),
+                    style: TextStyle(
+                        color: AppTheme.getColors(context).textPrimary,
+                        fontSize: 14),
                     decoration: InputDecoration(
                       hintText: 'e.g. Engineering, Architecture, Meetings',
-                      hintStyle: TextStyle(color: AppTheme.getColors(context).textSecondary),
+                      hintStyle: TextStyle(
+                          color: AppTheme.getColors(context).textSecondary),
                     ),
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
@@ -149,19 +166,31 @@ class _CategoryFormDialogState extends ConsumerState<CategoryFormDialog> {
                     onFieldSubmitted: (_) => _submit(),
                   ),
                   const SizedBox(height: 16),
-                  Text('Description (Optional)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AppTheme.getColors(context).textSecondary)),
+                  Text('Description (Optional)',
+                      style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          color: AppTheme.getColors(context).textSecondary)),
                   const SizedBox(height: 6),
                   TextFormField(
                     controller: _descController,
                     maxLines: 2,
-                    style: TextStyle(color: AppTheme.getColors(context).textPrimary, fontSize: 14),
+                    style: TextStyle(
+                        color: AppTheme.getColors(context).textPrimary,
+                        fontSize: 14),
                     decoration: InputDecoration(
-                      hintText: 'Brief summary of what belongs to this category...',
-                      hintStyle: TextStyle(color: AppTheme.getColors(context).textSecondary),
+                      hintText:
+                          'Brief summary of what belongs to this category...',
+                      hintStyle: TextStyle(
+                          color: AppTheme.getColors(context).textSecondary),
                     ),
                   ),
                   const SizedBox(height: 16),
-                  Text('Select Icon', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AppTheme.getColors(context).textSecondary)),
+                  Text('Select Icon',
+                      style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          color: AppTheme.getColors(context).textSecondary)),
                   const SizedBox(height: 8),
                   Wrap(
                     spacing: 8,
@@ -169,23 +198,30 @@ class _CategoryFormDialogState extends ConsumerState<CategoryFormDialog> {
                     children: IconUtils.availableIcons.entries.map((entry) {
                       final isSelected = entry.key == _selectedIconName;
                       return InkWell(
-                        onTap: () => setState(() => _selectedIconName = entry.key),
+                        onTap: () =>
+                            setState(() => _selectedIconName = entry.key),
                         borderRadius: BorderRadius.circular(8),
                         child: Container(
                           width: 36,
                           height: 36,
                           decoration: BoxDecoration(
-                            color: isSelected ? AppTheme.primaryColor.withValues(alpha: 0.2) : AppTheme.getColors(context).card,
+                            color: isSelected
+                                ? AppTheme.primaryColor.withValues(alpha: 0.2)
+                                : AppTheme.getColors(context).card,
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(
-                              color: isSelected ? AppTheme.primaryColor : AppTheme.getColors(context).divider,
+                              color: isSelected
+                                  ? AppTheme.primaryColor
+                                  : AppTheme.getColors(context).divider,
                               width: 1.5,
                             ),
                           ),
                           child: Icon(
                             entry.value,
                             size: 18,
-                            color: isSelected ? AppTheme.primaryColor : AppTheme.getColors(context).textSecondary,
+                            color: isSelected
+                                ? AppTheme.primaryColor
+                                : AppTheme.getColors(context).textSecondary,
                           ),
                         ),
                       );
@@ -204,7 +240,11 @@ class _CategoryFormDialogState extends ConsumerState<CategoryFormDialog> {
           ElevatedButton(
             onPressed: _isSubmitting ? null : _submit,
             child: _isSubmitting
-                ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2, color: Colors.white))
                 : Text(isEditing ? 'Save Changes' : 'Create Category'),
           ),
         ],

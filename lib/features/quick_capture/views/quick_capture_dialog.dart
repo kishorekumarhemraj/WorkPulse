@@ -339,8 +339,8 @@ class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
                   padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
                   decoration: BoxDecoration(
                     color: AppTheme.getColors(context).card,
-                    borderRadius:
-                        const BorderRadius.vertical(bottom: Radius.circular(14)),
+                    borderRadius: const BorderRadius.vertical(
+                        bottom: Radius.circular(14)),
                     border: Border(
                         top: BorderSide(
                             color: AppTheme.getColors(context).divider,
@@ -515,7 +515,8 @@ class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
     return Container(
       decoration: BoxDecoration(
         border: isSelected
-            ? const Border(left: BorderSide(color: AppTheme.primaryColor, width: 3))
+            ? const Border(
+                left: BorderSide(color: AppTheme.primaryColor, width: 3))
             : null,
       ),
       child: Material(
@@ -604,7 +605,8 @@ class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
     return Container(
       decoration: BoxDecoration(
         border: isSelected
-            ? const Border(left: BorderSide(color: AppTheme.accentGreen, width: 3))
+            ? const Border(
+                left: BorderSide(color: AppTheme.accentGreen, width: 3))
             : null,
       ),
       child: Material(

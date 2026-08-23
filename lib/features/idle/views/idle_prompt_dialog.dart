@@ -192,7 +192,8 @@ class _IdlePromptDialogState extends ConsumerState<IdlePromptDialog> {
                 // Active Task Card
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   decoration: BoxDecoration(
                     color: AppTheme.getColors(context).background,
                     borderRadius: BorderRadius.circular(8),
@@ -330,7 +331,8 @@ class _IdlePromptDialogState extends ConsumerState<IdlePromptDialog> {
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
                     color: AppTheme.getColors(context).background,
                     borderRadius: BorderRadius.circular(4),

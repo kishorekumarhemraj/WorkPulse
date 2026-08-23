@@ -10,19 +10,23 @@ class AttributeOptionsEditorDialog extends ConsumerStatefulWidget {
 
   const AttributeOptionsEditorDialog({super.key, required this.definition});
 
-  static Future<void> show(BuildContext context, {required AttributeDefinition definition}) {
+  static Future<void> show(BuildContext context,
+      {required AttributeDefinition definition}) {
     return showDialog(
       context: context,
       barrierDismissible: true,
-      builder: (context) => AttributeOptionsEditorDialog(definition: definition),
+      builder: (context) =>
+          AttributeOptionsEditorDialog(definition: definition),
     );
   }
 
   @override
-  ConsumerState<AttributeOptionsEditorDialog> createState() => _AttributeOptionsEditorDialogState();
+  ConsumerState<AttributeOptionsEditorDialog> createState() =>
+      _AttributeOptionsEditorDialogState();
 }
 
-class _AttributeOptionsEditorDialogState extends ConsumerState<AttributeOptionsEditorDialog> {
+class _AttributeOptionsEditorDialogState
+    extends ConsumerState<AttributeOptionsEditorDialog> {
   final _labelController = TextEditingController();
   final _valueController = TextEditingController();
   String _selectedColor = ColorUtils.paletteHex.first;
@@ -56,7 +60,9 @@ class _AttributeOptionsEditorDialogState extends ConsumerState<AttributeOptionsE
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error creating option: $e'), backgroundColor: AppTheme.accentRed),
+          SnackBar(
+              content: Text('Error creating option: $e'),
+              backgroundColor: AppTheme.accentRed),
         );
       }
     } finally {
@@ -66,7 +72,8 @@ class _AttributeOptionsEditorDialogState extends ConsumerState<AttributeOptionsE
 
   @override
   Widget build(BuildContext context) {
-    final optionsAsync = ref.watch(attributeOptionsFamilyProvider(widget.definition.id));
+    final optionsAsync =
+        ref.watch(attributeOptionsFamilyProvider(widget.definition.id));
 
     return AlertDialog(
       backgroundColor: AppTheme.getColors(context).surface,
@@ -85,7 +92,8 @@ class _AttributeOptionsEditorDialogState extends ConsumerState<AttributeOptionsE
               color: AppTheme.accentPurple.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: const Icon(Icons.list_alt, color: AppTheme.accentPurple, size: 20),
+            child: const Icon(Icons.list_alt,
+                color: AppTheme.accentPurple, size: 20),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -94,13 +102,20 @@ class _AttributeOptionsEditorDialogState extends ConsumerState<AttributeOptionsE
               children: [
                 Text(
                   'Options for "${widget.definition.name}"',
-                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: AppTheme.getColors(context).textPrimary),
+                  style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.getColors(context).textPrimary),
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  widget.definition.type == AttributeType.singleSelect ? 'Single Select Options' : 'Multi Select Options',
-                  style: TextStyle(fontSize: 11, color: AppTheme.getColors(context).textSecondary),
+                  widget.definition.type == AttributeType.singleSelect
+                      ? 'Single Select Options'
+                      : 'Multi Select Options',
+                  style: TextStyle(
+                      fontSize: 11,
+                      color: AppTheme.getColors(context).textSecondary),
                 ),
               ],
             ),
@@ -116,18 +131,32 @@ class _AttributeOptionsEditorDialogState extends ConsumerState<AttributeOptionsE
             Expanded(
               child: optionsAsync.when(
                 loading: () => const Center(child: CircularProgressIndicator()),
-                error: (e, _) => Center(child: Text('Error: $e', style: const TextStyle(color: AppTheme.accentRed))),
+                error: (e, _) => Center(
+                    child: Text('Error: $e',
+                        style: const TextStyle(color: AppTheme.accentRed))),
                 data: (options) {
                   if (options.isEmpty) {
                     return Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.format_list_bulleted, size: 36, color: AppTheme.getColors(context).textSecondary.withValues(alpha: 0.3)),
+                          Icon(Icons.format_list_bulleted,
+                              size: 36,
+                              color: AppTheme.getColors(context)
+                                  .textSecondary
+                                  .withValues(alpha: 0.3)),
                           const SizedBox(height: 8),
-                          Text('No options defined yet', style: TextStyle(fontSize: 13, color: AppTheme.getColors(context).textSecondary)),
+                          Text('No options defined yet',
+                              style: TextStyle(
+                                  fontSize: 13,
+                                  color: AppTheme.getColors(context)
+                                      .textSecondary)),
                           const SizedBox(height: 4),
-                          Text('Add options using the input below', style: TextStyle(fontSize: 11, color: AppTheme.getColors(context).textSecondary)),
+                          Text('Add options using the input below',
+                              style: TextStyle(
+                                  fontSize: 11,
+                                  color: AppTheme.getColors(context)
+                                      .textSecondary)),
                         ],
                       ),
                     );
@@ -135,26 +164,41 @@ class _AttributeOptionsEditorDialogState extends ConsumerState<AttributeOptionsE
 
                   return ListView.separated(
                     itemCount: options.length,
-                    separatorBuilder: (_, __) => Divider(color: AppTheme.getColors(context).divider, height: 1),
+                    separatorBuilder: (_, __) => Divider(
+                        color: AppTheme.getColors(context).divider, height: 1),
                     itemBuilder: (context, index) {
                       final opt = options[index];
                       final col = ColorUtils.parseHex(opt.colorHex);
 
                       return ListTile(
                         dense: true,
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 2),
                         leading: Container(
                           width: 12,
                           height: 12,
-                          decoration: BoxDecoration(color: col, shape: BoxShape.circle),
+                          decoration:
+                              BoxDecoration(color: col, shape: BoxShape.circle),
                         ),
-                        title: Text(opt.label, style: TextStyle(fontSize: 13, color: AppTheme.getColors(context).textPrimary, fontWeight: FontWeight.w500)),
-                        subtitle: Text(opt.value, style: TextStyle(fontSize: 11, fontFamily: 'Courier', color: AppTheme.getColors(context).textSecondary)),
+                        title: Text(opt.label,
+                            style: TextStyle(
+                                fontSize: 13,
+                                color: AppTheme.getColors(context).textPrimary,
+                                fontWeight: FontWeight.w500)),
+                        subtitle: Text(opt.value,
+                            style: TextStyle(
+                                fontSize: 11,
+                                fontFamily: 'Courier',
+                                color:
+                                    AppTheme.getColors(context).textSecondary)),
                         trailing: IconButton(
-                          icon: const Icon(Icons.delete_outline, size: 16, color: AppTheme.accentRed),
+                          icon: const Icon(Icons.delete_outline,
+                              size: 16, color: AppTheme.accentRed),
                           tooltip: 'Delete option',
                           onPressed: () async {
-                            await ref.read(attributeOptionsControllerProvider).deleteOption(widget.definition.id, opt.id);
+                            await ref
+                                .read(attributeOptionsControllerProvider)
+                                .deleteOption(widget.definition.id, opt.id);
                           },
                         ),
                       );
@@ -184,16 +228,25 @@ class _AttributeOptionsEditorDialogState extends ConsumerState<AttributeOptionsE
                         flex: 3,
                         child: TextField(
                           controller: _labelController,
-                          style: TextStyle(fontSize: 13, color: AppTheme.getColors(context).textPrimary),
+                          style: TextStyle(
+                              fontSize: 13,
+                              color: AppTheme.getColors(context).textPrimary),
                           decoration: InputDecoration(
                             hintText: 'Option Label (e.g. High)',
-                            hintStyle: TextStyle(fontSize: 12, color: AppTheme.getColors(context).textSecondary),
+                            hintStyle: TextStyle(
+                                fontSize: 12,
+                                color:
+                                    AppTheme.getColors(context).textSecondary),
                             isDense: true,
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                            contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 8),
                           ),
                           onChanged: (val) {
                             if (_valueController.text.isEmpty) {
-                              _valueController.text = val.trim().toLowerCase().replaceAll(RegExp(r'\s+'), '_');
+                              _valueController.text = val
+                                  .trim()
+                                  .toLowerCase()
+                                  .replaceAll(RegExp(r'\s+'), '_');
                             }
                           },
                         ),
@@ -203,12 +256,19 @@ class _AttributeOptionsEditorDialogState extends ConsumerState<AttributeOptionsE
                         flex: 2,
                         child: TextField(
                           controller: _valueController,
-                          style: TextStyle(fontSize: 12, fontFamily: 'Courier', color: AppTheme.getColors(context).textPrimary),
+                          style: TextStyle(
+                              fontSize: 12,
+                              fontFamily: 'Courier',
+                              color: AppTheme.getColors(context).textPrimary),
                           decoration: InputDecoration(
                             hintText: 'Value (e.g. high)',
-                            hintStyle: TextStyle(fontSize: 11, color: AppTheme.getColors(context).textSecondary),
+                            hintStyle: TextStyle(
+                                fontSize: 11,
+                                color:
+                                    AppTheme.getColors(context).textSecondary),
                             isDense: true,
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                            contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 8),
                           ),
                         ),
                       ),
@@ -217,7 +277,11 @@ class _AttributeOptionsEditorDialogState extends ConsumerState<AttributeOptionsE
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      Text('Color: ', style: TextStyle(fontSize: 11, color: AppTheme.getColors(context).textSecondary)),
+                      Text('Color: ',
+                          style: TextStyle(
+                              fontSize: 11,
+                              color:
+                                  AppTheme.getColors(context).textSecondary)),
                       const SizedBox(width: 6),
                       Wrap(
                         spacing: 6,
@@ -233,7 +297,9 @@ class _AttributeOptionsEditorDialogState extends ConsumerState<AttributeOptionsE
                               decoration: BoxDecoration(
                                 color: col,
                                 shape: BoxShape.circle,
-                                border: isSel ? Border.all(color: Colors.white, width: 2) : null,
+                                border: isSel
+                                    ? Border.all(color: Colors.white, width: 2)
+                                    : null,
                               ),
                             ),
                           );
@@ -243,9 +309,11 @@ class _AttributeOptionsEditorDialogState extends ConsumerState<AttributeOptionsE
                       ElevatedButton.icon(
                         onPressed: _isAdding ? null : _addOption,
                         icon: const Icon(Icons.add, size: 14),
-                        label: const Text('Add Option', style: TextStyle(fontSize: 12)),
+                        label: const Text('Add Option',
+                            style: TextStyle(fontSize: 12)),
                         style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 6),
                         ),
                       ),
                     ],

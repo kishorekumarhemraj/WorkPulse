@@ -9,19 +9,23 @@ class AttributeDefinitionFormDialog extends ConsumerStatefulWidget {
 
   const AttributeDefinitionFormDialog({super.key, this.definition});
 
-  static Future<AttributeDefinition?> show(BuildContext context, {AttributeDefinition? definition}) {
+  static Future<AttributeDefinition?> show(BuildContext context,
+      {AttributeDefinition? definition}) {
     return showDialog<AttributeDefinition>(
       context: context,
       barrierDismissible: true,
-      builder: (context) => AttributeDefinitionFormDialog(definition: definition),
+      builder: (context) =>
+          AttributeDefinitionFormDialog(definition: definition),
     );
   }
 
   @override
-  ConsumerState<AttributeDefinitionFormDialog> createState() => _AttributeDefinitionFormDialogState();
+  ConsumerState<AttributeDefinitionFormDialog> createState() =>
+      _AttributeDefinitionFormDialogState();
 }
 
-class _AttributeDefinitionFormDialogState extends ConsumerState<AttributeDefinitionFormDialog> {
+class _AttributeDefinitionFormDialogState
+    extends ConsumerState<AttributeDefinitionFormDialog> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _keyController;
   late final TextEditingController _nameController;
@@ -82,11 +86,15 @@ class _AttributeDefinitionFormDialogState extends ConsumerState<AttributeDefinit
     setState(() => _isSaving = true);
     try {
       if (widget.definition != null) {
-        final updated = await ref.read(attributeDefinitionsProvider.notifier).updateDefinition(
+        final updated = await ref
+            .read(attributeDefinitionsProvider.notifier)
+            .updateDefinition(
               widget.definition!.copyWith(
                 key: _keyController.text.trim().toLowerCase(),
                 name: _nameController.text.trim(),
-                description: _descriptionController.text.trim().isEmpty ? null : _descriptionController.text.trim(),
+                description: _descriptionController.text.trim().isEmpty
+                    ? null
+                    : _descriptionController.text.trim(),
                 type: _selectedType,
                 scope: _selectedScope,
                 required: _required,
@@ -98,10 +106,14 @@ class _AttributeDefinitionFormDialogState extends ConsumerState<AttributeDefinit
             );
         if (mounted) Navigator.of(context).pop(updated);
       } else {
-        final created = await ref.read(attributeDefinitionsProvider.notifier).createDefinition(
+        final created = await ref
+            .read(attributeDefinitionsProvider.notifier)
+            .createDefinition(
               key: _keyController.text.trim().toLowerCase(),
               name: _nameController.text.trim(),
-              description: _descriptionController.text.trim().isEmpty ? null : _descriptionController.text.trim(),
+              description: _descriptionController.text.trim().isEmpty
+                  ? null
+                  : _descriptionController.text.trim(),
               type: _selectedType,
               scope: _selectedScope,
               required: _required,
@@ -115,7 +127,9 @@ class _AttributeDefinitionFormDialogState extends ConsumerState<AttributeDefinit
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error saving attribute: $e'), backgroundColor: AppTheme.accentRed),
+          SnackBar(
+              content: Text('Error saving attribute: $e'),
+              backgroundColor: AppTheme.accentRed),
         );
       }
     } finally {
@@ -144,12 +158,16 @@ class _AttributeDefinitionFormDialogState extends ConsumerState<AttributeDefinit
               color: AppTheme.primaryColor.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: const Icon(Icons.tune, color: AppTheme.primaryColor, size: 20),
+            child:
+                const Icon(Icons.tune, color: AppTheme.primaryColor, size: 20),
           ),
           const SizedBox(width: 12),
           Text(
             isEditing ? 'Edit Custom Attribute' : 'New Custom Attribute',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: AppTheme.getColors(context).textPrimary),
+            style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.getColors(context).textPrimary),
           ),
         ],
       ),
@@ -166,15 +184,23 @@ class _AttributeDefinitionFormDialogState extends ConsumerState<AttributeDefinit
                 TextFormField(
                   controller: _nameController,
                   autofocus: !isEditing,
-                  style: TextStyle(fontSize: 14, color: AppTheme.getColors(context).textPrimary),
+                  style: TextStyle(
+                      fontSize: 14,
+                      color: AppTheme.getColors(context).textPrimary),
                   decoration: const InputDecoration(
                     labelText: 'Display Name *',
                     hintText: 'e.g. Jira Issue Key, Cost Centre, Client',
                   ),
-                  validator: (v) => (v == null || v.trim().isEmpty) ? 'Name is required' : null,
+                  validator: (v) => (v == null || v.trim().isEmpty)
+                      ? 'Name is required'
+                      : null,
                   onChanged: (val) {
                     if (!isEditing && _keyController.text.isEmpty) {
-                      _keyController.text = val.trim().toLowerCase().replaceAll(RegExp(r'\s+'), '_').replaceAll(RegExp(r'[^a-z0-9_]'), '');
+                      _keyController.text = val
+                          .trim()
+                          .toLowerCase()
+                          .replaceAll(RegExp(r'\s+'), '_')
+                          .replaceAll(RegExp(r'[^a-z0-9_]'), '');
                     }
                   },
                 ),
@@ -183,7 +209,10 @@ class _AttributeDefinitionFormDialogState extends ConsumerState<AttributeDefinit
                 // Key Identifier
                 TextFormField(
                   controller: _keyController,
-                  style: TextStyle(fontSize: 13, fontFamily: 'Courier', color: AppTheme.getColors(context).textPrimary),
+                  style: TextStyle(
+                      fontSize: 13,
+                      fontFamily: 'Courier',
+                      color: AppTheme.getColors(context).textPrimary),
                   decoration: const InputDecoration(
                     labelText: 'Internal Key *',
                     hintText: 'e.g. jira_key, cost_centre',
@@ -209,15 +238,21 @@ class _AttributeDefinitionFormDialogState extends ConsumerState<AttributeDefinit
                         isDense: true,
                         isExpanded: true,
                         dropdownColor: AppTheme.getColors(context).surface,
-                        style: TextStyle(fontSize: 13, color: AppTheme.getColors(context).textPrimary),
-                        decoration: const InputDecoration(labelText: 'Data Type'),
+                        style: TextStyle(
+                            fontSize: 13,
+                            color: AppTheme.getColors(context).textPrimary),
+                        decoration:
+                            const InputDecoration(labelText: 'Data Type'),
                         items: AttributeType.values.map((t) {
-                          return DropdownMenuItem(value: t, child: Text(_formatType(t)));
+                          return DropdownMenuItem(
+                              value: t, child: Text(_formatType(t)));
                         }).toList(),
                         onChanged: isEditing
                             ? null
                             : (v) {
-                                if (v != null) setState(() => _selectedType = v);
+                                if (v != null) {
+                                  setState(() => _selectedType = v);
+                                }
                               },
                       ),
                     ),
@@ -230,16 +265,24 @@ class _AttributeDefinitionFormDialogState extends ConsumerState<AttributeDefinit
                         isDense: true,
                         isExpanded: true,
                         dropdownColor: AppTheme.getColors(context).surface,
-                        style: TextStyle(fontSize: 13, color: AppTheme.getColors(context).textPrimary),
+                        style: TextStyle(
+                            fontSize: 13,
+                            color: AppTheme.getColors(context).textPrimary),
                         decoration: const InputDecoration(labelText: 'Scope'),
                         items: const [
-                          DropdownMenuItem(value: AttributeScope.task, child: Text('Task Scope')),
-                          DropdownMenuItem(value: AttributeScope.session, child: Text('Session Scope')),
+                          DropdownMenuItem(
+                              value: AttributeScope.task,
+                              child: Text('Task Scope')),
+                          DropdownMenuItem(
+                              value: AttributeScope.session,
+                              child: Text('Session Scope')),
                         ],
                         onChanged: isEditing
                             ? null
                             : (v) {
-                                if (v != null) setState(() => _selectedScope = v);
+                                if (v != null) {
+                                  setState(() => _selectedScope = v);
+                                }
                               },
                       ),
                     ),
@@ -251,7 +294,9 @@ class _AttributeDefinitionFormDialogState extends ConsumerState<AttributeDefinit
                 TextFormField(
                   controller: _descriptionController,
                   maxLines: 2,
-                  style: TextStyle(fontSize: 13, color: AppTheme.getColors(context).textPrimary),
+                  style: TextStyle(
+                      fontSize: 13,
+                      color: AppTheme.getColors(context).textPrimary),
                   decoration: const InputDecoration(
                     labelText: 'Description (optional)',
                     hintText: 'Describe how this metadata field should be used',
@@ -279,7 +324,8 @@ class _AttributeDefinitionFormDialogState extends ConsumerState<AttributeDefinit
                 const SizedBox(height: 8),
                 _buildSwitchRow(
                   title: 'Searchable',
-                  subtitle: 'Include attribute value in global search filtering',
+                  subtitle:
+                      'Include attribute value in global search filtering',
                   value: _searchable,
                   onChanged: (v) => setState(() => _searchable = v),
                 ),
@@ -296,7 +342,11 @@ class _AttributeDefinitionFormDialogState extends ConsumerState<AttributeDefinit
         ElevatedButton(
           onPressed: _isSaving ? null : _save,
           child: _isSaving
-              ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                      strokeWidth: 2, color: Colors.white))
               : Text(isEditing ? 'Save Changes' : 'Create Attribute'),
         ),
       ],
@@ -315,9 +365,15 @@ class _AttributeDefinitionFormDialogState extends ConsumerState<AttributeDefinit
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title, style: TextStyle(fontSize: 13, color: AppTheme.getColors(context).textPrimary)),
+              Text(title,
+                  style: TextStyle(
+                      fontSize: 13,
+                      color: AppTheme.getColors(context).textPrimary)),
               const SizedBox(height: 2),
-              Text(subtitle, style: TextStyle(fontSize: 11, color: AppTheme.getColors(context).textSecondary)),
+              Text(subtitle,
+                  style: TextStyle(
+                      fontSize: 11,
+                      color: AppTheme.getColors(context).textSecondary)),
             ],
           ),
         ),
