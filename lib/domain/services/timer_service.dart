@@ -55,8 +55,12 @@ class TimerService {
     return created;
   }
 
-  /// Stops an active session.
-  Future<Session> stopSession(String sessionId, {DateTime? endTime}) async {
+  /// Stops an active session with optional end timestamp and session notes.
+  Future<Session> stopSession(
+    String sessionId, {
+    DateTime? endTime,
+    String? notes,
+  }) async {
     final session = await _sessionRepository.getById(sessionId);
     if (session == null) {
       throw NotFoundException('Session with id $sessionId not found');
@@ -68,6 +72,7 @@ class TimerService {
 
     final stopped = session.copyWith(
       endTime: endTime ?? DateTime.now().toUtc(),
+      notes: notes ?? session.notes,
     );
 
     return _sessionRepository.update(stopped);
