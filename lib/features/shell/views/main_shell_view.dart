@@ -7,6 +7,8 @@ import 'package:workpulse/features/attributes/providers/attribute_definitions_pr
 import 'package:workpulse/features/attributes/views/attribute_definitions_view.dart';
 import 'package:workpulse/features/categories/providers/categories_provider.dart';
 import 'package:workpulse/features/categories/views/categories_view.dart';
+import 'package:workpulse/features/idle/providers/idle_provider.dart';
+import 'package:workpulse/features/idle/views/idle_prompt_dialog.dart';
 import 'package:workpulse/features/people/providers/people_provider.dart';
 import 'package:workpulse/features/people/views/people_view.dart';
 import 'package:workpulse/features/projects/providers/projects_provider.dart';
@@ -16,6 +18,8 @@ import 'package:workpulse/features/tags/providers/tags_provider.dart';
 import 'package:workpulse/features/tags/views/tags_view.dart';
 import 'package:workpulse/features/tasks/providers/work_items_provider.dart';
 import 'package:workpulse/features/tasks/views/tasks_view.dart';
+import 'package:workpulse/features/timer/models/timer_state.dart';
+import 'package:workpulse/features/timer/providers/timer_provider.dart';
 import 'package:workpulse/features/timer/views/active_timer_bar.dart';
 import 'package:workpulse/features/workspace/providers/workspace_provider.dart';
 
@@ -72,6 +76,19 @@ class _MainShellViewState extends ConsumerState<MainShellView> {
   Widget build(BuildContext context) {
     final activeTab = ref.watch(activeNavTabProvider);
     final workspaceAsync = ref.watch(currentWorkspaceProvider);
+
+    // Prompt user when inactivity is detected
+    ref.listen<IdleState>(idleNotifierProvider, (previous, next) {
+      if (next.isPromptVisible && previous?.isPromptVisible != true) {
+        IdlePromptDialog.show(context);
+      }
+    });
+
+    // Start/stop idle monitoring based on active timer status
+    ref.listen<AsyncValue<TimerState>>(timerProvider, (previous, next) {
+      final isRunning = next.value?.isRunning ?? false;
+      ref.read(idleDetectorServiceProvider).startMonitoring(isTracking: isRunning);
+    });
 
     return Scaffold(
       backgroundColor: AppTheme.backgroundDark,
