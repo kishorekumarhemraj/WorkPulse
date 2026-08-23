@@ -72,6 +72,10 @@ class DashboardView extends ConsumerWidget {
           final idleStr = TimerService.formatDuration(summary.totalIdleDuration,
               includeSeconds: false);
 
+          final isToday = selectedRange == DashboardTimeRange.today ||
+              (data.hourlyActivity.isNotEmpty &&
+                  data.range.duration <= const Duration(days: 1));
+
           return SingleChildScrollView(
             padding: const EdgeInsets.all(24),
             child: Column(
@@ -213,9 +217,15 @@ class DashboardView extends ConsumerWidget {
                 ),
                 const SizedBox(height: 24),
 
-                // Daily Activity Timeline Chart
-                if (data.dailyActivity.isNotEmpty) ...[
-                  DailyActivityChart(activities: data.dailyActivity),
+                // Daily / Hourly Activity Timeline Chart
+                if (isToday
+                    ? data.hourlyActivity.isNotEmpty
+                    : data.dailyActivity.isNotEmpty) ...[
+                  DailyActivityChart(
+                    activities: data.dailyActivity,
+                    hourlyActivities: data.hourlyActivity,
+                    isHourly: isToday,
+                  ),
                   const SizedBox(height: 24),
                 ],
 

@@ -21,8 +21,8 @@ enum DashboardTimeRange {
         return DateRange(start: localStart.toUtc(), end: localEnd.toUtc());
 
       case DashboardTimeRange.thisWeek:
-        // Monday as first day of week in user's local time
-        final daysToSubtract = (now.weekday - DateTime.monday) % 7;
+        // Sunday as first day of week in user's local time
+        final daysToSubtract = now.weekday % 7;
         final localStartOfWeek =
             DateTime(now.year, now.month, now.day - daysToSubtract);
         final localEndOfWeek = DateTime(
@@ -117,6 +117,25 @@ class DailyActivityItem extends Equatable {
   List<Object?> get props => [date, activeDuration, idleDuration, sessionCount];
 }
 
+class HourlyActivityItem extends Equatable {
+  final int hour; // 0..23 local hour
+  final Duration activeDuration;
+  final Duration idleDuration;
+  final int sessionCount;
+
+  const HourlyActivityItem({
+    required this.hour,
+    required this.activeDuration,
+    required this.idleDuration,
+    required this.sessionCount,
+  });
+
+  Duration get totalDuration => activeDuration + idleDuration;
+
+  @override
+  List<Object?> get props => [hour, activeDuration, idleDuration, sessionCount];
+}
+
 class AttributeBreakdownGroup extends Equatable {
   final AttributeDefinition definition;
   final List<BreakdownItem> items;
@@ -140,6 +159,7 @@ class DashboardData extends Equatable {
   final List<BreakdownItem> personBreakdown;
   final List<AttributeBreakdownGroup> attributeBreakdowns;
   final List<DailyActivityItem> dailyActivity;
+  final List<HourlyActivityItem> hourlyActivity;
 
   const DashboardData({
     required this.range,
@@ -151,6 +171,7 @@ class DashboardData extends Equatable {
     this.personBreakdown = const [],
     this.attributeBreakdowns = const [],
     this.dailyActivity = const [],
+    this.hourlyActivity = const [],
   });
 
   @override
@@ -164,5 +185,6 @@ class DashboardData extends Equatable {
         personBreakdown,
         attributeBreakdowns,
         dailyActivity,
+        hourlyActivity,
       ];
 }
