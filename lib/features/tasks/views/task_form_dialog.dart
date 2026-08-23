@@ -403,6 +403,7 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
                               error: (_, __) => Text('Error loading projects'),
                               data: (projects) {
                                 return DropdownButtonFormField<String>(
+                                  isDense: true,
                                   isExpanded: true,
                                   initialValue: projects.any(
                                           (p) => p.id == _selectedProjectId)
@@ -493,6 +494,7 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
                                   Text('Error loading categories'),
                               data: (categories) {
                                 return DropdownButtonFormField<String>(
+                                  isDense: true,
                                   isExpanded: true,
                                   initialValue: categories.any(
                                           (c) => c.id == _selectedCategoryId)
@@ -698,21 +700,12 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
         actions: [
           TextButton(
             onPressed: _isSubmitting ? null : () => Navigator.of(context).pop(),
-            child: Text('Cancel',
-                style: TextStyle(
-                    color: AppTheme.getColors(context).textSecondary)),
+            child: const Text('Cancel'),
           ),
           ElevatedButton(
             onPressed: _isSubmitting ? null : _submit,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.primaryColor,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(6)),
-              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            ),
             child: _isSubmitting
-                ? SizedBox(
+                ? const SizedBox(
                     width: 16,
                     height: 16,
                     child: CircularProgressIndicator(
