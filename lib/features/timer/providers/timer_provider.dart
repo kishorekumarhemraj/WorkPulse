@@ -45,8 +45,7 @@ class TimerNotifier extends AsyncNotifier<TimerState> {
     final activeSession = await timerService.getActiveSession();
     if (activeSession != null) {
       final workItem = await workItemRepo.getById(activeSession.workItemId);
-      final elapsed =
-          DateTime.now().toUtc().difference(activeSession.startTime);
+      final elapsed = DateTime.now().toUtc().difference(activeSession.startTime);
 
       _startTicker(activeSession.startTime);
 
@@ -85,16 +84,12 @@ class TimerNotifier extends AsyncNotifier<TimerState> {
     final current = state.value;
 
     // If already tracking this exact work item, do nothing
-    if (current != null &&
-        current.isRunning &&
-        current.activeWorkItem?.id == workItem.id) {
+    if (current != null && current.isRunning && current.activeWorkItem?.id == workItem.id) {
       return;
     }
 
     // If currently tracking another work item, trigger switch confirmation
-    if (current != null &&
-        current.isRunning &&
-        current.activeWorkItem?.id != workItem.id) {
+    if (current != null && current.isRunning && current.activeWorkItem?.id != workItem.id) {
       requestSwitch(workItem);
       return;
     }
@@ -125,9 +120,7 @@ class TimerNotifier extends AsyncNotifier<TimerState> {
   /// Stops tracking the active session.
   Future<Session?> stopTimer() async {
     final current = state.value;
-    if (current == null ||
-        !current.isRunning ||
-        current.activeSession == null) {
+    if (current == null || !current.isRunning || current.activeSession == null) {
       return null;
     }
 
@@ -135,8 +128,7 @@ class TimerNotifier extends AsyncNotifier<TimerState> {
     _ticker = null;
 
     final timerService = ref.read(timerServiceProvider);
-    final stoppedSession =
-        await timerService.stopSession(current.activeSession!.id);
+    final stoppedSession = await timerService.stopSession(current.activeSession!.id);
 
     state = const AsyncData(TimerState(status: TimerStatus.idle));
     ref.invalidate(workItemsProvider);

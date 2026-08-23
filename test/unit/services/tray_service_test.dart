@@ -6,8 +6,7 @@ import 'package:workpulse/features/tray/providers/tray_provider.dart';
 
 void main() {
   group('TrayService and WindowService Unit Tests', () {
-    test('TrayCoordinator formatDuration properly formats HH:MM:SS and MM:SS',
-        () {
+    test('TrayCoordinator formatDuration properly formats HH:MM:SS and MM:SS', () {
       final container = ProviderContainer(
         overrides: [
           trayServiceProvider.overrideWithValue(NoOpTrayService()),
@@ -18,18 +17,10 @@ void main() {
 
       final coordinator = container.read(trayCoordinatorProvider);
 
-      expect(
-          coordinator.formatDuration(const Duration(seconds: 45)), '00:00:45');
-      expect(coordinator.formatDuration(const Duration(minutes: 5, seconds: 9)),
-          '00:05:09');
-      expect(
-          coordinator.formatDuration(
-              const Duration(hours: 1, minutes: 23, seconds: 45)),
-          '01:23:45');
-      expect(
-          coordinator.formatDuration(
-              const Duration(hours: 10, minutes: 0, seconds: 1)),
-          '10:00:01');
+      expect(coordinator.formatDuration(const Duration(seconds: 45)), '00:00:45');
+      expect(coordinator.formatDuration(const Duration(minutes: 5, seconds: 9)), '00:05:09');
+      expect(coordinator.formatDuration(const Duration(hours: 1, minutes: 23, seconds: 45)), '01:23:45');
+      expect(coordinator.formatDuration(const Duration(hours: 10, minutes: 0, seconds: 1)), '10:00:01');
     });
 
     test('NoOpTrayService stores title, tooltip, and menu items', () async {

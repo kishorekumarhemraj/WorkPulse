@@ -3,8 +3,7 @@ import 'package:workpulse/domain/models/attribute_model.dart';
 abstract class AttributeRepository {
   // Attribute Definitions
   Future<AttributeDefinition?> getDefinitionById(String id);
-  Future<AttributeDefinition?> getDefinitionByKey(
-      String workspaceId, String key);
+  Future<AttributeDefinition?> getDefinitionByKey(String workspaceId, String key);
   Future<List<AttributeDefinition>> getDefinitions({
     String? workspaceId,
     AttributeScope? scope,
@@ -16,8 +15,7 @@ abstract class AttributeRepository {
   Future<void> deleteDefinition(String id);
 
   // Attribute Options
-  Future<List<AttributeOption>> getOptions(String definitionId,
-      {bool includeArchived = false});
+  Future<List<AttributeOption>> getOptions(String definitionId, {bool includeArchived = false});
   Future<AttributeOption> createOption(AttributeOption option);
   Future<AttributeOption> updateOption(AttributeOption option);
   Future<void> archiveOption(String id);

@@ -59,21 +59,11 @@ void main() {
       final now = DateTime.now().toUtc();
 
       final proj = await projectRepo.create(
-        Project(
-            id: 'proj-1',
-            workspaceId: wsId,
-            name: 'Engine Dev',
-            createdAt: now,
-            updatedAt: now),
+        Project(id: 'proj-1', workspaceId: wsId, name: 'Engine Dev', createdAt: now, updatedAt: now),
       );
 
       final cat = await categoryRepo.create(
-        Category(
-            id: 'cat-1',
-            workspaceId: wsId,
-            name: 'Feature',
-            createdAt: now,
-            updatedAt: now),
+        Category(id: 'cat-1', workspaceId: wsId, name: 'Feature', createdAt: now, updatedAt: now),
       );
 
       final task = await workItemRepo.create(
@@ -124,20 +114,13 @@ void main() {
     test('selectedTimeRangeProvider defaults to today and switches ranges', () {
       final container = createContainer();
 
-      expect(
-          container.read(selectedTimeRangeProvider), DashboardTimeRange.today);
+      expect(container.read(selectedTimeRangeProvider), DashboardTimeRange.today);
 
-      container
-          .read(selectedTimeRangeProvider.notifier)
-          .setRange(DashboardTimeRange.thisWeek);
-      expect(container.read(selectedTimeRangeProvider),
-          DashboardTimeRange.thisWeek);
+      container.read(selectedTimeRangeProvider.notifier).setRange(DashboardTimeRange.thisWeek);
+      expect(container.read(selectedTimeRangeProvider), DashboardTimeRange.thisWeek);
 
-      container
-          .read(selectedTimeRangeProvider.notifier)
-          .setRange(DashboardTimeRange.thisMonth);
-      expect(container.read(selectedTimeRangeProvider),
-          DashboardTimeRange.thisMonth);
+      container.read(selectedTimeRangeProvider.notifier).setRange(DashboardTimeRange.thisMonth);
+      expect(container.read(selectedTimeRangeProvider), DashboardTimeRange.thisMonth);
     });
 
     test('customDateRangeProvider sets and clears custom range', () {
@@ -154,8 +137,7 @@ void main() {
       expect(container.read(customDateRangeProvider), custom);
     });
 
-    test('dashboardDataProvider loads DashboardData for active workspace',
-        () async {
+    test('dashboardDataProvider loads DashboardData for active workspace', () async {
       final container = createContainer();
       await container.read(currentWorkspaceProvider.future);
 

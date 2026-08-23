@@ -105,8 +105,7 @@ void main() {
       return container;
     }
 
-    test('initializes to idle when no active session exists in SQLite',
-        () async {
+    test('initializes to idle when no active session exists in SQLite', () async {
       final container = createContainer();
       final timerState = await container.read(timerProvider.future);
 
@@ -116,11 +115,8 @@ void main() {
       expect(timerState.activeWorkItem, isNull);
     });
 
-    test(
-        'startup recovery: restores running state if an active session exists in SQLite',
-        () async {
-      final startTime =
-          DateTime.now().toUtc().subtract(const Duration(minutes: 10));
+    test('startup recovery: restores running state if an active session exists in SQLite', () async {
+      final startTime = DateTime.now().toUtc().subtract(const Duration(minutes: 10));
       await sessionRepo.create(
         Session(
           id: 'sess-active',
@@ -165,8 +161,7 @@ void main() {
       expect(state.activeSession, isNull);
     });
 
-    test('task switching: requestSwitch, confirmSwitch, and cancelSwitch flow',
-        () async {
+    test('task switching: requestSwitch, confirmSwitch, and cancelSwitch flow', () async {
       final container = createContainer();
       await container.read(timerProvider.future);
 

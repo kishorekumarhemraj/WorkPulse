@@ -96,13 +96,9 @@ void main() {
       await dbService.close();
     });
 
-    test(
-        'startSession starts a new active session and updates lastWorkedAt on work item',
-        () async {
-      final startTime =
-          DateTime.now().toUtc().subtract(const Duration(minutes: 5));
-      final session =
-          await timerService.startSession(taskA.id, startTime: startTime);
+    test('startSession starts a new active session and updates lastWorkedAt on work item', () async {
+      final startTime = DateTime.now().toUtc().subtract(const Duration(minutes: 5));
+      final session = await timerService.startSession(taskA.id, startTime: startTime);
 
       expect(session.workItemId, taskA.id);
       expect(session.endTime, isNull);
@@ -116,21 +112,15 @@ void main() {
       expect(updatedTaskA!.lastWorkedAt, isNotNull);
     });
 
-    test(
-        'Single-Active-Session Invariant: starting session on taskB automatically stops session on taskA',
-        () async {
-      final time1 =
-          DateTime.now().toUtc().subtract(const Duration(minutes: 30));
-      final time2 =
-          DateTime.now().toUtc().subtract(const Duration(minutes: 10));
+    test('Single-Active-Session Invariant: starting session on taskB automatically stops session on taskA', () async {
+      final time1 = DateTime.now().toUtc().subtract(const Duration(minutes: 30));
+      final time2 = DateTime.now().toUtc().subtract(const Duration(minutes: 10));
 
-      final sessionA =
-          await timerService.startSession(taskA.id, startTime: time1);
+      final sessionA = await timerService.startSession(taskA.id, startTime: time1);
       expect(sessionA.isActive, isTrue);
 
       // Start session on Task B
-      final sessionB =
-          await timerService.startSession(taskB.id, startTime: time2);
+      final sessionB = await timerService.startSession(taskB.id, startTime: time2);
 
       // Session A must now be stopped with endTime == time2
       final reloadedA = await sessionRepo.getById(sessionA.id);
@@ -145,14 +135,11 @@ void main() {
     });
 
     test('stopSession marks session as ended with timestamp', () async {
-      final startTime =
-          DateTime.now().toUtc().subtract(const Duration(minutes: 15));
+      final startTime = DateTime.now().toUtc().subtract(const Duration(minutes: 15));
       final endTime = DateTime.now().toUtc();
 
-      final session =
-          await timerService.startSession(taskA.id, startTime: startTime);
-      final stopped =
-          await timerService.stopSession(session.id, endTime: endTime);
+      final session = await timerService.startSession(taskA.id, startTime: startTime);
+      final stopped = await timerService.stopSession(session.id, endTime: endTime);
 
       expect(stopped.endTime, equals(endTime));
       expect(stopped.isActive, isFalse);
@@ -161,61 +148,37 @@ void main() {
       expect(active, isNull);
     });
 
-    test(
-        'getWorkItemTotalDuration aggregates multiple completed sessions plus active session',
-        () async {
+    test('getWorkItemTotalDuration aggregates multiple completed sessions plus active session', () async {
       final base = DateTime.now().toUtc().subtract(const Duration(hours: 3));
 
       // Session 1: 30 mins
       final s1 = await timerService.startSession(taskA.id, startTime: base);
-      await timerService.stopSession(s1.id,
-          endTime: base.add(const Duration(minutes: 30)));
+      await timerService.stopSession(s1.id, endTime: base.add(const Duration(minutes: 30)));
 
       // Session 2: 45 mins
-      final s2 = await timerService.startSession(taskA.id,
-          startTime: base.add(const Duration(hours: 1)));
-      await timerService.stopSession(s2.id,
-          endTime: base.add(const Duration(hours: 1, minutes: 45)));
+      final s2 = await timerService.startSession(taskA.id, startTime: base.add(const Duration(hours: 1)));
+      await timerService.stopSession(s2.id, endTime: base.add(const Duration(hours: 1, minutes: 45)));
 
       // Duration so far: 30 + 45 = 75 minutes (1h 15m)
-      final durationBeforeActive =
-          await timerService.getWorkItemTotalDuration(taskA.id);
+      final durationBeforeActive = await timerService.getWorkItemTotalDuration(taskA.id);
       expect(durationBeforeActive, const Duration(minutes: 75));
 
       // Active Session 3: started 15 mins ago
-      final s3StartTime =
-          DateTime.now().toUtc().subtract(const Duration(minutes: 15));
-      final s3 =
-          await timerService.startSession(taskA.id, startTime: s3StartTime);
+      final s3StartTime = DateTime.now().toUtc().subtract(const Duration(minutes: 15));
+      final s3 = await timerService.startSession(taskA.id, startTime: s3StartTime);
 
-      final totalDurationWithActive = await timerService
-          .getWorkItemTotalDuration(taskA.id, activeSession: s3);
+      final totalDurationWithActive = await timerService.getWorkItemTotalDuration(taskA.id, activeSession: s3);
       expect(totalDurationWithActive.inMinutes, greaterThanOrEqualTo(90));
     });
 
     test('formatDuration formats correctly in standard and compact modes', () {
-      expect(
-          TimerService.formatDuration(const Duration(seconds: 45)), '00:00:45');
-      expect(
-          TimerService.formatDuration(const Duration(minutes: 5, seconds: 12)),
-          '00:05:12');
-      expect(
-          TimerService.formatDuration(
-              const Duration(hours: 1, minutes: 23, seconds: 45)),
-          '01:23:45');
+      expect(TimerService.formatDuration(const Duration(seconds: 45)), '00:00:45');
+      expect(TimerService.formatDuration(const Duration(minutes: 5, seconds: 12)), '00:05:12');
+      expect(TimerService.formatDuration(const Duration(hours: 1, minutes: 23, seconds: 45)), '01:23:45');
 
-      expect(
-          TimerService.formatDuration(const Duration(seconds: 45),
-              compact: true),
-          '45s');
-      expect(
-          TimerService.formatDuration(const Duration(minutes: 5, seconds: 12),
-              compact: true),
-          '5m 12s');
-      expect(
-          TimerService.formatDuration(const Duration(hours: 2, minutes: 30),
-              compact: true),
-          '2h 30m');
+      expect(TimerService.formatDuration(const Duration(seconds: 45), compact: true), '45s');
+      expect(TimerService.formatDuration(const Duration(minutes: 5, seconds: 12), compact: true), '5m 12s');
+      expect(TimerService.formatDuration(const Duration(hours: 2, minutes: 30), compact: true), '2h 30m');
     });
   });
 }

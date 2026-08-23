@@ -7,13 +7,11 @@ import 'package:workpulse/features/workspace/providers/workspace_provider.dart';
 
 const _uuid = Uuid();
 
-final attributeDefinitionsProvider = AsyncNotifierProvider<
-    AttributeDefinitionsNotifier, List<AttributeDefinition>>(
+final attributeDefinitionsProvider = AsyncNotifierProvider<AttributeDefinitionsNotifier, List<AttributeDefinition>>(
   AttributeDefinitionsNotifier.new,
 );
 
-class AttributeDefinitionsNotifier
-    extends AsyncNotifier<List<AttributeDefinition>> {
+class AttributeDefinitionsNotifier extends AsyncNotifier<List<AttributeDefinition>> {
   AttributeRepository get _repo => ref.read(attributeRepositoryProvider);
 
   @override
@@ -47,8 +45,7 @@ class AttributeDefinitionsNotifier
       workspaceId: workspace.id,
       key: key.trim().toLowerCase(),
       name: name.trim(),
-      description:
-          description?.trim().isEmpty == true ? null : description?.trim(),
+      description: description?.trim().isEmpty == true ? null : description?.trim(),
       type: type,
       scope: scope,
       required: required,
@@ -67,8 +64,7 @@ class AttributeDefinitionsNotifier
     return created;
   }
 
-  Future<AttributeDefinition> updateDefinition(
-      AttributeDefinition definition) async {
+  Future<AttributeDefinition> updateDefinition(AttributeDefinition definition) async {
     final updated = await _repo.updateDefinition(
       definition.copyWith(updatedAt: DateTime.now().toUtc()),
     );
@@ -100,15 +96,12 @@ class AttributeDefinitionsNotifier
   }
 }
 
-final attributeOptionsFamilyProvider =
-    FutureProvider.family<List<AttributeOption>, String>(
-        (ref, definitionId) async {
+final attributeOptionsFamilyProvider = FutureProvider.family<List<AttributeOption>, String>((ref, definitionId) async {
   final repo = ref.watch(attributeRepositoryProvider);
   return repo.getOptions(definitionId, includeArchived: false);
 });
 
-final attributeOptionsControllerProvider =
-    Provider<AttributeOptionsController>((ref) {
+final attributeOptionsControllerProvider = Provider<AttributeOptionsController>((ref) {
   return AttributeOptionsController(ref);
 });
 
@@ -145,8 +138,7 @@ class AttributeOptionsController {
 
   Future<AttributeOption> updateOption(AttributeOption option) async {
     final updated = await _repo.updateOption(option);
-    _ref.invalidate(
-        attributeOptionsFamilyProvider(option.attributeDefinitionId));
+    _ref.invalidate(attributeOptionsFamilyProvider(option.attributeDefinitionId));
     return updated;
   }
 
@@ -161,15 +153,12 @@ class AttributeOptionsController {
   }
 }
 
-final workItemAttributeValuesFamilyProvider =
-    FutureProvider.family<List<WorkItemAttributeValue>, String>(
-        (ref, workItemId) async {
+final workItemAttributeValuesFamilyProvider = FutureProvider.family<List<WorkItemAttributeValue>, String>((ref, workItemId) async {
   final repo = ref.watch(attributeRepositoryProvider);
   return repo.getWorkItemValues(workItemId);
 });
 
-final workItemAttributeValuesControllerProvider =
-    Provider<WorkItemAttributeValuesController>((ref) {
+final workItemAttributeValuesControllerProvider = Provider<WorkItemAttributeValuesController>((ref) {
   return WorkItemAttributeValuesController(ref);
 });
 
@@ -184,8 +173,7 @@ class WorkItemAttributeValuesController {
     _ref.invalidate(workItemAttributeValuesFamilyProvider(value.workItemId));
   }
 
-  Future<void> saveValues(
-      String workItemId, List<WorkItemAttributeValue> values) async {
+  Future<void> saveValues(String workItemId, List<WorkItemAttributeValue> values) async {
     for (final v in values) {
       await _repo.setWorkItemValue(v);
     }

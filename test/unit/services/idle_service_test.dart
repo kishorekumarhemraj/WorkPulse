@@ -57,21 +57,11 @@ void main() {
       final now = DateTime.now().toUtc();
 
       final proj = await projectRepo.create(
-        Project(
-            id: 'proj-1',
-            workspaceId: wsId,
-            name: 'Core',
-            createdAt: now,
-            updatedAt: now),
+        Project(id: 'proj-1', workspaceId: wsId, name: 'Core', createdAt: now, updatedAt: now),
       );
 
       final cat = await categoryRepo.create(
-        Category(
-            id: 'cat-1',
-            workspaceId: wsId,
-            name: 'Dev',
-            createdAt: now,
-            updatedAt: now),
+        Category(id: 'cat-1', workspaceId: wsId, name: 'Dev', createdAt: now, updatedAt: now),
       );
 
       testTask = await workItemRepo.create(
@@ -91,16 +81,13 @@ void main() {
       await dbService.close();
     });
 
-    test(
-        'resolveKeepTracking records idle period in SQLite and keeps session active',
-        () async {
+    test('resolveKeepTracking records idle period in SQLite and keeps session active', () async {
       final now = DateTime.now().toUtc();
       final startTime = now.subtract(const Duration(minutes: 30));
       final idleStart = now.subtract(const Duration(minutes: 10));
       final idleEnd = now;
 
-      final session =
-          await timerService.startSession(testTask.id, startTime: startTime);
+      final session = await timerService.startSession(testTask.id, startTime: startTime);
 
       final result = await idleService.resolveKeepTracking(
         sessionId: session.id,
@@ -122,16 +109,13 @@ void main() {
       expect(active.endTime, isNull);
     });
 
-    test(
-        'resolveMarkIdle stops session at idle start, records period, and starts new session',
-        () async {
+    test('resolveMarkIdle stops session at idle start, records period, and starts new session', () async {
       final now = DateTime.now().toUtc();
       final startTime = now.subtract(const Duration(minutes: 45));
       final idleStart = now.subtract(const Duration(minutes: 20));
       final idleEnd = now;
 
-      final sessionA =
-          await timerService.startSession(testTask.id, startTime: startTime);
+      final sessionA = await timerService.startSession(testTask.id, startTime: startTime);
 
       final result = await idleService.resolveMarkIdle(
         sessionId: sessionA.id,
@@ -162,16 +146,13 @@ void main() {
       expect(idlePeriods.first.resolution, IdleResolution.markIdle);
     });
 
-    test(
-        'resolveStopSession stops active session at idle start and records period',
-        () async {
+    test('resolveStopSession stops active session at idle start and records period', () async {
       final now = DateTime.now().toUtc();
       final startTime = now.subtract(const Duration(minutes: 50));
       final idleStart = now.subtract(const Duration(minutes: 25));
       final idleEnd = now;
 
-      final session =
-          await timerService.startSession(testTask.id, startTime: startTime);
+      final session = await timerService.startSession(testTask.id, startTime: startTime);
 
       final result = await idleService.resolveStopSession(
         sessionId: session.id,

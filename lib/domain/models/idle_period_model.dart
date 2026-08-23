@@ -54,6 +54,5 @@ class IdlePeriod extends Equatable {
   }
 
   @override
-  List<Object?> get props =>
-      [id, sessionId, startTime, endTime, resolution, createdAt];
+  List<Object?> get props => [id, sessionId, startTime, endTime, resolution, createdAt];
 }

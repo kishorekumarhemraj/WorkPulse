@@ -28,8 +28,7 @@ void main() {
       dbService = DatabaseService();
       await dbService.initialize(inMemory: true);
 
-      testWorkspace = Workspace(
-          id: uuid.v4(), name: 'Test WS', createdAt: now, updatedAt: now);
+      testWorkspace = Workspace(id: uuid.v4(), name: 'Test WS', createdAt: now, updatedAt: now);
       await dbService.database.insert('workspaces', {
         'id': testWorkspace.id,
         'name': testWorkspace.name,
@@ -40,8 +39,7 @@ void main() {
       container = ProviderContainer(
         overrides: [
           databaseServiceProvider.overrideWithValue(dbService),
-          currentWorkspaceProvider
-              .overrideWith(() => _MockWorkspaceNotifier(testWorkspace)),
+          currentWorkspaceProvider.overrideWith(() => _MockWorkspaceNotifier(testWorkspace)),
         ],
       );
     });
@@ -57,16 +55,14 @@ void main() {
       var projects = await container.read(projectsProvider.future);
       expect(projects, isEmpty);
 
-      final p1 = await notifier.createProject(
-          name: 'Project 1', description: 'Desc 1', colorHex: '#0A84FF');
+      final p1 = await notifier.createProject(name: 'Project 1', description: 'Desc 1', colorHex: '#0A84FF');
       expect(p1.name, 'Project 1');
 
       final p2 = await notifier.createProject(name: 'Project 2');
       projects = await container.read(projectsProvider.future);
       expect(projects.length, 2);
 
-      final updated =
-          await notifier.updateProject(p1.copyWith(name: 'Project 1 Edited'));
+      final updated = await notifier.updateProject(p1.copyWith(name: 'Project 1 Edited'));
       expect(updated.name, 'Project 1 Edited');
 
       await notifier.archiveProject(p1.id);
@@ -89,16 +85,14 @@ void main() {
       var categories = await container.read(categoriesProvider.future);
       expect(categories, isEmpty);
 
-      final c1 = await notifier.createCategory(
-          name: 'Engineering', description: 'Dev work', iconName: 'code');
+      final c1 = await notifier.createCategory(name: 'Engineering', description: 'Dev work', iconName: 'code');
       expect(c1.name, 'Engineering');
 
       final c2 = await notifier.createCategory(name: 'Design');
       categories = await container.read(categoriesProvider.future);
       expect(categories.length, 2);
 
-      final updated =
-          await notifier.updateCategory(c1.copyWith(name: 'Engineering & QA'));
+      final updated = await notifier.updateCategory(c1.copyWith(name: 'Engineering & QA'));
       expect(updated.name, 'Engineering & QA');
 
       await notifier.archiveCategory(c1.id);
@@ -116,16 +110,14 @@ void main() {
       var tags = await container.read(tagsProvider.future);
       expect(tags, isEmpty);
 
-      final t1 =
-          await notifier.createTag(name: 'Frontend', colorHex: '#30D158');
+      final t1 = await notifier.createTag(name: 'Frontend', colorHex: '#30D158');
       expect(t1.name, 'Frontend');
 
       final t2 = await notifier.createTag(name: 'Backend');
       tags = await container.read(tagsProvider.future);
       expect(tags.length, 2);
 
-      final updated =
-          await notifier.updateTag(t1.copyWith(name: 'UI / Frontend'));
+      final updated = await notifier.updateTag(t1.copyWith(name: 'UI / Frontend'));
       expect(updated.name, 'UI / Frontend');
 
       await notifier.deleteTag(t2.id);
@@ -140,16 +132,14 @@ void main() {
       var people = await container.read(peopleProvider.future);
       expect(people, isEmpty);
 
-      final p1 = await notifier.createPerson(
-          name: 'John Doe', email: 'john@example.com');
+      final p1 = await notifier.createPerson(name: 'John Doe', email: 'john@example.com');
       expect(p1.name, 'John Doe');
 
       final p2 = await notifier.createPerson(name: 'Jane Smith');
       people = await container.read(peopleProvider.future);
       expect(people.length, 2);
 
-      final updated =
-          await notifier.updatePerson(p1.copyWith(name: 'Johnathan Doe'));
+      final updated = await notifier.updatePerson(p1.copyWith(name: 'Johnathan Doe'));
       expect(updated.name, 'Johnathan Doe');
 
       await notifier.deletePerson(p2.id);

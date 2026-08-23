@@ -104,8 +104,7 @@ class TrayCoordinator {
         TrayMenuItem(label: '⏱ $formattedTime', disabled: true),
         const TrayMenuItem.separator(),
         const TrayMenuItem(key: 'stop_timer', label: 'Stop Timer'),
-        const TrayMenuItem(
-            key: 'quick_capture', label: 'Quick Capture (⌥ + Space)'),
+        const TrayMenuItem(key: 'quick_capture', label: 'Quick Capture (⌥ + Space)'),
         const TrayMenuItem.separator(),
         const TrayMenuItem(key: 'show_window', label: 'Open WorkPulse'),
         const TrayMenuItem.separator(),
@@ -125,8 +124,7 @@ class TrayCoordinator {
     await _trayService.setContextMenu([
       const TrayMenuItem(label: '● No Active Timer', disabled: true),
       const TrayMenuItem.separator(),
-      const TrayMenuItem(
-          key: 'quick_capture', label: 'Quick Capture (⌥ + Space)'),
+      const TrayMenuItem(key: 'quick_capture', label: 'Quick Capture (⌥ + Space)'),
       const TrayMenuItem.separator(),
       const TrayMenuItem(key: 'show_window', label: 'Open WorkPulse'),
       const TrayMenuItem.separator(),

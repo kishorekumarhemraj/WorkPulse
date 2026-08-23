@@ -298,12 +298,10 @@ void main() {
       expect(totalHourlyIdle, const Duration(minutes: 15));
     });
 
-    test('DashboardTimeRange.thisWeek starts on Sunday and ends on Saturday',
-        () {
+    test('DashboardTimeRange.thisWeek starts on Sunday and ends on Saturday', () {
       // Test on Sunday (2026-08-23 is a Sunday)
       final sunday = DateTime(2026, 8, 23, 15, 30);
-      final sundayRange =
-          DashboardTimeRange.thisWeek.toDateRange(referenceTime: sunday);
+      final sundayRange = DashboardTimeRange.thisWeek.toDateRange(referenceTime: sunday);
       expect(sundayRange.start.toLocal().weekday, DateTime.sunday);
       expect(sundayRange.start.toLocal().day, 23);
       expect(sundayRange.end.toLocal().weekday, DateTime.saturday);
@@ -311,8 +309,7 @@ void main() {
 
       // Test on Wednesday (2026-08-26 is a Wednesday)
       final wednesday = DateTime(2026, 8, 26, 10, 0);
-      final wednesdayRange =
-          DashboardTimeRange.thisWeek.toDateRange(referenceTime: wednesday);
+      final wednesdayRange = DashboardTimeRange.thisWeek.toDateRange(referenceTime: wednesday);
       expect(wednesdayRange.start.toLocal().weekday, DateTime.sunday);
       expect(wednesdayRange.start.toLocal().day, 23);
       expect(wednesdayRange.end.toLocal().weekday, DateTime.saturday);
@@ -320,8 +317,7 @@ void main() {
 
       // Test on Saturday (2026-08-29 is a Saturday)
       final saturday = DateTime(2026, 8, 29, 23, 0);
-      final saturdayRange =
-          DashboardTimeRange.thisWeek.toDateRange(referenceTime: saturday);
+      final saturdayRange = DashboardTimeRange.thisWeek.toDateRange(referenceTime: saturday);
       expect(saturdayRange.start.toLocal().weekday, DateTime.sunday);
       expect(saturdayRange.start.toLocal().day, 23);
       expect(saturdayRange.end.toLocal().weekday, DateTime.saturday);

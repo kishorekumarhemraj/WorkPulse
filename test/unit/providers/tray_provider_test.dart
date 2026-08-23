@@ -58,21 +58,11 @@ void main() {
       final now = DateTime.now().toUtc();
 
       final proj = await projectRepo.create(
-        Project(
-            id: 'proj-1',
-            workspaceId: wsId,
-            name: 'Core',
-            createdAt: now,
-            updatedAt: now),
+        Project(id: 'proj-1', workspaceId: wsId, name: 'Core', createdAt: now, updatedAt: now),
       );
 
       final cat = await categoryRepo.create(
-        Category(
-            id: 'cat-1',
-            workspaceId: wsId,
-            name: 'Dev',
-            createdAt: now,
-            updatedAt: now),
+        Category(id: 'cat-1', workspaceId: wsId, name: 'Dev', createdAt: now, updatedAt: now),
       );
 
       testTask = await workItemRepo.create(
@@ -106,27 +96,20 @@ void main() {
       return container;
     }
 
-    test('updateTrayState sets idle text and menu when timer is stopped',
-        () async {
+    test('updateTrayState sets idle text and menu when timer is stopped', () async {
       final container = createContainer();
       await container.read(currentWorkspaceProvider.future);
       await container.read(timerProvider.future);
 
       final coordinator = container.read(trayCoordinatorProvider);
-      await coordinator
-          .updateTrayState(const TimerState(status: TimerStatus.idle));
+      await coordinator.updateTrayState(const TimerState(status: TimerStatus.idle));
 
       expect(fakeTrayService.currentTitle, 'WorkPulse');
       expect(fakeTrayService.currentToolTip, contains('Ready'));
-      expect(
-          fakeTrayService.currentMenu
-              .any((item) => item.label.contains('No Active Timer')),
-          isTrue);
+      expect(fakeTrayService.currentMenu.any((item) => item.label.contains('No Active Timer')), isTrue);
     });
 
-    test(
-        'updateTrayState sets active ticker and task menu when timer is running',
-        () async {
+    test('updateTrayState sets active ticker and task menu when timer is running', () async {
       final container = createContainer();
       await container.read(currentWorkspaceProvider.future);
       await container.read(timerProvider.future);
@@ -140,17 +123,11 @@ void main() {
 
       expect(fakeTrayService.currentTitle, contains('⏱'));
       expect(fakeTrayService.currentToolTip, 'Tracking: Menu Bar Integration');
-      expect(
-          fakeTrayService.currentMenu
-              .any((item) => item.label == '● Menu Bar Integration'),
-          isTrue);
-      expect(
-          fakeTrayService.currentMenu.any((item) => item.key == 'stop_timer'),
-          isTrue);
+      expect(fakeTrayService.currentMenu.any((item) => item.label == '● Menu Bar Integration'), isTrue);
+      expect(fakeTrayService.currentMenu.any((item) => item.key == 'stop_timer'), isTrue);
     });
 
-    test('tray menu actions show window and trigger quick capture callback',
-        () async {
+    test('tray menu actions show window and trigger quick capture callback', () async {
       final container = createContainer();
       await container.read(currentWorkspaceProvider.future);
       await container.read(timerProvider.future);

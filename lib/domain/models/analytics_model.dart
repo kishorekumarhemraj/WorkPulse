@@ -17,8 +17,7 @@ enum DashboardTimeRange {
     switch (this) {
       case DashboardTimeRange.today:
         final localStart = DateTime(now.year, now.month, now.day);
-        final localEnd =
-            DateTime(now.year, now.month, now.day, 23, 59, 59, 999);
+        final localEnd = DateTime(now.year, now.month, now.day, 23, 59, 59, 999);
         return DateRange(start: localStart.toUtc(), end: localEnd.toUtc());
 
       case DashboardTimeRange.thisWeek:
@@ -44,8 +43,7 @@ enum DashboardTimeRange {
       case DashboardTimeRange.custom:
         if (customRange != null) return customRange;
         final localStart = DateTime(now.year, now.month, now.day);
-        final localEnd =
-            DateTime(now.year, now.month, now.day, 23, 59, 59, 999);
+        final localEnd = DateTime(now.year, now.month, now.day, 23, 59, 59, 999);
         return DateRange(start: localStart.toUtc(), end: localEnd.toUtc());
     }
   }
