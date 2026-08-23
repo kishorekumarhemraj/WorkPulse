@@ -63,6 +63,7 @@ class _FakeTimerNotifier extends TimerNotifier {
   final TimerState _initial;
   bool stopCalled = false;
   bool confirmSwitchCalled = false;
+  String? switchNotes;
 
   _FakeTimerNotifier(this._initial);
 
@@ -77,8 +78,9 @@ class _FakeTimerNotifier extends TimerNotifier {
   }
 
   @override
-  Future<void> confirmSwitch() async {
+  Future<void> confirmSwitch({String? notes}) async {
     confirmSwitchCalled = true;
+    switchNotes = notes;
   }
 }
 
@@ -241,6 +243,48 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(fakeTimer.confirmSwitchCalled, isTrue);
+    });
+
+    testWidgets('TaskSwitchDialog captures optional session note and confirms switch', (tester) async {
+      final fakeTimer = _FakeTimerNotifier(
+        TimerState(
+          status: TimerStatus.switching,
+          activeWorkItem: testTaskA,
+          activeSession: testActiveSession,
+          elapsed: const Duration(minutes: 15),
+          pendingSwitchWorkItem: testTaskB,
+        ),
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            timerProvider.overrideWith(() => fakeTimer),
+          ],
+          child: MaterialApp(
+            theme: AppTheme.darkTheme,
+            home: Scaffold(
+              body: TaskSwitchDialog(
+                currentItem: testTaskA,
+                currentElapsed: const Duration(minutes: 15),
+                targetItem: testTaskB,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      // Enter session note
+      await tester.enterText(find.byType(TextField), 'Finished timer foundation');
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Confirm Switch'));
+      await tester.pumpAndSettle();
+
+      expect(fakeTimer.confirmSwitchCalled, isTrue);
+      expect(fakeTimer.switchNotes, 'Finished timer foundation');
     });
 
     testWidgets('TasksView displays Play button and TRACKING status on active task card', (tester) async {
