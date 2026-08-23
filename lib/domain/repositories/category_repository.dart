@@ -1,10 +1,11 @@
 import 'package:workpulse/domain/models/category_model.dart';
 
 abstract class CategoryRepository {
-  Future<List<Category>> getAllCategories({bool includeArchived = false});
-  Future<Category?> getCategoryById(String id);
-  Future<Category?> getCategoryByName(String name);
-  Future<void> createCategory(Category category);
-  Future<void> updateCategory(Category category);
-  Future<void> deleteCategory(String id);
+  Future<Category?> getById(String id);
+  Future<List<Category>> getAll({String? workspaceId, bool includeArchived = false});
+  Future<Category> create(Category category);
+  Future<Category> update(Category category);
+  Future<void> archive(String id);
+  Future<void> unarchive(String id);
+  Future<void> delete(String id);
 }

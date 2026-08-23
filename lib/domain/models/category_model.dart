@@ -2,6 +2,7 @@ import 'package:equatable/equatable.dart';
 
 class Category extends Equatable {
   final String id;
+  final String workspaceId;
   final String name;
   final String? description;
   final String? iconName;
@@ -11,6 +12,7 @@ class Category extends Equatable {
 
   const Category({
     required this.id,
+    required this.workspaceId,
     required this.name,
     this.description,
     this.iconName,
@@ -23,6 +25,7 @@ class Category extends Equatable {
 
   Category copyWith({
     String? id,
+    String? workspaceId,
     String? name,
     String? description,
     String? iconName,
@@ -32,6 +35,7 @@ class Category extends Equatable {
   }) {
     return Category(
       id: id ?? this.id,
+      workspaceId: workspaceId ?? this.workspaceId,
       name: name ?? this.name,
       description: description ?? this.description,
       iconName: iconName ?? this.iconName,
@@ -42,5 +46,5 @@ class Category extends Equatable {
   }
 
   @override
-  List<Object?> get props => [id, name, description, iconName, createdAt, updatedAt, archivedAt];
+  List<Object?> get props => [id, workspaceId, name, description, iconName, createdAt, updatedAt, archivedAt];
 }
