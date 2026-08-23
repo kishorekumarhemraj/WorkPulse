@@ -17,41 +17,57 @@ final windowServiceProvider = Provider<WindowService>((ref) {
 });
 
 final trayCoordinatorProvider = Provider<TrayCoordinator>((ref) {
-  final coordinator = TrayCoordinator(ref);
+  final trayService = ref.watch(trayServiceProvider);
+  final windowService = ref.watch(windowServiceProvider);
+
+  final coordinator = TrayCoordinator(
+    ref: ref,
+    trayService: trayService,
+    windowService: windowService,
+  );
+
+  ref.onDispose(coordinator.dispose);
   coordinator.initialize();
   return coordinator;
 });
 
 class TrayCoordinator {
   final Ref _ref;
+  final TrayService _trayService;
+  final WindowService _windowService;
+  bool _isDisposed = false;
   void Function()? onQuickCaptureRequested;
 
-  TrayCoordinator(this._ref);
-
-  TrayService get _trayService => _ref.read(trayServiceProvider);
-  WindowService get _windowService => _ref.read(windowServiceProvider);
-
-  Future<void> initialize() async {
-    await _trayService.initialize();
-    await _windowService.initialize();
-
+  TrayCoordinator({
+    required Ref ref,
+    required TrayService trayService,
+    required WindowService windowService,
+  })  : _ref = ref,
+        _trayService = trayService,
+        _windowService = windowService {
     _trayService.setTrayClickListener(() {
       _windowService.show();
     });
 
     _trayService.setMenuItemClickListener(_handleMenuItemClick);
 
-    // React to timer state changes
+    // Synchronously listen to timer state
     _ref.listen<AsyncValue<TimerState>>(timerProvider, (_, next) {
+      if (_isDisposed) return;
       final state = next.value;
       if (state != null) {
         updateTrayState(state);
       }
     });
+  }
 
-    // Initial tray sync
+  Future<void> initialize() async {
+    await _trayService.initialize();
+    await _windowService.initialize();
+
+    if (_isDisposed) return;
     final currentTimer = _ref.read(timerProvider).value;
-    if (currentTimer != null) {
+    if (currentTimer != null && currentTimer.isRunning) {
       await updateTrayState(currentTimer);
     } else {
       await _setIdleTrayState();
@@ -63,14 +79,12 @@ class TrayCoordinator {
     final minutes = duration.inMinutes.remainder(60);
     final seconds = duration.inSeconds.remainder(60);
 
-    if (hours > 0) {
-      return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
-    } else {
-      return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
-    }
+    return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
   }
 
   Future<void> updateTrayState(TimerState state) async {
+    if (_isDisposed) return;
+
     if (state.isRunning && state.activeWorkItem != null) {
       final formattedTime = formatDuration(state.elapsed);
       final title = '⏱ $formattedTime';
@@ -96,6 +110,8 @@ class TrayCoordinator {
   }
 
   Future<void> _setIdleTrayState() async {
+    if (_isDisposed) return;
+
     await _trayService.setTitle('WorkPulse');
     await _trayService.setToolTip('${AppConstants.appName} - Ready');
 
@@ -111,6 +127,8 @@ class TrayCoordinator {
   }
 
   void _handleMenuItemClick(String key) {
+    if (_isDisposed) return;
+
     switch (key) {
       case 'show_window':
         _windowService.show();
@@ -125,5 +143,9 @@ class TrayCoordinator {
       case 'quit_app':
         exit(0);
     }
+  }
+
+  void dispose() {
+    _isDisposed = true;
   }
 }
