@@ -353,8 +353,8 @@ class _ExportDialogState extends ConsumerState<ExportDialog> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppTheme.primaryColor,
                       foregroundColor: Colors.white,
-                      padding:
-                          const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 18, vertical: 12),
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8)),
                     ),

@@ -1,6 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:workpulse/core/theme/app_theme.dart';
+import 'package:workpulse/core/theme/app_colors.dart';
+import 'package:workpulse/core/theme/app_typography.dart';
+import 'package:workpulse/core/theme/design_tokens.dart';
+import 'package:workpulse/core/widgets/app_card.dart';
 
+/// A headline figure on the dashboard.
+///
+/// Previously the card wrapped itself in [Expanded], which forced every use
+/// site into a fixed Row and made the KPI strip overflow as the window
+/// narrowed. It now sizes to whatever the parent gives it, so the dashboard
+/// can lay the cards out responsively.
 class MetricCard extends StatelessWidget {
   final String title;
   final String value;
@@ -19,66 +28,62 @@ class MetricCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: AppTheme.getColors(context).surface,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppTheme.getColors(context).divider),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(icon, size: 18, color: color),
+    final colors = context.colors;
+    final theme = Theme.of(context);
+
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(Spacing.sm),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.15),
+                  borderRadius: Radii.mdAll,
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: AppTheme.getColors(context).textSecondary,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 14),
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                letterSpacing: -0.5,
-                color: AppTheme.getColors(context).textPrimary,
+                child: Icon(icon, size: IconSizes.lg, color: color),
               ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            if (subtitle != null) ...[
-              const SizedBox(height: 4),
-              Text(
-                subtitle!,
-                style: TextStyle(
-                  fontSize: 11,
-                  color: AppTheme.getColors(context).textSecondary,
+              const SizedBox(width: Spacing.sm + 2),
+              Expanded(
+                child: Text(
+                  title,
+                  style: theme.textTheme.labelMedium,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
+          ),
+          const SizedBox(height: Spacing.md + 2),
+          // Durations are monospaced and tabular so the four cards' figures
+          // line up with each other rather than drifting by glyph width.
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              value,
+              maxLines: 1,
+              style: AppTypography.numeric(
+                fontSize: 23,
+                fontWeight: FontWeight.w700,
+                color: colors.textPrimary,
+                letterSpacing: -0.5,
+              ),
+            ),
+          ),
+          if (subtitle != null) ...[
+            const SizedBox(height: Spacing.xs),
+            Text(
+              subtitle!,
+              style: theme.textTheme.bodySmall,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
           ],
-        ),
+        ],
       ),
     );
   }
