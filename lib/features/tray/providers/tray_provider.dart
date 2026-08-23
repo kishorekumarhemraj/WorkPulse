@@ -90,7 +90,10 @@ class TrayCoordinator {
 
     if (state.isRunning && state.activeWorkItem != null) {
       final formattedTime = formatDuration(state.elapsed);
-      final title = '⏱ $formattedTime';
+      final taskName = state.activeWorkItem!.name;
+      final displayTaskName =
+          taskName.length > 25 ? '${taskName.substring(0, 25)}…' : taskName;
+      final title = '⏱ $formattedTime  $displayTaskName';
       final tooltip = 'Tracking: ${state.activeWorkItem!.name}';
 
       await _trayService.setTitle(title);
