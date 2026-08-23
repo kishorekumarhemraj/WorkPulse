@@ -5,7 +5,6 @@ import 'package:workpulse/core/theme/app_theme.dart';
 import 'package:workpulse/core/theme/color_utils.dart';
 import 'package:workpulse/core/theme/icon_utils.dart';
 import 'package:workpulse/domain/models/analytics_model.dart';
-import 'package:workpulse/domain/services/export_service.dart';
 import 'package:workpulse/domain/services/timer_service.dart';
 import 'package:workpulse/features/reports/providers/reports_provider.dart';
 import 'package:workpulse/features/reports/views/export_dialog.dart';
@@ -85,25 +84,26 @@ class SessionHistoryView extends ConsumerWidget {
             // Top Header Bar
             Row(
               children: [
-                const Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Time Log & History',
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: AppTheme.textPrimaryDark,
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Time Log & History',
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.textPrimaryDark,
+                        ),
                       ),
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      'View and edit historical time tracking sessions',
-                      style: TextStyle(fontSize: 12, color: AppTheme.textSecondaryDark),
-                    ),
-                  ],
+                      SizedBox(height: 4),
+                      Text(
+                        'View and edit historical time tracking sessions',
+                        style: TextStyle(fontSize: 12, color: AppTheme.textSecondaryDark),
+                      ),
+                    ],
+                  ),
                 ),
-                const Spacer(),
 
                 // Range Selector Filter Pills
                 Container(
@@ -265,10 +265,10 @@ class SessionHistoryView extends ConsumerWidget {
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                   ),
-                                  if (s.notes != null && s.notes!.isNotEmpty) ...[
+                                  if (record.workItem.notes != null && record.workItem.notes!.isNotEmpty) ...[
                                     const SizedBox(height: 2),
                                     Text(
-                                      s.notes!,
+                                      record.workItem.notes!,
                                       style: const TextStyle(fontSize: 11, fontStyle: FontStyle.italic, color: AppTheme.textSecondaryDark),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,

@@ -9,7 +9,6 @@ import 'package:workpulse/domain/models/project_model.dart';
 import 'package:workpulse/domain/models/session_model.dart';
 import 'package:workpulse/domain/models/tag_model.dart';
 import 'package:workpulse/domain/models/work_item_model.dart';
-import 'package:workpulse/domain/models/workspace_model.dart';
 import 'package:workpulse/domain/repositories/attribute_repository.dart';
 import 'package:workpulse/domain/repositories/category_repository.dart';
 import 'package:workpulse/domain/repositories/idle_period_repository.dart';
@@ -228,12 +227,12 @@ class ExportService {
       final projStr = r.project?.name ?? '';
       final catStr = r.category?.name ?? '';
       final taskStr = r.workItem.name;
-      final notesStr = s.notes ?? r.workItem.notes ?? '';
+      final notesStr = r.workItem.notes ?? '';
       final tagsStr = r.tags.map((t) => t.name).join('; ');
       final peopleStr = r.people.map((p) => p.name).join('; ');
-      final grossStr = TimerService.formatDuration(r.grossDuration, includeSeconds: true);
-      final idleStr = TimerService.formatDuration(r.idleDuration, includeSeconds: true);
-      final netStr = TimerService.formatDuration(r.netActiveDuration, includeSeconds: true);
+      final grossStr = formatDurationHms(r.grossDuration);
+      final idleStr = formatDurationHms(r.idleDuration);
+      final netStr = formatDurationHms(r.netActiveDuration);
       final grossSec = r.grossDuration.inSeconds.toString();
       final netSec = r.netActiveDuration.inSeconds.toString();
 
@@ -304,7 +303,7 @@ class ExportService {
         'totalNetDurationFormatted': TimerService.formatDuration(totalNet, includeSeconds: true),
       },
       'attributeDefinitions': definitions
-          .map((d) => {
+          .map<Map<String, dynamic>>((d) => {
                 'id': d.id,
                 'key': d.key,
                 'name': d.name,
@@ -321,11 +320,9 @@ class ExportService {
           'grossDurationSeconds': r.grossDuration.inSeconds,
           'idleDurationSeconds': r.idleDuration.inSeconds,
           'netDurationSeconds': r.netActiveDuration.inSeconds,
-          'notes': s.notes,
           'workItem': {
             'id': r.workItem.id,
             'name': r.workItem.name,
-            'status': r.workItem.status.name,
             'notes': r.workItem.notes,
           },
           'project': r.project != null
@@ -391,6 +388,15 @@ class ExportService {
         }
         return text ?? '';
     }
+  }
+
+  static String formatDurationHms(Duration duration) {
+    if (duration.isNegative) return '00:00:00';
+    final totalSeconds = duration.inSeconds;
+    final hours = (totalSeconds ~/ 3600).toString().padLeft(2, '0');
+    final minutes = ((totalSeconds % 3600) ~/ 60).toString().padLeft(2, '0');
+    final seconds = (totalSeconds % 60).toString().padLeft(2, '0');
+    return '$hours:$minutes:$seconds';
   }
 
   static String _escapeCsv(String value) {
