@@ -158,6 +158,7 @@ class _MainShellViewState extends ConsumerState<MainShellView> {
                                 ),
                               ],
                             ),
+                          ),
                           const SizedBox(height: 12),
                           // Quick Capture Shortcut Button
                           InkWell(
