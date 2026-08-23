@@ -86,8 +86,10 @@ class ExportService {
   }) async {
     final allSessions =
         await _sessionRepository.getByDateRange(range.start, range.end);
-    final allWorkItems =
-        await _workItemRepository.getAll(workspaceId: workspaceId);
+    // includeArchived: true - a session for an archived task must still
+    // appear in Time Log / Session History / CSV / JSON export.
+    final allWorkItems = await _workItemRepository.getAll(
+        workspaceId: workspaceId, includeArchived: true);
     final allProjects =
         await _projectRepository.getAll(workspaceId: workspaceId);
     final allCategories =
@@ -258,7 +260,7 @@ class ExportService {
       final projStr = r.project?.name ?? '';
       final catStr = r.category?.name ?? '';
       final taskStr = r.workItem.name;
-      final notesStr = r.workItem.notes ?? '';
+      final notesStr = s.notes ?? '';
       final tagsStr = r.tags.map((t) => t.name).join('; ');
       final peopleStr = r.people.map((p) => p.name).join('; ');
       final grossStr = formatDurationHms(r.grossDuration);
@@ -353,13 +355,14 @@ class ExportService {
           'id': s.id,
           'startTime': s.startTime.toUtc().toIso8601String(),
           'endTime': s.endTime?.toUtc().toIso8601String(),
+          'notes': s.notes,
           'grossDurationSeconds': r.grossDuration.inSeconds,
           'idleDurationSeconds': r.idleDuration.inSeconds,
           'netDurationSeconds': r.netActiveDuration.inSeconds,
           'workItem': {
             'id': r.workItem.id,
             'name': r.workItem.name,
-            'notes': r.workItem.notes,
+            'legacyNotes': r.workItem.notes,
           },
           'project': r.project != null
               ? {

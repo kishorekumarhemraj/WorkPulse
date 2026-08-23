@@ -134,7 +134,8 @@ class _MainShellViewState extends ConsumerState<MainShellView> {
               children: [
                 Text(
                   'Press the keys you want to use.',
-                  style: TextStyle(color: AppTheme.getColors(context).textSecondary),
+                  style: TextStyle(
+                      color: AppTheme.getColors(context).textSecondary),
                 ),
                 SizedBox(height: 16),
                 Container(
@@ -143,7 +144,8 @@ class _MainShellViewState extends ConsumerState<MainShellView> {
                   decoration: BoxDecoration(
                     color: AppTheme.getColors(context).card,
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: AppTheme.getColors(context).divider),
+                    border:
+                        Border.all(color: AppTheme.getColors(context).divider),
                   ),
                   child: HotKeyRecorder(
                     initalHotKey: currentHotKey,
@@ -217,7 +219,8 @@ class _MainShellViewState extends ConsumerState<MainShellView> {
               CircularProgressIndicator(),
               SizedBox(height: 16),
               Text('Initializing WorkPulse...',
-                  style: TextStyle(color: AppTheme.getColors(context).textSecondary)),
+                  style: TextStyle(
+                      color: AppTheme.getColors(context).textSecondary)),
             ],
           ),
         ),
@@ -237,8 +240,9 @@ class _MainShellViewState extends ConsumerState<MainShellView> {
                       decoration: BoxDecoration(
                         color: AppTheme.getColors(context).surface,
                         border: Border(
-                          right:
-                              BorderSide(color: AppTheme.getColors(context).divider, width: 1),
+                          right: BorderSide(
+                              color: AppTheme.getColors(context).divider,
+                              width: 1),
                         ),
                       ),
                       child: Column(
@@ -270,7 +274,8 @@ class _MainShellViewState extends ConsumerState<MainShellView> {
                                         style: TextStyle(
                                           fontSize: 17,
                                           fontWeight: FontWeight.bold,
-                                          color: AppTheme.getColors(context).textPrimary,
+                                          color: AppTheme.getColors(context)
+                                              .textPrimary,
                                           letterSpacing: -0.3,
                                         ),
                                         overflow: TextOverflow.ellipsis,
@@ -286,15 +291,17 @@ class _MainShellViewState extends ConsumerState<MainShellView> {
                                   decoration: BoxDecoration(
                                     color: AppTheme.getColors(context).card,
                                     borderRadius: BorderRadius.circular(6),
-                                    border:
-                                        Border.all(color: AppTheme.getColors(context).divider),
+                                    border: Border.all(
+                                        color: AppTheme.getColors(context)
+                                            .divider),
                                   ),
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       Icon(Icons.workspaces_outlined,
                                           size: 12,
-                                          color: AppTheme.getColors(context).textSecondary),
+                                          color: AppTheme.getColors(context)
+                                              .textSecondary),
                                       SizedBox(width: 6),
                                       Flexible(
                                         child: Text(
@@ -302,8 +309,8 @@ class _MainShellViewState extends ConsumerState<MainShellView> {
                                           style: TextStyle(
                                               fontSize: 11,
                                               fontWeight: FontWeight.w500,
-                                              color:
-                                                  AppTheme.getColors(context).textSecondary),
+                                              color: AppTheme.getColors(context)
+                                                  .textSecondary),
                                           overflow: TextOverflow.ellipsis,
                                         ),
                                       ),
@@ -312,71 +319,81 @@ class _MainShellViewState extends ConsumerState<MainShellView> {
                                 ),
                                 SizedBox(height: 12),
                                 // Quick Capture Shortcut Button
-                                InkWell(
-                                  onTap: _showQuickCapture,
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: Container(
-                                    padding: EdgeInsets.symmetric(
-                                        horizontal: 10, vertical: 7),
-                                    decoration: BoxDecoration(
-                                      color: AppTheme.primaryColor
-                                          .withValues(alpha: 0.12),
+                                Container(
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                        color: AppTheme.primaryColor
+                                            .withValues(alpha: 0.3)),
+                                  ),
+                                  child: Material(
+                                    color: AppTheme.primaryColor
+                                        .withValues(alpha: 0.12),
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: InkWell(
+                                      onTap: _showQuickCapture,
                                       borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(
-                                          color: AppTheme.primaryColor
-                                              .withValues(alpha: 0.3)),
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        Icon(Icons.flash_on,
-                                            size: 15,
-                                            color: AppTheme.primaryColor),
-                                        SizedBox(width: 8),
-                                        Expanded(
-                                          child: Text(
-                                            'Quick Capture',
-                                            style: TextStyle(
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.w600,
+                                      child: Padding(
+                                        padding: EdgeInsets.symmetric(
+                                            horizontal: 10, vertical: 7),
+                                        child: Row(
+                                          children: [
+                                            Icon(Icons.flash_on,
+                                                size: 15,
+                                                color: AppTheme.primaryColor),
+                                            SizedBox(width: 8),
+                                            Expanded(
+                                              child: Text(
+                                                'Quick Capture',
+                                                style: TextStyle(
+                                                    fontSize: 12,
+                                                    fontWeight: FontWeight.w600,
+                                                    color: AppTheme.getColors(
+                                                            context)
+                                                        .textPrimary),
+                                              ),
+                                            ),
+                                            Container(
+                                              padding: EdgeInsets.symmetric(
+                                                  horizontal: 5, vertical: 2),
+                                              decoration: BoxDecoration(
                                                 color:
-                                                    AppTheme.getColors(context).textPrimary),
-                                          ),
+                                                    AppTheme.getColors(context)
+                                                        .surface,
+                                                borderRadius:
+                                                    BorderRadius.circular(4),
+                                              ),
+                                              child: Text(
+                                                settings == null
+                                                    ? '⌥ Space'
+                                                    : hotKeyLabel(settings
+                                                        .quickCaptureHotKey),
+                                                style: TextStyle(
+                                                    fontSize: 10,
+                                                    fontWeight: FontWeight.bold,
+                                                    color: AppTheme.getColors(
+                                                            context)
+                                                        .textSecondary),
+                                              ),
+                                            ),
+                                          ],
                                         ),
-                                        Container(
-                                          padding: EdgeInsets.symmetric(
-                                              horizontal: 5, vertical: 2),
-                                          decoration: BoxDecoration(
-                                            color: AppTheme.getColors(context).surface,
-                                            borderRadius:
-                                                BorderRadius.circular(4),
-                                          ),
-                                          child: Text(
-                                            settings == null
-                                                ? '⌥ Space'
-                                                : hotKeyLabel(settings
-                                                    .quickCaptureHotKey),
-                                            style: TextStyle(
-                                                fontSize: 10,
-                                                fontWeight: FontWeight.bold,
-                                                color:
-                                                    AppTheme.getColors(context).textSecondary),
-                                          ),
-                                        ),
-                                      ],
+                                      ),
                                     ),
                                   ),
                                 ),
                               ],
                             ),
                           ),
-                          Divider(color: AppTheme.getColors(context).divider, height: 1),
+                          Divider(
+                              color: AppTheme.getColors(context).divider,
+                              height: 1),
                           SizedBox(height: 8),
 
                           // Navigation Items
                           Expanded(
                             child: ListView(
-                              padding:
-                                  EdgeInsets.symmetric(horizontal: 8),
+                              padding: EdgeInsets.symmetric(horizontal: 8),
                               children: [
                                 _SidebarNavItem(
                                   icon: Icons.space_dashboard_outlined,
@@ -478,14 +495,16 @@ class _MainShellViewState extends ConsumerState<MainShellView> {
                                   children: [
                                     Icon(Icons.light_mode_outlined,
                                         size: 15,
-                                        color: AppTheme.getColors(context).textSecondary),
+                                        color: AppTheme.getColors(context)
+                                            .textSecondary),
                                     SizedBox(width: 8),
                                     Expanded(
                                       child: Text(
                                         'Light Mode',
                                         style: TextStyle(
                                             fontSize: 12,
-                                            color: AppTheme.getColors(context).textSecondary),
+                                            color: AppTheme.getColors(context)
+                                                .textSecondary),
                                       ),
                                     ),
                                     Switch(
@@ -511,8 +530,7 @@ class _MainShellViewState extends ConsumerState<MainShellView> {
                                       ? null
                                       : () => _showShortcutRecorder(
                                           settings.quickCaptureHotKey),
-                                  icon: Icon(Icons.keyboard_outlined,
-                                      size: 15),
+                                  icon: Icon(Icons.keyboard_outlined, size: 15),
                                   label: Text(
                                     settings == null
                                         ? 'Shortcut'
@@ -521,9 +539,11 @@ class _MainShellViewState extends ConsumerState<MainShellView> {
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                   style: OutlinedButton.styleFrom(
-                                    foregroundColor: AppTheme.getColors(context).textSecondary,
+                                    foregroundColor: AppTheme.getColors(context)
+                                        .textSecondary,
                                     side: BorderSide(
-                                        color: AppTheme.getColors(context).divider),
+                                        color: AppTheme.getColors(context)
+                                            .divider),
                                     textStyle: TextStyle(fontSize: 12),
                                   ),
                                 ),
@@ -532,7 +552,8 @@ class _MainShellViewState extends ConsumerState<MainShellView> {
                                   'v${AppConstants.appVersion} • macOS',
                                   style: TextStyle(
                                       fontSize: 11,
-                                      color: AppTheme.getColors(context).textSecondary),
+                                      color: AppTheme.getColors(context)
+                                          .textSecondary),
                                 ),
                               ],
                             ),
@@ -588,62 +609,61 @@ class _SidebarNavItem extends ConsumerWidget {
 
     return Padding(
       padding: EdgeInsets.symmetric(vertical: 2.0),
-      child: InkWell(
-        onTap: onTap,
+      child: Material(
+        color: isSelected
+            ? AppTheme.primaryColor.withValues(alpha: 0.15)
+            : Colors.transparent,
         borderRadius: BorderRadius.circular(6),
-        child: Container(
-          padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-          decoration: BoxDecoration(
-            color: isSelected
-                ? AppTheme.primaryColor.withValues(alpha: 0.15)
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(6),
-          ),
-          child: Row(
-            children: [
-              Icon(
-                icon,
-                size: 18,
-                color: isSelected
-                    ? AppTheme.primaryColor
-                    : AppTheme.getColors(context).textSecondary,
-              ),
-              SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight:
-                        isSelected ? FontWeight.w600 : FontWeight.normal,
-                    color: isSelected
-                        ? AppTheme.primaryColor
-                        : AppTheme.getColors(context).textSecondary,
-                  ),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(6),
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            child: Row(
+              children: [
+                Icon(
+                  icon,
+                  size: 18,
+                  color: isSelected
+                      ? AppTheme.primaryColor
+                      : AppTheme.getColors(context).textSecondary,
                 ),
-              ),
-              if (count != null && count > 0)
-                Container(
-                  padding:
-                      EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? AppTheme.primaryColor.withValues(alpha: 0.2)
-                        : AppTheme.getColors(context).card,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
+                SizedBox(width: 10),
+                Expanded(
                   child: Text(
-                    '$count',
+                    label,
                     style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w500,
+                      fontSize: 13,
+                      fontWeight:
+                          isSelected ? FontWeight.w600 : FontWeight.normal,
                       color: isSelected
                           ? AppTheme.primaryColor
                           : AppTheme.getColors(context).textSecondary,
                     ),
                   ),
                 ),
-            ],
+                if (count != null && count > 0)
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? AppTheme.primaryColor.withValues(alpha: 0.2)
+                          : AppTheme.getColors(context).card,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      '$count',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                        color: isSelected
+                            ? AppTheme.primaryColor
+                            : AppTheme.getColors(context).textSecondary,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
           ),
         ),
       ),

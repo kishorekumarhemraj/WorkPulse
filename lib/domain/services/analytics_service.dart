@@ -51,8 +51,10 @@ class AnalyticsService {
     );
 
     // 2. Fetch context entities
-    final allWorkItems =
-        await _workItemRepository.getAll(workspaceId: workspaceId);
+    // includeArchived: true - archiving a task must not erase its
+    // historical time data from dashboard metrics.
+    final allWorkItems = await _workItemRepository.getAll(
+        workspaceId: workspaceId, includeArchived: true);
     final allProjects =
         await _projectRepository.getAll(workspaceId: workspaceId);
     final allCategories =
