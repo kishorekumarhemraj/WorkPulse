@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workpulse/data/providers/repository_providers.dart';
 import 'package:workpulse/domain/models/analytics_model.dart';
+import 'package:workpulse/domain/models/date_range.dart';
 import 'package:workpulse/domain/services/analytics_service.dart';
 import 'package:workpulse/features/timer/providers/timer_provider.dart';
 import 'package:workpulse/features/workspace/providers/workspace_provider.dart';
@@ -19,7 +20,8 @@ final analyticsServiceProvider = Provider<AnalyticsService>((ref) {
   );
 });
 
-final selectedTimeRangeProvider = NotifierProvider<SelectedTimeRangeNotifier, DashboardTimeRange>(
+final selectedTimeRangeProvider =
+    NotifierProvider<SelectedTimeRangeNotifier, DashboardTimeRange>(
   SelectedTimeRangeNotifier.new,
 );
 
@@ -30,7 +32,8 @@ class SelectedTimeRangeNotifier extends Notifier<DashboardTimeRange> {
   void setRange(DashboardTimeRange range) => state = range;
 }
 
-final customDateRangeProvider = NotifierProvider<CustomDateRangeNotifier, DateTimeRange?>(
+final customDateRangeProvider =
+    NotifierProvider<CustomDateRangeNotifier, DateTimeRange?>(
   CustomDateRangeNotifier.new,
 );
 
@@ -50,7 +53,12 @@ final dashboardDataProvider = FutureProvider<DashboardData>((ref) async {
   // Invalidate when active session starts/stops/switches
   ref.watch(timerProvider.select((s) => s.value?.activeSession?.id));
 
-  final calculatedRange = timeRange.toDateTimeRange(customRange: customRange);
+  // Bridge Flutter DateTimeRange to pure-Dart DateRange for domain layer
+  final flutterCustomRange = customRange != null
+      ? DateRange(start: customRange.start, end: customRange.end)
+      : null;
+  final calculatedRange =
+      timeRange.toDateRange(customRange: flutterCustomRange);
 
   return analyticsService.getDashboardData(
     workspaceId: workspace.id,

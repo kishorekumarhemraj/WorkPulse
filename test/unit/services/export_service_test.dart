@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:workpulse/core/database/database_service.dart';
@@ -15,6 +14,7 @@ import 'package:workpulse/data/repositories/sqlite_work_item_repository.dart';
 import 'package:workpulse/data/repositories/sqlite_workspace_repository.dart';
 import 'package:workpulse/domain/models/attribute_model.dart';
 import 'package:workpulse/domain/models/category_model.dart';
+import 'package:workpulse/domain/models/date_range.dart';
 import 'package:workpulse/domain/models/idle_period_model.dart';
 import 'package:workpulse/domain/models/person_model.dart';
 import 'package:workpulse/domain/models/project_model.dart';
@@ -74,20 +74,41 @@ void main() {
 
       // Seed Project & Category
       final proj = await projectRepo.create(
-        Project(id: 'proj-1', workspaceId: wsId, name: 'Client "Acme" Project, Inc.', colorHex: '#0A84FF', createdAt: now, updatedAt: now),
+        Project(
+            id: 'proj-1',
+            workspaceId: wsId,
+            name: 'Client "Acme" Project, Inc.',
+            colorHex: '#0A84FF',
+            createdAt: now,
+            updatedAt: now),
       );
 
       final cat = await categoryRepo.create(
-        Category(id: 'cat-1', workspaceId: wsId, name: 'Development', iconName: 'code', createdAt: now, updatedAt: now),
+        Category(
+            id: 'cat-1',
+            workspaceId: wsId,
+            name: 'Development',
+            iconName: 'code',
+            createdAt: now,
+            updatedAt: now),
       );
 
       // Seed Tag & Person
       final tag = await tagRepo.create(
-        Tag(id: 'tag-1', workspaceId: wsId, name: 'Frontend', colorHex: '#30D158', createdAt: now),
+        Tag(
+            id: 'tag-1',
+            workspaceId: wsId,
+            name: 'Frontend',
+            colorHex: '#30D158',
+            createdAt: now),
       );
 
       final person = await personRepo.create(
-        Person(id: 'person-1', workspaceId: wsId, name: 'John Doe', createdAt: now),
+        Person(
+            id: 'person-1',
+            workspaceId: wsId,
+            name: 'John Doe',
+            createdAt: now),
       );
 
       // Seed Custom Attribute (Billing Rate & Ticket ID)
@@ -163,13 +184,16 @@ void main() {
       await dbService.close();
     });
 
-    test('generateCsv outputs RFC 4180 compliant CSV with dynamic attribute columns and proper escaping', () async {
-      final range = DateTimeRange(
+    test(
+        'generateCsv outputs RFC 4180 compliant CSV with dynamic attribute columns and proper escaping',
+        () async {
+      final range = DateRange(
         start: DateTime.utc(2026, 8, 23, 0, 0, 0),
         end: DateTime.utc(2026, 8, 23, 23, 59, 59),
       );
 
-      final csv = await exportService.generateCsv(workspaceId: wsId, range: range);
+      final csv =
+          await exportService.generateCsv(workspaceId: wsId, range: range);
 
       expect(csv, isNotEmpty);
       final lines = csv.trim().split('\n');
@@ -182,7 +206,10 @@ void main() {
       expect(headerLine, contains('Billing Rate'));
 
       final dataLine = lines[1];
-      expect(dataLine, contains('"Client ""Acme"" Project, Inc."')); // Escaped quotes and comma
+      expect(
+          dataLine,
+          contains(
+              '"Client ""Acme"" Project, Inc."')); // Escaped quotes and comma
       expect(dataLine, contains('Development'));
       expect(dataLine, contains('Build Export Feature'));
       expect(dataLine, contains('Frontend'));
@@ -193,13 +220,16 @@ void main() {
       expect(dataLine, contains('150')); // Billing rate value
     });
 
-    test('generateJson outputs structured hierarchical backup with complete metadata', () async {
-      final range = DateTimeRange(
+    test(
+        'generateJson outputs structured hierarchical backup with complete metadata',
+        () async {
+      final range = DateRange(
         start: DateTime.utc(2026, 8, 23, 0, 0, 0),
         end: DateTime.utc(2026, 8, 23, 23, 59, 59),
       );
 
-      final jsonStr = await exportService.generateJson(workspaceId: wsId, range: range);
+      final jsonStr =
+          await exportService.generateJson(workspaceId: wsId, range: range);
       expect(jsonStr, isNotEmpty);
 
       final decoded = json.decode(jsonStr) as Map<String, dynamic>;

@@ -4,6 +4,7 @@ import 'package:uuid/uuid.dart';
 import 'package:workpulse/data/providers/repository_providers.dart';
 import 'package:workpulse/domain/models/analytics_model.dart';
 import 'package:workpulse/domain/models/attribute_model.dart';
+import 'package:workpulse/domain/models/date_range.dart';
 import 'package:workpulse/domain/services/export_service.dart';
 import 'package:workpulse/features/attributes/providers/attribute_definitions_provider.dart';
 import 'package:workpulse/features/timer/providers/timer_provider.dart';
@@ -25,7 +26,8 @@ final exportServiceProvider = Provider<ExportService>((ref) {
   );
 });
 
-final reportsTimeRangeProvider = NotifierProvider<ReportsTimeRangeNotifier, DashboardTimeRange>(
+final reportsTimeRangeProvider =
+    NotifierProvider<ReportsTimeRangeNotifier, DashboardTimeRange>(
   ReportsTimeRangeNotifier.new,
 );
 
@@ -36,7 +38,8 @@ class ReportsTimeRangeNotifier extends Notifier<DashboardTimeRange> {
   void setRange(DashboardTimeRange range) => state = range;
 }
 
-final reportsCustomRangeProvider = NotifierProvider<ReportsCustomRangeNotifier, DateTimeRange?>(
+final reportsCustomRangeProvider =
+    NotifierProvider<ReportsCustomRangeNotifier, DateTimeRange?>(
   ReportsCustomRangeNotifier.new,
 );
 
@@ -47,7 +50,8 @@ class ReportsCustomRangeNotifier extends Notifier<DateTimeRange?> {
   void setCustomRange(DateTimeRange? range) => state = range;
 }
 
-final sessionHistoryProvider = FutureProvider<List<SessionExportRecord>>((ref) async {
+final sessionHistoryProvider =
+    FutureProvider<List<SessionExportRecord>>((ref) async {
   final workspace = await ref.watch(currentWorkspaceProvider.future);
   final timeRange = ref.watch(reportsTimeRangeProvider);
   final customRange = ref.watch(reportsCustomRangeProvider);
@@ -56,7 +60,11 @@ final sessionHistoryProvider = FutureProvider<List<SessionExportRecord>>((ref) a
   // Invalidate when timer state changes to reflect freshly stopped sessions
   ref.watch(timerProvider.select((s) => s.value?.activeSession?.id));
 
-  final calculatedRange = timeRange.toDateTimeRange(customRange: customRange);
+  // Bridge Flutter DateTimeRange to pure-Dart DateRange for domain layer
+  final domainCustomRange = customRange != null
+      ? DateRange(start: customRange.start, end: customRange.end)
+      : null;
+  final calculatedRange = timeRange.toDateRange(customRange: domainCustomRange);
 
   return exportService.getExportRecords(
     workspaceId: workspace.id,
@@ -64,7 +72,8 @@ final sessionHistoryProvider = FutureProvider<List<SessionExportRecord>>((ref) a
   );
 });
 
-final sessionEditorControllerProvider = Provider<SessionEditorController>((ref) {
+final sessionEditorControllerProvider =
+    Provider<SessionEditorController>((ref) {
   return SessionEditorController(ref);
 });
 
@@ -103,7 +112,10 @@ class SessionEditorController {
     if (attributeValues.isNotEmpty) {
       final attrRepo = _ref.read(attributeRepositoryProvider);
       final definitions = _ref.read(attributeDefinitionsProvider).value ?? [];
-      final sessionDefs = definitions.where((d) => d.scope == AttributeScope.session && d.enabled && !d.isArchived).toList();
+      final sessionDefs = definitions
+          .where((d) =>
+              d.scope == AttributeScope.session && d.enabled && !d.isArchived)
+          .toList();
       final now = DateTime.now().toUtc();
 
       for (final entry in attributeValues.entries) {
@@ -121,7 +133,9 @@ class SessionEditorController {
             textVal = entry.value.toString();
             break;
           case AttributeType.number:
-            numVal = entry.value is num ? (entry.value as num).toDouble() : double.tryParse(entry.value.toString());
+            numVal = entry.value is num
+                ? (entry.value as num).toDouble()
+                : double.tryParse(entry.value.toString());
             break;
           case AttributeType.boolean:
             boolVal = entry.value == true;
@@ -133,7 +147,9 @@ class SessionEditorController {
             textVal = (entry.value as List).join(',');
             break;
           case AttributeType.date:
-            dateVal = entry.value is DateTime ? entry.value as DateTime : DateTime.tryParse(entry.value.toString());
+            dateVal = entry.value is DateTime
+                ? entry.value as DateTime
+                : DateTime.tryParse(entry.value.toString());
             break;
         }
 
