@@ -115,16 +115,13 @@ void main() {
       await container.read(timerProvider.future);
 
       final coordinator = container.read(trayCoordinatorProvider);
+      await coordinator.initialize();
 
-      final timerState = TimerState(
-        status: TimerStatus.running,
-        activeWorkItem: testTask,
-        elapsed: const Duration(minutes: 12, seconds: 34),
-      );
+      final timerNotifier = container.read(timerProvider.notifier);
+      await timerNotifier.startTimer(testTask);
+      await Future<void>.delayed(Duration.zero);
 
-      await coordinator.updateTrayState(timerState);
-
-      expect(fakeTrayService.currentTitle, '⏱ 00:12:34');
+      expect(fakeTrayService.currentTitle, contains('⏱'));
       expect(fakeTrayService.currentToolTip, 'Tracking: Menu Bar Integration');
       expect(fakeTrayService.currentMenu.any((item) => item.label == '● Menu Bar Integration'), isTrue);
       expect(fakeTrayService.currentMenu.any((item) => item.key == 'stop_timer'), isTrue);

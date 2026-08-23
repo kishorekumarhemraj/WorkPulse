@@ -27,7 +27,6 @@ final trayCoordinatorProvider = Provider<TrayCoordinator>((ref) {
   );
 
   ref.onDispose(coordinator.dispose);
-  coordinator.initialize();
   return coordinator;
 });
 
@@ -36,6 +35,7 @@ class TrayCoordinator {
   final TrayService _trayService;
   final WindowService _windowService;
   bool _isDisposed = false;
+  bool _isInitializing = false;
   void Function()? onQuickCaptureRequested;
 
   TrayCoordinator({
@@ -62,6 +62,9 @@ class TrayCoordinator {
   }
 
   Future<void> initialize() async {
+    if (_isInitializing || _isDisposed) return;
+    _isInitializing = true;
+
     await _trayService.initialize();
     await _windowService.initialize();
 
