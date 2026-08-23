@@ -74,6 +74,16 @@ void main() {
     ),
   ];
 
+  final mockHourlyActivity = List.generate(
+    24,
+    (h) => HourlyActivityItem(
+      hour: h,
+      activeDuration: h == 10 ? const Duration(minutes: 45) : Duration.zero,
+      idleDuration: h == 10 ? const Duration(minutes: 15) : Duration.zero,
+      sessionCount: h == 10 ? 1 : 0,
+    ),
+  );
+
   final mockDashboardData = DashboardData(
     range: mockRange,
     summary: mockSummary,
@@ -81,6 +91,7 @@ void main() {
     categoryBreakdown: mockCategoryBreakdown,
     workItemBreakdown: mockWorkItemBreakdown,
     dailyActivity: mockDailyActivity,
+    hourlyActivity: mockHourlyActivity,
   );
 
   group('DashboardView UI Widget Tests', () {
