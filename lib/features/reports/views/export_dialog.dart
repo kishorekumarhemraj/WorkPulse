@@ -55,9 +55,9 @@ class _ExportDialogState extends ConsumerState<ExportDialog> {
       builder: (context, child) {
         return Theme(
           data: ThemeData.dark().copyWith(
-            colorScheme: ColorScheme.dark(
+            colorScheme: const ColorScheme.dark(
               primary: AppTheme.primaryColor,
-              surface: AppTheme.getColors(context).surface,
+              surface: AppTheme.surfaceDark,
             ),
           ),
           child: child!,
@@ -228,7 +228,7 @@ class _ExportDialogState extends ConsumerState<ExportDialog> {
                                   ? FontWeight.bold
                                   : FontWeight.w500,
                               color: isSelected
-                                  ? Colors.white
+                                  ? AppTheme.primaryColor
                                   : AppTheme.getColors(context).textSecondary,
                             ),
                           ),
@@ -298,7 +298,7 @@ class _ExportDialogState extends ConsumerState<ExportDialog> {
                                         ? FontWeight.bold
                                         : FontWeight.w500,
                                     color: isSelected
-                                        ? Colors.white
+                                        ? AppTheme.primaryColor
                                         : AppTheme.getColors(context).textPrimary,
                                   ),
                                 ),
