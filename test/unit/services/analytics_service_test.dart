@@ -10,6 +10,7 @@ import 'package:workpulse/data/repositories/sqlite_project_repository.dart';
 import 'package:workpulse/data/repositories/sqlite_session_repository.dart';
 import 'package:workpulse/data/repositories/sqlite_tag_repository.dart';
 import 'package:workpulse/data/repositories/sqlite_work_item_repository.dart';
+import 'package:workpulse/domain/models/analytics_model.dart';
 import 'package:workpulse/domain/models/attribute_model.dart';
 import 'package:workpulse/domain/models/category_model.dart';
 import 'package:workpulse/domain/models/date_range.dart';
@@ -279,6 +280,48 @@ void main() {
       expect(billableGroup.items.length, 1);
       expect(billableGroup.items.first.name, 'Yes');
       expect(billableGroup.items.first.duration, const Duration(minutes: 45));
+
+      // Hourly Activity assertions (24 hours breakdown)
+      expect(data.hourlyActivity.length, 24);
+      for (int h = 0; h < 24; h++) {
+        expect(data.hourlyActivity[h].hour, h);
+      }
+      final totalHourlyActive = data.hourlyActivity.fold<Duration>(
+        Duration.zero,
+        (sum, item) => sum + item.activeDuration,
+      );
+      final totalHourlyIdle = data.hourlyActivity.fold<Duration>(
+        Duration.zero,
+        (sum, item) => sum + item.idleDuration,
+      );
+      expect(totalHourlyActive, const Duration(minutes: 75));
+      expect(totalHourlyIdle, const Duration(minutes: 15));
+    });
+
+    test('DashboardTimeRange.thisWeek starts on Sunday and ends on Saturday', () {
+      // Test on Sunday (2026-08-23 is a Sunday)
+      final sunday = DateTime(2026, 8, 23, 15, 30);
+      final sundayRange = DashboardTimeRange.thisWeek.toDateRange(referenceTime: sunday);
+      expect(sundayRange.start.toLocal().weekday, DateTime.sunday);
+      expect(sundayRange.start.toLocal().day, 23);
+      expect(sundayRange.end.toLocal().weekday, DateTime.saturday);
+      expect(sundayRange.end.toLocal().day, 29);
+
+      // Test on Wednesday (2026-08-26 is a Wednesday)
+      final wednesday = DateTime(2026, 8, 26, 10, 0);
+      final wednesdayRange = DashboardTimeRange.thisWeek.toDateRange(referenceTime: wednesday);
+      expect(wednesdayRange.start.toLocal().weekday, DateTime.sunday);
+      expect(wednesdayRange.start.toLocal().day, 23);
+      expect(wednesdayRange.end.toLocal().weekday, DateTime.saturday);
+      expect(wednesdayRange.end.toLocal().day, 29);
+
+      // Test on Saturday (2026-08-29 is a Saturday)
+      final saturday = DateTime(2026, 8, 29, 23, 0);
+      final saturdayRange = DashboardTimeRange.thisWeek.toDateRange(referenceTime: saturday);
+      expect(saturdayRange.start.toLocal().weekday, DateTime.sunday);
+      expect(saturdayRange.start.toLocal().day, 23);
+      expect(saturdayRange.end.toLocal().weekday, DateTime.saturday);
+      expect(saturdayRange.end.toLocal().day, 29);
     });
   });
 }
