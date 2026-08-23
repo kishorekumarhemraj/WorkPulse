@@ -106,7 +106,8 @@ class DashboardView extends ConsumerWidget {
                         Text(
                           _formatRangeSubtitle(data.range),
                           style: TextStyle(
-                              fontSize: 12, color: AppTheme.getColors(context).textSecondary),
+                              fontSize: 12,
+                              color: AppTheme.getColors(context).textSecondary),
                         ),
                       ],
                     ),
@@ -118,41 +119,43 @@ class DashboardView extends ConsumerWidget {
                       decoration: BoxDecoration(
                         color: AppTheme.getColors(context).surface,
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: AppTheme.getColors(context).divider),
+                        border: Border.all(
+                            color: AppTheme.getColors(context).divider),
                       ),
                       child: Row(
                         children: DashboardTimeRange.values.map((r) {
                           final isSelected = selectedRange == r;
-                          return InkWell(
-                            onTap: () {
-                              if (r == DashboardTimeRange.custom) {
-                                _pickCustomRange(context, ref);
-                              } else {
-                                ref
-                                    .read(selectedTimeRangeProvider.notifier)
-                                    .setRange(r);
-                              }
-                            },
+                          return Material(
+                            color: isSelected
+                                ? AppTheme.primaryColor
+                                : Colors.transparent,
                             borderRadius: BorderRadius.circular(6),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 12, vertical: 6),
-                              decoration: BoxDecoration(
-                                color: isSelected
-                                    ? AppTheme.primaryColor
-                                    : Colors.transparent,
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Text(
-                                r.label,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: isSelected
-                                      ? FontWeight.bold
-                                      : FontWeight.w500,
-                                  color: isSelected
-                                      ? Colors.white
-                                      : AppTheme.getColors(context).textSecondary,
+                            child: InkWell(
+                              onTap: () {
+                                if (r == DashboardTimeRange.custom) {
+                                  _pickCustomRange(context, ref);
+                                } else {
+                                  ref
+                                      .read(selectedTimeRangeProvider.notifier)
+                                      .setRange(r);
+                                }
+                              },
+                              borderRadius: BorderRadius.circular(6),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 6),
+                                child: Text(
+                                  r.label,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: isSelected
+                                        ? FontWeight.bold
+                                        : FontWeight.w500,
+                                    color: isSelected
+                                        ? Colors.white
+                                        : AppTheme.getColors(context)
+                                            .textSecondary,
+                                  ),
                                 ),
                               ),
                             ),
@@ -166,7 +169,8 @@ class DashboardView extends ConsumerWidget {
                     IconButton(
                       onPressed: () => ref.invalidate(dashboardDataProvider),
                       icon: Icon(Icons.refresh,
-                          size: 18, color: AppTheme.getColors(context).textSecondary),
+                          size: 18,
+                          color: AppTheme.getColors(context).textSecondary),
                       tooltip: 'Refresh analytics',
                     ),
                   ],

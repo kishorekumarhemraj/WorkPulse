@@ -52,7 +52,10 @@ class SqliteSessionRepository implements SessionRepository {
     final results = await _db.query(
       Tables.sessions,
       where: 'start_time >= ? AND start_time <= ?',
-      whereArgs: [start.toIso8601String(), end.toIso8601String()],
+      whereArgs: [
+        start.toUtc().toIso8601String(),
+        end.toUtc().toIso8601String()
+      ],
       orderBy: 'start_time DESC',
     );
 
@@ -170,6 +173,7 @@ class SqliteSessionRepository implements SessionRepository {
       'work_item_id': session.workItemId,
       'start_time': session.startTime.toStorageString(),
       'end_time': session.endTime?.toStorageString(),
+      'notes': session.notes,
       'created_at': session.createdAt.toStorageString(),
     };
   }
@@ -183,6 +187,7 @@ class SqliteSessionRepository implements SessionRepository {
           ? DateTime.parse(map['end_time'] as String)
           : null,
       peopleIds: peopleIds,
+      notes: map['notes'] as String?,
       createdAt: DateTime.parse(map['created_at'] as String),
     );
   }
