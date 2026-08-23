@@ -58,7 +58,7 @@ class SessionHistoryView extends ConsumerWidget {
             style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.accentRed,
                 foregroundColor: Colors.white),
-            child: Text('Delete'),
+            child: const Text('Delete'),
           ),
         ],
       ),
@@ -79,7 +79,7 @@ class SessionHistoryView extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppTheme.getColors(context).background,
       body: Padding(
-        padding: EdgeInsets.all(24.0),
+        padding: const EdgeInsets.all(24.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -98,7 +98,7 @@ class SessionHistoryView extends ConsumerWidget {
                           color: AppTheme.getColors(context).textPrimary,
                         ),
                       ),
-                      SizedBox(height: 4),
+                      const SizedBox(height: 4),
                       Text(
                         'View and edit historical time tracking sessions',
                         style: TextStyle(
@@ -111,7 +111,7 @@ class SessionHistoryView extends ConsumerWidget {
 
                 // Range Selector Filter Pills
                 Container(
-                  padding: EdgeInsets.all(4),
+                  padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
                     color: AppTheme.getColors(context).surface,
                     borderRadius: BorderRadius.circular(8),
@@ -138,7 +138,7 @@ class SessionHistoryView extends ConsumerWidget {
                           },
                           borderRadius: BorderRadius.circular(6),
                           child: Padding(
-                            padding: EdgeInsets.symmetric(
+                            padding: const EdgeInsets.symmetric(
                                 horizontal: 12, vertical: 6),
                             child: Text(
                               r.label,
@@ -158,22 +158,22 @@ class SessionHistoryView extends ConsumerWidget {
                     }).toList(),
                   ),
                 ),
-                SizedBox(width: 12),
+                const SizedBox(width: 12),
 
                 // Export Button
                 ElevatedButton.icon(
                   onPressed: () => ExportDialog.show(context),
-                  icon: Icon(Icons.file_download_outlined, size: 16),
-                  label: Text('Export Data'),
+                  icon: const Icon(Icons.file_download_outlined, size: 16),
+                  label: const Text('Export Data'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.primaryColor,
                     foregroundColor: Colors.white,
-                    padding: EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8)),
                   ),
                 ),
-                SizedBox(width: 8),
+                const SizedBox(width: 8),
 
                 // Refresh Button
                 IconButton(
@@ -185,7 +185,7 @@ class SessionHistoryView extends ConsumerWidget {
                 ),
               ],
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
 
             // Sessions List
             Expanded(
@@ -193,7 +193,7 @@ class SessionHistoryView extends ConsumerWidget {
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (err, stack) => Center(
                     child: Text('Error loading sessions: $err',
-                        style: TextStyle(color: AppTheme.accentRed))),
+                        style: const TextStyle(color: AppTheme.accentRed))),
                 data: (records) {
                   if (records.isEmpty) {
                     return Center(
@@ -205,7 +205,7 @@ class SessionHistoryView extends ConsumerWidget {
                               color: AppTheme.getColors(context)
                                   .textSecondary
                                   .withValues(alpha: 0.5)),
-                          SizedBox(height: 12),
+                          const SizedBox(height: 12),
                           Text(
                             'No sessions recorded in this period',
                             style: TextStyle(
@@ -221,7 +221,7 @@ class SessionHistoryView extends ConsumerWidget {
 
                   return ListView.separated(
                     itemCount: records.length,
-                    separatorBuilder: (_, __) => SizedBox(height: 10),
+                    separatorBuilder: (_, __) => const SizedBox(height: 10),
                     itemBuilder: (context, index) {
                       final record = records[index];
                       final s = record.session;
@@ -237,7 +237,7 @@ class SessionHistoryView extends ConsumerWidget {
                           includeSeconds: true);
 
                       return Container(
-                        padding: EdgeInsets.all(14),
+                        padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
                           color: AppTheme.getColors(context).surface,
                           borderRadius: BorderRadius.circular(10),
@@ -258,7 +258,7 @@ class SessionHistoryView extends ConsumerWidget {
                                           fontWeight: FontWeight.bold,
                                           color: AppTheme.getColors(context)
                                               .textPrimary)),
-                                  SizedBox(height: 2),
+                                  const SizedBox(height: 2),
                                   Text('$startStr – $endStr',
                                       style: TextStyle(
                                           fontSize: 11,
@@ -267,12 +267,12 @@ class SessionHistoryView extends ConsumerWidget {
                                 ],
                               ),
                             ),
-                            SizedBox(width: 12),
+                            const SizedBox(width: 12),
 
                             // Project & Category Badges
                             if (record.project != null) ...[
                               Container(
-                                padding: EdgeInsets.symmetric(
+                                padding: const EdgeInsets.symmetric(
                                     horizontal: 7, vertical: 3),
                                 decoration: BoxDecoration(
                                   color: projectColor.withValues(alpha: 0.15),
@@ -287,7 +287,7 @@ class SessionHistoryView extends ConsumerWidget {
                                         decoration: BoxDecoration(
                                             color: projectColor,
                                             shape: BoxShape.circle)),
-                                    SizedBox(width: 5),
+                                    const SizedBox(width: 5),
                                     Text(record.project!.name,
                                         style: TextStyle(
                                             fontSize: 11,
@@ -296,7 +296,7 @@ class SessionHistoryView extends ConsumerWidget {
                                   ],
                                 ),
                               ),
-                              SizedBox(width: 8),
+                              const SizedBox(width: 8),
                             ],
 
                             if (record.category != null) ...[
@@ -304,13 +304,13 @@ class SessionHistoryView extends ConsumerWidget {
                                   size: 14,
                                   color: AppTheme.getColors(context)
                                       .textSecondary),
-                              SizedBox(width: 4),
+                              const SizedBox(width: 4),
                               Text(record.category!.name,
                                   style: TextStyle(
                                       fontSize: 11,
                                       color: AppTheme.getColors(context)
                                           .textSecondary)),
-                              SizedBox(width: 12),
+                              const SizedBox(width: 12),
                             ],
 
                             // Work Item Name
@@ -330,7 +330,7 @@ class SessionHistoryView extends ConsumerWidget {
                                   ),
                                   if (record.session.notes != null &&
                                       record.session.notes!.isNotEmpty) ...[
-                                    SizedBox(height: 2),
+                                    const SizedBox(height: 2),
                                     Text(
                                       record.session.notes!,
                                       style: TextStyle(
@@ -349,7 +349,7 @@ class SessionHistoryView extends ConsumerWidget {
                             // Idle Deduction Tag (if any)
                             if (record.idleDuration.inSeconds > 0) ...[
                               Container(
-                                padding: EdgeInsets.symmetric(
+                                padding: const EdgeInsets.symmetric(
                                     horizontal: 6, vertical: 2),
                                 decoration: BoxDecoration(
                                   color: AppTheme.accentOrange
@@ -358,18 +358,18 @@ class SessionHistoryView extends ConsumerWidget {
                                 ),
                                 child: Text(
                                   '-${TimerService.formatDuration(record.idleDuration, includeSeconds: true)} idle',
-                                  style: TextStyle(
+                                  style: const TextStyle(
                                       fontSize: 10,
                                       fontWeight: FontWeight.bold,
                                       color: AppTheme.accentOrange),
                                 ),
                               ),
-                              SizedBox(width: 10),
+                              const SizedBox(width: 10),
                             ],
 
                             // Net Active Duration Chip
                             Container(
-                              padding: EdgeInsets.symmetric(
+                              padding: const EdgeInsets.symmetric(
                                   horizontal: 10, vertical: 5),
                               decoration: BoxDecoration(
                                 color: AppTheme.getColors(context).card,
@@ -379,13 +379,13 @@ class SessionHistoryView extends ConsumerWidget {
                               ),
                               child: Text(
                                 netDurationStr,
-                                style: TextStyle(
+                                style: const TextStyle(
                                     fontSize: 13,
                                     fontWeight: FontWeight.bold,
                                     color: AppTheme.accentGreen),
                               ),
                             ),
-                            SizedBox(width: 12),
+                            const SizedBox(width: 12),
 
                             // Edit Button
                             IconButton(
@@ -400,7 +400,7 @@ class SessionHistoryView extends ConsumerWidget {
 
                             // Delete Button
                             IconButton(
-                              icon: Icon(Icons.delete_outline,
+                              icon: const Icon(Icons.delete_outline,
                                   size: 16, color: AppTheme.accentRed),
                               tooltip: 'Delete session',
                               onPressed: () => _confirmDelete(

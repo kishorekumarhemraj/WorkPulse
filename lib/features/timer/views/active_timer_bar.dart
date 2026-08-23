@@ -73,7 +73,7 @@ class ActiveTimerBar extends ConsumerWidget {
           const SizedBox(width: 12),
 
           // Active label
-          Text(
+          const Text(
             'TRACKING',
             style: TextStyle(
               fontSize: 10,
@@ -143,7 +143,7 @@ class ActiveTimerBar extends ConsumerWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(
+                const Icon(
                   Icons.timer_outlined,
                   size: 14,
                   color: AppTheme.primaryColor,
@@ -192,7 +192,7 @@ class ActiveTimerBar extends ConsumerWidget {
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(6),
-                side: BorderSide(color: AppTheme.accentRed, width: 1),
+                side: const BorderSide(color: AppTheme.accentRed, width: 1),
               ),
             ),
           ),

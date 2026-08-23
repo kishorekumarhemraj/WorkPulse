@@ -214,7 +214,7 @@ class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.search,
+                      const Icon(Icons.search,
                           size: 22, color: AppTheme.primaryColor),
                       const SizedBox(width: 12),
                       Expanded(
@@ -302,7 +302,7 @@ class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
                     itemBuilder: (context, index) {
                       if (totalItems == 0) {
                         return Padding(
-                          padding: EdgeInsets.symmetric(
+                          padding: const EdgeInsets.symmetric(
                               vertical: 24, horizontal: 16),
                           child: Center(
                             child: Text(
@@ -340,7 +340,7 @@ class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
                   decoration: BoxDecoration(
                     color: AppTheme.getColors(context).card,
                     borderRadius:
-                        BorderRadius.vertical(bottom: Radius.circular(14)),
+                        const BorderRadius.vertical(bottom: Radius.circular(14)),
                     border: Border(
                         top: BorderSide(
                             color: AppTheme.getColors(context).divider,
@@ -515,7 +515,7 @@ class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
     return Container(
       decoration: BoxDecoration(
         border: isSelected
-            ? Border(left: BorderSide(color: AppTheme.primaryColor, width: 3))
+            ? const Border(left: BorderSide(color: AppTheme.primaryColor, width: 3))
             : null,
       ),
       child: Material(
@@ -585,7 +585,7 @@ class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
                   ),
                 ),
                 if (isSelected)
-                  Text(
+                  const Text(
                     '↵ to track',
                     style: TextStyle(
                         fontSize: 11,
@@ -604,7 +604,7 @@ class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
     return Container(
       decoration: BoxDecoration(
         border: isSelected
-            ? Border(left: BorderSide(color: AppTheme.accentGreen, width: 3))
+            ? const Border(left: BorderSide(color: AppTheme.accentGreen, width: 3))
             : null,
       ),
       child: Material(
@@ -648,7 +648,7 @@ class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                Text(
+                const Text(
                   '↵ to create',
                   style: TextStyle(
                       fontSize: 11,
