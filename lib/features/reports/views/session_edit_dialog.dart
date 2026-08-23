@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:workpulse/core/theme/app_theme.dart';
+import 'package:workpulse/core/widgets/searchable_multi_select.dart';
 import 'package:workpulse/domain/models/attribute_model.dart';
 import 'package:workpulse/domain/services/export_service.dart';
 import 'package:workpulse/features/attributes/providers/attribute_definitions_provider.dart';
 import 'package:workpulse/features/attributes/widgets/dynamic_attribute_fields.dart';
+import 'package:workpulse/features/people/providers/people_provider.dart';
 import 'package:workpulse/features/reports/providers/reports_provider.dart';
 
 class SessionEditDialog extends ConsumerStatefulWidget {
@@ -30,6 +32,7 @@ class _SessionEditDialogState extends ConsumerState<SessionEditDialog> {
   late DateTime _startTime;
   late DateTime? _endTime;
   late final TextEditingController _notesController;
+  late List<String> _selectedPeopleIds;
   final Map<String, dynamic> _sessionAttributeValues = {};
   bool _isSubmitting = false;
 
@@ -39,8 +42,8 @@ class _SessionEditDialogState extends ConsumerState<SessionEditDialog> {
     final s = widget.record.session;
     _startTime = s.startTime.toLocal();
     _endTime = s.endTime?.toLocal();
-    _notesController =
-        TextEditingController(text: widget.record.workItem.notes ?? '');
+    _notesController = TextEditingController(text: s.notes ?? '');
+    _selectedPeopleIds = List.from(s.peopleIds);
   }
 
   @override
@@ -106,11 +109,14 @@ class _SessionEditDialogState extends ConsumerState<SessionEditDialog> {
 
     setState(() => _isSubmitting = true);
     try {
+      final trimmedNotes = _notesController.text.trim();
       await ref.read(sessionEditorControllerProvider).updateSession(
             sessionId: widget.record.session.id,
             startTime: _startTime.toUtc(),
             endTime: _endTime?.toUtc(),
-            notes: _notesController.text.trim(),
+            notes: trimmedNotes.isEmpty ? null : trimmedNotes,
+            clearNotes: trimmedNotes.isEmpty,
+            peopleIds: _selectedPeopleIds,
             attributeValues: _sessionAttributeValues,
           );
 
@@ -139,6 +145,7 @@ class _SessionEditDialogState extends ConsumerState<SessionEditDialog> {
         .where((d) =>
             d.scope == AttributeScope.session && d.enabled && !d.isArchived)
         .toList();
+    final peopleAsync = ref.watch(peopleProvider);
     final dateFormat = DateFormat('yyyy-MM-dd HH:mm');
 
     return Dialog(
@@ -327,6 +334,36 @@ class _SessionEditDialogState extends ConsumerState<SessionEditDialog> {
                                     color:
                                         AppTheme.getColors(context).divider)),
                           ),
+                        ),
+                        SizedBox(height: 16),
+
+                        // Session People
+                        Text('People',
+                            style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color:
+                                    AppTheme.getColors(context).textSecondary)),
+                        SizedBox(height: 6),
+                        peopleAsync.when(
+                          loading: () => const SizedBox.shrink(),
+                          error: (_, __) => const SizedBox.shrink(),
+                          data: (people) {
+                            return SearchableMultiSelect(
+                              allItems: people
+                                  .map((person) => SearchableMultiSelectItem(
+                                        id: person.id,
+                                        label: person.name,
+                                        icon: Icons.person,
+                                      ))
+                                  .toList(),
+                              selectedIds: _selectedPeopleIds,
+                              onChanged: (ids) =>
+                                  setState(() => _selectedPeopleIds = ids),
+                              hintText: 'Search people...',
+                              emptyStateText: 'No people added yet',
+                            );
+                          },
                         ),
 
                         // Custom Session Attributes

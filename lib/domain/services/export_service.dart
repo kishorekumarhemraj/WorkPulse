@@ -260,7 +260,7 @@ class ExportService {
       final projStr = r.project?.name ?? '';
       final catStr = r.category?.name ?? '';
       final taskStr = r.workItem.name;
-      final notesStr = r.workItem.notes ?? '';
+      final notesStr = s.notes ?? '';
       final tagsStr = r.tags.map((t) => t.name).join('; ');
       final peopleStr = r.people.map((p) => p.name).join('; ');
       final grossStr = formatDurationHms(r.grossDuration);
@@ -355,13 +355,14 @@ class ExportService {
           'id': s.id,
           'startTime': s.startTime.toUtc().toIso8601String(),
           'endTime': s.endTime?.toUtc().toIso8601String(),
+          'notes': s.notes,
           'grossDurationSeconds': r.grossDuration.inSeconds,
           'idleDurationSeconds': r.idleDuration.inSeconds,
           'netDurationSeconds': r.netActiveDuration.inSeconds,
           'workItem': {
             'id': r.workItem.id,
             'name': r.workItem.name,
-            'notes': r.workItem.notes,
+            'legacyNotes': r.workItem.notes,
           },
           'project': r.project != null
               ? {
