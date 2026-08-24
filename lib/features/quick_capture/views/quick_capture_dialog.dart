@@ -48,7 +48,36 @@ class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
   void initState() {
     super.initState();
     _searchController = TextEditingController();
-    _inputFocusNode = FocusNode();
+    _inputFocusNode = FocusNode(
+      onKeyEvent: (node, event) {
+        if (event is KeyDownEvent) {
+          if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+            final qcState = ref.read(quickCaptureProvider);
+            final query = qcState.query.trim().toLowerCase();
+            final workItems = ref.read(workItemsProvider).value ?? [];
+            final matchingTasks = workItems
+                .where((item) =>
+                    !item.isArchived &&
+                    (query.isEmpty || item.name.toLowerCase().contains(query)))
+                .take(5)
+                .toList();
+            final hasExactMatch =
+                matchingTasks.any((t) => t.name.toLowerCase() == query);
+            final showCreateOption = query.isNotEmpty && !hasExactMatch;
+            final totalItems =
+                matchingTasks.length + (showCreateOption ? 1 : 0);
+
+            ref.read(quickCaptureProvider.notifier).selectNext(totalItems);
+            return KeyEventResult.handled;
+          }
+          if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+            ref.read(quickCaptureProvider.notifier).selectPrevious();
+            return KeyEventResult.handled;
+          }
+        }
+        return KeyEventResult.ignored;
+      },
+    );
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         _inputFocusNode.requestFocus();
@@ -63,17 +92,19 @@ class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
     super.dispose();
   }
 
-  Future<void> _handleConfirm(
-    List<WorkItem> matchingTasks,
-    bool showCreateOption,
-    String query,
-  ) async {
+  Future<void> _handleConfirm({
+    required List<WorkItem> matchingTasks,
+    required bool showCreateOption,
+    required String query,
+    int? overrideIndex,
+  }) async {
     final qcState = ref.read(quickCaptureProvider);
+    final selectedIndex = overrideIndex ?? qcState.selectedIndex;
     final totalCount = matchingTasks.length + (showCreateOption ? 1 : 0);
     if (totalCount == 0) return;
 
     final isNewTaskSelected =
-        showCreateOption && qcState.selectedIndex == matchingTasks.length;
+        showCreateOption && selectedIndex == matchingTasks.length;
 
     if (isNewTaskSelected) {
       // Create and start new task
@@ -85,9 +116,9 @@ class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
       if (mounted && created != null) {
         Navigator.of(context).pop();
       }
-    } else if (qcState.selectedIndex < matchingTasks.length) {
+    } else if (selectedIndex >= 0 && selectedIndex < matchingTasks.length) {
       // Select existing task
-      final targetTask = matchingTasks[qcState.selectedIndex];
+      final targetTask = matchingTasks[selectedIndex];
       final timerState = ref.read(timerProvider).value;
 
       if (timerState != null &&
@@ -155,27 +186,13 @@ class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
     final totalItems = matchingTasks.length + (showCreateOption ? 1 : 0);
 
     return Focus(
-      autofocus: true,
+      autofocus: false,
       onKeyEvent: (node, event) {
         if (event is KeyDownEvent) {
           if (event.logicalKey == LogicalKeyboardKey.escape) {
             ref.read(quickCaptureProvider.notifier).reset();
             Navigator.of(context).pop();
             return KeyEventResult.handled;
-          }
-          if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
-            if (node.hasPrimaryFocus || _inputFocusNode.hasFocus) {
-              ref.read(quickCaptureProvider.notifier).selectNext(totalItems);
-              return KeyEventResult.handled;
-            }
-            return KeyEventResult.ignored;
-          }
-          if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
-            if (node.hasPrimaryFocus || _inputFocusNode.hasFocus) {
-              ref.read(quickCaptureProvider.notifier).selectPrevious();
-              return KeyEventResult.handled;
-            }
-            return KeyEventResult.ignored;
           }
           if (event.logicalKey == LogicalKeyboardKey.tab) {
             if (HardwareKeyboard.instance.isShiftPressed) {
@@ -187,11 +204,20 @@ class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
           }
           if (event.logicalKey == LogicalKeyboardKey.enter ||
               event.logicalKey == LogicalKeyboardKey.numpadEnter) {
-            if (node.hasPrimaryFocus || _inputFocusNode.hasFocus) {
-              _handleConfirm(matchingTasks, showCreateOption, qcState.query);
-              return KeyEventResult.handled;
-            }
-            return KeyEventResult.ignored;
+            _handleConfirm(
+              matchingTasks: matchingTasks,
+              showCreateOption: showCreateOption,
+              query: qcState.query,
+            );
+            return KeyEventResult.handled;
+          }
+          if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+            ref.read(quickCaptureProvider.notifier).selectNext(totalItems);
+            return KeyEventResult.handled;
+          }
+          if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+            ref.read(quickCaptureProvider.notifier).selectPrevious();
+            return KeyEventResult.handled;
           }
         }
         return KeyEventResult.ignored;
@@ -237,6 +263,14 @@ class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
                           controller: _searchController,
                           focusNode: _inputFocusNode,
                           autofocus: true,
+                          textInputAction: TextInputAction.go,
+                          onSubmitted: (val) {
+                            _handleConfirm(
+                              matchingTasks: matchingTasks,
+                              showCreateOption: showCreateOption,
+                              query: qcState.query,
+                            );
+                          },
                           style: TextStyle(
                               fontSize: 16,
                               color: context.colors.textPrimary,
@@ -306,7 +340,8 @@ class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
                       final isSelected = qcState.selectedIndex == index;
 
                       if (isCreateOption) {
-                        return _buildCreateOption(qcState.query, isSelected);
+                        return _buildCreateOption(
+                            qcState.query, isSelected, matchingTasks);
                       }
 
                       final task = matchingTasks[index];
@@ -314,7 +349,15 @@ class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
                       final category = categoryMap[task.categoryId];
 
                       return _buildTaskResultItem(
-                          task, project, category, isSelected, index);
+                        task,
+                        project,
+                        category,
+                        isSelected,
+                        index,
+                        matchingTasks,
+                        showCreateOption,
+                        qcState.query,
+                      );
                     },
                   ),
                 ),
@@ -465,6 +508,9 @@ class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
     Category? category,
     bool isSelected,
     int index,
+    List<WorkItem> matchingTasks,
+    bool showCreateOption,
+    String query,
   ) {
     final projectColor = ColorUtils.parseHex(project?.colorHex);
 
@@ -482,7 +528,12 @@ class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
           canRequestFocus: false,
           onTap: () {
             ref.read(quickCaptureProvider.notifier).setSelectedIndex(index);
-            _handleConfirm([task], false, '');
+            _handleConfirm(
+              matchingTasks: matchingTasks,
+              showCreateOption: showCreateOption,
+              query: query,
+              overrideIndex: index,
+            );
           },
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -556,7 +607,11 @@ class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
     );
   }
 
-  Widget _buildCreateOption(String query, bool isSelected) {
+  Widget _buildCreateOption(
+    String query,
+    bool isSelected,
+    List<WorkItem> matchingTasks,
+  ) {
     return Container(
       decoration: BoxDecoration(
         border: isSelected
@@ -570,7 +625,12 @@ class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
         child: InkWell(
           canRequestFocus: false,
           onTap: () {
-            _handleConfirm([], true, query);
+            _handleConfirm(
+              matchingTasks: matchingTasks,
+              showCreateOption: true,
+              query: query,
+              overrideIndex: matchingTasks.length,
+            );
           },
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),

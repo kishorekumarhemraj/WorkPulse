@@ -7,6 +7,7 @@ import 'package:workpulse/core/widgets/keycap.dart';
 import 'package:workpulse/core/theme/color_utils.dart';
 import 'package:workpulse/core/theme/icon_utils.dart';
 import 'package:workpulse/core/widgets/app_select.dart';
+import 'package:workpulse/core/widgets/searchable_multi_select.dart';
 import 'package:workpulse/domain/models/attribute_model.dart';
 import 'package:workpulse/domain/models/category_model.dart';
 import 'package:workpulse/domain/models/project_model.dart';
@@ -45,7 +46,36 @@ class _QuickCaptureStandaloneViewState
   void initState() {
     super.initState();
     _searchController = TextEditingController();
-    _inputFocusNode = FocusNode();
+    _inputFocusNode = FocusNode(
+      onKeyEvent: (node, event) {
+        if (event is KeyDownEvent) {
+          if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+            final qcState = ref.read(quickCaptureProvider);
+            final query = qcState.query.trim().toLowerCase();
+            final workItems = ref.read(workItemsProvider).value ?? [];
+            final matchingTasks = workItems
+                .where((item) =>
+                    !item.isArchived &&
+                    (query.isEmpty || item.name.toLowerCase().contains(query)))
+                .take(5)
+                .toList();
+            final hasExactMatch =
+                matchingTasks.any((t) => t.name.toLowerCase() == query);
+            final showCreateOption = query.isNotEmpty && !hasExactMatch;
+            final totalItems =
+                matchingTasks.length + (showCreateOption ? 1 : 0);
+
+            ref.read(quickCaptureProvider.notifier).selectNext(totalItems);
+            return KeyEventResult.handled;
+          }
+          if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+            ref.read(quickCaptureProvider.notifier).selectPrevious();
+            return KeyEventResult.handled;
+          }
+        }
+        return KeyEventResult.ignored;
+      },
+    );
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _inputFocusNode.requestFocus();
     });
@@ -58,17 +88,19 @@ class _QuickCaptureStandaloneViewState
     super.dispose();
   }
 
-  Future<void> _handleConfirm(
-    List<WorkItem> matchingTasks,
-    bool showCreateOption,
-    String query,
-  ) async {
+  Future<void> _handleConfirm({
+    required List<WorkItem> matchingTasks,
+    required bool showCreateOption,
+    required String query,
+    int? overrideIndex,
+  }) async {
     final qcState = ref.read(quickCaptureProvider);
+    final selectedIndex = overrideIndex ?? qcState.selectedIndex;
     final totalCount = matchingTasks.length + (showCreateOption ? 1 : 0);
     if (totalCount == 0) return;
 
     final isNewTaskSelected =
-        showCreateOption && qcState.selectedIndex == matchingTasks.length;
+        showCreateOption && selectedIndex == matchingTasks.length;
 
     if (isNewTaskSelected) {
       // Create and start new task
@@ -80,9 +112,9 @@ class _QuickCaptureStandaloneViewState
       if (mounted && created != null) {
         widget.onClose?.call();
       }
-    } else if (qcState.selectedIndex < matchingTasks.length) {
+    } else if (selectedIndex >= 0 && selectedIndex < matchingTasks.length) {
       // Select existing task
-      final targetTask = matchingTasks[qcState.selectedIndex];
+      final targetTask = matchingTasks[selectedIndex];
       final timerState = ref.read(timerProvider).value;
 
       if (timerState != null &&
@@ -159,26 +191,12 @@ class _QuickCaptureStandaloneViewState
     return Scaffold(
       backgroundColor: context.colors.surface,
       body: Focus(
-        autofocus: true,
+        autofocus: false,
         onKeyEvent: (node, event) {
           if (event is KeyDownEvent) {
             if (event.logicalKey == LogicalKeyboardKey.escape) {
               _handleCancel();
               return KeyEventResult.handled;
-            }
-            if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
-              if (node.hasPrimaryFocus || _inputFocusNode.hasFocus) {
-                ref.read(quickCaptureProvider.notifier).selectNext(totalItems);
-                return KeyEventResult.handled;
-              }
-              return KeyEventResult.ignored;
-            }
-            if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
-              if (node.hasPrimaryFocus || _inputFocusNode.hasFocus) {
-                ref.read(quickCaptureProvider.notifier).selectPrevious();
-                return KeyEventResult.handled;
-              }
-              return KeyEventResult.ignored;
             }
             if (event.logicalKey == LogicalKeyboardKey.tab) {
               if (HardwareKeyboard.instance.isShiftPressed) {
@@ -190,11 +208,20 @@ class _QuickCaptureStandaloneViewState
             }
             if (event.logicalKey == LogicalKeyboardKey.enter ||
                 event.logicalKey == LogicalKeyboardKey.numpadEnter) {
-              if (node.hasPrimaryFocus || _inputFocusNode.hasFocus) {
-                _handleConfirm(matchingTasks, showCreateOption, qcState.query);
-                return KeyEventResult.handled;
-              }
-              return KeyEventResult.ignored;
+              _handleConfirm(
+                matchingTasks: matchingTasks,
+                showCreateOption: showCreateOption,
+                query: qcState.query,
+              );
+              return KeyEventResult.handled;
+            }
+            if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+              ref.read(quickCaptureProvider.notifier).selectNext(totalItems);
+              return KeyEventResult.handled;
+            }
+            if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+              ref.read(quickCaptureProvider.notifier).selectPrevious();
+              return KeyEventResult.handled;
             }
           }
           return KeyEventResult.ignored;
@@ -237,6 +264,14 @@ class _QuickCaptureStandaloneViewState
                         controller: _searchController,
                         focusNode: _inputFocusNode,
                         autofocus: true,
+                        textInputAction: TextInputAction.go,
+                        onSubmitted: (val) {
+                          _handleConfirm(
+                            matchingTasks: matchingTasks,
+                            showCreateOption: showCreateOption,
+                            query: qcState.query,
+                          );
+                        },
                         style: TextStyle(
                           fontSize: 16,
                           color: context.colors.textPrimary,
@@ -313,7 +348,8 @@ class _QuickCaptureStandaloneViewState
                     final isSelected = qcState.selectedIndex == index;
 
                     if (isCreateOption) {
-                      return _buildCreateOption(qcState.query, isSelected);
+                      return _buildCreateOption(
+                          qcState.query, isSelected, matchingTasks);
                     }
 
                     final task = matchingTasks[index];
@@ -326,6 +362,9 @@ class _QuickCaptureStandaloneViewState
                       category,
                       isSelected,
                       index,
+                      matchingTasks,
+                      showCreateOption,
+                      qcState.query,
                     );
                   },
                 ),
@@ -416,40 +455,40 @@ class _QuickCaptureStandaloneViewState
                             ],
                           ),
                         ],
-                    if (tags.isNotEmpty || people.isNotEmpty) ...[
+                    if (tags.isNotEmpty) ...[
                       const SizedBox(height: 10),
-                      Wrap(
-                        spacing: 6,
-                        runSpacing: 6,
-                        children: [
-                          ...tags.map((t) {
-                            final isTagSelected =
-                                qcState.selectedTagIds.contains(t.id);
-                            final tagColor = ColorUtils.parseHex(t.colorHex);
-                            return _StandaloneQuickChip(
-                              label: '#${t.name}',
-                              icon: Icons.label_outline,
-                              selected: isTagSelected,
-                              color: tagColor,
-                              onTap: () => ref
-                                  .read(quickCaptureProvider.notifier)
-                                  .toggleTag(t.id),
-                            );
-                          }),
-                          ...people.map((person) {
-                            final isPersonSelected =
-                                qcState.selectedPeopleIds.contains(person.id);
-                            return _StandaloneQuickChip(
-                              label: person.name,
-                              icon: Icons.person_outline,
-                              selected: isPersonSelected,
-                              color: context.colors.accent,
-                              onTap: () => ref
-                                  .read(quickCaptureProvider.notifier)
-                                  .togglePerson(person.id),
-                            );
-                          }),
-                        ],
+                      SearchableMultiSelect(
+                        allItems: tags
+                            .map((t) => SearchableMultiSelectItem(
+                                  id: t.id,
+                                  label: t.name,
+                                  color: ColorUtils.parseHex(t.colorHex),
+                                ))
+                            .toList(),
+                        selectedIds: qcState.selectedTagIds,
+                        onChanged: (ids) => ref
+                            .read(quickCaptureProvider.notifier)
+                            .setTagIds(ids),
+                        hintText: 'Search tags...',
+                        emptyStateText: 'No tags created yet',
+                      ),
+                    ],
+                    if (people.isNotEmpty) ...[
+                      const SizedBox(height: 10),
+                      SearchableMultiSelect(
+                        allItems: people
+                            .map((person) => SearchableMultiSelectItem(
+                                  id: person.id,
+                                  label: person.name,
+                                  icon: Icons.person_outline,
+                                ))
+                            .toList(),
+                        selectedIds: qcState.selectedPeopleIds,
+                        onChanged: (ids) => ref
+                            .read(quickCaptureProvider.notifier)
+                            .setPeopleIds(ids),
+                        hintText: 'Search people...',
+                        emptyStateText: 'No people added yet',
                       ),
                     ],
                     if (quickCaptureAttributes.isNotEmpty) ...[
@@ -482,6 +521,9 @@ class _QuickCaptureStandaloneViewState
     Category? category,
     bool isSelected,
     int index,
+    List<WorkItem> matchingTasks,
+    bool showCreateOption,
+    String query,
   ) {
     final projectColor = ColorUtils.parseHex(project?.colorHex);
 
@@ -499,7 +541,12 @@ class _QuickCaptureStandaloneViewState
           canRequestFocus: false,
           onTap: () {
             ref.read(quickCaptureProvider.notifier).setSelectedIndex(index);
-            _handleConfirm([task], false, '');
+            _handleConfirm(
+              matchingTasks: matchingTasks,
+              showCreateOption: showCreateOption,
+              query: query,
+              overrideIndex: index,
+            );
           },
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -583,7 +630,11 @@ class _QuickCaptureStandaloneViewState
     );
   }
 
-  Widget _buildCreateOption(String query, bool isSelected) {
+  Widget _buildCreateOption(
+    String query,
+    bool isSelected,
+    List<WorkItem> matchingTasks,
+  ) {
     return Container(
       decoration: BoxDecoration(
         border: isSelected
@@ -597,7 +648,12 @@ class _QuickCaptureStandaloneViewState
         child: InkWell(
           canRequestFocus: false,
           onTap: () {
-            _handleConfirm([], true, query);
+            _handleConfirm(
+              matchingTasks: matchingTasks,
+              showCreateOption: true,
+              query: query,
+              overrideIndex: matchingTasks.length,
+            );
           },
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
