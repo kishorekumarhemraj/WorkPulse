@@ -178,6 +178,83 @@ void main() {
       expect(header, equals('%PDF-'));
     });
 
+    test(
+        'generateReportPdf handles single work item with multiple session categories (Design, Engineering, Meeting)',
+        () async {
+      final range = DateRange(
+        start: DateTime.utc(2026, 8, 25, 0, 0, 0),
+        end: DateTime.utc(2026, 8, 25, 23, 59, 59),
+      );
+
+      final catDesign = Category(
+        id: 'cat-design',
+        workspaceId: 'ws-1',
+        name: 'Design',
+        iconName: 'palette',
+        createdAt: now,
+        updatedAt: now,
+      );
+
+      final catMeeting = Category(
+        id: 'cat-meeting',
+        workspaceId: 'ws-1',
+        name: 'Meeting',
+        iconName: 'groups',
+        createdAt: now,
+        updatedAt: now,
+      );
+
+      final sessionDesign = Session(
+        id: 'sess-design',
+        workItemId: 'task-1',
+        categoryId: 'cat-design',
+        startTime: now.subtract(const Duration(hours: 4)),
+        endTime: now.subtract(const Duration(hours: 3)),
+        notes: 'UI Mockups and styling adjustments',
+        createdAt: now.subtract(const Duration(hours: 4)),
+      );
+
+      final sessionMeeting = Session(
+        id: 'sess-meeting',
+        workItemId: 'task-1',
+        categoryId: 'cat-meeting',
+        startTime: now.subtract(const Duration(hours: 1)),
+        endTime: now,
+        notes: 'Sprint alignment meeting with team',
+        createdAt: now.subtract(const Duration(hours: 1)),
+      );
+
+      final recordDesign = SessionExportRecord(
+        session: sessionDesign,
+        workItem: mockWorkItem,
+        project: mockProject,
+        category: catDesign,
+        grossDuration: const Duration(hours: 1),
+        idleDuration: Duration.zero,
+        netActiveDuration: const Duration(hours: 1),
+      );
+
+      final recordMeeting = SessionExportRecord(
+        session: sessionMeeting,
+        workItem: mockWorkItem,
+        project: mockProject,
+        category: catMeeting,
+        grossDuration: const Duration(hours: 1),
+        idleDuration: Duration.zero,
+        netActiveDuration: const Duration(hours: 1),
+      );
+
+      final pdfBytes = await pdfService.generateReportPdf(
+        workspaceName: 'WorkPulse Workspace',
+        range: range,
+        records: [mockRecord, recordDesign, recordMeeting],
+      );
+
+      expect(pdfBytes, isNotEmpty);
+      final header = String.fromCharCodes(pdfBytes.take(5));
+      expect(header, equals('%PDF-'));
+    });
+
     test('PdfExportHandler formats single-day and date-range filenames cleanly',
         () {
       final singleDay = DateTime(2026, 8, 25);

@@ -38,7 +38,7 @@ WorkPulse is built from the ground up as a **personal productivity companion**, 
 ## ✨ Features & User Value
 
 ### ⚡ Instant Quick Capture (`⌥ + Space`)
-- **Sub-300ms Response Time**: A lightweight floating palette appears instantly anywhere on macOS via global hotkey (`⌥ + Space`).
+- **Sub-300ms Response Time**: A lightweight floating palette appears instantly anywhere on macOS via global hotkey (`⌥ + Space` or user-customized shortcut).
 - **Keyboard-First Workflow**: Fuzzy search existing tasks, select categories and tags, or type a new work item and hit `Enter`—without your hands leaving the keyboard.
 - **Zero Interruption to Flow**: Context switching overhead drops to seconds, keeping your cognitive energy focused on real work.
 
@@ -54,7 +54,7 @@ WorkPulse is built from the ground up as a **personal productivity companion**, 
 ### ⏱️ Timestamp-Based Session Integrity
 - **Wall-Clock Accuracy**: Session durations are computed mathematically from immutable start/end timestamps (`duration = endTime - startTime`), never fragile in-memory ticker loops.
 - **Resilient to Sleep & Restarts**: Close your laptop lid, reboot your Mac, or recover from unexpected crashes—your active session seamlessly resumes with 100% accurate time.
-- **Strict Single-Active Session Invariant**: Exactly one session is active at any time. Starting a new task cleanly closes and commits the previous session automatically.
+- **Strict Single-Active Session Invariant**: Exactly one session is active at any time. Starting a new task cleanly closes and commits the previous session automatically with interactive switch confirmation.
 
 ---
 
@@ -68,7 +68,7 @@ WorkPulse is built from the ground up as a **personal productivity companion**, 
 
 ### 💤 Smart Inactivity & Idle Management
 - **Automatic Away-State Detection**: Detects when you step away from your Mac during an active tracking session.
-- **Survives Quits and Shutdowns**: If WorkPulse was closed — or the Mac was switched off — with a timer running, the next launch reconstructs exactly how long it was gone and asks before that time is counted as work.
+- **Heartbeat Gap Recovery**: If WorkPulse was closed or the Mac went to sleep with a timer running, the next launch reconstructs the unaccounted gap via `ActivityHeartbeatService` and prompts the user before logging.
 - **User-Controlled Resolution**: When you return, choose how to handle the idle gap:
   - ✅ **Keep as Work**: Attribute the duration to offline discussions, sketching, or reading.
   - ⏸️ **Mark as Idle**: Keep the record tagged as inactive.
@@ -76,16 +76,31 @@ WorkPulse is built from the ground up as a **personal productivity companion**, 
 
 ---
 
-### 📊 Rich Dashboards & Deep Work Analytics
-- **Visual Time Breakdowns**: Group time by **Project**, **Category**, **Tag**, **Person**, or any **Custom Attribute**.
-- **Context-Switching Insights**: Identify days with excessive context fragmentation versus uninterrupted deep work blocks.
-- **Collaborator Tracking**: Associate team members with work items to see how much time is spent on paired sessions, reviews, and syncs.
+### 📝 Time Notes & Daily Standup Journaling
+- **Session & Task Notes**: Log detailed markdown notes directly against sessions or parent work items.
+- **1-Click Standup Summaries**: Instantly compile and copy daily/weekly accomplishments into clean, bulleted Markdown ready to paste into Slack, Teams, or daily standup meetings.
+- **Searchable Note Stream**: Filter notes by keyword, project, category, tag, or collaborator.
 
 ---
 
-### 📤 Frictionless Data Portability & Export
-- **One-Click Export**: Export your entire work history to standard **CSV** or **JSON** anytime.
-- **Effortless Timesheets & Billing**: Easily transfer your tracked hours to company billing software, client invoices, or weekly standup recaps with zero vendor lock-in.
+### 📊 Rich Dashboards & Deep Work Analytics
+- **Visual Time Breakdowns**: Group time by **Project**, **Category**, **Tag**, **Person**, or any **Custom Attribute**.
+- **Interactive Daily Activity Charts**: Inspect hours logged across each day with visual time distributions.
+- **Deep Work & Context-Switching Metrics**: Track deep work ratios and context-switch frequency to protect focus time.
+
+---
+
+### 📤 Multi-Format Export & Data Portability
+- **Executive Visual PDF Reports**: Generate colorful, high-fidelity PDF work summaries with KPI metric cards, project distributions, and session tables—instantly previewed in macOS Preview.app.
+- **RFC 4180 CSV Spreadsheets**: Export tabular session data with custom attribute columns, gross/net durations, and timestamps ready for Excel, Google Sheets, or Numbers.
+- **Structured JSON Backups**: Full hierarchical data exports with complete relational integrity and metadata.
+
+---
+
+### ⌨️ Command Palette & Desktop Fluidity
+- **Command Palette (`⌘ + K`)**: Jump to any section, execute actions, start work items, or switch themes in keystrokes.
+- **macOS Menu Bar Companion**: System tray integration with live running timer status, quick capture trigger, and session controls.
+- **Customizable Shortcuts**: Re-bind the global Quick Capture shortcut using the built-in graphical hotkey recorder.
 
 ---
 
@@ -95,14 +110,14 @@ WorkPulse is built from the ground up as a **personal productivity companion**, 
 graph TD
     A[Global Hotkey: ⌥ + Space] --> B[Quick Capture Dialog]
     B -->|Search / Create Task| C{Active Session Running?}
-    C -->|Yes| D[Cleanly Stop & Commit Previous Session]
+    C -->|Yes| D[Prompt / Cleanly Stop & Commit Previous Session]
     C -->|No| E[Start New Session]
     D --> E
     E --> F[Background Wall-Clock Timer]
     F -->|Inactivity Detected| G[Smart Idle Resolution Prompt]
     F -->|Manual Stop / Switch| H[Commit Session to Local SQLite]
     G --> H
-    H --> I[Instant Local Analytics & CSV/JSON Export]
+    H --> I[Instant Analytics, Time Notes & PDF/CSV/JSON Export]
 ```
 
 ---
@@ -113,8 +128,8 @@ graph TD
 | :--- | :--- |
 | 💻 **Software Engineers & Architects** | Effortlessly track time across code reviews, architecture spikes, meetings, and feature development without leaving the keyboard or wrestling with web timesheets. |
 | 🎨 **Designers & Creators** | Gain clarity on deep creative focus versus client revisions and sync meetings with zero distraction. |
-| 💼 **Consultants & Freelancers** | Categorize work by client, project, and custom billing codes; export spotless CSV reports for invoicing in seconds. |
-| 🚀 **Product & Engineering Leaders** | Understand personal bandwidth, spot meeting fatigue, and protect focus time without invasive corporate surveillance tools. |
+| 💼 **Consultants & Freelancers** | Categorize work by client, project, and custom billing codes; export spotless CSV reports and executive PDFs for client billing in seconds. |
+| 🚀 **Product & Engineering Leaders** | Understand personal bandwidth, spot meeting fatigue, and generate formatted standup recaps with zero invasive corporate surveillance. |
 
 ---
 
@@ -124,10 +139,25 @@ WorkPulse is built following clean, domain-driven architecture and strict modula
 
 ```text
 lib/
-├── core/         # Theme, database setup, utilities, platform bridges
+├── core/         # Theme, design tokens, database setup, utilities, platform bridges
 ├── domain/       # Pure Dart business models, state machines, repository contracts (Zero Flutter/SQLite dependencies)
-├── data/         # SQLite tables, versioned migrations, repository implementations
-└── features/     # Feature vertical slices (UI, Riverpod state notifiers, widgets)
+├── data/         # SQLite tables, versioned migrations (v1-v4), repository implementations
+└── features/     # Feature vertical slices (UI, Riverpod state notifiers, dialogs, widgets)
+    ├── quick_capture/ # Floating & standalone Quick Capture HUD
+    ├── timer/         # Active timer bar, switch dialog, ticker providers
+    ├── dashboard/     # Metric cards, activity charts, breakdown widgets
+    ├── notes/         # Time notes view, standup generator, search
+    ├── tasks/         # Work items, inspector panel, filter toolbar
+    ├── projects/      # Project management & color coding
+    ├── categories/    # Category classification & icon library
+    ├── tags/          # Cross-cutting labels & color badges
+    ├── people/        # Collaborators & team tracking
+    ├── attributes/    # Configurable attribute definitions & options
+    ├── reports/       # Time log, session editor, PDF/CSV/JSON export
+    ├── idle/          # Inactivity prompt & gap resolution
+    ├── shell/         # Main layout, sidebar, command palette, shortcuts
+    ├── settings/      # Preferences, theme mode, hotkey configuration
+    └── tray/          # macOS menu bar status item & menu
 ```
 
 ### The 10 Invariant Architectural Rules
@@ -146,13 +176,26 @@ lib/
 
 ## ⌨️ Keyboard Shortcuts
 
-| Shortcut | Action |
-| :--- | :--- |
-| <kbd>⌥ Option</kbd> + <kbd>Space</kbd> | Toggle Quick Capture floating dialog from anywhere |
-| <kbd>Enter</kbd> | Confirm and start/switch tracking session |
-| <kbd>Esc</kbd> | Dismiss Quick Capture / close active modal dialog |
-| <kbd>Tab</kbd> / <kbd>Shift + Tab</kbd> | Cycle through inputs (WorkItem, Project, Category, Tags, Attributes) |
-| <kbd>↑</kbd> / <kbd>↓</kbd> | Navigate search suggestions and dropdown options |
+| Shortcut | Scope | Action |
+| :--- | :--- | :--- |
+| <kbd>⌥ Option</kbd> + <kbd>Space</kbd> | Global | Toggle Quick Capture floating dialog from anywhere |
+| <kbd>⌘ Cmd</kbd> + <kbd>K</kbd> | In-App | Open Command Palette (navigate, actions, switch themes) |
+| <kbd>⌘ Cmd</kbd> + <kbd>N</kbd> | In-App | Create new item in context (Task, Project, etc.) |
+| <kbd>⌘ Cmd</kbd> + <kbd>.</kbd> | In-App | Stop currently running timer |
+| <kbd>⌘ Cmd</kbd> + <kbd>E</kbd> | In-App | Open Export Data dialog (PDF / CSV / JSON) |
+| <kbd>⌘ Cmd</kbd> + <kbd>1</kbd> | In-App | Go to **Dashboard** |
+| <kbd>⌘ Cmd</kbd> + <kbd>2</kbd> | In-App | Go to **Time Log** (Session History) |
+| <kbd>⌘ Cmd</kbd> + <kbd>3</kbd> | In-App | Go to **Work Items** (Tasks) |
+| <kbd>⌘ Cmd</kbd> + <kbd>4</kbd> | In-App | Go to **Time Notes** (Standup Summary) |
+| <kbd>⌘ Cmd</kbd> + <kbd>5</kbd> | In-App | Go to **Projects** |
+| <kbd>⌘ Cmd</kbd> + <kbd>6</kbd> | In-App | Go to **Categories** |
+| <kbd>⌘ Cmd</kbd> + <kbd>7</kbd> | In-App | Go to **Tags** |
+| <kbd>⌘ Cmd</kbd> + <kbd>8</kbd> | In-App | Go to **People** |
+| <kbd>⌘ Cmd</kbd> + <kbd>9</kbd> | In-App | Go to **Custom Attributes** |
+| <kbd>Enter</kbd> | In-App / HUD | Confirm and start/switch tracking session |
+| <kbd>Esc</kbd> | In-App / HUD | Dismiss Quick Capture / close active modal dialog |
+| <kbd>Tab</kbd> / <kbd>Shift + Tab</kbd> | In-App / HUD | Cycle through form inputs and suggestions |
+| <kbd>↑</kbd> / <kbd>↓</kbd> | In-App / HUD | Navigate search suggestions and dropdown options |
 
 ---
 
@@ -197,21 +240,23 @@ WorkPulse includes a comprehensive automated test suite spanning unit tests, dat
 # Run the complete test suite
 flutter test
 
-# Run database schema & migration tests
+# Run database schema & migration tests (v1 -> v4)
 flutter test test/data/database_migration_test.dart
 
 # Run SQLite repository CRUD tests
 flutter test test/data/sqlite_repositories_test.dart
 
-# Run domain service tests (Timer, Task Switcher, Idle)
-flutter test test/unit/services/timer_service_test.dart
-flutter test test/unit/services/idle_service_test.dart
+# Run domain service tests (Timer, Task Switcher, Idle, Heartbeat, PDF Report)
+flutter test test/unit/services/
 
 # Run Riverpod state notifier tests
 flutter test test/unit/providers/
 
-# Run widget and UI tests
+# Run widget, responsive layout, and UI tests
 flutter test test/widget/
+
+# Run integration & end-to-end task switching tests
+flutter test test/integration/
 ```
 
 ---
@@ -243,3 +288,4 @@ The resulting application bundle will be located at:
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+

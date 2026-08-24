@@ -118,10 +118,29 @@ class DashboardView extends ConsumerWidget {
       await PdfExportHandler.openPdfInPreview(result.filePath);
 
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        final messenger = ScaffoldMessenger.of(context);
+        messenger.clearSnackBars();
+        messenger.showSnackBar(
           SnackBar(
-            content: Text('Report saved to Downloads: ${result.fileName}'),
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle_outline, color: Colors.white, size: 18),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Report saved to Downloads: ${result.fileName}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
             backgroundColor: context.colors.success,
+            duration: const Duration(seconds: 4),
+            showCloseIcon: true,
+            closeIconColor: Colors.white,
             action: SnackBarAction(
               label: 'Show in Finder',
               textColor: Colors.white,
@@ -133,10 +152,26 @@ class DashboardView extends ConsumerWidget {
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        final messenger = ScaffoldMessenger.of(context);
+        messenger.clearSnackBars();
+        messenger.showSnackBar(
           SnackBar(
-            content: Text('PDF export failed: $e'),
+            content: Row(
+              children: [
+                const Icon(Icons.error_outline, color: Colors.white, size: 18),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'PDF export failed: $e',
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                ),
+              ],
+            ),
             backgroundColor: context.colors.danger,
+            duration: const Duration(seconds: 5),
+            showCloseIcon: true,
+            closeIconColor: Colors.white,
           ),
         );
       }

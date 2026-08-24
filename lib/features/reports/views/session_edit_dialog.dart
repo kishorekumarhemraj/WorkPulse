@@ -56,7 +56,37 @@ class _SessionEditDialogState extends ConsumerState<SessionEditDialog> {
     _notesController = TextEditingController(text: s.notes ?? '');
     _selectedTagIds = List.from(s.tagIds.isNotEmpty ? s.tagIds : widget.record.workItem.tagIds);
     _selectedPeopleIds = List.from(s.peopleIds.isNotEmpty ? s.peopleIds : widget.record.workItem.peopleIds);
+
+    Future.microtask(() async {
+      try {
+        final existingValues = await ref.read(
+            sessionAttributeValuesFamilyProvider(widget.record.session.id).future);
+        if (mounted) {
+          setState(() {
+            for (final v in existingValues) {
+              if (v.textValue != null) {
+                _sessionAttributeValues[v.attributeDefinitionId] = v.textValue;
+              }
+              if (v.numberValue != null) {
+                _sessionAttributeValues[v.attributeDefinitionId] = v.numberValue;
+              }
+              if (v.booleanValue != null) {
+                _sessionAttributeValues[v.attributeDefinitionId] = v.booleanValue;
+              }
+              if (v.dateValue != null) {
+                _sessionAttributeValues[v.attributeDefinitionId] = v.dateValue;
+              }
+              if (v.optionId != null) {
+                _sessionAttributeValues[v.attributeDefinitionId] = v.optionId;
+              }
+            }
+          });
+        }
+      } catch (_) {}
+    });
+
   }
+
 
   @override
   void dispose() {

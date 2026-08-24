@@ -180,3 +180,9 @@ class WorkItemAttributeValuesController {
     _ref.invalidate(workItemAttributeValuesFamilyProvider(workItemId));
   }
 }
+
+final sessionAttributeValuesFamilyProvider = FutureProvider.family<List<SessionAttributeValue>, String>((ref, sessionId) async {
+  final repo = ref.watch(attributeRepositoryProvider);
+  return repo.getSessionValues(sessionId);
+});
+

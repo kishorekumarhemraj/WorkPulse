@@ -136,6 +136,8 @@ class AppTheme {
         actionTextColor: c.accent,
         behavior: SnackBarBehavior.floating,
         elevation: 6,
+        showCloseIcon: true,
+        closeIconColor: c.textSecondary,
         shape: RoundedRectangleBorder(
           borderRadius: Radii.mdAll,
           side: BorderSide(color: c.divider),
