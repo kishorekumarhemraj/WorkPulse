@@ -95,6 +95,7 @@ class _FakeTimerNotifier extends TimerNotifier {
   Future<void> startTimer(
     WorkItem workItem, {
     String? categoryId,
+    List<String> tagIds = const [],
     List<String> peopleIds = const [],
     String? notes,
   }) async {

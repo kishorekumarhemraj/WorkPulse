@@ -8,6 +8,7 @@ import 'package:workpulse/data/database/tables.dart';
 import 'package:workpulse/data/migrations/migration_v1.dart';
 import 'package:workpulse/data/migrations/migration_v2.dart';
 import 'package:workpulse/data/migrations/migration_v3.dart';
+import 'package:workpulse/data/migrations/migration_v4.dart';
 
 void main() {
   setUpAll(() {
@@ -27,7 +28,7 @@ void main() {
       await dbService.close();
     });
 
-    test('All 16 SQLite tables are created with proper schema', () async {
+    test('All 17 SQLite tables are created with proper schema', () async {
       final db = dbService.database;
 
       final tables = [
@@ -41,6 +42,7 @@ void main() {
         Tables.workItemPeople,
         Tables.sessions,
         Tables.sessionPeople,
+        Tables.sessionTags,
         Tables.idlePeriods,
         Tables.attributeDefinitions,
         Tables.attributeOptions,
@@ -175,6 +177,12 @@ void main() {
         final peopleColNames = peopleCols.map((c) => c['name'] as String).toSet();
         expect(peopleColNames, contains('team'));
 
+        final sessionTagsTable = await db.rawQuery(
+          "SELECT name FROM sqlite_master WHERE type='table' AND name=?;",
+          [Tables.sessionTags],
+        );
+        expect(sessionTagsTable, isNotEmpty);
+
         final rows = await db.query(
           Tables.sessions,
           where: 'id = ?',
@@ -190,7 +198,7 @@ void main() {
       }
     });
 
-    test('MigrationV2 and MigrationV3 are idempotent when columns already exist',
+    test('MigrationV2, MigrationV3 and MigrationV4 are idempotent',
         () async {
       final tempDir =
           await Directory.systemTemp.createTemp('workpulse_idempotency_test');
@@ -205,12 +213,14 @@ void main() {
           ),
         );
 
-        // Run MigrationV2 and MigrationV3 once
+        // Run MigrationV2, MigrationV3, and MigrationV4 once
         await MigrationV2.execute(db);
         await MigrationV3.execute(db);
-        // Run a second time - should not throw duplicate column error
+        await MigrationV4.execute(db);
+        // Run a second time - should not throw duplicate column/table error
         await expectLater(MigrationV2.execute(db), completes);
         await expectLater(MigrationV3.execute(db), completes);
+        await expectLater(MigrationV4.execute(db), completes);
 
         await db.close();
       } finally {
