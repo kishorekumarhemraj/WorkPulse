@@ -107,6 +107,16 @@ class _AppSelectState<T> extends State<AppSelect<T>> {
     setState(() => _isFocused = _focusNode.hasFocus);
   }
 
+  /// Keys that open a closed select. Enter belongs here alongside Space:
+  /// every other focusable control in the app activates on both, and its
+  /// absence made the select the one place Enter did nothing.
+  static bool _opensMenu(LogicalKeyboardKey key) =>
+      key == LogicalKeyboardKey.arrowDown ||
+      key == LogicalKeyboardKey.arrowUp ||
+      key == LogicalKeyboardKey.space ||
+      key == LogicalKeyboardKey.enter ||
+      key == LogicalKeyboardKey.numpadEnter;
+
   SelectOption<T>? get _selected {
     for (final option in widget.options) {
       if (option.value == widget.value) return option;
@@ -235,14 +245,10 @@ class _AppSelectState<T> extends State<AppSelect<T>> {
             focusNode: _focusNode,
             canRequestFocus: widget.enabled,
             onKeyEvent: (node, event) {
-              if (event is KeyDownEvent) {
-                if (event.logicalKey == LogicalKeyboardKey.arrowDown ||
-                    event.logicalKey == LogicalKeyboardKey.arrowUp ||
-                    event.logicalKey == LogicalKeyboardKey.space) {
-                  if (!controller.isOpen && widget.enabled) {
-                    controller.open();
-                    return KeyEventResult.handled;
-                  }
+              if (event is KeyDownEvent && _opensMenu(event.logicalKey)) {
+                if (!controller.isOpen && widget.enabled) {
+                  controller.open();
+                  return KeyEventResult.handled;
                 }
               }
               return KeyEventResult.ignored;
@@ -251,7 +257,8 @@ class _AppSelectState<T> extends State<AppSelect<T>> {
               canRequestFocus: false,
               borderRadius: Radii.mdAll,
               onTap: widget.enabled
-                  ? () => controller.isOpen ? controller.close() : controller.open()
+                  ? () =>
+                      controller.isOpen ? controller.close() : controller.open()
                   : null,
               child: ConstrainedBox(
                 constraints: BoxConstraints(maxWidth: widget.maxTriggerWidth),

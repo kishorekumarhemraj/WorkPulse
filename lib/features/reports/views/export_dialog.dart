@@ -2,13 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:workpulse/core/platform/pdf_export_handler.dart';
 import 'package:workpulse/core/theme/app_colors.dart';
+import 'package:workpulse/core/widgets/app_snack_bar.dart';
 import 'package:workpulse/core/theme/design_tokens.dart';
 import 'package:workpulse/core/widgets/app_dialog.dart';
 import 'package:workpulse/core/widgets/segmented_control.dart';
 import 'package:workpulse/domain/models/analytics_model.dart';
 import 'package:workpulse/domain/models/date_range.dart';
+import 'package:workpulse/features/reports/pdf_report_export.dart';
 import 'package:workpulse/features/reports/providers/reports_provider.dart';
 import 'package:workpulse/features/workspace/providers/workspace_provider.dart';
 
@@ -70,138 +71,56 @@ class _ExportDialogState extends ConsumerState<ExportDialog> {
 
   Future<void> _exportData() async {
     setState(() => _isExporting = true);
+
+    final domainCustom = _customRange != null
+        ? DateRange(
+            start: _customRange!.start.toUtc(),
+            end: _customRange!.end.toUtc(),
+          )
+        : null;
+    final range = _selectedRange.toDateRange(customRange: domainCustom);
+
     try {
-      final workspace = await ref.read(currentWorkspaceProvider.future);
-      final domainCustom = _customRange != null
-          ? DateRange(
-              start: _customRange!.start.toUtc(),
-              end: _customRange!.end.toUtc())
-          : null;
-      final range = _selectedRange.toDateRange(customRange: domainCustom);
-      final exportService = ref.read(exportServiceProvider);
-
       if (_format == ExportFormat.pdf) {
-        final pdfBytes = await exportService.generatePdf(
-          workspaceId: workspace.id,
+        // Shared with the dashboard and the command palette so a PDF export
+        // behaves identically wherever it is started from.
+        final result = await PdfReportExport.run(
+          context,
+          ref,
           range: range,
+          fileNamePrefix: 'WorkPulse_Report',
         );
-
-        final fileName = PdfExportHandler.formatReportFileName(
-          prefix: 'WorkPulse_Report',
-          startDate: range.start,
-          endDate: range.end,
-        );
-
-        final result = await PdfExportHandler.savePdf(
-          bytes: pdfBytes,
-          fileName: fileName,
-        );
-
-        await PdfExportHandler.openPdfInPreview(result.filePath);
-
-        if (mounted) {
-          setState(() {
-            _exportedContent = result.filePath;
-            _isExporting = false;
-          });
-
-          final messenger = ScaffoldMessenger.of(context);
-          messenger.clearSnackBars();
-          messenger.showSnackBar(
-            SnackBar(
-              content: Row(
-                children: [
-                  const Icon(Icons.check_circle_outline, color: Colors.white, size: 18),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'PDF saved to Downloads: ${result.fileName}',
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
-                    ),
-                  ),
-                ],
-              ),
-              backgroundColor: context.colors.success,
-              duration: const Duration(seconds: 4),
-              showCloseIcon: true,
-              closeIconColor: Colors.white,
-              action: SnackBarAction(
-                label: 'Show in Finder',
-                textColor: Colors.white,
-                onPressed: () =>
-                    PdfExportHandler.revealInFinder(result.filePath),
-              ),
-            ),
-          );
+        if (mounted && result != null) {
+          setState(() => _exportedContent = result.filePath);
         }
-      } else {
-        String content;
-        if (_format == ExportFormat.csv) {
-          content = await exportService.generateCsv(
-              workspaceId: workspace.id, range: range);
-        } else {
-          content = await exportService.generateJson(
-              workspaceId: workspace.id, range: range);
-        }
-
-        await Clipboard.setData(ClipboardData(text: content));
-
-        if (mounted) {
-          setState(() {
-            _exportedContent = content;
-            _isExporting = false;
-          });
-
-          final messenger = ScaffoldMessenger.of(context);
-          messenger.clearSnackBars();
-          messenger.showSnackBar(
-            SnackBar(
-              content: Row(
-                children: [
-                  const Icon(Icons.check_circle_outline, color: Colors.white, size: 18),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      '${_format == ExportFormat.csv ? 'CSV' : 'JSON'} exported and copied to clipboard!',
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
-                    ),
-                  ),
-                ],
-              ),
-              backgroundColor: context.colors.success,
-              duration: const Duration(seconds: 4),
-              showCloseIcon: true,
-              closeIconColor: Colors.white,
-            ),
-          );
-        }
+        return;
       }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _isExporting = false);
-        final messenger = ScaffoldMessenger.of(context);
-        messenger.clearSnackBars();
-        messenger.showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.error_outline, color: Colors.white, size: 18),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'Export failed: $e',
-                    style: const TextStyle(color: Colors.white),
-                  ),
-                ),
-              ],
-            ),
-            backgroundColor: context.colors.danger,
-            duration: const Duration(seconds: 5),
-            showCloseIcon: true,
-            closeIconColor: Colors.white,
-          ),
-        );
-      }
+
+      final workspace = await ref.read(currentWorkspaceProvider.future);
+      final exportService = ref.read(exportServiceProvider);
+      final isCsv = _format == ExportFormat.csv;
+      final content = isCsv
+          ? await exportService.generateCsv(
+              workspaceId: workspace.id, range: range)
+          : await exportService.generateJson(
+              workspaceId: workspace.id, range: range);
+
+      await Clipboard.setData(ClipboardData(text: content));
+
+      if (!mounted) return;
+      setState(() => _exportedContent = content);
+      ScaffoldMessenger.of(context).showAppSnackBar(
+        AppSnackBar.success(
+          message: '${isCsv ? 'CSV' : 'JSON'} exported and copied to clipboard',
+        ),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showAppSnackBar(
+        AppSnackBar.failure(message: 'Export failed: $error'),
+      );
+    } finally {
+      if (mounted) setState(() => _isExporting = false);
     }
   }
 
@@ -217,8 +136,12 @@ class _ExportDialogState extends ConsumerState<ExportDialog> {
 
     final isPdf = _format == ExportFormat.pdf;
     final buttonLabel = isPdf
-        ? (_exportedContent != null ? 'PDF Exported & Opened!' : 'Export & Open PDF')
-        : (_exportedContent != null ? 'Copied to Clipboard!' : 'Copy to Clipboard');
+        ? (_exportedContent != null
+            ? 'PDF Exported & Opened!'
+            : 'Export & Open PDF')
+        : (_exportedContent != null
+            ? 'Copied to Clipboard!'
+            : 'Copy to Clipboard');
 
     return AppDialog(
       title: 'Export Work Data',
@@ -245,9 +168,7 @@ class _ExportDialogState extends ConsumerState<ExportDialog> {
               : Icon(
                   _exportedContent != null
                       ? Icons.check
-                      : (isPdf
-                          ? Icons.picture_as_pdf_outlined
-                          : Icons.copy),
+                      : (isPdf ? Icons.picture_as_pdf_outlined : Icons.copy),
                   size: IconSizes.md,
                 ),
           label: Text(buttonLabel),

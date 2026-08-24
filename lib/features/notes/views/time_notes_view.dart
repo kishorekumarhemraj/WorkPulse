@@ -7,6 +7,7 @@ import 'package:workpulse/core/theme/app_typography.dart';
 import 'package:workpulse/core/theme/color_utils.dart';
 import 'package:workpulse/core/theme/design_tokens.dart';
 import 'package:workpulse/core/theme/icon_utils.dart';
+import 'package:workpulse/core/widgets/app_snack_bar.dart';
 import 'package:workpulse/core/widgets/empty_state.dart';
 import 'package:workpulse/core/widgets/entity_chip.dart';
 import 'package:workpulse/core/widgets/error_state.dart';
@@ -69,7 +70,8 @@ class TimeNotesView extends ConsumerWidget {
         final dur = TimerService.formatDuration(note.duration, compact: true);
         final proj = note.project != null ? ' [${note.project!.name}]' : '';
 
-        buffer.writeln('- **${note.workItem.name}**$proj ($start - $end • $dur)');
+        buffer
+            .writeln('- **${note.workItem.name}**$proj ($start - $end • $dur)');
         final noteLines = note.note.split('\n');
         for (final line in noteLines) {
           if (line.trim().isNotEmpty) {
@@ -81,17 +83,9 @@ class TimeNotesView extends ConsumerWidget {
     }
 
     Clipboard.setData(ClipboardData(text: buffer.toString().trim()));
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Row(
-          children: [
-            Icon(Icons.check_circle, color: Colors.white, size: 18),
-            SizedBox(width: 8),
-            Text('Standup notes copied to clipboard!'),
-          ],
-        ),
-        backgroundColor: context.colors.success,
-        duration: const Duration(seconds: 3),
+    ScaffoldMessenger.of(context).showAppSnackBar(
+      const AppSnackBar.success(
+        message: 'Standup notes copied to clipboard',
       ),
     );
   }
@@ -106,7 +100,8 @@ class TimeNotesView extends ConsumerWidget {
       backgroundColor: colors.background,
       body: PageScaffold(
         title: 'Time Notes',
-        subtitle: 'Review, search, and copy time-based session notes and daily standup summaries',
+        subtitle:
+            'Review, search, and copy time-based session notes and daily standup summaries',
         actions: [
           AppSegmentedControl<DashboardTimeRange>(
             selected: selectedRange,
@@ -119,8 +114,10 @@ class TimeNotesView extends ConsumerWidget {
             },
             options: const [
               SegmentOption(value: DashboardTimeRange.today, label: 'Today'),
-              SegmentOption(value: DashboardTimeRange.thisWeek, label: 'This Week'),
-              SegmentOption(value: DashboardTimeRange.thisMonth, label: 'This Month'),
+              SegmentOption(
+                  value: DashboardTimeRange.thisWeek, label: 'This Week'),
+              SegmentOption(
+                  value: DashboardTimeRange.thisMonth, label: 'This Month'),
               SegmentOption(value: DashboardTimeRange.custom, label: 'Custom…'),
             ],
           ),
@@ -291,7 +288,8 @@ class _DayNotesGroup extends StatelessWidget {
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             itemCount: notes.length,
-            separatorBuilder: (_, __) => Divider(height: 1, color: colors.divider),
+            separatorBuilder: (_, __) =>
+                Divider(height: 1, color: colors.divider),
             itemBuilder: (context, i) {
               final note = notes[i];
               return _TimeNoteCard(

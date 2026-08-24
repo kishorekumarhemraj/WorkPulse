@@ -114,8 +114,7 @@ void main() {
       expect(find.text('Stop Timer at Inactivity'), findsOneWidget);
     });
 
-    testWidgets(
-        'words itself for a gap where WorkPulse was not running at all',
+    testWidgets('words itself for a gap where WorkPulse was not running at all',
         (tester) async {
       // The app's own window is 1200x800; the default 800x600 test surface is
       // shorter than WorkPulse ever runs, which would push this dialog's third
@@ -137,7 +136,8 @@ void main() {
             home: Scaffold(
               body: IdlePromptDialog(
                 idleDuration: const Duration(hours: 8, minutes: 12),
-                idleStartTime: now.subtract(const Duration(hours: 8, minutes: 12)),
+                idleStartTime:
+                    now.subtract(const Duration(hours: 8, minutes: 12)),
                 activeWorkItem: testTask,
                 trigger: IdleTrigger.appNotRunning,
               ),

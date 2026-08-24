@@ -45,8 +45,7 @@ class ReportsTimeRangeNotifier extends Notifier<DashboardTimeRange> {
   void setRange(DashboardTimeRange range) => state = range;
 }
 
-final reportsDateProvider =
-    NotifierProvider<ReportsDateNotifier, DateTime>(
+final reportsDateProvider = NotifierProvider<ReportsDateNotifier, DateTime>(
   ReportsDateNotifier.new,
 );
 
@@ -103,8 +102,8 @@ final sessionHistoryProvider =
     case DashboardTimeRange.custom:
       final localStart = DateTime(
           selectedDate.year, selectedDate.month, selectedDate.day, 0, 0, 0);
-      final localEnd = DateTime(
-          selectedDate.year, selectedDate.month, selectedDate.day, 23, 59, 59, 999);
+      final localEnd = DateTime(selectedDate.year, selectedDate.month,
+          selectedDate.day, 23, 59, 59, 999);
       calculatedRange = DateRange(
         start: localStart.toUtc(),
         end: localEnd.toUtc(),
@@ -244,7 +243,6 @@ class SessionEditorController {
     _ref.invalidate(sessionsForWorkItemProvider(session.workItemId));
     _ref.invalidate(sessionAttributeValuesFamilyProvider(sessionId));
   }
-
 
   Future<void> deleteSession(String sessionId) async {
     final sessionRepo = _ref.read(sessionRepositoryProvider);

@@ -387,8 +387,8 @@ class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
                                   Expanded(
                                     child: AppSelect<String>(
                                       label: 'Project',
-                                      value: projects.any(
-                                              (p) => p.id == qcState.selectedProjectId)
+                                      value: projects.any((p) =>
+                                              p.id == qcState.selectedProjectId)
                                           ? qcState.selectedProjectId
                                           : projects.first.id,
                                       placeholder: 'Select Project',
@@ -397,27 +397,30 @@ class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
                                           .map((p) => SelectOption(
                                                 value: p.id,
                                                 label: p.name,
-                                                color:
-                                                    ColorUtils.parseHex(p.colorHex),
+                                                color: ColorUtils.parseHex(
+                                                    p.colorHex),
                                               ))
                                           .toList(),
                                       onChanged: (val) {
                                         if (val != null) {
                                           ref
-                                              .read(quickCaptureProvider.notifier)
+                                              .read(
+                                                  quickCaptureProvider.notifier)
                                               .setProject(val);
                                         }
                                       },
                                     ),
                                   ),
-                                if (projects.isNotEmpty && categories.isNotEmpty)
+                                if (projects.isNotEmpty &&
+                                    categories.isNotEmpty)
                                   const SizedBox(width: 12),
                                 if (categories.isNotEmpty)
                                   Expanded(
                                     child: AppSelect<String>(
                                       label: 'Category',
-                                      value: categories.any(
-                                              (c) => c.id == qcState.selectedCategoryId)
+                                      value: categories.any((c) =>
+                                              c.id ==
+                                              qcState.selectedCategoryId)
                                           ? qcState.selectedCategoryId
                                           : categories.first.id,
                                       placeholder: 'Select Category',
@@ -426,13 +429,15 @@ class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
                                           .map((c) => SelectOption(
                                                 value: c.id,
                                                 label: c.name,
-                                                icon: IconUtils.getIcon(c.iconName),
+                                                icon: IconUtils.getIcon(
+                                                    c.iconName),
                                               ))
                                           .toList(),
                                       onChanged: (val) {
                                         if (val != null) {
                                           ref
-                                              .read(quickCaptureProvider.notifier)
+                                              .read(
+                                                  quickCaptureProvider.notifier)
                                               .setCategory(val);
                                         }
                                       },
@@ -441,66 +446,66 @@ class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
                               ],
                             ),
                           ],
-                      if (tags.isNotEmpty) ...[
-                        const SizedBox(height: 10),
-                        SearchableMultiSelect(
-                          allItems: tags
-                              .map((t) => SearchableMultiSelectItem(
-                                    id: t.id,
-                                    label: t.name,
-                                    color: ColorUtils.parseHex(t.colorHex),
-                                  ))
-                              .toList(),
-                          selectedIds: qcState.selectedTagIds,
-                          onChanged: (ids) => ref
-                              .read(quickCaptureProvider.notifier)
-                              .setTagIds(ids),
-                          hintText: 'Search tags...',
-                          emptyStateText: 'No tags created yet',
-                        ),
-                      ],
-                      if (people.isNotEmpty) ...[
-                        const SizedBox(height: 10),
-                        SearchableMultiSelect(
-                          allItems: people
-                              .map((person) => SearchableMultiSelectItem(
-                                    id: person.id,
-                                    label: person.name,
-                                    icon: Icons.person_outline,
-                                  ))
-                              .toList(),
-                          selectedIds: qcState.selectedPeopleIds,
-                          onChanged: (ids) => ref
-                              .read(quickCaptureProvider.notifier)
-                              .setPeopleIds(ids),
-                          hintText: 'Search people...',
-                          emptyStateText: 'No people added yet',
-                        ),
-                      ],
-                      if (quickCaptureAttributes.isNotEmpty) ...[
-                        const SizedBox(height: 12),
-                        DynamicAttributeFields(
-                          definitions: quickCaptureAttributes,
-                          values: _attributeValues,
-                          onValueChanged: (defId, val) {
-                            setState(() {
-                              _attributeValues[defId] = val;
-                            });
-                          },
-                        ),
-                      ],
-                    ],
+                          if (tags.isNotEmpty) ...[
+                            const SizedBox(height: 10),
+                            SearchableMultiSelect(
+                              allItems: tags
+                                  .map((t) => SearchableMultiSelectItem(
+                                        id: t.id,
+                                        label: t.name,
+                                        color: ColorUtils.parseHex(t.colorHex),
+                                      ))
+                                  .toList(),
+                              selectedIds: qcState.selectedTagIds,
+                              onChanged: (ids) => ref
+                                  .read(quickCaptureProvider.notifier)
+                                  .setTagIds(ids),
+                              hintText: 'Search tags...',
+                              emptyStateText: 'No tags created yet',
+                            ),
+                          ],
+                          if (people.isNotEmpty) ...[
+                            const SizedBox(height: 10),
+                            SearchableMultiSelect(
+                              allItems: people
+                                  .map((person) => SearchableMultiSelectItem(
+                                        id: person.id,
+                                        label: person.name,
+                                        icon: Icons.person_outline,
+                                      ))
+                                  .toList(),
+                              selectedIds: qcState.selectedPeopleIds,
+                              onChanged: (ids) => ref
+                                  .read(quickCaptureProvider.notifier)
+                                  .setPeopleIds(ids),
+                              hintText: 'Search people...',
+                              emptyStateText: 'No people added yet',
+                            ),
+                          ],
+                          if (quickCaptureAttributes.isNotEmpty) ...[
+                            const SizedBox(height: 12),
+                            DynamicAttributeFields(
+                              definitions: quickCaptureAttributes,
+                              values: _attributeValues,
+                              onValueChanged: (defId, val) {
+                                setState(() {
+                                  _attributeValues[defId] = val;
+                                });
+                              },
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
                   ),
                 ),
-              ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
-    ),
-  ),
-);
-}
+    );
+  }
 
   Widget _buildTaskResultItem(
     WorkItem task,

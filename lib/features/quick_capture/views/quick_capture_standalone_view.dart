@@ -410,8 +410,8 @@ class _QuickCaptureStandaloneViewState
                                         .map((p) => SelectOption(
                                               value: p.id,
                                               label: p.name,
-                                              color:
-                                                  ColorUtils.parseHex(p.colorHex),
+                                              color: ColorUtils.parseHex(
+                                                  p.colorHex),
                                             ))
                                         .toList(),
                                     onChanged: (val) {
@@ -440,7 +440,8 @@ class _QuickCaptureStandaloneViewState
                                         .map((c) => SelectOption(
                                               value: c.id,
                                               label: c.name,
-                                              icon: IconUtils.getIcon(c.iconName),
+                                              icon:
+                                                  IconUtils.getIcon(c.iconName),
                                             ))
                                         .toList(),
                                     onChanged: (val) {
@@ -455,65 +456,65 @@ class _QuickCaptureStandaloneViewState
                             ],
                           ),
                         ],
-                    if (tags.isNotEmpty) ...[
-                      const SizedBox(height: 10),
-                      SearchableMultiSelect(
-                        allItems: tags
-                            .map((t) => SearchableMultiSelectItem(
-                                  id: t.id,
-                                  label: t.name,
-                                  color: ColorUtils.parseHex(t.colorHex),
-                                ))
-                            .toList(),
-                        selectedIds: qcState.selectedTagIds,
-                        onChanged: (ids) => ref
-                            .read(quickCaptureProvider.notifier)
-                            .setTagIds(ids),
-                        hintText: 'Search tags...',
-                        emptyStateText: 'No tags created yet',
-                      ),
-                    ],
-                    if (people.isNotEmpty) ...[
-                      const SizedBox(height: 10),
-                      SearchableMultiSelect(
-                        allItems: people
-                            .map((person) => SearchableMultiSelectItem(
-                                  id: person.id,
-                                  label: person.name,
-                                  icon: Icons.person_outline,
-                                ))
-                            .toList(),
-                        selectedIds: qcState.selectedPeopleIds,
-                        onChanged: (ids) => ref
-                            .read(quickCaptureProvider.notifier)
-                            .setPeopleIds(ids),
-                        hintText: 'Search people...',
-                        emptyStateText: 'No people added yet',
-                      ),
-                    ],
-                    if (quickCaptureAttributes.isNotEmpty) ...[
-                      const SizedBox(height: 12),
-                      DynamicAttributeFields(
-                        definitions: quickCaptureAttributes,
-                        values: _attributeValues,
-                        onValueChanged: (defId, val) {
-                          setState(() {
-                            _attributeValues[defId] = val;
-                          });
-                        },
-                      ),
-                    ],
-                  ],
+                        if (tags.isNotEmpty) ...[
+                          const SizedBox(height: 10),
+                          SearchableMultiSelect(
+                            allItems: tags
+                                .map((t) => SearchableMultiSelectItem(
+                                      id: t.id,
+                                      label: t.name,
+                                      color: ColorUtils.parseHex(t.colorHex),
+                                    ))
+                                .toList(),
+                            selectedIds: qcState.selectedTagIds,
+                            onChanged: (ids) => ref
+                                .read(quickCaptureProvider.notifier)
+                                .setTagIds(ids),
+                            hintText: 'Search tags...',
+                            emptyStateText: 'No tags created yet',
+                          ),
+                        ],
+                        if (people.isNotEmpty) ...[
+                          const SizedBox(height: 10),
+                          SearchableMultiSelect(
+                            allItems: people
+                                .map((person) => SearchableMultiSelectItem(
+                                      id: person.id,
+                                      label: person.name,
+                                      icon: Icons.person_outline,
+                                    ))
+                                .toList(),
+                            selectedIds: qcState.selectedPeopleIds,
+                            onChanged: (ids) => ref
+                                .read(quickCaptureProvider.notifier)
+                                .setPeopleIds(ids),
+                            hintText: 'Search people...',
+                            emptyStateText: 'No people added yet',
+                          ),
+                        ],
+                        if (quickCaptureAttributes.isNotEmpty) ...[
+                          const SizedBox(height: 12),
+                          DynamicAttributeFields(
+                            definitions: quickCaptureAttributes,
+                            values: _attributeValues,
+                            onValueChanged: (defId, val) {
+                              setState(() {
+                                _attributeValues[defId] = val;
+                              });
+                            },
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
                 ),
               ),
-            ),
+            ],
           ),
-        ],
+        ),
       ),
-    ),
-  ),
-);
-}
+    );
+  }
 
   Widget _buildTaskResultItem(
     WorkItem task,
@@ -701,60 +702,6 @@ class _QuickCaptureStandaloneViewState
               ],
             ),
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _StandaloneQuickChip extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final bool selected;
-  final Color color;
-  final VoidCallback onTap;
-
-  const _StandaloneQuickChip({
-    required this.label,
-    required this.icon,
-    required this.selected,
-    required this.color,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: Radii.smAll,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-        decoration: BoxDecoration(
-          color:
-              selected ? color.withValues(alpha: 0.28) : context.colors.surface,
-          borderRadius: Radii.smAll,
-          border: Border.all(
-            color: selected ? color : context.colors.divider,
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              size: 11,
-              color: selected ? color : context.colors.textSecondary,
-            ),
-            const SizedBox(width: 4),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 11,
-                color: selected ? color : context.colors.textSecondary,
-                fontWeight: selected ? FontWeight.bold : FontWeight.normal,
-              ),
-            ),
-          ],
         ),
       ),
     );

@@ -1,4 +1,3 @@
-import 'dart:typed_data';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
@@ -51,8 +50,9 @@ class PdfReportService {
     List<AttributeDefinition> attributeDefinitions = const [],
     String? userName,
   }) async {
-    final effectiveUserName =
-        (userName != null && userName.trim().isNotEmpty) ? userName.trim() : 'User';
+    final effectiveUserName = (userName != null && userName.trim().isNotEmpty)
+        ? userName.trim()
+        : 'User';
     final doc = pw.Document();
 
     pw.ThemeData theme;
@@ -97,7 +97,8 @@ class PdfReportService {
       // Category aggregation (accurately tracks each session's category override or task category)
       final sessionCatName = r.category?.name ?? 'Uncategorized';
       categoryTotals[sessionCatName] =
-          (categoryTotals[sessionCatName] ?? Duration.zero) + r.netActiveDuration;
+          (categoryTotals[sessionCatName] ?? Duration.zero) +
+              r.netActiveDuration;
 
       // Task aggregation (collects all session categories for the same work item)
       final taskKey = r.workItem.id;
@@ -282,7 +283,7 @@ class PdfReportService {
           ),
           pw.Text(
             'Page ${context.pageNumber} of ${context.pagesCount}',
-            style: pw.TextStyle(
+            style: const pw.TextStyle(
               fontSize: 8,
               fontWeight: pw.FontWeight.bold,
               color: _slate500,
@@ -328,7 +329,7 @@ class PdfReportService {
                         isSingleDay
                             ? 'DAILY WORK REPORT'
                             : 'WORK & ACTIVITY REPORT',
-                        style: pw.TextStyle(
+                        style: const pw.TextStyle(
                           fontSize: 8,
                           fontWeight: pw.FontWeight.bold,
                           color: PdfColors.white,
@@ -346,7 +347,7 @@ class PdfReportService {
                       ),
                       child: pw.Text(
                         'Report for $userName',
-                        style: pw.TextStyle(
+                        style: const pw.TextStyle(
                           fontSize: 8,
                           fontWeight: pw.FontWeight.bold,
                           color: _indigoDark,
@@ -366,7 +367,7 @@ class PdfReportService {
                 pw.SizedBox(height: 6),
                 pw.Text(
                   dateSubtitle,
-                  style: pw.TextStyle(
+                  style: const pw.TextStyle(
                     fontSize: 17,
                     fontWeight: pw.FontWeight.bold,
                     color: PdfColors.white,
@@ -391,7 +392,7 @@ class PdfReportService {
               children: [
                 pw.Text(
                   'TOTAL TIME',
-                  style: pw.TextStyle(
+                  style: const pw.TextStyle(
                     fontSize: 7.5,
                     fontWeight: pw.FontWeight.bold,
                     color: _slate500,
@@ -400,7 +401,7 @@ class PdfReportService {
                 pw.SizedBox(height: 2),
                 pw.Text(
                   TimerService.formatDuration(totalNet, includeSeconds: false),
-                  style: pw.TextStyle(
+                  style: const pw.TextStyle(
                     fontSize: 18,
                     fontWeight: pw.FontWeight.bold,
                     color: _indigoDark,
@@ -499,7 +500,7 @@ class PdfReportService {
           pw.SizedBox(height: 4),
           pw.Text(
             value,
-            style: pw.TextStyle(
+            style: const pw.TextStyle(
               fontSize: 15,
               fontWeight: pw.FontWeight.bold,
               color: _slate900,
@@ -540,7 +541,7 @@ class PdfReportService {
         children: [
           pw.Text(
             'TIME BREAKDOWN & CATEGORIZATION',
-            style: pw.TextStyle(
+            style: const pw.TextStyle(
               fontSize: 9,
               fontWeight: pw.FontWeight.bold,
               color: _slate800,
@@ -584,7 +585,7 @@ class PdfReportService {
                   children: [
                     pw.Text(
                       'Time by Project',
-                      style: pw.TextStyle(
+                      style: const pw.TextStyle(
                         fontSize: 8,
                         fontWeight: pw.FontWeight.bold,
                         color: _slate700,
@@ -619,7 +620,7 @@ class PdfReportService {
                             ),
                             pw.Text(
                               '${TimerService.formatDuration(entry.value, compact: true)} (${pct.toStringAsFixed(0)}%)',
-                              style: pw.TextStyle(
+                              style: const pw.TextStyle(
                                 fontSize: 7.5,
                                 fontWeight: pw.FontWeight.bold,
                                 color: _slate700,
@@ -641,7 +642,7 @@ class PdfReportService {
                   children: [
                     pw.Text(
                       'Time by Category',
-                      style: pw.TextStyle(
+                      style: const pw.TextStyle(
                         fontSize: 8,
                         fontWeight: pw.FontWeight.bold,
                         color: _slate700,
@@ -675,7 +676,7 @@ class PdfReportService {
                             ),
                             pw.Text(
                               '${TimerService.formatDuration(entry.value, compact: true)} (${pct.toStringAsFixed(0)}%)',
-                              style: pw.TextStyle(
+                              style: const pw.TextStyle(
                                 fontSize: 7.5,
                                 fontWeight: pw.FontWeight.bold,
                                 color: _slate700,
@@ -715,7 +716,7 @@ class PdfReportService {
             padding: const pw.EdgeInsets.fromLTRB(10, 8, 10, 6),
             child: pw.Text(
               'TASKS WORKED ON SUMMARY',
-              style: pw.TextStyle(
+              style: const pw.TextStyle(
                 fontSize: 9,
                 fontWeight: pw.FontWeight.bold,
                 color: _slate800,
@@ -724,7 +725,7 @@ class PdfReportService {
           ),
           pw.TableHelper.fromTextArray(
             border: null,
-            headerStyle: pw.TextStyle(
+            headerStyle: const pw.TextStyle(
               fontSize: 7.5,
               fontWeight: pw.FontWeight.bold,
               color: _slate500,
@@ -793,7 +794,7 @@ class PdfReportService {
               pw.SizedBox(width: 5),
               pw.Text(
                 'STANDUP / PROGRESS HIGHLIGHTS & NOTES',
-                style: pw.TextStyle(
+                style: const pw.TextStyle(
                   fontSize: 8.5,
                   fontWeight: pw.FontWeight.bold,
                   color: _indigoDark,
@@ -812,7 +813,7 @@ class PdfReportService {
                 children: [
                   pw.Text(
                     '- ${n.taskName}$projSuffix (${TimerService.formatDuration(n.duration, compact: true)})',
-                    style: pw.TextStyle(
+                    style: const pw.TextStyle(
                       fontSize: 8,
                       fontWeight: pw.FontWeight.bold,
                       color: _slate900,
@@ -850,7 +851,7 @@ class PdfReportService {
       children: [
         pw.Text(
           'DETAILED SESSION TIMELINE',
-          style: pw.TextStyle(
+          style: const pw.TextStyle(
             fontSize: 9,
             fontWeight: pw.FontWeight.bold,
             color: _slate800,
@@ -891,7 +892,7 @@ class PdfReportService {
                       ),
                       child: pw.Text(
                         timeRangeStr,
-                        style: pw.TextStyle(
+                        style: const pw.TextStyle(
                           fontSize: 7.5,
                           fontWeight: pw.FontWeight.bold,
                           color: _slate700,
@@ -904,7 +905,7 @@ class PdfReportService {
                     pw.Expanded(
                       child: pw.Text(
                         r.workItem.name,
-                        style: pw.TextStyle(
+                        style: const pw.TextStyle(
                           fontSize: 9,
                           fontWeight: pw.FontWeight.bold,
                           color: _slate900,
@@ -917,7 +918,7 @@ class PdfReportService {
                     pw.Text(
                       TimerService.formatDuration(r.netActiveDuration,
                           includeSeconds: false),
-                      style: pw.TextStyle(
+                      style: const pw.TextStyle(
                         fontSize: 9.5,
                         fontWeight: pw.FontWeight.bold,
                         color: _indigo,
@@ -985,8 +986,7 @@ class PdfReportService {
                     padding: const pw.EdgeInsets.all(6),
                     decoration: const pw.BoxDecoration(
                       color: _slate50,
-                      borderRadius:
-                          pw.BorderRadius.all(pw.Radius.circular(4)),
+                      borderRadius: pw.BorderRadius.all(pw.Radius.circular(4)),
                     ),
                     child: pw.Text(
                       s.notes!.trim(),
