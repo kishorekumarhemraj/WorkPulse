@@ -19,6 +19,18 @@ final analyticsServiceProvider = Provider<AnalyticsService>((ref) {
   );
 });
 
+final selectedTimeRangeProvider =
+    NotifierProvider<SelectedTimeRangeNotifier, DashboardTimeRange>(
+  SelectedTimeRangeNotifier.new,
+);
+
+class SelectedTimeRangeNotifier extends Notifier<DashboardTimeRange> {
+  @override
+  DashboardTimeRange build() => DashboardTimeRange.today;
+
+  void setRange(DashboardTimeRange range) => state = range;
+}
+
 final dashboardDateProvider =
     NotifierProvider<DashboardDateNotifier, DateTime>(
   DashboardDateNotifier.new,
@@ -51,6 +63,7 @@ class DashboardDateNotifier extends Notifier<DateTime> {
 
 final dashboardDataProvider = FutureProvider<DashboardData>((ref) async {
   final workspace = await ref.watch(currentWorkspaceProvider.future);
+  final timeRange = ref.watch(selectedTimeRangeProvider);
   final selectedDate = ref.watch(dashboardDateProvider);
   final analyticsService = ref.watch(analyticsServiceProvider);
 
@@ -59,15 +72,32 @@ final dashboardDataProvider = FutureProvider<DashboardData>((ref) async {
       ? s.value?.elapsed.inSeconds
       : s.value?.activeSession?.id));
 
-  // Compute 24-hour UTC DateRange for the single selected calendar day.
-  final localStart =
-      DateTime(selectedDate.year, selectedDate.month, selectedDate.day, 0, 0, 0);
-  final localEnd = DateTime(
-      selectedDate.year, selectedDate.month, selectedDate.day, 23, 59, 59, 999);
-  final calculatedRange = DateRange(
-    start: localStart.toUtc(),
-    end: localEnd.toUtc(),
-  );
+  DateRange calculatedRange;
+  switch (timeRange) {
+    case DashboardTimeRange.today:
+      final now = DateTime.now();
+      final localStart = DateTime(now.year, now.month, now.day, 0, 0, 0);
+      final localEnd = DateTime(now.year, now.month, now.day, 23, 59, 59, 999);
+      calculatedRange =
+          DateRange(start: localStart.toUtc(), end: localEnd.toUtc());
+      break;
+    case DashboardTimeRange.thisWeek:
+      calculatedRange = DashboardTimeRange.thisWeek.toDateRange();
+      break;
+    case DashboardTimeRange.thisMonth:
+      calculatedRange = DashboardTimeRange.thisMonth.toDateRange();
+      break;
+    case DashboardTimeRange.custom:
+      final localStart = DateTime(
+          selectedDate.year, selectedDate.month, selectedDate.day, 0, 0, 0);
+      final localEnd = DateTime(
+          selectedDate.year, selectedDate.month, selectedDate.day, 23, 59, 59, 999);
+      calculatedRange = DateRange(
+        start: localStart.toUtc(),
+        end: localEnd.toUtc(),
+      );
+      break;
+  }
 
   return analyticsService.getDashboardData(
     workspaceId: workspace.id,

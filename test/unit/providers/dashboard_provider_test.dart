@@ -13,6 +13,7 @@ import 'package:workpulse/data/repositories/sqlite_session_repository.dart';
 import 'package:workpulse/data/repositories/sqlite_tag_repository.dart';
 import 'package:workpulse/data/repositories/sqlite_work_item_repository.dart';
 import 'package:workpulse/data/repositories/sqlite_workspace_repository.dart';
+import 'package:workpulse/domain/models/analytics_model.dart';
 import 'package:workpulse/domain/models/category_model.dart';
 import 'package:workpulse/domain/models/project_model.dart';
 import 'package:workpulse/domain/models/session_model.dart';
@@ -80,9 +81,9 @@ void main() {
         Session(
           id: 'sess-1',
           workItemId: task.id,
-          startTime: now.subtract(const Duration(minutes: 50)),
+          startTime: now.subtract(const Duration(minutes: 1)),
           endTime: now,
-          createdAt: now.subtract(const Duration(minutes: 50)),
+          createdAt: now.subtract(const Duration(minutes: 1)),
         ),
       );
     });
@@ -108,6 +109,25 @@ void main() {
       addTearDown(container.dispose);
       return container;
     }
+
+    test('selectedTimeRangeProvider defaults to today and switches ranges', () {
+      final container = createContainer();
+
+      expect(
+          container.read(selectedTimeRangeProvider), DashboardTimeRange.today);
+
+      container
+          .read(selectedTimeRangeProvider.notifier)
+          .setRange(DashboardTimeRange.thisWeek);
+      expect(container.read(selectedTimeRangeProvider),
+          DashboardTimeRange.thisWeek);
+
+      container
+          .read(selectedTimeRangeProvider.notifier)
+          .setRange(DashboardTimeRange.thisMonth);
+      expect(container.read(selectedTimeRangeProvider),
+          DashboardTimeRange.thisMonth);
+    });
 
     test('dashboardDateProvider defaults to today and navigates days', () {
       final container = createContainer();
@@ -138,7 +158,7 @@ void main() {
 
       expect(data.summary.sessionCount, 1);
       expect(data.summary.taskCount, 1);
-      expect(data.summary.totalTrackedDuration, const Duration(minutes: 50));
+      expect(data.summary.totalTrackedDuration, const Duration(minutes: 1));
       expect(data.projectBreakdown.length, 1);
       expect(data.projectBreakdown.first.name, 'Engine Dev');
     });

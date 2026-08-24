@@ -193,6 +193,22 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(container.read(dashboardDateProvider), today);
+      expect(find.text('Today'), findsOneWidget);
+      expect(find.text('This Week'), findsOneWidget);
+      expect(find.text('This Month'), findsOneWidget);
+      expect(find.text('Date'), findsOneWidget);
+
+      // Tap This Week
+      await tester.tap(find.text('This Week'));
+      await tester.pumpAndSettle();
+      expect(container.read(selectedTimeRangeProvider),
+          DashboardTimeRange.thisWeek);
+
+      // Tap This Month
+      await tester.tap(find.text('This Month'));
+      await tester.pumpAndSettle();
+      expect(container.read(selectedTimeRangeProvider),
+          DashboardTimeRange.thisMonth);
 
       // Tap previous day
       await tester.tap(find.byTooltip('Previous day'));
@@ -200,13 +216,16 @@ void main() {
 
       final yesterday = DateTime(today.year, today.month, today.day - 1);
       expect(container.read(dashboardDateProvider), yesterday);
+      expect(container.read(selectedTimeRangeProvider),
+          DashboardTimeRange.custom);
 
-      // Tap Today button to return to today
-      expect(find.text('Today'), findsOneWidget);
+      // Tap Today tab to return to today
       await tester.tap(find.text('Today'));
       await tester.pumpAndSettle();
 
       expect(container.read(dashboardDateProvider), today);
+      expect(container.read(selectedTimeRangeProvider),
+          DashboardTimeRange.today);
 
       // Tap next day
       await tester.tap(find.byTooltip('Next day'));
@@ -214,6 +233,8 @@ void main() {
 
       final tomorrow = DateTime(today.year, today.month, today.day + 1);
       expect(container.read(dashboardDateProvider), tomorrow);
+      expect(container.read(selectedTimeRangeProvider),
+          DashboardTimeRange.custom);
     });
   });
 }
