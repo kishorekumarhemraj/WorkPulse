@@ -1,6 +1,6 @@
 # Rule: Platform Bridges & Native macOS Integration
 
-WorkPulse targets macOS first while maintaining architectural readiness for Windows and Linux. Native platform interactions must adhere to strict interface isolation.
+WorkPulse targets macOS first, with Windows as a supported platform built and tested in CI, and architectural readiness for Linux. Native platform interactions must adhere to strict interface isolation.
 
 ## 1. Architecture Boundaries
 
@@ -8,7 +8,8 @@ WorkPulse targets macOS first while maintaining architectural readiness for Wind
 lib/core/platform/
 ├── hotkey_service.dart          # Abstract HotKeyService & DesktopHotKeyService
 ├── tray_service.dart            # Abstract TrayService & DesktopTrayService
-├── idle_detector_service.dart   # Abstract IdleDetectorService & MacOSIdleDetectorService
+├── idle_detector_service.dart   # Abstract IdleDetectorService & DesktopIdleDetectorService
+├── system_idle_source.dart      # OS "seconds since last input" via dart:ffi (see docs/adr/001)
 └── window_service.dart          # Abstract WindowService & DesktopWindowService (WindowMode coordinator)
 ```
 
@@ -20,7 +21,8 @@ lib/core/platform/
 
 2. **Graceful Degradation & Fallbacks**:
    - On non-desktop platforms (Web/Mobile/Tests) or unsupported operating systems, platform services must silently no-op or log debug information without crashing (`NoOpWindowService`, `NoOpTrayService`, `NoOpHotKeyService`).
-   - Guard platform code with `defaultTargetPlatform == TargetPlatform.macOS` and `!kIsWeb`.
+   - Guard platform code with a platform check and `!kIsWeb`. Where a platform simply cannot answer (system idle time on Linux), report "unknown" and let the caller stay quiet — never substitute a guess.
+   - Never write a keyboard shortcut hint with a literal `⌘`/`⌥`. Use `ShortcutLabels` (`lib/core/keyboard/`), and register both the `meta:` and `control:` activator for every in-app shortcut.
 
 3. **Window Management & Screen Retriever**:
    - `WindowService` manages two discrete window modes (`WindowMode.dashboard` and `WindowMode.quickCapture`).

@@ -2,11 +2,12 @@
 
 <p align="center">
   <strong>Understand your work. Improve your flow.</strong><br>
-  <em>A privacy-first, offline-first macOS work-awareness and time-tracking application designed for engineers, creators, and focused professionals.</em>
+  <em>A privacy-first, offline-first desktop work-awareness and time-tracking application designed for engineers, creators, and focused professionals.</em>
 </p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/Platform-macOS%20(Apple%20Silicon%20%26%20Intel)-000000?style=for-the-badge&logo=apple&logoColor=white" alt="macOS" />
+  <img src="https://img.shields.io/badge/Platform-Windows%2010%2F11%20(x64)-0078D6?style=for-the-badge&logo=windows&logoColor=white" alt="Windows" />
   <img src="https://img.shields.io/badge/Flutter-Desktop%203.16+-02569B?style=for-the-badge&logo=flutter&logoColor=white" alt="Flutter" />
   <img src="https://img.shields.io/badge/Storage-SQLite%20(100%25%20Offline)-003B57?style=for-the-badge&logo=sqlite&logoColor=white" alt="SQLite" />
   <img src="https://img.shields.io/badge/Privacy-Zero%20Telemetry-2ea44f?style=for-the-badge&logo=shield&logoColor=white" alt="Privacy First" />
@@ -67,8 +68,9 @@ WorkPulse is built from the ground up as a **personal productivity companion**, 
 ---
 
 ### 💤 Smart Inactivity & Idle Management
-- **Automatic Away-State Detection**: Detects when you step away from your Mac during an active tracking session.
-- **Heartbeat Gap Recovery**: If WorkPulse was closed or the Mac went to sleep with a timer running, the next launch reconstructs the unaccounted gap via `ActivityHeartbeatService` and prompts the user before logging.
+- **Automatic Away-State Detection**: While a session is running, WorkPulse asks the operating system how long it has been since *any* keyboard or mouse input — Core Graphics on macOS, `GetLastInputInfo` on Windows. It reads a counter the OS already maintains; it never observes what you type. Idle detection is unavailable on Linux, where WorkPulse stays quiet rather than guessing.
+- **Configurable Threshold**: Choose how long counts as "away" (3–30 minutes, default 10) from the sidebar footer.
+- **Heartbeat Gap Recovery**: If WorkPulse was closed or the machine went to sleep with a timer running, the next launch reconstructs the unaccounted gap via `ActivityHeartbeatService` and prompts before logging it.
 - **User-Controlled Resolution**: When you return, choose how to handle the idle gap:
   - ✅ **Keep as Work**: Attribute the duration to offline discussions, sketching, or reading.
   - ⏸️ **Mark as Idle**: Keep the record tagged as inactive.
@@ -176,36 +178,40 @@ lib/
 
 ## ⌨️ Keyboard Shortcuts
 
+WorkPulse binds both the macOS and the Windows accelerator for every in-app
+shortcut, and the hints shown in the UI are spelled for the platform you are
+on — <kbd>⌘K</kbd> on macOS, <kbd>Ctrl+K</kbd> on Windows. The table below
+writes the macOS form; substitute <kbd>Ctrl</kbd> for <kbd>⌘ Cmd</kbd> and
+<kbd>Alt</kbd> for <kbd>⌥ Option</kbd> on Windows.
+
 | Shortcut | Scope | Action |
 | :--- | :--- | :--- |
-| <kbd>⌥ Option</kbd> + <kbd>Space</kbd> | Global | Toggle Quick Capture floating dialog from anywhere |
+| <kbd>⌥ Option</kbd> + <kbd>Space</kbd> | Global | Toggle Quick Capture floating dialog from anywhere (re-bindable) |
 | <kbd>⌘ Cmd</kbd> + <kbd>K</kbd> | In-App | Open Command Palette (navigate, actions, switch themes) |
 | <kbd>⌘ Cmd</kbd> + <kbd>N</kbd> | In-App | Create new item in context (Task, Project, etc.) |
+| <kbd>⌘ Cmd</kbd> + <kbd>F</kbd> | In-App | Focus the current screen's search field |
 | <kbd>⌘ Cmd</kbd> + <kbd>.</kbd> | In-App | Stop currently running timer |
 | <kbd>⌘ Cmd</kbd> + <kbd>E</kbd> | In-App | Open Export Data dialog (PDF / CSV / JSON) |
-| <kbd>⌘ Cmd</kbd> + <kbd>1</kbd> | In-App | Go to **Dashboard** |
-| <kbd>⌘ Cmd</kbd> + <kbd>2</kbd> | In-App | Go to **Time Log** (Session History) |
-| <kbd>⌘ Cmd</kbd> + <kbd>3</kbd> | In-App | Go to **Work Items** (Tasks) |
-| <kbd>⌘ Cmd</kbd> + <kbd>4</kbd> | In-App | Go to **Time Notes** (Standup Summary) |
-| <kbd>⌘ Cmd</kbd> + <kbd>5</kbd> | In-App | Go to **Projects** |
-| <kbd>⌘ Cmd</kbd> + <kbd>6</kbd> | In-App | Go to **Categories** |
-| <kbd>⌘ Cmd</kbd> + <kbd>7</kbd> | In-App | Go to **Tags** |
-| <kbd>⌘ Cmd</kbd> + <kbd>8</kbd> | In-App | Go to **People** |
-| <kbd>⌘ Cmd</kbd> + <kbd>9</kbd> | In-App | Go to **Custom Attributes** |
-| <kbd>Enter</kbd> | In-App / HUD | Confirm and start/switch tracking session |
-| <kbd>Esc</kbd> | In-App / HUD | Dismiss Quick Capture / close active modal dialog |
-| <kbd>Tab</kbd> / <kbd>Shift + Tab</kbd> | In-App / HUD | Cycle through form inputs and suggestions |
-| <kbd>↑</kbd> / <kbd>↓</kbd> | In-App / HUD | Navigate search suggestions and dropdown options |
+| <kbd>⌘ Cmd</kbd> + <kbd>↩ Enter</kbd> | Dialogs | Submit the open form from anywhere inside it |
+| <kbd>⌘ Cmd</kbd> + <kbd>1</kbd>…<kbd>9</kbd> | In-App | Jump to Dashboard, Time Log, Work Items, Time Notes, Projects, Categories, Tags, People, Attributes |
+| <kbd>Enter</kbd> | In-App / HUD | Confirm and start/switch tracking session; confirm a destructive dialog |
+| <kbd>Esc</kbd> | In-App / HUD | Dismiss Quick Capture, close the active modal, or clear a search field |
+| <kbd>Tab</kbd> / <kbd>Shift + Tab</kbd> | In-App / HUD | Cycle through form inputs, list rows and suggestions |
+| <kbd>↑</kbd> / <kbd>↓</kbd> | In-App / HUD | Navigate search suggestions, command palette and dropdown options |
+| <kbd>Home</kbd> / <kbd>End</kbd> | Command Palette | Jump to the first / last result |
+| <kbd>Space</kbd> | In-App | Open the focused dropdown; activate the focused control |
+
+Keyboard focus is drawn with the palette's focus ring on every list row, card,
+navigation item and input, so the current position is always visible.
 
 ---
 
 ## 🚀 Getting Started
 
 ### Prerequisites
-- **macOS**: 12.0+ (Monterey or newer), supporting both Apple Silicon (M1/M2/M3/M4) and Intel (x86_64).
-- **Flutter SDK**: `>= 3.16.0`
-- **Dart SDK**: `>= 3.2.0`
-- **Xcode**: Command Line Tools installed (`xcode-select --install`)
+- **Flutter SDK**: `>= 3.38.4` (Dart `>= 3.12.0`) — see `pubspec.lock`
+- **macOS**: 12.0+ (Monterey or newer), Apple Silicon (M1/M2/M3/M4) or Intel (x86_64), with Xcode Command Line Tools (`xcode-select --install`)
+- **Windows**: Windows 10 (1809) or newer, x64, with Visual Studio 2022 and the "Desktop development with C++" workload
 
 ### Installation & Setup
 
@@ -225,9 +231,10 @@ lib/
    dart run build_runner build --delete-conflicting-outputs
    ```
 
-4. **Launch WorkPulse on macOS:**
+4. **Launch WorkPulse:**
    ```bash
-   flutter run -d macos
+   flutter run -d macos     # macOS
+   flutter run -d windows   # Windows
    ```
 
 ---
@@ -263,14 +270,17 @@ flutter test test/integration/
 
 ## 📦 Building for Release
 
-To package a standalone, optimized macOS application:
-
 ```bash
-flutter build macos --release
+flutter build macos --release     # -> build/macos/Build/Products/Release/WorkPulse.app
+flutter build windows --release   # -> build/windows/x64/runner/Release/
 ```
 
-The resulting application bundle will be located at:
-`build/macos/Build/Products/Release/workpulse.app`
+On Windows the whole `Release` directory is the distributable: the `.exe`
+alone will not start without the bundled Flutter DLLs and the `data/` folder.
+
+Both platforms are built and tested on every pull request by
+`.github/workflows/ci.yml`, and released together by
+`.github/workflows/release.yml`.
 
 ---
 
@@ -278,6 +288,7 @@ The resulting application bundle will be located at:
 
 - 📖 [Product & Technical Specification](docs/WORKPULSE_SPEC.md) (`docs/WORKPULSE_SPEC.md`)
 - 🏗️ [Architecture & Technical Design](docs/DESIGN.md) (`docs/DESIGN.md`)
+- 🧾 [ADR 001 — System Idle Detection](docs/adr/001-system-idle-detection.md) (`docs/adr/001-system-idle-detection.md`)
 - 🛠️ [Developer Guide](docs/DEVELOPMENT.md) (`docs/DEVELOPMENT.md`)
 - 🤖 [Agent Guidelines](AGENTS.md) (`AGENTS.md`)
 - 📋 [Sprint Roadmap Guide](.agents/skills/workpulse-sprint-guide/SKILL.md) (`.agents/skills/workpulse-sprint-guide/SKILL.md`)

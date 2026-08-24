@@ -59,7 +59,8 @@ class TaskSwitchService {
     // 1. Find the active session
     final activeSession = await _sessionRepository.getActiveSession();
     if (activeSession == null) {
-      throw const ValidationException('No active session found to switch from.');
+      throw const ValidationException(
+          'No active session found to switch from.');
     }
 
     if (activeSession.workItemId != currentWorkItem.id) {
@@ -84,7 +85,8 @@ class TaskSwitchService {
       final updatedNotes = (currentNotes == null || currentNotes.isEmpty)
           ? note
           : '$currentNotes\n---\n$note';
-      await _workItemRepository.update(currentWorkItem.copyWith(notes: updatedNotes));
+      await _workItemRepository
+          .update(currentWorkItem.copyWith(notes: updatedNotes));
     }
 
     // 3. Start new session for target work item starting exactly at effectiveSwitchTime
@@ -92,7 +94,9 @@ class TaskSwitchService {
       targetWorkItem.id,
       categoryId: targetCategoryId ?? targetWorkItem.categoryId,
       tagIds: targetTagIds.isNotEmpty ? targetTagIds : targetWorkItem.tagIds,
-      peopleIds: targetPeopleIds.isNotEmpty ? targetPeopleIds : targetWorkItem.peopleIds,
+      peopleIds: targetPeopleIds.isNotEmpty
+          ? targetPeopleIds
+          : targetWorkItem.peopleIds,
       startTime: effectiveSwitchTime,
     );
 

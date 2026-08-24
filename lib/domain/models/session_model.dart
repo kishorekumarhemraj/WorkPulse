@@ -58,6 +58,15 @@ class Session extends Equatable {
   }
 
   @override
-  List<Object?> get props =>
-      [id, workItemId, categoryId, startTime, endTime, tagIds, peopleIds, notes, createdAt];
+  List<Object?> get props => [
+        id,
+        workItemId,
+        categoryId,
+        startTime,
+        endTime,
+        tagIds,
+        peopleIds,
+        notes,
+        createdAt
+      ];
 }

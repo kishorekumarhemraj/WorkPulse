@@ -276,13 +276,15 @@ void main() {
           equals('WorkPulse_Report_2026-08-20_to_2026-08-25.pdf'));
     });
 
-    test('UserInfoService retrieves non-empty user full name or fallback', () async {
+    test('UserInfoService retrieves non-empty user full name or fallback',
+        () async {
       UserInfoService.setMockUserName(null);
       final name = await UserInfoService.getCurrentUserFullName();
       expect(name, isNotEmpty);
     });
 
-    test('generateReportPdf embeds custom user full name in output document', () async {
+    test('generateReportPdf embeds custom user full name in output document',
+        () async {
       final range = DateRange(
         start: DateTime.utc(2026, 8, 25, 0, 0, 0),
         end: DateTime.utc(2026, 8, 25, 23, 59, 59),

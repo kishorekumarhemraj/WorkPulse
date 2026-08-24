@@ -9,13 +9,12 @@ class MigrationV3 {
     final hasCategoryId =
         sessionInfo.any((column) => column['name'] == 'category_id');
     if (!hasCategoryId) {
-      await db
-          .execute('ALTER TABLE ${Tables.sessions} ADD COLUMN category_id TEXT;');
+      await db.execute(
+          'ALTER TABLE ${Tables.sessions} ADD COLUMN category_id TEXT;');
     }
 
     // 2. Add team to people table
-    final peopleInfo =
-        await db.rawQuery('PRAGMA table_info(${Tables.people})');
+    final peopleInfo = await db.rawQuery('PRAGMA table_info(${Tables.people})');
     final hasTeam = peopleInfo.any((column) => column['name'] == 'team');
     if (!hasTeam) {
       await db.execute('ALTER TABLE ${Tables.people} ADD COLUMN team TEXT;');
