@@ -27,6 +27,7 @@ class _PersonFormDialogState extends ConsumerState<PersonFormDialog> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _nameController;
   late final TextEditingController _emailController;
+  late final TextEditingController _teamController;
   bool _isSubmitting = false;
 
   @override
@@ -34,12 +35,14 @@ class _PersonFormDialogState extends ConsumerState<PersonFormDialog> {
     super.initState();
     _nameController = TextEditingController(text: widget.person?.name ?? '');
     _emailController = TextEditingController(text: widget.person?.email ?? '');
+    _teamController = TextEditingController(text: widget.person?.team ?? '');
   }
 
   @override
   void dispose() {
     _nameController.dispose();
     _emailController.dispose();
+    _teamController.dispose();
     super.dispose();
   }
 
@@ -48,17 +51,28 @@ class _PersonFormDialogState extends ConsumerState<PersonFormDialog> {
 
     setState(() => _isSubmitting = true);
     try {
+      final teamVal = _teamController.text.trim().isEmpty
+          ? null
+          : _teamController.text.trim();
+      final emailVal = _emailController.text.trim().isEmpty
+          ? null
+          : _emailController.text.trim();
+
       if (widget.person == null) {
         final created = await ref.read(peopleProvider.notifier).createPerson(
               name: _nameController.text.trim(),
-              email: _emailController.text.trim(),
+              email: emailVal,
+              team: teamVal,
             );
         if (mounted) Navigator.of(context).pop(created);
       } else {
         final updated = await ref.read(peopleProvider.notifier).updatePerson(
               widget.person!.copyWith(
                 name: _nameController.text.trim(),
-                email: _emailController.text.trim(),
+                email: emailVal,
+                team: teamVal,
+                clearEmail: emailVal == null,
+                clearTeam: teamVal == null,
               ),
             );
         if (mounted) Navigator.of(context).pop(updated);
@@ -125,6 +139,17 @@ class _PersonFormDialogState extends ConsumerState<PersonFormDialog> {
                   }
                   return null;
                 },
+                onFieldSubmitted: (_) => _submit(),
+              ),
+            ),
+            const SizedBox(height: Spacing.lg),
+            DialogField(
+              label: 'Team / Department (Optional)',
+              child: TextFormField(
+                controller: _teamController,
+                decoration: const InputDecoration(
+                  hintText: 'e.g. Frontend, Product, Design, QA',
+                ),
                 onFieldSubmitted: (_) => _submit(),
               ),
             ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:workpulse/core/theme/app_colors.dart';
 import 'package:workpulse/core/theme/design_tokens.dart';
 import 'package:workpulse/core/widgets/hoverable.dart';
@@ -136,10 +137,12 @@ class _AppSelectState<T> extends State<AppSelect<T>> {
               _Caption(text: widget.label!, isRequired: widget.isRequired),
               const SizedBox(height: Spacing.xs + 2),
             ],
-            Align(
-              alignment: Alignment.centerLeft,
-              child: _buildAnchor(context, field),
-            ),
+            widget.maxTriggerWidth.isFinite
+                ? Align(
+                    alignment: Alignment.centerLeft,
+                    child: _buildAnchor(context, field),
+                  )
+                : _buildAnchor(context, field),
             if (field.errorText != null) ...[
               const SizedBox(height: Spacing.xs + 2),
               Text(
@@ -228,51 +231,83 @@ class _AppSelectState<T> extends State<AppSelect<T>> {
 
         return Material(
           color: Colors.transparent,
-          child: InkWell(
+          child: Focus(
             focusNode: _focusNode,
             canRequestFocus: widget.enabled,
-            borderRadius: Radii.mdAll,
-            onTap: widget.enabled
-                ? () => controller.isOpen ? controller.close() : controller.open()
-                : null,
-            child: ConstrainedBox(
-              constraints: BoxConstraints(maxWidth: widget.maxTriggerWidth),
-              child: Container(
-                height: ControlSizes.standard,
-                padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
-                decoration: BoxDecoration(
-                  color: widget.enabled
-                      ? colors.card
-                      : colors.card.withValues(alpha: 0.5),
-                  borderRadius: Radii.mdAll,
-                  border: Border.all(color: borderColor, width: borderWidth),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (selected != null)
-                      _OptionGlyph(option: selected, color: colors.accent),
-                    Flexible(
-                      child: Text(
-                        selected?.label ?? widget.placeholder,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: foreground,
-                          fontWeight:
-                              isEmpty ? FontWeight.w400 : FontWeight.w500,
+            onKeyEvent: (node, event) {
+              if (event is KeyDownEvent) {
+                if (event.logicalKey == LogicalKeyboardKey.arrowDown ||
+                    event.logicalKey == LogicalKeyboardKey.arrowUp ||
+                    event.logicalKey == LogicalKeyboardKey.space) {
+                  if (!controller.isOpen && widget.enabled) {
+                    controller.open();
+                    return KeyEventResult.handled;
+                  }
+                }
+              }
+              return KeyEventResult.ignored;
+            },
+            child: InkWell(
+              canRequestFocus: false,
+              borderRadius: Radii.mdAll,
+              onTap: widget.enabled
+                  ? () => controller.isOpen ? controller.close() : controller.open()
+                  : null,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: widget.maxTriggerWidth),
+                child: Container(
+                  width:
+                      widget.maxTriggerWidth.isFinite ? null : double.infinity,
+                  height: ControlSizes.standard,
+                  padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
+                  decoration: BoxDecoration(
+                    color: widget.enabled
+                        ? colors.card
+                        : colors.card.withValues(alpha: 0.5),
+                    borderRadius: Radii.mdAll,
+                    border: Border.all(color: borderColor, width: borderWidth),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: widget.maxTriggerWidth.isFinite
+                        ? MainAxisAlignment.start
+                        : MainAxisAlignment.spaceBetween,
+                    mainAxisSize: widget.maxTriggerWidth.isFinite
+                        ? MainAxisSize.min
+                        : MainAxisSize.max,
+                    children: [
+                      Flexible(
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (selected != null)
+                              _OptionGlyph(
+                                  option: selected, color: colors.accent),
+                            Flexible(
+                              child: Text(
+                                selected?.label ?? widget.placeholder,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: foreground,
+                                  fontWeight: isEmpty
+                                      ? FontWeight.w400
+                                      : FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                    ),
-                    const SizedBox(width: Spacing.sm),
-                    Icon(
-                      Icons.expand_more,
-                      size: IconSizes.md,
-                      color: widget.enabled
-                          ? colors.textSecondary
-                          : colors.textTertiary,
-                    ),
-                  ],
+                      const SizedBox(width: Spacing.sm),
+                      Icon(
+                        Icons.expand_more,
+                        size: IconSizes.md,
+                        color: widget.enabled
+                            ? colors.textSecondary
+                            : colors.textTertiary,
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),

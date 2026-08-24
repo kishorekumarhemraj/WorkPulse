@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workpulse/data/providers/repository_providers.dart';
 import 'package:workpulse/domain/models/analytics_model.dart';
@@ -32,39 +31,77 @@ class SelectedTimeRangeNotifier extends Notifier<DashboardTimeRange> {
   void setRange(DashboardTimeRange range) => state = range;
 }
 
-final customDateRangeProvider =
-    NotifierProvider<CustomDateRangeNotifier, DateTimeRange?>(
-  CustomDateRangeNotifier.new,
+final dashboardDateProvider =
+    NotifierProvider<DashboardDateNotifier, DateTime>(
+  DashboardDateNotifier.new,
 );
 
-class CustomDateRangeNotifier extends Notifier<DateTimeRange?> {
+class DashboardDateNotifier extends Notifier<DateTime> {
   @override
-  DateTimeRange? build() => null;
+  DateTime build() {
+    final now = DateTime.now();
+    return DateTime(now.year, now.month, now.day);
+  }
 
-  void setCustomRange(DateTimeRange? range) => state = range;
+  void setDate(DateTime date) {
+    state = DateTime(date.year, date.month, date.day);
+  }
+
+  void previousDay() {
+    state = DateTime(state.year, state.month, state.day - 1);
+  }
+
+  void nextDay() {
+    state = DateTime(state.year, state.month, state.day + 1);
+  }
+
+  void goToToday() {
+    final now = DateTime.now();
+    state = DateTime(now.year, now.month, now.day);
+  }
 }
 
 final dashboardDataProvider = FutureProvider<DashboardData>((ref) async {
   final workspace = await ref.watch(currentWorkspaceProvider.future);
   final timeRange = ref.watch(selectedTimeRangeProvider);
-  final customRange = ref.watch(customDateRangeProvider);
+  final selectedDate = ref.watch(dashboardDateProvider);
   final analyticsService = ref.watch(analyticsServiceProvider);
 
-  // Invalidate when active session starts/stops/switches
-  ref.watch(timerProvider.select((s) => s.value?.activeSession?.id));
+  // Invalidate in real-time when running, or when active session starts/stops/switches
+  ref.watch(timerProvider.select((s) => s.value?.isRunning == true
+      ? s.value?.elapsed.inSeconds
+      : s.value?.activeSession?.id));
 
-  // Bridge Flutter DateTimeRange to pure-Dart DateRange for domain layer.
-  // .toUtc() matters here: DateTimeRange is local wall-clock time from the
-  // date picker, but start_time/end_time are always stored as UTC.
-  final flutterCustomRange = customRange != null
-      ? DateRange(
-          start: customRange.start.toUtc(), end: customRange.end.toUtc())
-      : null;
-  final calculatedRange =
-      timeRange.toDateRange(customRange: flutterCustomRange);
+  DateRange calculatedRange;
+  switch (timeRange) {
+    case DashboardTimeRange.today:
+      final now = DateTime.now();
+      final localStart = DateTime(now.year, now.month, now.day, 0, 0, 0);
+      final localEnd = DateTime(now.year, now.month, now.day, 23, 59, 59, 999);
+      calculatedRange =
+          DateRange(start: localStart.toUtc(), end: localEnd.toUtc());
+      break;
+    case DashboardTimeRange.thisWeek:
+      calculatedRange = DashboardTimeRange.thisWeek.toDateRange();
+      break;
+    case DashboardTimeRange.thisMonth:
+      calculatedRange = DashboardTimeRange.thisMonth.toDateRange();
+      break;
+    case DashboardTimeRange.custom:
+      final localStart = DateTime(
+          selectedDate.year, selectedDate.month, selectedDate.day, 0, 0, 0);
+      final localEnd = DateTime(
+          selectedDate.year, selectedDate.month, selectedDate.day, 23, 59, 59, 999);
+      calculatedRange = DateRange(
+        start: localStart.toUtc(),
+        end: localEnd.toUtc(),
+      );
+      break;
+  }
 
   return analyticsService.getDashboardData(
     workspaceId: workspace.id,
     range: calculatedRange,
   );
 });
+

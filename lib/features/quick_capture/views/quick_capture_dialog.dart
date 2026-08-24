@@ -6,6 +6,7 @@ import 'package:workpulse/core/theme/app_colors.dart';
 import 'package:workpulse/core/widgets/keycap.dart';
 import 'package:workpulse/core/theme/color_utils.dart';
 import 'package:workpulse/core/theme/icon_utils.dart';
+import 'package:workpulse/core/widgets/app_select.dart';
 import 'package:workpulse/core/widgets/searchable_multi_select.dart';
 import 'package:workpulse/domain/models/attribute_model.dart';
 import 'package:workpulse/domain/models/category_model.dart';
@@ -48,6 +49,11 @@ class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
     super.initState();
     _searchController = TextEditingController();
     _inputFocusNode = FocusNode();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _inputFocusNode.requestFocus();
+      }
+    });
   }
 
   @override
@@ -158,12 +164,18 @@ class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
             return KeyEventResult.handled;
           }
           if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
-            ref.read(quickCaptureProvider.notifier).selectNext(totalItems);
-            return KeyEventResult.handled;
+            if (node.hasPrimaryFocus || _inputFocusNode.hasFocus) {
+              ref.read(quickCaptureProvider.notifier).selectNext(totalItems);
+              return KeyEventResult.handled;
+            }
+            return KeyEventResult.ignored;
           }
           if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
-            ref.read(quickCaptureProvider.notifier).selectPrevious();
-            return KeyEventResult.handled;
+            if (node.hasPrimaryFocus || _inputFocusNode.hasFocus) {
+              ref.read(quickCaptureProvider.notifier).selectPrevious();
+              return KeyEventResult.handled;
+            }
+            return KeyEventResult.ignored;
           }
           if (event.logicalKey == LogicalKeyboardKey.tab) {
             if (HardwareKeyboard.instance.isShiftPressed) {
@@ -175,8 +187,11 @@ class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
           }
           if (event.logicalKey == LogicalKeyboardKey.enter ||
               event.logicalKey == LogicalKeyboardKey.numpadEnter) {
-            _handleConfirm(matchingTasks, showCreateOption, qcState.query);
-            return KeyEventResult.handled;
+            if (node.hasPrimaryFocus || _inputFocusNode.hasFocus) {
+              _handleConfirm(matchingTasks, showCreateOption, qcState.query);
+              return KeyEventResult.handled;
+            }
+            return KeyEventResult.ignored;
           }
         }
         return KeyEventResult.ignored;
@@ -186,7 +201,7 @@ class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
           color: Colors.transparent,
           child: Container(
             width: 620,
-            constraints: const BoxConstraints(maxHeight: 520),
+            constraints: const BoxConstraints(maxHeight: 640, minHeight: 400),
             decoration: BoxDecoration(
               color: context.colors.surface,
               borderRadius: Radii.xlAll,
@@ -263,7 +278,6 @@ class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
                 // Results List
                 Flexible(
                   child: ListView.builder(
-                    shrinkWrap: true,
                     padding: const EdgeInsets.symmetric(vertical: 6),
                     itemCount: totalItems == 0 ? 1 : totalItems,
                     itemBuilder: (context, index) {
@@ -302,7 +316,6 @@ class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
 
                 // Bottom Configuration Bar
                 Container(
-                  padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
                   decoration: BoxDecoration(
                     color: context.colors.card,
                     borderRadius: const BorderRadius.vertical(
@@ -311,96 +324,75 @@ class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
                         top: BorderSide(
                             color: context.colors.divider, width: 1)),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxHeight: 220),
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          if (projects.isNotEmpty) ...[
-                            Icon(Icons.folder_outlined,
-                                size: 14, color: context.colors.textSecondary),
-                            const SizedBox(width: 6),
-                            DropdownButton<String>(
-                              value: projects.any(
-                                      (p) => p.id == qcState.selectedProjectId)
-                                  ? qcState.selectedProjectId
-                                  : projects.first.id,
-                              dropdownColor: context.colors.surface,
-                              underline: const SizedBox.shrink(),
-                              isDense: true,
-                              style: TextStyle(
-                                  fontSize: 12,
-                                  color: context.colors.textPrimary),
-                              items: projects.map((p) {
-                                final col = ColorUtils.parseHex(p.colorHex);
-                                return DropdownMenuItem(
-                                  value: p.id,
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Container(
-                                          width: 6,
-                                          height: 6,
-                                          decoration: BoxDecoration(
-                                              color: col,
-                                              shape: BoxShape.circle)),
-                                      const SizedBox(width: 6),
-                                      Text(p.name,
-                                          style: TextStyle(
-                                              fontSize: 12,
-                                              color:
-                                                  context.colors.textPrimary)),
-                                    ],
+                          if (projects.isNotEmpty || categories.isNotEmpty) ...[
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                if (projects.isNotEmpty)
+                                  Expanded(
+                                    child: AppSelect<String>(
+                                      label: 'Project',
+                                      value: projects.any(
+                                              (p) => p.id == qcState.selectedProjectId)
+                                          ? qcState.selectedProjectId
+                                          : projects.first.id,
+                                      placeholder: 'Select Project',
+                                      maxTriggerWidth: double.infinity,
+                                      options: projects
+                                          .map((p) => SelectOption(
+                                                value: p.id,
+                                                label: p.name,
+                                                color:
+                                                    ColorUtils.parseHex(p.colorHex),
+                                              ))
+                                          .toList(),
+                                      onChanged: (val) {
+                                        if (val != null) {
+                                          ref
+                                              .read(quickCaptureProvider.notifier)
+                                              .setProject(val);
+                                        }
+                                      },
+                                    ),
                                   ),
-                                );
-                              }).toList(),
-                              onChanged: (val) => ref
-                                  .read(quickCaptureProvider.notifier)
-                                  .setProject(val),
-                            ),
-                            const SizedBox(width: 14),
-                          ],
-                          if (categories.isNotEmpty) ...[
-                            Icon(Icons.category_outlined,
-                                size: 14, color: context.colors.textSecondary),
-                            const SizedBox(width: 6),
-                            DropdownButton<String>(
-                              value: categories.any(
-                                      (c) => c.id == qcState.selectedCategoryId)
-                                  ? qcState.selectedCategoryId
-                                  : categories.first.id,
-                              dropdownColor: context.colors.surface,
-                              underline: const SizedBox.shrink(),
-                              isDense: true,
-                              style: TextStyle(
-                                  fontSize: 12,
-                                  color: context.colors.textPrimary),
-                              items: categories.map((c) {
-                                return DropdownMenuItem(
-                                  value: c.id,
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(IconUtils.getIcon(c.iconName),
-                                          size: 12,
-                                          color: context.colors.accent),
-                                      const SizedBox(width: 6),
-                                      Text(c.name,
-                                          style: TextStyle(
-                                              fontSize: 12,
-                                              color:
-                                                  context.colors.textPrimary)),
-                                    ],
+                                if (projects.isNotEmpty && categories.isNotEmpty)
+                                  const SizedBox(width: 12),
+                                if (categories.isNotEmpty)
+                                  Expanded(
+                                    child: AppSelect<String>(
+                                      label: 'Category',
+                                      value: categories.any(
+                                              (c) => c.id == qcState.selectedCategoryId)
+                                          ? qcState.selectedCategoryId
+                                          : categories.first.id,
+                                      placeholder: 'Select Category',
+                                      maxTriggerWidth: double.infinity,
+                                      options: categories
+                                          .map((c) => SelectOption(
+                                                value: c.id,
+                                                label: c.name,
+                                                icon: IconUtils.getIcon(c.iconName),
+                                              ))
+                                          .toList(),
+                                      onChanged: (val) {
+                                        if (val != null) {
+                                          ref
+                                              .read(quickCaptureProvider.notifier)
+                                              .setCategory(val);
+                                        }
+                                      },
+                                    ),
                                   ),
-                                );
-                              }).toList(),
-                              onChanged: (val) => ref
-                                  .read(quickCaptureProvider.notifier)
-                                  .setCategory(val),
+                              ],
                             ),
                           ],
-                        ],
-                      ),
                       if (tags.isNotEmpty) ...[
                         const SizedBox(height: 10),
                         SearchableMultiSelect(
@@ -452,13 +444,15 @@ class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
                     ],
                   ),
                 ),
-              ],
+              ),
             ),
-          ),
+          ],
         ),
       ),
-    );
-  }
+    ),
+  ),
+);
+}
 
   Widget _buildTaskResultItem(
     WorkItem task,
@@ -480,6 +474,7 @@ class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
             ? context.colors.accent.withValues(alpha: 0.15)
             : Colors.transparent,
         child: InkWell(
+          canRequestFocus: false,
           onTap: () {
             ref.read(quickCaptureProvider.notifier).setSelectedIndex(index);
             _handleConfirm([task], false, '');
@@ -568,6 +563,7 @@ class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
             ? context.colors.success.withValues(alpha: 0.15)
             : Colors.transparent,
         child: InkWell(
+          canRequestFocus: false,
           onTap: () {
             _handleConfirm([], true, query);
           },

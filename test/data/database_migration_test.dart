@@ -7,6 +7,8 @@ import 'package:workpulse/core/database/database_service.dart';
 import 'package:workpulse/data/database/tables.dart';
 import 'package:workpulse/data/migrations/migration_v1.dart';
 import 'package:workpulse/data/migrations/migration_v2.dart';
+import 'package:workpulse/data/migrations/migration_v3.dart';
+import 'package:workpulse/data/migrations/migration_v4.dart';
 
 void main() {
   setUpAll(() {
@@ -26,7 +28,7 @@ void main() {
       await dbService.close();
     });
 
-    test('All 16 SQLite tables are created with proper schema', () async {
+    test('All 17 SQLite tables are created with proper schema', () async {
       final db = dbService.database;
 
       final tables = [
@@ -40,6 +42,7 @@ void main() {
         Tables.workItemPeople,
         Tables.sessions,
         Tables.sessionPeople,
+        Tables.sessionTags,
         Tables.idlePeriods,
         Tables.attributeDefinitions,
         Tables.attributeOptions,
@@ -87,12 +90,22 @@ void main() {
       );
     });
 
-    test('sessions table has a notes column on a fresh database', () async {
+    test('sessions table has a notes and category_id column on a fresh database',
+        () async {
       final db = dbService.database;
       final columns =
           await db.rawQuery('PRAGMA table_info(${Tables.sessions});');
       final columnNames = columns.map((c) => c['name'] as String).toSet();
       expect(columnNames, contains('notes'));
+      expect(columnNames, contains('category_id'));
+    });
+
+    test('people table has a team column on a fresh database', () async {
+      final db = dbService.database;
+      final columns =
+          await db.rawQuery('PRAGMA table_info(${Tables.people});');
+      final columnNames = columns.map((c) => c['name'] as String).toSet();
+      expect(columnNames, contains('team'));
     });
   });
 
@@ -128,6 +141,18 @@ void main() {
           'created_at': now,
           'updated_at': now,
         });
+        await v1Db.insert(Tables.tags, {
+          'id': 'tag-pre-upgrade',
+          'workspace_id': MigrationV1.defaultWorkspaceId,
+          'name': 'Pre-upgrade Tag',
+          'created_at': now,
+        });
+        await v1Db.insert(Tables.people, {
+          'id': 'person-pre-upgrade',
+          'workspace_id': MigrationV1.defaultWorkspaceId,
+          'name': 'Pre-upgrade Person',
+          'created_at': now,
+        });
         await v1Db.insert(Tables.workItems, {
           'id': 'wi-pre-upgrade',
           'workspace_id': MigrationV1.defaultWorkspaceId,
@@ -136,6 +161,14 @@ void main() {
           'category_id': 'cat-pre-upgrade',
           'created_at': now,
           'updated_at': now,
+        });
+        await v1Db.insert(Tables.workItemTags, {
+          'work_item_id': 'wi-pre-upgrade',
+          'tag_id': 'tag-pre-upgrade',
+        });
+        await v1Db.insert(Tables.workItemPeople, {
+          'work_item_id': 'wi-pre-upgrade',
+          'person_id': 'person-pre-upgrade',
         });
         await v1Db.insert(Tables.sessions, {
           'id': 'session-pre-upgrade',
@@ -147,8 +180,8 @@ void main() {
         await v1Db.close();
 
         // 2. Re-open the same file through DatabaseService, which now
-        // targets AppConstants.dbVersion (2) - this exercises the real
-        // onUpgrade(db, 1, 2) path, not onCreate.
+        // targets AppConstants.dbVersion (4) - this exercises the real
+        // onUpgrade(db, 1, 4) path, not onCreate.
         final upgraded = DatabaseService();
         await upgraded.initialize(customPath: dbPath);
         final db = upgraded.database;
@@ -157,6 +190,18 @@ void main() {
             await db.rawQuery('PRAGMA table_info(${Tables.sessions});');
         final columnNames = columns.map((c) => c['name'] as String).toSet();
         expect(columnNames, contains('notes'));
+        expect(columnNames, contains('category_id'));
+
+        final peopleCols =
+            await db.rawQuery('PRAGMA table_info(${Tables.people});');
+        final peopleColNames = peopleCols.map((c) => c['name'] as String).toSet();
+        expect(peopleColNames, contains('team'));
+
+        final sessionTagsTable = await db.rawQuery(
+          "SELECT name FROM sqlite_master WHERE type='table' AND name=?;",
+          [Tables.sessionTags],
+        );
+        expect(sessionTagsTable, isNotEmpty);
 
         final rows = await db.query(
           Tables.sessions,
@@ -165,6 +210,24 @@ void main() {
         );
         expect(rows, hasLength(1));
         expect(rows.first['notes'], isNull);
+        // Backfilled from parent work item:
+        expect(rows.first['category_id'], equals('cat-pre-upgrade'));
+
+        final backfilledTags = await db.query(
+          Tables.sessionTags,
+          where: 'session_id = ?',
+          whereArgs: ['session-pre-upgrade'],
+        );
+        expect(backfilledTags, hasLength(1));
+        expect(backfilledTags.first['tag_id'], equals('tag-pre-upgrade'));
+
+        final backfilledPeople = await db.query(
+          Tables.sessionPeople,
+          where: 'session_id = ?',
+          whereArgs: ['session-pre-upgrade'],
+        );
+        expect(backfilledPeople, hasLength(1));
+        expect(backfilledPeople.first['person_id'], equals('person-pre-upgrade'));
 
         await upgraded.close();
       } finally {
@@ -172,7 +235,8 @@ void main() {
       }
     });
 
-    test('MigrationV2 is idempotent when column already exists', () async {
+    test('MigrationV2, MigrationV3 and MigrationV4 are idempotent',
+        () async {
       final tempDir =
           await Directory.systemTemp.createTemp('workpulse_idempotency_test');
       final dbPath = p.join(tempDir.path, 'idempotent_test.db');
@@ -186,10 +250,14 @@ void main() {
           ),
         );
 
-        // Run MigrationV2 once
+        // Run MigrationV2, MigrationV3, and MigrationV4 once
         await MigrationV2.execute(db);
-        // Run MigrationV2 a second time - should not throw duplicate column error
-        expect(() async => await MigrationV2.execute(db), returnsNormally);
+        await MigrationV3.execute(db);
+        await MigrationV4.execute(db);
+        // Run a second time - should not throw duplicate column/table error
+        await expectLater(MigrationV2.execute(db), completes);
+        await expectLater(MigrationV3.execute(db), completes);
+        await expectLater(MigrationV4.execute(db), completes);
 
         await db.close();
       } finally {

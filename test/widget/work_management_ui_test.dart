@@ -13,6 +13,7 @@ import 'package:workpulse/domain/models/workspace_model.dart';
 import 'package:workpulse/features/categories/providers/categories_provider.dart';
 import 'package:workpulse/features/categories/views/categories_view.dart';
 import 'package:workpulse/features/dashboard/views/dashboard_view.dart';
+import 'package:workpulse/features/notes/views/time_notes_view.dart';
 import 'package:workpulse/features/people/providers/people_provider.dart';
 import 'package:workpulse/features/people/views/people_view.dart';
 import 'package:workpulse/features/projects/providers/projects_provider.dart';
@@ -136,9 +137,16 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byType(DashboardView), findsOneWidget);
 
-      // Cmd+4 jumps to Projects.
+      // Cmd+4 jumps to Time Notes.
       await tester.sendKeyDownEvent(LogicalKeyboardKey.meta);
       await tester.sendKeyEvent(LogicalKeyboardKey.digit4);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.meta);
+      await tester.pumpAndSettle();
+      expect(find.byType(TimeNotesView), findsOneWidget);
+
+      // Cmd+5 jumps to Projects.
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.meta);
+      await tester.sendKeyEvent(LogicalKeyboardKey.digit5);
       await tester.sendKeyUpEvent(LogicalKeyboardKey.meta);
       await tester.pumpAndSettle();
       expect(find.byType(ProjectsView), findsOneWidget);

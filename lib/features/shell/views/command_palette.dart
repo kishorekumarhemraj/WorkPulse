@@ -1,14 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:workpulse/core/platform/pdf_export_handler.dart';
 import 'package:workpulse/core/theme/app_colors.dart';
 import 'package:workpulse/core/theme/design_tokens.dart';
 import 'package:workpulse/core/widgets/keycap.dart';
+import 'package:workpulse/domain/models/analytics_model.dart';
 import 'package:workpulse/domain/models/work_item_model.dart';
+import 'package:workpulse/features/reports/providers/reports_provider.dart';
 import 'package:workpulse/features/shell/models/shell_nav_tab.dart';
 import 'package:workpulse/features/tasks/providers/work_items_provider.dart';
 import 'package:workpulse/features/timer/providers/timer_provider.dart';
 import 'package:workpulse/features/timer/views/task_switch_dialog.dart';
+import 'package:workpulse/features/workspace/providers/workspace_provider.dart';
 
 /// What a palette entry does when chosen.
 enum CommandKind { navigate, action, workItem }
@@ -184,6 +188,15 @@ class _CommandPaletteState extends ConsumerState<CommandPalette> {
           invoke: () async => ref.read(timerProvider.notifier).stopTimer(),
         ),
       PaletteCommand(
+        id: 'action-export-pdf',
+        label: "Export Today's PDF Report",
+        section: 'Actions',
+        icon: Icons.picture_as_pdf_outlined,
+        kind: CommandKind.action,
+        keywords: const ['pdf', 'report', 'today', 'daily', 'manager', 'standup', 'export'],
+        invoke: _exportTodayPdf,
+      ),
+      PaletteCommand(
         id: 'action-export',
         label: 'Export Data',
         section: 'Actions',
@@ -236,6 +249,87 @@ class _CommandPaletteState extends ConsumerState<CommandPalette> {
       );
     } else {
       await ref.read(timerProvider.notifier).startTimer(item);
+    }
+  }
+
+  Future<void> _exportTodayPdf() async {
+    try {
+      final workspace = await ref.read(currentWorkspaceProvider.future);
+      final exportService = ref.read(exportServiceProvider);
+      final todayRange = DashboardTimeRange.today.toDateRange();
+
+      final pdfBytes = await exportService.generatePdf(
+        workspaceId: workspace.id,
+        range: todayRange,
+      );
+
+      final fileName = PdfExportHandler.formatReportFileName(
+        prefix: 'WorkPulse_Daily_Report',
+        startDate: todayRange.start,
+      );
+
+      final result = await PdfExportHandler.savePdf(
+        bytes: pdfBytes,
+        fileName: fileName,
+      );
+
+      await PdfExportHandler.openPdfInPreview(result.filePath);
+
+      if (mounted) {
+        final messenger = ScaffoldMessenger.of(context);
+        messenger.clearSnackBars();
+        messenger.showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle_outline, color: Colors.white, size: 18),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Today\'s report saved: ${result.fileName}',
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: context.colors.success,
+            duration: const Duration(seconds: 4),
+            showCloseIcon: true,
+            closeIconColor: Colors.white,
+            action: SnackBarAction(
+              label: 'Show in Finder',
+              textColor: Colors.white,
+              onPressed: () =>
+                  PdfExportHandler.revealInFinder(result.filePath),
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        final messenger = ScaffoldMessenger.of(context);
+        messenger.clearSnackBars();
+        messenger.showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.error_outline, color: Colors.white, size: 18),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'PDF export failed: $e',
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: context.colors.danger,
+            duration: const Duration(seconds: 5),
+            showCloseIcon: true,
+            closeIconColor: Colors.white,
+          ),
+        );
+      }
     }
   }
 

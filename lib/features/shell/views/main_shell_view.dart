@@ -16,6 +16,7 @@ import 'package:workpulse/features/categories/views/categories_view.dart';
 import 'package:workpulse/features/dashboard/views/dashboard_view.dart';
 import 'package:workpulse/features/idle/providers/idle_provider.dart';
 import 'package:workpulse/features/idle/views/idle_prompt_dialog.dart';
+import 'package:workpulse/features/notes/views/time_notes_view.dart';
 import 'package:workpulse/features/people/views/people_view.dart';
 import 'package:workpulse/features/projects/views/project_form_dialog.dart';
 import 'package:workpulse/features/projects/views/projects_view.dart';
@@ -191,6 +192,7 @@ class _MainShellViewState extends ConsumerState<MainShellView>
         await ProjectFormDialog.show(context);
       case ShellNavTab.dashboard:
       case ShellNavTab.history:
+      case ShellNavTab.notes:
       case ShellNavTab.tasks:
       case ShellNavTab.categories:
       case ShellNavTab.tags:
@@ -405,6 +407,7 @@ class _ShellShortcuts extends StatelessWidget {
     LogicalKeyboardKey.digit6,
     LogicalKeyboardKey.digit7,
     LogicalKeyboardKey.digit8,
+    LogicalKeyboardKey.digit9,
   ];
 
   @override
@@ -517,6 +520,7 @@ class _ContentViewport extends StatelessWidget {
           ShellNavTab.dashboard => const DashboardView(),
           ShellNavTab.history => const SessionHistoryView(),
           ShellNavTab.tasks => const TasksView(),
+          ShellNavTab.notes => const TimeNotesView(),
           ShellNavTab.projects => const ProjectsView(),
           ShellNavTab.categories => const CategoriesView(),
           ShellNavTab.tags => const TagsView(),

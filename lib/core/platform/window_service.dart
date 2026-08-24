@@ -39,6 +39,7 @@ class DesktopWindowService with WindowListener implements WindowService {
   final ValueNotifier<WindowMode> _modeNotifier =
       ValueNotifier<WindowMode>(WindowMode.dashboard);
   Rect? _savedDashboardBounds;
+  bool _wasDashboardVisibleBeforeQuickCapture = false;
 
   @override
   WindowMode get currentMode => _currentMode;
@@ -80,6 +81,19 @@ class DesktopWindowService with WindowListener implements WindowService {
   Future<void> show() async {
     if (!_isInitialized) return;
     try {
+      if (_currentMode == WindowMode.dashboard) {
+        try {
+          final size = await windowManager.getSize();
+          if (size.width < 800 || size.height < 600) {
+            if (_savedDashboardBounds != null) {
+              await windowManager.setBounds(_savedDashboardBounds!);
+            } else {
+              await windowManager.setSize(const Size(1200, 800));
+              await windowManager.center();
+            }
+          }
+        } catch (_) {}
+      }
       await windowManager.show();
       await windowManager.focus();
     } catch (e) {
@@ -164,7 +178,9 @@ class DesktopWindowService with WindowListener implements WindowService {
       }
 
       final isAlreadyVisible = await windowManager.isVisible();
-      if (_currentMode == WindowMode.dashboard && isAlreadyVisible) {
+      _wasDashboardVisibleBeforeQuickCapture =
+          _currentMode == WindowMode.dashboard && isAlreadyVisible;
+      if (_wasDashboardVisibleBeforeQuickCapture) {
         try {
           _savedDashboardBounds = await windowManager.getBounds();
         } catch (_) {}
@@ -183,7 +199,7 @@ class DesktopWindowService with WindowListener implements WindowService {
       await windowManager.setAlwaysOnTop(true);
 
       const targetWidth = 640.0;
-      const targetHeight = 440.0;
+      const targetHeight = 580.0;
       await windowManager.setSize(const Size(targetWidth, targetHeight));
 
       try {
@@ -242,12 +258,22 @@ class DesktopWindowService with WindowListener implements WindowService {
 
     try {
       if (!_isInitialized) return;
-      await windowManager.hide();
-      await windowManager.setAlwaysOnTop(false);
-      await windowManager.setTitleBarStyle(
-        TitleBarStyle.normal,
-        windowButtonVisibility: true,
-      );
+
+      if (_wasDashboardVisibleBeforeQuickCapture) {
+        await openDashboard();
+      } else {
+        await windowManager.hide();
+        await windowManager.setAlwaysOnTop(false);
+        await windowManager.setTitleBarStyle(
+          TitleBarStyle.normal,
+          windowButtonVisibility: true,
+        );
+        if (_savedDashboardBounds != null) {
+          await windowManager.setBounds(_savedDashboardBounds!);
+        } else {
+          await windowManager.setSize(const Size(1200, 800));
+        }
+      }
     } catch (e) {
       debugPrint('DesktopWindowService closeQuickCapture error: $e');
     }

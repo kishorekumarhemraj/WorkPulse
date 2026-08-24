@@ -49,6 +49,8 @@ class TaskSwitchService {
     required WorkItem currentWorkItem,
     required WorkItem targetWorkItem,
     String? currentSessionNotes,
+    String? targetCategoryId,
+    List<String> targetTagIds = const [],
     List<String> targetPeopleIds = const [],
     DateTime? switchTime,
   }) async {
@@ -67,14 +69,17 @@ class TaskSwitchService {
     }
 
     // 2. Stop current active session with end timestamp
-    final stoppedSession = await _timerService.stopSession(
+    var stoppedSession = await _timerService.stopSession(
       activeSession.id,
       endTime: effectiveSwitchTime,
     );
 
-    // If closing notes are provided, update previous work item notes in SQLite
+    // If closing notes are provided, update session notes and previous work item notes in SQLite
     if (currentSessionNotes != null && currentSessionNotes.trim().isNotEmpty) {
       final note = currentSessionNotes.trim();
+      stoppedSession = await _sessionRepository.update(
+        stoppedSession.copyWith(notes: note),
+      );
       final currentNotes = currentWorkItem.notes;
       final updatedNotes = (currentNotes == null || currentNotes.isEmpty)
           ? note
@@ -85,7 +90,9 @@ class TaskSwitchService {
     // 3. Start new session for target work item starting exactly at effectiveSwitchTime
     final newSession = await _timerService.startSession(
       targetWorkItem.id,
-      peopleIds: targetPeopleIds,
+      categoryId: targetCategoryId ?? targetWorkItem.categoryId,
+      tagIds: targetTagIds.isNotEmpty ? targetTagIds : targetWorkItem.tagIds,
+      peopleIds: targetPeopleIds.isNotEmpty ? targetPeopleIds : targetWorkItem.peopleIds,
       startTime: effectiveSwitchTime,
     );
 
