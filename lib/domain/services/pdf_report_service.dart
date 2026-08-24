@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
@@ -81,7 +82,7 @@ class PdfReportService {
       totalIdle += r.idleDuration;
       totalNet += r.netActiveDuration;
 
-      // Project
+      // Project aggregation
       final projName = r.project?.name ?? 'No Project';
       projectTotals[projName] =
           (projectTotals[projName] ?? Duration.zero) + r.netActiveDuration;
@@ -90,12 +91,12 @@ class PdfReportService {
         colorIndex++;
       }
 
-      // Category
-      final catName = r.category?.name ?? 'Uncategorized';
-      categoryTotals[catName] =
-          (categoryTotals[catName] ?? Duration.zero) + r.netActiveDuration;
+      // Category aggregation (accurately tracks each session's category override or task category)
+      final sessionCatName = r.category?.name ?? 'Uncategorized';
+      categoryTotals[sessionCatName] =
+          (categoryTotals[sessionCatName] ?? Duration.zero) + r.netActiveDuration;
 
-      // Task
+      // Task aggregation (collects all session categories for the same work item)
       final taskKey = r.workItem.id;
       final existingTask = taskTotals[taskKey];
       if (existingTask == null) {
@@ -103,7 +104,7 @@ class PdfReportService {
           taskId: r.workItem.id,
           taskName: r.workItem.name,
           projectName: r.project?.name ?? '-',
-          categoryName: r.category?.name ?? '-',
+          categories: {sessionCatName},
           totalDuration: r.netActiveDuration,
           sessionCount: 1,
         );
@@ -112,7 +113,7 @@ class PdfReportService {
           taskId: r.workItem.id,
           taskName: r.workItem.name,
           projectName: r.project?.name ?? existingTask.projectName,
-          categoryName: r.category?.name ?? existingTask.categoryName,
+          categories: {...existingTask.categories, sessionCatName},
           totalDuration: existingTask.totalDuration + r.netActiveDuration,
           sessionCount: existingTask.sessionCount + 1,
         );
@@ -269,7 +270,7 @@ class PdfReportService {
           ),
           pw.Text(
             'Page ${context.pageNumber} of ${context.pagesCount}',
-            style: const pw.TextStyle(
+            style: pw.TextStyle(
               fontSize: 8,
               fontWeight: pw.FontWeight.bold,
               color: _slate500,
@@ -314,7 +315,7 @@ class PdfReportService {
                         isSingleDay
                             ? 'DAILY WORK REPORT'
                             : 'WORK & ACTIVITY REPORT',
-                        style: const pw.TextStyle(
+                        style: pw.TextStyle(
                           fontSize: 8,
                           fontWeight: pw.FontWeight.bold,
                           color: PdfColors.white,
@@ -334,7 +335,7 @@ class PdfReportService {
                 pw.SizedBox(height: 6),
                 pw.Text(
                   dateSubtitle,
-                  style: const pw.TextStyle(
+                  style: pw.TextStyle(
                     fontSize: 17,
                     fontWeight: pw.FontWeight.bold,
                     color: PdfColors.white,
@@ -359,7 +360,7 @@ class PdfReportService {
               children: [
                 pw.Text(
                   'TOTAL TIME',
-                  style: const pw.TextStyle(
+                  style: pw.TextStyle(
                     fontSize: 7.5,
                     fontWeight: pw.FontWeight.bold,
                     color: _slate500,
@@ -368,7 +369,7 @@ class PdfReportService {
                 pw.SizedBox(height: 2),
                 pw.Text(
                   TimerService.formatDuration(totalNet, includeSeconds: false),
-                  style: const pw.TextStyle(
+                  style: pw.TextStyle(
                     fontSize: 18,
                     fontWeight: pw.FontWeight.bold,
                     color: _indigoDark,
@@ -467,7 +468,7 @@ class PdfReportService {
           pw.SizedBox(height: 4),
           pw.Text(
             value,
-            style: const pw.TextStyle(
+            style: pw.TextStyle(
               fontSize: 15,
               fontWeight: pw.FontWeight.bold,
               color: _slate900,
@@ -508,7 +509,7 @@ class PdfReportService {
         children: [
           pw.Text(
             'TIME BREAKDOWN & CATEGORIZATION',
-            style: const pw.TextStyle(
+            style: pw.TextStyle(
               fontSize: 9,
               fontWeight: pw.FontWeight.bold,
               color: _slate800,
@@ -552,7 +553,7 @@ class PdfReportService {
                   children: [
                     pw.Text(
                       'Time by Project',
-                      style: const pw.TextStyle(
+                      style: pw.TextStyle(
                         fontSize: 8,
                         fontWeight: pw.FontWeight.bold,
                         color: _slate700,
@@ -587,7 +588,7 @@ class PdfReportService {
                             ),
                             pw.Text(
                               '${TimerService.formatDuration(entry.value, compact: true)} (${pct.toStringAsFixed(0)}%)',
-                              style: const pw.TextStyle(
+                              style: pw.TextStyle(
                                 fontSize: 7.5,
                                 fontWeight: pw.FontWeight.bold,
                                 color: _slate700,
@@ -609,7 +610,7 @@ class PdfReportService {
                   children: [
                     pw.Text(
                       'Time by Category',
-                      style: const pw.TextStyle(
+                      style: pw.TextStyle(
                         fontSize: 8,
                         fontWeight: pw.FontWeight.bold,
                         color: _slate700,
@@ -643,7 +644,7 @@ class PdfReportService {
                             ),
                             pw.Text(
                               '${TimerService.formatDuration(entry.value, compact: true)} (${pct.toStringAsFixed(0)}%)',
-                              style: const pw.TextStyle(
+                              style: pw.TextStyle(
                                 fontSize: 7.5,
                                 fontWeight: pw.FontWeight.bold,
                                 color: _slate700,
@@ -683,7 +684,7 @@ class PdfReportService {
             padding: const pw.EdgeInsets.fromLTRB(10, 8, 10, 6),
             child: pw.Text(
               'TASKS WORKED ON SUMMARY',
-              style: const pw.TextStyle(
+              style: pw.TextStyle(
                 fontSize: 9,
                 fontWeight: pw.FontWeight.bold,
                 color: _slate800,
@@ -692,7 +693,7 @@ class PdfReportService {
           ),
           pw.TableHelper.fromTextArray(
             border: null,
-            headerStyle: const pw.TextStyle(
+            headerStyle: pw.TextStyle(
               fontSize: 7.5,
               fontWeight: pw.FontWeight.bold,
               color: _slate500,
@@ -712,17 +713,18 @@ class PdfReportService {
             headers: [
               'Task Name',
               'Project',
-              'Category',
+              'Category / Types',
               'Sessions',
               'Total Time',
               'Share',
             ],
             data: tasks.map((t) {
               final pct = (t.totalDuration.inSeconds / totalSeconds) * 100;
+              final catDisplay = t.categories.where((c) => c != '-').join(', ');
               return [
                 t.taskName,
                 t.projectName,
-                t.categoryName,
+                catDisplay.isNotEmpty ? catDisplay : 'Uncategorized',
                 '${t.sessionCount}',
                 TimerService.formatDuration(t.totalDuration,
                     includeSeconds: false),
@@ -760,7 +762,7 @@ class PdfReportService {
               pw.SizedBox(width: 5),
               pw.Text(
                 'STANDUP / PROGRESS HIGHLIGHTS & NOTES',
-                style: const pw.TextStyle(
+                style: pw.TextStyle(
                   fontSize: 8.5,
                   fontWeight: pw.FontWeight.bold,
                   color: _indigoDark,
@@ -779,7 +781,7 @@ class PdfReportService {
                 children: [
                   pw.Text(
                     '- ${n.taskName}$projSuffix (${TimerService.formatDuration(n.duration, compact: true)})',
-                    style: const pw.TextStyle(
+                    style: pw.TextStyle(
                       fontSize: 8,
                       fontWeight: pw.FontWeight.bold,
                       color: _slate900,
@@ -817,7 +819,7 @@ class PdfReportService {
       children: [
         pw.Text(
           'DETAILED SESSION TIMELINE',
-          style: const pw.TextStyle(
+          style: pw.TextStyle(
             fontSize: 9,
             fontWeight: pw.FontWeight.bold,
             color: _slate800,
@@ -831,10 +833,6 @@ class PdfReportService {
           final timeRangeStr = end != null
               ? '${timeFormat.format(start)} - ${timeFormat.format(end)}'
               : '${timeFormat.format(start)} - in progress';
-
-          final projColor = r.project != null
-              ? (projectColorMap[r.project!.name] ?? _indigo)
-              : _slate400;
 
           return pw.Container(
             margin: const pw.EdgeInsets.only(bottom: 8),
@@ -862,7 +860,7 @@ class PdfReportService {
                       ),
                       child: pw.Text(
                         timeRangeStr,
-                        style: const pw.TextStyle(
+                        style: pw.TextStyle(
                           fontSize: 7.5,
                           fontWeight: pw.FontWeight.bold,
                           color: _slate700,
@@ -875,7 +873,7 @@ class PdfReportService {
                     pw.Expanded(
                       child: pw.Text(
                         r.workItem.name,
-                        style: const pw.TextStyle(
+                        style: pw.TextStyle(
                           fontSize: 9,
                           fontWeight: pw.FontWeight.bold,
                           color: _slate900,
@@ -888,7 +886,7 @@ class PdfReportService {
                     pw.Text(
                       TimerService.formatDuration(r.netActiveDuration,
                           includeSeconds: false),
-                      style: const pw.TextStyle(
+                      style: pw.TextStyle(
                         fontSize: 9.5,
                         fontWeight: pw.FontWeight.bold,
                         color: _indigo,
@@ -902,28 +900,48 @@ class PdfReportService {
                 pw.Row(
                   children: [
                     if (r.project != null) ...[
-                      _buildChip(r.project!.name, projColor),
+                      _buildChip(
+                        label: r.project!.name,
+                        bgColor: _indigoLight,
+                        textColor: _indigoDark,
+                        borderColor: _indigo.shade(0.3),
+                      ),
                       pw.SizedBox(width: 4),
                     ],
                     if (r.category != null) ...[
-                      _buildChip(r.category!.name, _slate700),
+                      _buildChip(
+                        label: r.category!.name,
+                        bgColor: _emeraldLight,
+                        textColor: _emerald,
+                        borderColor: _emerald.shade(0.3),
+                      ),
                       pw.SizedBox(width: 4),
                     ],
                     ...r.tags.map((tag) => pw.Padding(
                           padding: const pw.EdgeInsets.only(right: 4),
-                          child: _buildChip('#${tag.name}', _slate500),
+                          child: _buildChip(
+                            label: '#${tag.name}',
+                            bgColor: _slate100,
+                            textColor: _slate700,
+                            borderColor: _slate200,
+                          ),
                         )),
                     if (r.people.isNotEmpty) ...[
                       _buildChip(
-                        'with ${r.people.map((p) => p.name).join(', ')}',
-                        _slate500,
+                        label: 'with ${r.people.map((p) => p.name).join(', ')}',
+                        bgColor: _blueLight,
+                        textColor: _blue,
+                        borderColor: _blue.shade(0.3),
                       ),
                       pw.SizedBox(width: 4),
                     ],
                     if (r.idleDuration.inSeconds > 0)
                       _buildChip(
-                        '-${TimerService.formatDuration(r.idleDuration, compact: true)} idle',
-                        _amber,
+                        label:
+                            '-${TimerService.formatDuration(r.idleDuration, compact: true)} idle',
+                        bgColor: _amberLight,
+                        textColor: _amber,
+                        borderColor: _amber.shade(0.3),
                       ),
                   ],
                 ),
@@ -979,20 +997,25 @@ class PdfReportService {
     );
   }
 
-  static pw.Widget _buildChip(String label, PdfColor color) {
+  static pw.Widget _buildChip({
+    required String label,
+    required PdfColor bgColor,
+    required PdfColor textColor,
+    PdfColor? borderColor,
+  }) {
     return pw.Container(
       padding: const pw.EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
       decoration: pw.BoxDecoration(
-        color: color.shade(0.1),
+        color: bgColor,
         borderRadius: const pw.BorderRadius.all(pw.Radius.circular(3)),
-        border: pw.Border.all(color: color.shade(0.3), width: 0.5),
+        border: pw.Border.all(color: borderColor ?? bgColor, width: 0.5),
       ),
       child: pw.Text(
         label,
         style: pw.TextStyle(
           fontSize: 6.5,
           fontWeight: pw.FontWeight.bold,
-          color: color,
+          color: textColor,
         ),
       ),
     );
@@ -1009,7 +1032,7 @@ class _TaskSummary {
   final String taskId;
   final String taskName;
   final String projectName;
-  final String categoryName;
+  final Set<String> categories;
   final Duration totalDuration;
   final int sessionCount;
 
@@ -1017,7 +1040,7 @@ class _TaskSummary {
     required this.taskId,
     required this.taskName,
     required this.projectName,
-    required this.categoryName,
+    required this.categories,
     required this.totalDuration,
     required this.sessionCount,
   });

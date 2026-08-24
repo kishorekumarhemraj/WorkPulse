@@ -242,7 +242,9 @@ class SessionEditorController {
 
     _ref.invalidate(sessionHistoryProvider);
     _ref.invalidate(sessionsForWorkItemProvider(session.workItemId));
+    _ref.invalidate(sessionAttributeValuesFamilyProvider(sessionId));
   }
+
 
   Future<void> deleteSession(String sessionId) async {
     final sessionRepo = _ref.read(sessionRepositoryProvider);

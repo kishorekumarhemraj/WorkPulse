@@ -89,31 +89,34 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
 
     if (widget.workItem != null) {
       Future.microtask(() async {
-        final existingValues = await ref.read(
-            workItemAttributeValuesFamilyProvider(widget.workItem!.id).future);
-        if (mounted) {
-          setState(() {
-            for (final v in existingValues) {
-              if (v.textValue != null) {
-                _attributeValues[v.attributeDefinitionId] = v.textValue;
+        try {
+          final existingValues = await ref.read(
+              workItemAttributeValuesFamilyProvider(widget.workItem!.id).future);
+          if (mounted) {
+            setState(() {
+              for (final v in existingValues) {
+                if (v.textValue != null) {
+                  _attributeValues[v.attributeDefinitionId] = v.textValue;
+                }
+                if (v.numberValue != null) {
+                  _attributeValues[v.attributeDefinitionId] = v.numberValue;
+                }
+                if (v.booleanValue != null) {
+                  _attributeValues[v.attributeDefinitionId] = v.booleanValue;
+                }
+                if (v.dateValue != null) {
+                  _attributeValues[v.attributeDefinitionId] = v.dateValue;
+                }
+                if (v.optionId != null) {
+                  _attributeValues[v.attributeDefinitionId] = v.optionId;
+                }
               }
-              if (v.numberValue != null) {
-                _attributeValues[v.attributeDefinitionId] = v.numberValue;
-              }
-              if (v.booleanValue != null) {
-                _attributeValues[v.attributeDefinitionId] = v.booleanValue;
-              }
-              if (v.dateValue != null) {
-                _attributeValues[v.attributeDefinitionId] = v.dateValue;
-              }
-              if (v.optionId != null) {
-                _attributeValues[v.attributeDefinitionId] = v.optionId;
-              }
-            }
-          });
-        }
+            });
+          }
+        } catch (_) {}
       });
     }
+
   }
 
   @override

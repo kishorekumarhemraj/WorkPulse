@@ -105,10 +105,26 @@ class _ExportDialogState extends ConsumerState<ExportDialog> {
             _isExporting = false;
           });
 
-          ScaffoldMessenger.of(context).showSnackBar(
+          final messenger = ScaffoldMessenger.of(context);
+          messenger.clearSnackBars();
+          messenger.showSnackBar(
             SnackBar(
-              content: Text('PDF saved to Downloads: ${result.fileName}'),
+              content: Row(
+                children: [
+                  const Icon(Icons.check_circle_outline, color: Colors.white, size: 18),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'PDF saved to Downloads: ${result.fileName}',
+                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
+                    ),
+                  ),
+                ],
+              ),
               backgroundColor: context.colors.success,
+              duration: const Duration(seconds: 4),
+              showCloseIcon: true,
+              closeIconColor: Colors.white,
               action: SnackBarAction(
                 label: 'Show in Finder',
                 textColor: Colors.white,
@@ -136,11 +152,26 @@ class _ExportDialogState extends ConsumerState<ExportDialog> {
             _isExporting = false;
           });
 
-          ScaffoldMessenger.of(context).showSnackBar(
+          final messenger = ScaffoldMessenger.of(context);
+          messenger.clearSnackBars();
+          messenger.showSnackBar(
             SnackBar(
-              content: Text(
-                  '${_format == ExportFormat.csv ? 'CSV' : 'JSON'} exported and copied to clipboard!'),
+              content: Row(
+                children: [
+                  const Icon(Icons.check_circle_outline, color: Colors.white, size: 18),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      '${_format == ExportFormat.csv ? 'CSV' : 'JSON'} exported and copied to clipboard!',
+                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
+                    ),
+                  ),
+                ],
+              ),
               backgroundColor: context.colors.success,
+              duration: const Duration(seconds: 4),
+              showCloseIcon: true,
+              closeIconColor: Colors.white,
             ),
           );
         }
@@ -148,10 +179,27 @@ class _ExportDialogState extends ConsumerState<ExportDialog> {
     } catch (e) {
       if (mounted) {
         setState(() => _isExporting = false);
-        ScaffoldMessenger.of(context).showSnackBar(
+        final messenger = ScaffoldMessenger.of(context);
+        messenger.clearSnackBars();
+        messenger.showSnackBar(
           SnackBar(
-              content: Text('Export failed: $e'),
-              backgroundColor: context.colors.danger),
+            content: Row(
+              children: [
+                const Icon(Icons.error_outline, color: Colors.white, size: 18),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Export failed: $e',
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: context.colors.danger,
+            duration: const Duration(seconds: 5),
+            showCloseIcon: true,
+            closeIconColor: Colors.white,
+          ),
         );
       }
     }

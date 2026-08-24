@@ -135,8 +135,10 @@ class _WorkPulseAppState extends ConsumerState<WorkPulseApp> {
           themeMode: settings?.themeMode ?? ThemeMode.dark,
           color: isQuickCapture ? Colors.transparent : null,
           home: isQuickCapture
-              ? QuickCaptureStandaloneView(
-                  onClose: () => _windowService.closeQuickCapture(),
+              ? ScaffoldMessenger(
+                  child: QuickCaptureStandaloneView(
+                    onClose: () => _windowService.closeQuickCapture(),
+                  ),
                 )
               : const MainShellView(),
         );
