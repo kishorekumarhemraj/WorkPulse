@@ -217,9 +217,12 @@ class AnalyticsService {
 
     for (final s in allSessions) {
       final item = workItemMap[s.workItemId];
-      if (item != null && item.tagIds.isNotEmpty) {
+      final tagIds = s.tagIds.isNotEmpty
+          ? s.tagIds
+          : (item?.tagIds ?? []);
+      if (tagIds.isNotEmpty) {
         final dur = sessionActiveDurations[s.id] ?? Duration.zero;
-        for (final tagId in item.tagIds) {
+        for (final tagId in tagIds) {
           tagDurations[tagId] = (tagDurations[tagId] ?? Duration.zero) + dur;
           tagSessionCounts[tagId] = (tagSessionCounts[tagId] ?? 0) + 1;
         }

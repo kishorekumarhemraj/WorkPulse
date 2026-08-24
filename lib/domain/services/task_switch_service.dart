@@ -50,6 +50,7 @@ class TaskSwitchService {
     required WorkItem targetWorkItem,
     String? currentSessionNotes,
     String? targetCategoryId,
+    List<String> targetTagIds = const [],
     List<String> targetPeopleIds = const [],
     DateTime? switchTime,
   }) async {
@@ -90,7 +91,8 @@ class TaskSwitchService {
     final newSession = await _timerService.startSession(
       targetWorkItem.id,
       categoryId: targetCategoryId ?? targetWorkItem.categoryId,
-      peopleIds: targetPeopleIds,
+      tagIds: targetTagIds.isNotEmpty ? targetTagIds : targetWorkItem.tagIds,
+      peopleIds: targetPeopleIds.isNotEmpty ? targetPeopleIds : targetWorkItem.peopleIds,
       startTime: effectiveSwitchTime,
     );
 

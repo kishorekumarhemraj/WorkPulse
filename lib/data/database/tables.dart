@@ -9,6 +9,7 @@ abstract class Tables {
   static const String workItemPeople = 'work_item_people';
   static const String sessions = 'sessions';
   static const String sessionPeople = 'session_people';
+  static const String sessionTags = 'session_tags';
   static const String idlePeriods = 'idle_periods';
   static const String attributeDefinitions = 'attribute_definitions';
   static const String attributeOptions = 'attribute_options';

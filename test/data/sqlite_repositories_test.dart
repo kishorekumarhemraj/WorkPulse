@@ -276,9 +276,12 @@ void main() {
     test('Session lifecycle, active session recovery, and multi-session resume', () async {
       final now = DateTime.utc(2026, 8, 23, 10, 0);
 
-      // Setup work item
+      // Setup work item, tags & people
       await projectRepo.create(Project(id: 'p-1', workspaceId: wsId, name: 'WorkPulse', createdAt: now, updatedAt: now));
       await categoryRepo.create(Category(id: 'c-1', workspaceId: wsId, name: 'Dev', createdAt: now, updatedAt: now));
+      await tagRepo.create(Tag(id: 'tag-1', workspaceId: wsId, name: 'Urgent', createdAt: now));
+      await tagRepo.create(Tag(id: 'tag-2', workspaceId: wsId, name: 'Backend', createdAt: now));
+      await personRepo.create(Person(id: 'person-1', workspaceId: wsId, name: 'Alice', createdAt: now));
       await workItemRepo.create(WorkItem(
         id: 'wi-1',
         workspaceId: wsId,
@@ -289,26 +292,36 @@ void main() {
         updatedAt: now,
       ));
 
-      // Session 1: completed
+      // Session 1: completed with tags and people
       final session1 = Session(
         id: 'sess-1',
         workItemId: 'wi-1',
+        categoryId: 'c-1',
         startTime: DateTime.utc(2026, 8, 23, 10, 0),
         endTime: DateTime.utc(2026, 8, 23, 11, 15),
+        tagIds: const ['tag-1'],
+        peopleIds: const ['person-1'],
         createdAt: now,
       );
       await sessionRepo.create(session1);
+
+      final fetched1 = await sessionRepo.getById('sess-1');
+      expect(fetched1, isNotNull);
+      expect(fetched1!.tagIds, equals(['tag-1']));
+      expect(fetched1.peopleIds, equals(['person-1']));
+      expect(fetched1.categoryId, equals('c-1'));
 
       // No active session yet
       var active = await sessionRepo.getActiveSession();
       expect(active, isNull);
 
-      // Session 2: active (ongoing)
+      // Session 2: active (ongoing) with tags
       final session2 = Session(
         id: 'sess-2',
         workItemId: 'wi-1',
         startTime: DateTime.utc(2026, 8, 23, 14, 0),
         endTime: null,
+        tagIds: const ['tag-1', 'tag-2'],
         createdAt: DateTime.utc(2026, 8, 23, 14, 0),
       );
       await sessionRepo.create(session2);
@@ -318,11 +331,18 @@ void main() {
       expect(active, isNotNull);
       expect(active!.id, equals('sess-2'));
       expect(active.isActive, isTrue);
+      expect(active.tagIds, equals(['tag-1', 'tag-2']));
 
-      // End active session
-      await sessionRepo.update(session2.copyWith(endTime: DateTime.utc(2026, 8, 23, 15, 0)));
+      // End active session and update tags
+      await sessionRepo.update(session2.copyWith(
+        endTime: DateTime.utc(2026, 8, 23, 15, 0),
+        tagIds: const ['tag-2'],
+      ));
       active = await sessionRepo.getActiveSession();
       expect(active, isNull);
+
+      final updatedSession2 = await sessionRepo.getById('sess-2');
+      expect(updatedSession2!.tagIds, equals(['tag-2']));
 
       // Verify all sessions for work item
       final itemSessions = await sessionRepo.getByWorkItemId('wi-1');

@@ -124,8 +124,9 @@ class ExportService {
       final category = categoryMap[s.categoryId ?? workItem.categoryId];
 
       // Tags
+      final tagIds = s.tagIds.isNotEmpty ? s.tagIds : workItem.tagIds;
       final itemTags =
-          workItem.tagIds.map((tid) => tagMap[tid]).whereType<Tag>().toList();
+          tagIds.map((tid) => tagMap[tid]).whereType<Tag>().toList();
 
       // People
       final peopleIds =
