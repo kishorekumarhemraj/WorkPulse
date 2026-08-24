@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
@@ -14,7 +13,6 @@ import 'package:workpulse/data/repositories/sqlite_session_repository.dart';
 import 'package:workpulse/data/repositories/sqlite_tag_repository.dart';
 import 'package:workpulse/data/repositories/sqlite_work_item_repository.dart';
 import 'package:workpulse/data/repositories/sqlite_workspace_repository.dart';
-import 'package:workpulse/domain/models/analytics_model.dart';
 import 'package:workpulse/domain/models/category_model.dart';
 import 'package:workpulse/domain/models/project_model.dart';
 import 'package:workpulse/domain/models/session_model.dart';
@@ -111,33 +109,28 @@ void main() {
       return container;
     }
 
-    test('selectedTimeRangeProvider defaults to today and switches ranges', () {
+    test('dashboardDateProvider defaults to today and navigates days', () {
       final container = createContainer();
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
 
-      expect(container.read(selectedTimeRangeProvider), DashboardTimeRange.today);
+      expect(container.read(dashboardDateProvider), today);
 
-      container.read(selectedTimeRangeProvider.notifier).setRange(DashboardTimeRange.thisWeek);
-      expect(container.read(selectedTimeRangeProvider), DashboardTimeRange.thisWeek);
+      final specific = DateTime(2026, 5, 15);
+      container.read(dashboardDateProvider.notifier).setDate(specific);
+      expect(container.read(dashboardDateProvider), specific);
 
-      container.read(selectedTimeRangeProvider.notifier).setRange(DashboardTimeRange.thisMonth);
-      expect(container.read(selectedTimeRangeProvider), DashboardTimeRange.thisMonth);
+      container.read(dashboardDateProvider.notifier).previousDay();
+      expect(container.read(dashboardDateProvider), DateTime(2026, 5, 14));
+
+      container.read(dashboardDateProvider.notifier).nextDay();
+      expect(container.read(dashboardDateProvider), DateTime(2026, 5, 15));
+
+      container.read(dashboardDateProvider.notifier).goToToday();
+      expect(container.read(dashboardDateProvider), today);
     });
 
-    test('customDateRangeProvider sets and clears custom range', () {
-      final container = createContainer();
-
-      expect(container.read(customDateRangeProvider), isNull);
-
-      final custom = DateTimeRange(
-        start: DateTime.utc(2026, 8, 1),
-        end: DateTime.utc(2026, 8, 15),
-      );
-
-      container.read(customDateRangeProvider.notifier).setCustomRange(custom);
-      expect(container.read(customDateRangeProvider), custom);
-    });
-
-    test('dashboardDataProvider loads DashboardData for active workspace', () async {
+    test('dashboardDataProvider loads DashboardData for active workspace on selected date', () async {
       final container = createContainer();
       await container.read(currentWorkspaceProvider.future);
 
