@@ -28,6 +28,36 @@ class DynamicAttributeFields extends ConsumerWidget {
         definitions.where((d) => d.enabled && !d.isArchived).toList();
     if (activeDefs.isEmpty) return const SizedBox.shrink();
 
+    final rows = <Widget>[];
+    for (var i = 0; i < activeDefs.length; i += 2) {
+      final def1 = activeDefs[i];
+      final hasSecond = i + 1 < activeDefs.length;
+      final def2 = hasSecond ? activeDefs[i + 1] : null;
+
+      rows.add(
+        Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: _buildFieldForDefinition(context, ref, def1),
+              ),
+              if (def2 != null) ...[
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildFieldForDefinition(context, ref, def2),
+                ),
+              ] else ...[
+                const SizedBox(width: 12),
+                const Expanded(child: SizedBox.shrink()),
+              ],
+            ],
+          ),
+        ),
+      );
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -39,12 +69,7 @@ class DynamicAttributeFields extends ConsumerWidget {
               color: context.colors.textSecondary),
         ),
         const SizedBox(height: 10),
-        ...activeDefs.map((def) {
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: _buildFieldForDefinition(context, ref, def),
-          );
-        }),
+        ...rows,
       ],
     );
   }
@@ -148,6 +173,7 @@ class DynamicAttributeFields extends ConsumerWidget {
               label: def.name,
               isRequired: def.required,
               placeholder: 'Select ${def.name}',
+              maxTriggerWidth: double.infinity,
               value: options.any((o) => o.id == currentValue)
                   ? currentValue as String?
                   : null,

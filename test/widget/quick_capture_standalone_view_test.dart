@@ -92,8 +92,13 @@ class _FakeTimerNotifier extends TimerNotifier {
       const TimerState(status: TimerStatus.idle);
 
   @override
-  Future<void> startTimer(WorkItem workItem,
-      {List<String> peopleIds = const []}) async {
+  Future<void> startTimer(
+    WorkItem workItem, {
+    String? categoryId,
+    List<String> tagIds = const [],
+    List<String> peopleIds = const [],
+    String? notes,
+  }) async {
     startedTask = workItem;
     state = AsyncData(
       TimerState(
@@ -102,6 +107,7 @@ class _FakeTimerNotifier extends TimerNotifier {
         activeSession: Session(
           id: 'sess-new',
           workItemId: workItem.id,
+          categoryId: categoryId ?? workItem.categoryId,
           startTime: DateTime.now().toUtc(),
           createdAt: DateTime.now().toUtc(),
         ),
@@ -263,6 +269,19 @@ void main() {
       expect(timerNotifier.startedTask, isNotNull);
       expect(timerNotifier.startedTask!.name, 'Fix Focus Bug');
       expect(closed, isTrue);
+    });
+
+    testWidgets('renders 2-column dropdowns with Project and Category labels',
+        (tester) async {
+      final timerNotifier = _FakeTimerNotifier();
+      await tester
+          .pumpWidget(createStandaloneApp(timerNotifier: timerNotifier));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Project'), findsOneWidget);
+      expect(find.text('Category'), findsOneWidget);
+      expect(find.text('App Core'), findsWidgets);
+      expect(find.text('Engineering'), findsWidgets);
     });
 
     testWidgets(

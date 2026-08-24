@@ -5,13 +5,18 @@ import 'package:workpulse/core/theme/app_colors.dart';
 import 'package:workpulse/core/theme/app_typography.dart';
 import 'package:workpulse/core/theme/design_tokens.dart';
 import 'package:workpulse/core/widgets/app_dialog.dart';
+import 'package:workpulse/core/theme/color_utils.dart';
+import 'package:workpulse/core/theme/icon_utils.dart';
+import 'package:workpulse/core/widgets/app_select.dart';
 import 'package:workpulse/core/widgets/searchable_multi_select.dart';
 import 'package:workpulse/domain/models/attribute_model.dart';
 import 'package:workpulse/domain/services/export_service.dart';
 import 'package:workpulse/features/attributes/providers/attribute_definitions_provider.dart';
 import 'package:workpulse/features/attributes/widgets/dynamic_attribute_fields.dart';
+import 'package:workpulse/features/categories/providers/categories_provider.dart';
 import 'package:workpulse/features/people/providers/people_provider.dart';
 import 'package:workpulse/features/reports/providers/reports_provider.dart';
+import 'package:workpulse/features/tags/providers/tags_provider.dart';
 
 class SessionEditDialog extends ConsumerStatefulWidget {
   final SessionExportRecord record;
@@ -34,7 +39,9 @@ class _SessionEditDialogState extends ConsumerState<SessionEditDialog> {
   final _formKey = GlobalKey<FormState>();
   late DateTime _startTime;
   late DateTime? _endTime;
+  late String? _selectedCategoryId;
   late final TextEditingController _notesController;
+  late List<String> _selectedTagIds;
   late List<String> _selectedPeopleIds;
   final Map<String, dynamic> _sessionAttributeValues = {};
   bool _isSubmitting = false;
@@ -45,9 +52,41 @@ class _SessionEditDialogState extends ConsumerState<SessionEditDialog> {
     final s = widget.record.session;
     _startTime = s.startTime.toLocal();
     _endTime = s.endTime?.toLocal();
+    _selectedCategoryId = s.categoryId ?? widget.record.workItem.categoryId;
     _notesController = TextEditingController(text: s.notes ?? '');
-    _selectedPeopleIds = List.from(s.peopleIds);
+    _selectedTagIds = List.from(s.tagIds.isNotEmpty ? s.tagIds : widget.record.workItem.tagIds);
+    _selectedPeopleIds = List.from(s.peopleIds.isNotEmpty ? s.peopleIds : widget.record.workItem.peopleIds);
+
+    Future.microtask(() async {
+      try {
+        final existingValues = await ref.read(
+            sessionAttributeValuesFamilyProvider(widget.record.session.id).future);
+        if (mounted) {
+          setState(() {
+            for (final v in existingValues) {
+              if (v.textValue != null) {
+                _sessionAttributeValues[v.attributeDefinitionId] = v.textValue;
+              }
+              if (v.numberValue != null) {
+                _sessionAttributeValues[v.attributeDefinitionId] = v.numberValue;
+              }
+              if (v.booleanValue != null) {
+                _sessionAttributeValues[v.attributeDefinitionId] = v.booleanValue;
+              }
+              if (v.dateValue != null) {
+                _sessionAttributeValues[v.attributeDefinitionId] = v.dateValue;
+              }
+              if (v.optionId != null) {
+                _sessionAttributeValues[v.attributeDefinitionId] = v.optionId;
+              }
+            }
+          });
+        }
+      } catch (_) {}
+    });
+
   }
+
 
   @override
   void dispose() {
@@ -117,8 +156,10 @@ class _SessionEditDialogState extends ConsumerState<SessionEditDialog> {
             sessionId: widget.record.session.id,
             startTime: _startTime.toUtc(),
             endTime: _endTime?.toUtc(),
+            categoryId: _selectedCategoryId,
             notes: trimmedNotes.isEmpty ? null : trimmedNotes,
             clearNotes: trimmedNotes.isEmpty,
+            tagIds: _selectedTagIds,
             peopleIds: _selectedPeopleIds,
             attributeValues: _sessionAttributeValues,
           );
@@ -148,6 +189,8 @@ class _SessionEditDialogState extends ConsumerState<SessionEditDialog> {
         .where((d) =>
             d.scope == AttributeScope.session && d.enabled && !d.isArchived)
         .toList();
+    final categoriesAsync = ref.watch(categoriesProvider);
+    final tagsAsync = ref.watch(tagsProvider);
     final peopleAsync = ref.watch(peopleProvider);
     final colors = context.colors;
     final dateFormat = DateFormat('yyyy-MM-dd HH:mm');
@@ -203,6 +246,65 @@ class _SessionEditDialogState extends ConsumerState<SessionEditDialog> {
                     : 'In Progress',
                 valueColor: _endTime == null ? colors.success : null,
                 onTap: _pickEndTime,
+              ),
+            ),
+            const SizedBox(height: Spacing.lg),
+            DialogField(
+              label: 'Category',
+              child: categoriesAsync.when(
+                loading: () => const AppSelectPlaceholder(
+                  label: 'Loading categories…',
+                ),
+                error: (_, __) => const SizedBox.shrink(),
+                data: (categories) {
+                  return AppSelect<String?>(
+                    placeholder: 'No Category',
+                    value: _selectedCategoryId,
+                    maxTriggerWidth: double.infinity,
+                    options: [
+                      const SelectOption<String?>(
+                        value: null,
+                        label: 'No Category',
+                        icon: Icons.label_off_outlined,
+                      ),
+                      ...categories.map(
+                        (c) => SelectOption<String?>(
+                          value: c.id,
+                          label: c.name,
+                          icon: IconUtils.getIcon(c.iconName),
+                        ),
+                      ),
+                    ],
+                    onChanged: (catId) {
+                      setState(() => _selectedCategoryId = catId);
+                    },
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: Spacing.lg),
+            DialogField(
+              label: 'Tags',
+              child: tagsAsync.when(
+                loading: () => const SizedBox.shrink(),
+                error: (_, __) => const SizedBox.shrink(),
+                data: (tags) {
+                  return SearchableMultiSelect(
+                    allItems: tags
+                        .map((tag) => SearchableMultiSelectItem(
+                              id: tag.id,
+                              label: '#${tag.name}',
+                              icon: Icons.label_outline,
+                              color: ColorUtils.parseHex(tag.colorHex),
+                            ))
+                        .toList(),
+                    selectedIds: _selectedTagIds,
+                    onChanged: (ids) =>
+                        setState(() => _selectedTagIds = ids),
+                    hintText: 'Search tags…',
+                    emptyStateText: 'No tags added yet',
+                  );
+                },
               ),
             ),
             const SizedBox(height: Spacing.lg),

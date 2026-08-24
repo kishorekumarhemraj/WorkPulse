@@ -81,7 +81,13 @@ class _FakeTimerNotifier extends TimerNotifier {
   }
 
   @override
-  Future<void> confirmSwitch({WorkItem? targetItem, String? notes}) async {
+  Future<void> confirmSwitch({
+    WorkItem? targetItem,
+    String? notes,
+    String? targetCategoryId,
+    List<String>? targetTagIds,
+    List<String>? targetPeopleIds,
+  }) async {
     confirmSwitchCalled = true;
     switchNotes = notes;
   }

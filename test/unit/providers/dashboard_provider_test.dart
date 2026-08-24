@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
@@ -82,9 +81,9 @@ void main() {
         Session(
           id: 'sess-1',
           workItemId: task.id,
-          startTime: now.subtract(const Duration(minutes: 50)),
+          startTime: now.subtract(const Duration(minutes: 1)),
           endTime: now,
-          createdAt: now.subtract(const Duration(minutes: 50)),
+          createdAt: now.subtract(const Duration(minutes: 1)),
         ),
       );
     });
@@ -114,30 +113,44 @@ void main() {
     test('selectedTimeRangeProvider defaults to today and switches ranges', () {
       final container = createContainer();
 
-      expect(container.read(selectedTimeRangeProvider), DashboardTimeRange.today);
+      expect(
+          container.read(selectedTimeRangeProvider), DashboardTimeRange.today);
 
-      container.read(selectedTimeRangeProvider.notifier).setRange(DashboardTimeRange.thisWeek);
-      expect(container.read(selectedTimeRangeProvider), DashboardTimeRange.thisWeek);
+      container
+          .read(selectedTimeRangeProvider.notifier)
+          .setRange(DashboardTimeRange.thisWeek);
+      expect(container.read(selectedTimeRangeProvider),
+          DashboardTimeRange.thisWeek);
 
-      container.read(selectedTimeRangeProvider.notifier).setRange(DashboardTimeRange.thisMonth);
-      expect(container.read(selectedTimeRangeProvider), DashboardTimeRange.thisMonth);
+      container
+          .read(selectedTimeRangeProvider.notifier)
+          .setRange(DashboardTimeRange.thisMonth);
+      expect(container.read(selectedTimeRangeProvider),
+          DashboardTimeRange.thisMonth);
     });
 
-    test('customDateRangeProvider sets and clears custom range', () {
+    test('dashboardDateProvider defaults to today and navigates days', () {
       final container = createContainer();
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
 
-      expect(container.read(customDateRangeProvider), isNull);
+      expect(container.read(dashboardDateProvider), today);
 
-      final custom = DateTimeRange(
-        start: DateTime.utc(2026, 8, 1),
-        end: DateTime.utc(2026, 8, 15),
-      );
+      final specific = DateTime(2026, 5, 15);
+      container.read(dashboardDateProvider.notifier).setDate(specific);
+      expect(container.read(dashboardDateProvider), specific);
 
-      container.read(customDateRangeProvider.notifier).setCustomRange(custom);
-      expect(container.read(customDateRangeProvider), custom);
+      container.read(dashboardDateProvider.notifier).previousDay();
+      expect(container.read(dashboardDateProvider), DateTime(2026, 5, 14));
+
+      container.read(dashboardDateProvider.notifier).nextDay();
+      expect(container.read(dashboardDateProvider), DateTime(2026, 5, 15));
+
+      container.read(dashboardDateProvider.notifier).goToToday();
+      expect(container.read(dashboardDateProvider), today);
     });
 
-    test('dashboardDataProvider loads DashboardData for active workspace', () async {
+    test('dashboardDataProvider loads DashboardData for active workspace on selected date', () async {
       final container = createContainer();
       await container.read(currentWorkspaceProvider.future);
 
@@ -145,7 +158,7 @@ void main() {
 
       expect(data.summary.sessionCount, 1);
       expect(data.summary.taskCount, 1);
-      expect(data.summary.totalTrackedDuration, const Duration(minutes: 50));
+      expect(data.summary.totalTrackedDuration, const Duration(minutes: 1));
       expect(data.projectBreakdown.length, 1);
       expect(data.projectBreakdown.first.name, 'Engine Dev');
     });

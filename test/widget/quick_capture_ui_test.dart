@@ -90,8 +90,13 @@ class _FakeTimerNotifier extends TimerNotifier {
       const TimerState(status: TimerStatus.idle);
 
   @override
-  Future<void> startTimer(WorkItem workItem,
-      {List<String> peopleIds = const []}) async {
+  Future<void> startTimer(
+    WorkItem workItem, {
+    String? categoryId,
+    List<String> tagIds = const [],
+    List<String> peopleIds = const [],
+    String? notes,
+  }) async {
     startedTask = workItem;
     state = AsyncData(
       TimerState(
@@ -100,6 +105,7 @@ class _FakeTimerNotifier extends TimerNotifier {
         activeSession: Session(
           id: 'sess-new',
           workItemId: workItem.id,
+          categoryId: categoryId ?? workItem.categoryId,
           startTime: DateTime.now().toUtc(),
           createdAt: DateTime.now().toUtc(),
         ),
@@ -244,6 +250,38 @@ void main() {
 
       expect(container.fakeTimer.startedTask, isNotNull);
       expect(container.fakeTimer.startedTask!.name, 'Brand New Task');
+    });
+
+    testWidgets('renders 2-column dropdowns with Project and Category labels',
+        (tester) async {
+      final container = FakeTimerProviderContainer();
+      await tester.pumpWidget(createTestApp(container));
+      await tester.pumpAndSettle();
+
+      // Check labels exist
+      expect(find.text('Project'), findsOneWidget);
+      expect(find.text('Category'), findsOneWidget);
+
+      // Check values displayed in triggers
+      expect(find.text('App Core'), findsWidgets);
+      expect(find.text('Engineering'), findsWidgets);
+    });
+
+    testWidgets('keyboard tab and arrow key opens dropdown', (tester) async {
+      final container = FakeTimerProviderContainer();
+      await tester.pumpWidget(createTestApp(container));
+      await tester.pumpAndSettle();
+
+      // Tab from search field to first dropdown (Project)
+      await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+      await tester.pumpAndSettle();
+
+      // Press ArrowDown to open the dropdown menu
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pumpAndSettle();
+
+      // Menu should be open with menu item
+      expect(find.byType(MenuItemButton), findsWidgets);
     });
   });
 }

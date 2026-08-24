@@ -26,7 +26,8 @@ class SqliteSessionRepository implements SessionRepository {
 
     final sessionMap = results.first;
     final peopleIds = await _getPeopleIds(id);
-    return _fromMap(sessionMap, peopleIds);
+    final tagIds = await _getTagIds(id);
+    return _fromMap(sessionMap, peopleIds, tagIds);
   }
 
   @override
@@ -42,7 +43,8 @@ class SqliteSessionRepository implements SessionRepository {
     for (final map in results) {
       final id = map['id'] as String;
       final peopleIds = await _getPeopleIds(id);
-      sessions.add(_fromMap(map, peopleIds));
+      final tagIds = await _getTagIds(id);
+      sessions.add(_fromMap(map, peopleIds, tagIds));
     }
     return sessions;
   }
@@ -63,7 +65,8 @@ class SqliteSessionRepository implements SessionRepository {
     for (final map in results) {
       final id = map['id'] as String;
       final peopleIds = await _getPeopleIds(id);
-      sessions.add(_fromMap(map, peopleIds));
+      final tagIds = await _getTagIds(id);
+      sessions.add(_fromMap(map, peopleIds, tagIds));
     }
     return sessions;
   }
@@ -82,7 +85,8 @@ class SqliteSessionRepository implements SessionRepository {
     final sessionMap = results.first;
     final id = sessionMap['id'] as String;
     final peopleIds = await _getPeopleIds(id);
-    return _fromMap(sessionMap, peopleIds);
+    final tagIds = await _getTagIds(id);
+    return _fromMap(sessionMap, peopleIds, tagIds);
   }
 
   @override
@@ -99,6 +103,13 @@ class SqliteSessionRepository implements SessionRepository {
           await txn.insert(Tables.sessionPeople, {
             'session_id': session.id,
             'person_id': personId,
+          });
+        }
+
+        for (final tagId in session.tagIds) {
+          await txn.insert(Tables.sessionTags, {
+            'session_id': session.id,
+            'tag_id': tagId,
           });
         }
       });
@@ -135,6 +146,19 @@ class SqliteSessionRepository implements SessionRepository {
             'person_id': personId,
           });
         }
+
+        // Sync tags
+        await txn.delete(
+          Tables.sessionTags,
+          where: 'session_id = ?',
+          whereArgs: [session.id],
+        );
+        for (final tagId in session.tagIds) {
+          await txn.insert(Tables.sessionTags, {
+            'session_id': session.id,
+            'tag_id': tagId,
+          });
+        }
       });
       return session;
     } on NotFoundException {
@@ -167,10 +191,21 @@ class SqliteSessionRepository implements SessionRepository {
     return results.map((row) => row['person_id'] as String).toList();
   }
 
+  Future<List<String>> _getTagIds(String sessionId) async {
+    final results = await _db.query(
+      Tables.sessionTags,
+      columns: ['tag_id'],
+      where: 'session_id = ?',
+      whereArgs: [sessionId],
+    );
+    return results.map((row) => row['tag_id'] as String).toList();
+  }
+
   Map<String, dynamic> _toMap(Session session) {
     return {
       'id': session.id,
       'work_item_id': session.workItemId,
+      'category_id': session.categoryId,
       'start_time': session.startTime.toStorageString(),
       'end_time': session.endTime?.toStorageString(),
       'notes': session.notes,
@@ -178,14 +213,20 @@ class SqliteSessionRepository implements SessionRepository {
     };
   }
 
-  Session _fromMap(Map<String, dynamic> map, List<String> peopleIds) {
+  Session _fromMap(
+    Map<String, dynamic> map,
+    List<String> peopleIds,
+    List<String> tagIds,
+  ) {
     return Session(
       id: map['id'] as String,
       workItemId: map['work_item_id'] as String,
+      categoryId: map['category_id'] as String?,
       startTime: DateTime.parse(map['start_time'] as String),
       endTime: map['end_time'] != null
           ? DateTime.parse(map['end_time'] as String)
           : null,
+      tagIds: tagIds,
       peopleIds: peopleIds,
       notes: map['notes'] as String?,
       createdAt: DateTime.parse(map['created_at'] as String),

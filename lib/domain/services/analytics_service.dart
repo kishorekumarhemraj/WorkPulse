@@ -107,12 +107,16 @@ class AnalyticsService {
     final uniqueWorkItemIds =
         allSessions.map((Session s) => s.workItemId).toSet();
 
+    final activeTaskCount = uniqueWorkItemIds
+        .where((id) => workItemMap[id]?.isArchived == false)
+        .length;
+
     final summary = AnalyticsSummary(
       totalTrackedDuration: totalTracked,
       totalActiveDuration: totalActive,
       totalIdleDuration: totalIdle,
       sessionCount: allSessions.length,
-      taskCount: uniqueWorkItemIds.length,
+      taskCount: activeTaskCount,
     );
 
     final baseActiveSeconds =
@@ -154,8 +158,8 @@ class AnalyticsService {
 
     for (final s in allSessions) {
       final workItem = workItemMap[s.workItemId];
-      if (workItem != null) {
-        final catId = workItem.categoryId;
+      final catId = s.categoryId ?? workItem?.categoryId;
+      if (catId != null) {
         final dur = sessionActiveDurations[s.id] ?? Duration.zero;
         categoryDurations[catId] =
             (categoryDurations[catId] ?? Duration.zero) + dur;
@@ -213,9 +217,12 @@ class AnalyticsService {
 
     for (final s in allSessions) {
       final item = workItemMap[s.workItemId];
-      if (item != null && item.tagIds.isNotEmpty) {
+      final tagIds = s.tagIds.isNotEmpty
+          ? s.tagIds
+          : (item?.tagIds ?? []);
+      if (tagIds.isNotEmpty) {
         final dur = sessionActiveDurations[s.id] ?? Duration.zero;
-        for (final tagId in item.tagIds) {
+        for (final tagId in tagIds) {
           tagDurations[tagId] = (tagDurations[tagId] ?? Duration.zero) + dur;
           tagSessionCounts[tagId] = (tagSessionCounts[tagId] ?? 0) + 1;
         }

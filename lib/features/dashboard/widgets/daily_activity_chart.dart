@@ -16,12 +16,16 @@ class DailyActivityChart extends StatefulWidget {
   final List<DailyActivityItem> activities;
   final List<HourlyActivityItem> hourlyActivities;
   final bool isHourly;
+  final String? title;
+  final bool isToday;
 
   const DailyActivityChart({
     super.key,
     this.activities = const [],
     this.hourlyActivities = const [],
     this.isHourly = false,
+    this.title,
+    this.isToday = true,
   });
 
   @override
@@ -59,9 +63,11 @@ class _DailyActivityChartState extends State<DailyActivityChart> {
   Widget build(BuildContext context) {
     if (widget.isHourly) {
       if (widget.hourlyActivities.isEmpty) return const SizedBox.shrink();
+      final chartTitle = widget.title ??
+          (widget.isToday ? "Today's Hourly Breakdown" : 'Hourly Breakdown');
       return _buildChart(
         context,
-        title: "Today's Hourly Breakdown",
+        title: chartTitle,
         icon: Icons.access_time,
         bars: [
           for (final h in widget.hourlyActivities)
@@ -71,7 +77,7 @@ class _DailyActivityChartState extends State<DailyActivityChart> {
               active: h.activeDuration,
               idle: h.idleDuration,
               sessionCount: h.sessionCount,
-              isNow: h.hour == DateTime.now().hour,
+              isNow: widget.isToday && h.hour == DateTime.now().hour,
               showLabel: h.hour % 3 == 0,
             ),
         ],

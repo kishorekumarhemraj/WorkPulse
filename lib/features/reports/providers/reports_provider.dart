@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import 'package:workpulse/data/providers/repository_providers.dart';
@@ -6,6 +5,7 @@ import 'package:workpulse/domain/models/analytics_model.dart';
 import 'package:workpulse/domain/models/attribute_model.dart';
 import 'package:workpulse/domain/models/date_range.dart';
 import 'package:workpulse/domain/services/export_service.dart';
+import 'package:workpulse/domain/services/pdf_report_service.dart';
 import 'package:workpulse/features/attributes/providers/attribute_definitions_provider.dart';
 import 'package:workpulse/features/tasks/providers/task_sessions_provider.dart';
 import 'package:workpulse/features/tasks/providers/work_items_provider.dart';
@@ -13,6 +13,10 @@ import 'package:workpulse/features/timer/providers/timer_provider.dart';
 import 'package:workpulse/features/workspace/providers/workspace_provider.dart';
 
 const _uuid = Uuid();
+
+final pdfReportServiceProvider = Provider<PdfReportService>((ref) {
+  return PdfReportService();
+});
 
 final exportServiceProvider = Provider<ExportService>((ref) {
   return ExportService(
@@ -25,6 +29,7 @@ final exportServiceProvider = Provider<ExportService>((ref) {
     personRepository: ref.watch(personRepositoryProvider),
     attributeRepository: ref.watch(attributeRepositoryProvider),
     idlePeriodRepository: ref.watch(idlePeriodRepositoryProvider),
+    pdfReportService: ref.watch(pdfReportServiceProvider),
   );
 });
 
@@ -40,36 +45,72 @@ class ReportsTimeRangeNotifier extends Notifier<DashboardTimeRange> {
   void setRange(DashboardTimeRange range) => state = range;
 }
 
-final reportsCustomRangeProvider =
-    NotifierProvider<ReportsCustomRangeNotifier, DateTimeRange?>(
-  ReportsCustomRangeNotifier.new,
+final reportsDateProvider =
+    NotifierProvider<ReportsDateNotifier, DateTime>(
+  ReportsDateNotifier.new,
 );
 
-class ReportsCustomRangeNotifier extends Notifier<DateTimeRange?> {
+class ReportsDateNotifier extends Notifier<DateTime> {
   @override
-  DateTimeRange? build() => null;
+  DateTime build() {
+    final now = DateTime.now();
+    return DateTime(now.year, now.month, now.day);
+  }
 
-  void setCustomRange(DateTimeRange? range) => state = range;
+  void setDate(DateTime date) {
+    state = DateTime(date.year, date.month, date.day);
+  }
+
+  void previousDay() {
+    state = DateTime(state.year, state.month, state.day - 1);
+  }
+
+  void nextDay() {
+    state = DateTime(state.year, state.month, state.day + 1);
+  }
+
+  void goToToday() {
+    final now = DateTime.now();
+    state = DateTime(now.year, now.month, now.day);
+  }
 }
 
 final sessionHistoryProvider =
     FutureProvider<List<SessionExportRecord>>((ref) async {
   final workspace = await ref.watch(currentWorkspaceProvider.future);
   final timeRange = ref.watch(reportsTimeRangeProvider);
-  final customRange = ref.watch(reportsCustomRangeProvider);
+  final selectedDate = ref.watch(reportsDateProvider);
   final exportService = ref.watch(exportServiceProvider);
 
   // Invalidate when timer state changes to reflect freshly stopped sessions
   ref.watch(timerProvider.select((s) => s.value?.activeSession?.id));
 
-  // Bridge Flutter DateTimeRange to pure-Dart DateRange for domain layer.
-  // .toUtc() matters here: DateTimeRange is local wall-clock time from the
-  // date picker, but start_time/end_time are always stored as UTC.
-  final domainCustomRange = customRange != null
-      ? DateRange(
-          start: customRange.start.toUtc(), end: customRange.end.toUtc())
-      : null;
-  final calculatedRange = timeRange.toDateRange(customRange: domainCustomRange);
+  DateRange calculatedRange;
+  switch (timeRange) {
+    case DashboardTimeRange.today:
+      final now = DateTime.now();
+      final localStart = DateTime(now.year, now.month, now.day, 0, 0, 0);
+      final localEnd = DateTime(now.year, now.month, now.day, 23, 59, 59, 999);
+      calculatedRange =
+          DateRange(start: localStart.toUtc(), end: localEnd.toUtc());
+      break;
+    case DashboardTimeRange.thisWeek:
+      calculatedRange = DashboardTimeRange.thisWeek.toDateRange();
+      break;
+    case DashboardTimeRange.thisMonth:
+      calculatedRange = DashboardTimeRange.thisMonth.toDateRange();
+      break;
+    case DashboardTimeRange.custom:
+      final localStart = DateTime(
+          selectedDate.year, selectedDate.month, selectedDate.day, 0, 0, 0);
+      final localEnd = DateTime(
+          selectedDate.year, selectedDate.month, selectedDate.day, 23, 59, 59, 999);
+      calculatedRange = DateRange(
+        start: localStart.toUtc(),
+        end: localEnd.toUtc(),
+      );
+      break;
+  }
 
   return exportService.getExportRecords(
     workspaceId: workspace.id,
@@ -91,8 +132,11 @@ class SessionEditorController {
     required String sessionId,
     DateTime? startTime,
     DateTime? endTime,
+    String? categoryId,
+    bool clearCategory = false,
     String? notes,
     bool clearNotes = false,
+    List<String>? tagIds,
     List<String>? peopleIds,
     Map<String, dynamic> attributeValues = const {},
   }) async {
@@ -103,6 +147,8 @@ class SessionEditorController {
     final updated = session.copyWith(
       startTime: startTime ?? session.startTime,
       endTime: endTime ?? session.endTime,
+      categoryId: clearCategory ? null : (categoryId ?? session.categoryId),
+      tagIds: tagIds ?? session.tagIds,
       peopleIds: peopleIds ?? session.peopleIds,
       notes: notes,
       clearNotes: clearNotes,
@@ -196,7 +242,9 @@ class SessionEditorController {
 
     _ref.invalidate(sessionHistoryProvider);
     _ref.invalidate(sessionsForWorkItemProvider(session.workItemId));
+    _ref.invalidate(sessionAttributeValuesFamilyProvider(sessionId));
   }
+
 
   Future<void> deleteSession(String sessionId) async {
     final sessionRepo = _ref.read(sessionRepositoryProvider);

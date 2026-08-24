@@ -25,7 +25,10 @@ class TimerService {
   /// Enforces the Single-Active-Session invariant: stops any currently running session.
   Future<Session> startSession(
     String workItemId, {
+    String? categoryId,
+    List<String> tagIds = const [],
     List<String> peopleIds = const [],
+    String? notes,
     DateTime? startTime,
   }) async {
     final now = DateTime.now().toUtc();
@@ -42,8 +45,11 @@ class TimerService {
     final newSession = Session(
       id: _uuid.v4(),
       workItemId: workItemId,
+      categoryId: categoryId,
       startTime: effectiveStartTime,
+      tagIds: tagIds,
       peopleIds: peopleIds,
+      notes: notes,
       createdAt: now,
     );
 
@@ -53,6 +59,38 @@ class TimerService {
     await _workItemRepository.updateLastWorkedAt(workItemId, effectiveStartTime);
 
     return created;
+  }
+
+  /// Updates the category of a session.
+  Future<Session?> updateSessionCategory(String sessionId, String? categoryId) async {
+    final session = await _sessionRepository.getById(sessionId);
+    if (session == null) return null;
+    final updated = session.copyWith(categoryId: categoryId, clearCategory: categoryId == null);
+    return _sessionRepository.update(updated);
+  }
+
+  /// Updates the tags of a session.
+  Future<Session?> updateSessionTags(String sessionId, List<String> tagIds) async {
+    final session = await _sessionRepository.getById(sessionId);
+    if (session == null) return null;
+    final updated = session.copyWith(tagIds: tagIds);
+    return _sessionRepository.update(updated);
+  }
+
+  /// Updates the people associated with a session.
+  Future<Session?> updateSessionPeople(String sessionId, List<String> peopleIds) async {
+    final session = await _sessionRepository.getById(sessionId);
+    if (session == null) return null;
+    final updated = session.copyWith(peopleIds: peopleIds);
+    return _sessionRepository.update(updated);
+  }
+
+  /// Updates the notes of a session.
+  Future<Session?> updateSessionNotes(String sessionId, String? notes) async {
+    final session = await _sessionRepository.getById(sessionId);
+    if (session == null) return null;
+    final updated = session.copyWith(notes: notes, clearNotes: notes == null);
+    return _sessionRepository.update(updated);
   }
 
   /// Stops an active session.

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:workpulse/core/platform/pdf_export_handler.dart';
 import 'package:workpulse/core/theme/app_colors.dart';
 import 'package:workpulse/core/theme/design_tokens.dart';
 import 'package:workpulse/core/widgets/error_state.dart';
@@ -13,37 +14,167 @@ import 'package:workpulse/features/dashboard/providers/dashboard_provider.dart';
 import 'package:workpulse/features/dashboard/widgets/breakdown_card.dart';
 import 'package:workpulse/features/dashboard/widgets/daily_activity_chart.dart';
 import 'package:workpulse/features/dashboard/widgets/metric_card.dart';
+import 'package:workpulse/features/reports/providers/reports_provider.dart';
+import 'package:workpulse/features/workspace/providers/workspace_provider.dart';
 
 class DashboardView extends ConsumerWidget {
   const DashboardView({super.key});
 
-  String _formatRangeSubtitle(DateRange range) {
-    final startStr = DateFormat.yMMMd().format(range.start.toLocal());
-    final endStr = DateFormat.yMMMd().format(range.end.toLocal());
-    if (startStr == endStr) return startStr;
-    return '$startStr – $endStr';
+  String _formatSubtitle(
+    DashboardTimeRange range,
+    DateTime selectedDate,
+    DateRange dataRange,
+  ) {
+    final now = DateTime.now();
+    switch (range) {
+      case DashboardTimeRange.today:
+        return 'Today · ${DateFormat.yMMMMEEEEd().format(selectedDate)}';
+      case DashboardTimeRange.thisWeek:
+        final startStr = DateFormat.yMMMd().format(dataRange.start.toLocal());
+        final endStr = DateFormat.yMMMd().format(dataRange.end.toLocal());
+        return 'This Week · $startStr – $endStr';
+      case DashboardTimeRange.thisMonth:
+        final monthStr = DateFormat.yMMMM().format(dataRange.start.toLocal());
+        return 'This Month · $monthStr';
+      case DashboardTimeRange.custom:
+        final isToday = selectedDate.year == now.year &&
+            selectedDate.month == now.month &&
+            selectedDate.day == now.day;
+        if (isToday) {
+          return 'Today · ${DateFormat.yMMMMEEEEd().format(selectedDate)}';
+        }
+        return DateFormat.yMMMMEEEEd().format(selectedDate);
+    }
   }
 
-  Future<void> _pickCustomRange(BuildContext context, WidgetRef ref) async {
-    final currentCustom = ref.read(customDateRangeProvider);
+  String _formatDateButtonLabel(DateTime date) {
+    final now = DateTime.now();
+    final isToday = date.year == now.year &&
+        date.month == now.month &&
+        date.day == now.day;
+    final yesterday = DateTime(now.year, now.month, now.day - 1);
+    final isYesterday = date.year == yesterday.year &&
+        date.month == yesterday.month &&
+        date.day == yesterday.day;
+    final tomorrow = DateTime(now.year, now.month, now.day + 1);
+    final isTomorrow = date.year == tomorrow.year &&
+        date.month == tomorrow.month &&
+        date.day == tomorrow.day;
+
+    final formatted = DateFormat.yMMMd().format(date);
+    if (isToday) return 'Today, $formatted';
+    if (isYesterday) return 'Yesterday, $formatted';
+    if (isTomorrow) return 'Tomorrow, $formatted';
+    return '${DateFormat.E().format(date)}, $formatted';
+  }
+
+  Future<void> _pickDate(BuildContext context, WidgetRef ref) async {
+    final currentDate = ref.read(dashboardDateProvider);
     final now = DateTime.now();
 
-    final picked = await showDateRangePicker(
+    final picked = await showDatePicker(
       context: context,
-      firstDate: DateTime(now.year - 2),
-      lastDate: DateTime(now.year + 1),
-      initialDateRange: currentCustom ??
-          DateTimeRange(
-            start: now.subtract(const Duration(days: 7)),
-            end: now,
-          ),
+      initialDate: currentDate,
+      firstDate: DateTime(now.year - 5),
+      lastDate: DateTime(now.year + 2),
     );
 
     if (picked != null) {
-      ref.read(customDateRangeProvider.notifier).setCustomRange(picked);
-      ref
-          .read(selectedTimeRangeProvider.notifier)
-          .setRange(DashboardTimeRange.custom);
+      ref.read(dashboardDateProvider.notifier).setDate(picked);
+      final isToday = picked.year == now.year &&
+          picked.month == now.month &&
+          picked.day == now.day;
+      ref.read(selectedTimeRangeProvider.notifier).setRange(
+            isToday ? DashboardTimeRange.today : DashboardTimeRange.custom,
+          );
+    }
+  }
+
+  Future<void> _exportPdf(
+    BuildContext context,
+    WidgetRef ref,
+    DateRange range,
+  ) async {
+    try {
+      final workspace = await ref.read(currentWorkspaceProvider.future);
+      final exportService = ref.read(exportServiceProvider);
+
+      final pdfBytes = await exportService.generatePdf(
+        workspaceId: workspace.id,
+        range: range,
+      );
+
+      final fileName = PdfExportHandler.formatReportFileName(
+        prefix: 'WorkPulse_Daily_Report',
+        startDate: range.start,
+        endDate: range.end,
+      );
+
+      final result = await PdfExportHandler.savePdf(
+        bytes: pdfBytes,
+        fileName: fileName,
+      );
+
+      await PdfExportHandler.openPdfInPreview(result.filePath);
+
+      if (context.mounted) {
+        final messenger = ScaffoldMessenger.of(context);
+        messenger.clearSnackBars();
+        messenger.showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle_outline, color: Colors.white, size: 18),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Report saved to Downloads: ${result.fileName}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: context.colors.success,
+            duration: const Duration(seconds: 4),
+            showCloseIcon: true,
+            closeIconColor: Colors.white,
+            action: SnackBarAction(
+              label: 'Show in Finder',
+              textColor: Colors.white,
+              onPressed: () =>
+                  PdfExportHandler.revealInFinder(result.filePath),
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        final messenger = ScaffoldMessenger.of(context);
+        messenger.clearSnackBars();
+        messenger.showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.error_outline, color: Colors.white, size: 18),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'PDF export failed: $e',
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: context.colors.danger,
+            duration: const Duration(seconds: 5),
+            showCloseIcon: true,
+            closeIconColor: Colors.white,
+          ),
+        );
+      }
     }
   }
 
@@ -51,11 +182,18 @@ class DashboardView extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = context.colors;
     final selectedRange = ref.watch(selectedTimeRangeProvider);
+    final selectedDate = ref.watch(dashboardDateProvider);
     final dashboardAsync = ref.watch(dashboardDataProvider);
+
+    final now = DateTime.now();
+    final isToday = selectedDate.year == now.year &&
+        selectedDate.month == now.month &&
+        selectedDate.day == now.day;
 
     return Scaffold(
       backgroundColor: colors.background,
       body: dashboardAsync.when(
+        skipLoadingOnReload: true,
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, stack) => ErrorState(
           title: 'Could not load the dashboard',
@@ -64,9 +202,9 @@ class DashboardView extends ConsumerWidget {
         ),
         data: (data) {
           final summary = data.summary;
-          final isToday = selectedRange == DashboardTimeRange.today ||
-              (data.hourlyActivity.isNotEmpty &&
-                  data.range.duration <= const Duration(days: 1));
+          final isSingleDay = selectedRange == DashboardTimeRange.today ||
+              selectedRange == DashboardTimeRange.custom ||
+              data.range.duration <= const Duration(days: 1);
 
           final efficiency = summary.totalTrackedDuration.inSeconds > 0
               ? (summary.totalActiveDuration.inSeconds /
@@ -77,23 +215,115 @@ class DashboardView extends ConsumerWidget {
           return PageScaffold(
             scrollable: true,
             title: 'Dashboard',
-            subtitle: _formatRangeSubtitle(data.range),
+            subtitle: _formatSubtitle(selectedRange, selectedDate, data.range),
             actions: [
+              // Time Range Segmented Control (Today, This Week, This Month, Date)
               AppSegmentedControl<DashboardTimeRange>(
                 selected: selectedRange,
                 onChanged: (range) {
-                  if (range == DashboardTimeRange.custom) {
-                    _pickCustomRange(context, ref);
-                  } else {
-                    ref
-                        .read(selectedTimeRangeProvider.notifier)
-                        .setRange(range);
+                  ref
+                      .read(selectedTimeRangeProvider.notifier)
+                      .setRange(range);
+                  if (range == DashboardTimeRange.today) {
+                    ref.read(dashboardDateProvider.notifier).goToToday();
+                  } else if (range == DashboardTimeRange.custom) {
+                    _pickDate(context, ref);
                   }
                 },
-                options: [
-                  for (final range in DashboardTimeRange.values)
-                    SegmentOption(value: range, label: range.label),
+                options: const [
+                  SegmentOption(
+                      value: DashboardTimeRange.today, label: 'Today'),
+                  SegmentOption(
+                      value: DashboardTimeRange.thisWeek, label: 'This Week'),
+                  SegmentOption(
+                      value: DashboardTimeRange.thisMonth, label: 'This Month'),
+                  SegmentOption(
+                      value: DashboardTimeRange.custom, label: 'Date'),
                 ],
+              ),
+              // Date Navigation Bar (Previous day, Current Date, Next day)
+              Container(
+                decoration: BoxDecoration(
+                  color: colors.surface,
+                  borderRadius: Radii.smAll,
+                  border: Border.all(color: colors.divider),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.chevron_left, size: IconSizes.md),
+                      tooltip: 'Previous day',
+                      onPressed: () {
+                        ref.read(dashboardDateProvider.notifier).previousDay();
+                        final newDate = ref.read(dashboardDateProvider);
+                        final isNewToday = newDate.year == now.year &&
+                            newDate.month == now.month &&
+                            newDate.day == now.day;
+                        ref.read(selectedTimeRangeProvider.notifier).setRange(
+                              isNewToday
+                                  ? DashboardTimeRange.today
+                                  : DashboardTimeRange.custom,
+                            );
+                      },
+                    ),
+                    InkWell(
+                      borderRadius: Radii.xsAll,
+                      onTap: () => _pickDate(context, ref),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: Spacing.sm,
+                          vertical: Spacing.xs,
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.calendar_today_outlined,
+                              size: IconSizes.sm,
+                              color: colors.accent,
+                            ),
+                            const SizedBox(width: Spacing.xs),
+                            Text(
+                              _formatDateButtonLabel(selectedDate),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.copyWith(fontWeight: FontWeight.w500),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.chevron_right, size: IconSizes.md),
+                      tooltip: 'Next day',
+                      onPressed: () {
+                        ref.read(dashboardDateProvider.notifier).nextDay();
+                        final newDate = ref.read(dashboardDateProvider);
+                        final isNewToday = newDate.year == now.year &&
+                            newDate.month == now.month &&
+                            newDate.day == now.day;
+                        ref.read(selectedTimeRangeProvider.notifier).setRange(
+                              isNewToday
+                                  ? DashboardTimeRange.today
+                                  : DashboardTimeRange.custom,
+                            );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              Tooltip(
+                message: 'Export colorful daily report as PDF',
+                child: ElevatedButton.icon(
+                  onPressed: () => _exportPdf(context, ref, data.range),
+                  icon: const Icon(
+                    Icons.picture_as_pdf_outlined,
+                    size: IconSizes.sm,
+                  ),
+                  label: const Text('Export PDF'),
+                ),
               ),
               IconButton(
                 onPressed: () => ref.invalidate(dashboardDataProvider),
@@ -146,13 +376,19 @@ class DashboardView extends ConsumerWidget {
                   ],
                 ),
                 const SizedBox(height: Spacing.xxl),
-                if (isToday
+                if (isSingleDay
                     ? data.hourlyActivity.isNotEmpty
                     : data.dailyActivity.isNotEmpty) ...[
                   DailyActivityChart(
                     activities: data.dailyActivity,
                     hourlyActivities: data.hourlyActivity,
-                    isHourly: isToday,
+                    isHourly: isSingleDay,
+                    isToday: isSingleDay && isToday,
+                    title: isSingleDay
+                        ? (isToday
+                            ? "Today's Hourly Breakdown"
+                            : 'Hourly Breakdown')
+                        : 'Daily Activity',
                   ),
                   const SizedBox(height: Spacing.xxl),
                 ],
