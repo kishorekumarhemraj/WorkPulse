@@ -6,6 +6,7 @@ enum ShellNavTab {
   dashboard,
   history,
   tasks,
+  notes,
   projects,
   categories,
   tags,
@@ -38,6 +39,7 @@ extension ShellNavTabInfo on ShellNavTab {
   String get label => switch (this) {
         ShellNavTab.dashboard => 'Dashboard',
         ShellNavTab.history => 'Time Log',
+        ShellNavTab.notes => 'Time Notes',
         ShellNavTab.tasks => 'Work Items',
         ShellNavTab.projects => 'Projects',
         ShellNavTab.categories => 'Categories',
@@ -49,6 +51,7 @@ extension ShellNavTabInfo on ShellNavTab {
   IconData get icon => switch (this) {
         ShellNavTab.dashboard => Icons.space_dashboard_outlined,
         ShellNavTab.history => Icons.history,
+        ShellNavTab.notes => Icons.edit_note_outlined,
         ShellNavTab.tasks => Icons.check_circle_outline,
         ShellNavTab.projects => Icons.folder_outlined,
         ShellNavTab.categories => Icons.category_outlined,
@@ -60,6 +63,7 @@ extension ShellNavTabInfo on ShellNavTab {
   ShellNavGroup get group => switch (this) {
         ShellNavTab.dashboard ||
         ShellNavTab.history ||
+        ShellNavTab.notes ||
         ShellNavTab.tasks =>
           ShellNavGroup.track,
         ShellNavTab.projects ||
@@ -77,6 +81,7 @@ extension ShellNavTabInfo on ShellNavTab {
   List<String> get searchKeywords => switch (this) {
         ShellNavTab.dashboard => ['insights', 'analytics', 'summary', 'charts'],
         ShellNavTab.history => ['sessions', 'log', 'history', 'timesheet'],
+        ShellNavTab.notes => ['notes', 'standup', 'daily', 'summary', 'journal', 'log'],
         ShellNavTab.tasks => ['tasks', 'items', 'issues', 'work'],
         ShellNavTab.projects => ['clients', 'projects'],
         ShellNavTab.categories => ['categories', 'types'],

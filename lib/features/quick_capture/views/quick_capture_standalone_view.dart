@@ -492,12 +492,14 @@ class _QuickCaptureStandaloneViewState
                   ],
                 ),
               ),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
-    );
-  }
+    ),
+  ),
+);
+}
 
   Widget _buildTaskResultItem(
     WorkItem task,
