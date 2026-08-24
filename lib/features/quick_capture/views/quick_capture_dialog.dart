@@ -186,7 +186,7 @@ class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
           color: Colors.transparent,
           child: Container(
             width: 620,
-            constraints: const BoxConstraints(maxHeight: 520),
+            constraints: const BoxConstraints(maxHeight: 640, minHeight: 400),
             decoration: BoxDecoration(
               color: context.colors.surface,
               borderRadius: Radii.xlAll,
@@ -263,7 +263,6 @@ class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
                 // Results List
                 Flexible(
                   child: ListView.builder(
-                    shrinkWrap: true,
                     padding: const EdgeInsets.symmetric(vertical: 6),
                     itemCount: totalItems == 0 ? 1 : totalItems,
                     itemBuilder: (context, index) {
@@ -302,7 +301,6 @@ class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
 
                 // Bottom Configuration Bar
                 Container(
-                  padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
                   decoration: BoxDecoration(
                     color: context.colors.card,
                     borderRadius: const BorderRadius.vertical(
@@ -311,11 +309,15 @@ class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
                         top: BorderSide(
                             color: context.colors.divider, width: 1)),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxHeight: 220),
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          Row(
+                            children: [
                           if (projects.isNotEmpty) ...[
                             Icon(Icons.folder_outlined,
                                 size: 14, color: context.colors.textSecondary),
