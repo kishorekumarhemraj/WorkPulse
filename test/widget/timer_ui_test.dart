@@ -85,6 +85,8 @@ class _FakeTimerNotifier extends TimerNotifier {
     WorkItem? targetItem,
     String? notes,
     String? targetCategoryId,
+    List<String>? targetTagIds,
+    List<String>? targetPeopleIds,
   }) async {
     confirmSwitchCalled = true;
     switchNotes = notes;
