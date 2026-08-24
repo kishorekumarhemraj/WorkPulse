@@ -68,6 +68,7 @@ WorkPulse is built from the ground up as a **personal productivity companion**, 
 
 ### 💤 Smart Inactivity & Idle Management
 - **Automatic Away-State Detection**: Detects when you step away from your Mac during an active tracking session.
+- **Survives Quits and Shutdowns**: If WorkPulse was closed — or the Mac was switched off — with a timer running, the next launch reconstructs exactly how long it was gone and asks before that time is counted as work.
 - **User-Controlled Resolution**: When you return, choose how to handle the idle gap:
   - ✅ **Keep as Work**: Attribute the duration to offline discussions, sketching, or reading.
   - ⏸️ **Mark as Idle**: Keep the record tagged as inactive.
