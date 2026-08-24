@@ -39,14 +39,7 @@ class SqliteSessionRepository implements SessionRepository {
       orderBy: 'start_time DESC',
     );
 
-    final sessions = <Session>[];
-    for (final map in results) {
-      final id = map['id'] as String;
-      final peopleIds = await _getPeopleIds(id);
-      final tagIds = await _getTagIds(id);
-      sessions.add(_fromMap(map, peopleIds, tagIds));
-    }
-    return sessions;
+    return _hydrate(results);
   }
 
   @override
@@ -61,14 +54,7 @@ class SqliteSessionRepository implements SessionRepository {
       orderBy: 'start_time DESC',
     );
 
-    final sessions = <Session>[];
-    for (final map in results) {
-      final id = map['id'] as String;
-      final peopleIds = await _getPeopleIds(id);
-      final tagIds = await _getTagIds(id);
-      sessions.add(_fromMap(map, peopleIds, tagIds));
-    }
-    return sessions;
+    return _hydrate(results);
   }
 
   @override
@@ -199,6 +185,74 @@ class SqliteSessionRepository implements SessionRepository {
       whereArgs: [sessionId],
     );
     return results.map((row) => row['tag_id'] as String).toList();
+  }
+
+  /// Attaches people and tags to a page of session rows in three queries
+  /// rather than `2n + 1`.
+  ///
+  /// The dashboard and every export read a whole date range through here; a
+  /// month of tracking is hundreds of sessions, and the per-row lookups it
+  /// used to do dominated the load time.
+  Future<List<Session>> _hydrate(List<Map<String, Object?>> rows) async {
+    if (rows.isEmpty) return const [];
+
+    final ids = rows.map((row) => row['id'] as String).toList();
+    final peopleBySession = await _idsBySession(
+      table: Tables.sessionPeople,
+      column: 'person_id',
+      sessionIds: ids,
+    );
+    final tagsBySession = await _idsBySession(
+      table: Tables.sessionTags,
+      column: 'tag_id',
+      sessionIds: ids,
+    );
+
+    return [
+      for (final row in rows)
+        _fromMap(
+          row,
+          peopleBySession[row['id'] as String] ?? const [],
+          tagsBySession[row['id'] as String] ?? const [],
+        ),
+    ];
+  }
+
+  /// One `IN (...)` query per join table, grouped back by session.
+  ///
+  /// Chunked because SQLite's default `SQLITE_MAX_VARIABLE_NUMBER` caps how
+  /// many placeholders a statement may carry, and a wide date range can hold
+  /// more sessions than that.
+  Future<Map<String, List<String>>> _idsBySession({
+    required String table,
+    required String column,
+    required List<String> sessionIds,
+  }) async {
+    const chunkSize = 500;
+    final grouped = <String, List<String>>{};
+
+    for (var start = 0; start < sessionIds.length; start += chunkSize) {
+      final end = start + chunkSize < sessionIds.length
+          ? start + chunkSize
+          : sessionIds.length;
+      final chunk = sessionIds.sublist(start, end);
+      final placeholders = List.filled(chunk.length, '?').join(', ');
+
+      final rows = await _db.query(
+        table,
+        columns: ['session_id', column],
+        where: 'session_id IN ($placeholders)',
+        whereArgs: chunk,
+      );
+
+      for (final row in rows) {
+        grouped
+            .putIfAbsent(row['session_id'] as String, () => <String>[])
+            .add(row[column] as String);
+      }
+    }
+
+    return grouped;
   }
 
   Map<String, dynamic> _toMap(Session session) {

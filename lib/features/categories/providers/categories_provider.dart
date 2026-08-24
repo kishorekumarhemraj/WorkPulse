@@ -6,7 +6,8 @@ import 'package:workpulse/features/workspace/providers/workspace_provider.dart';
 
 const _uuid = Uuid();
 
-final categoriesProvider = AsyncNotifierProvider<CategoriesNotifier, List<Category>>(
+final categoriesProvider =
+    AsyncNotifierProvider<CategoriesNotifier, List<Category>>(
   CategoriesNotifier.new,
 );
 
@@ -15,7 +16,8 @@ class CategoriesNotifier extends AsyncNotifier<List<Category>> {
   Future<List<Category>> build() async {
     final workspace = await ref.watch(currentWorkspaceProvider.future);
     final categoryRepo = ref.watch(categoryRepositoryProvider);
-    return categoryRepo.getAll(workspaceId: workspace.id, includeArchived: false);
+    return categoryRepo.getAll(
+        workspaceId: workspace.id, includeArchived: false);
   }
 
   Future<Category> createCategory({
@@ -31,7 +33,8 @@ class CategoriesNotifier extends AsyncNotifier<List<Category>> {
       id: _uuid.v4(),
       workspaceId: workspace.id,
       name: name.trim(),
-      description: description?.trim().isEmpty == true ? null : description?.trim(),
+      description:
+          description?.trim().isEmpty == true ? null : description?.trim(),
       iconName: iconName ?? 'folder',
       createdAt: now,
       updatedAt: now,

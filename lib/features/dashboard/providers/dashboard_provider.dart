@@ -31,8 +31,7 @@ class SelectedTimeRangeNotifier extends Notifier<DashboardTimeRange> {
   void setRange(DashboardTimeRange range) => state = range;
 }
 
-final dashboardDateProvider =
-    NotifierProvider<DashboardDateNotifier, DateTime>(
+final dashboardDateProvider = NotifierProvider<DashboardDateNotifier, DateTime>(
   DashboardDateNotifier.new,
 );
 
@@ -90,8 +89,8 @@ final dashboardDataProvider = FutureProvider<DashboardData>((ref) async {
     case DashboardTimeRange.custom:
       final localStart = DateTime(
           selectedDate.year, selectedDate.month, selectedDate.day, 0, 0, 0);
-      final localEnd = DateTime(
-          selectedDate.year, selectedDate.month, selectedDate.day, 23, 59, 59, 999);
+      final localEnd = DateTime(selectedDate.year, selectedDate.month,
+          selectedDate.day, 23, 59, 59, 999);
       calculatedRange = DateRange(
         start: localStart.toUtc(),
         end: localEnd.toUtc(),
@@ -104,4 +103,3 @@ final dashboardDataProvider = FutureProvider<DashboardData>((ref) async {
     range: calculatedRange,
   );
 });
-

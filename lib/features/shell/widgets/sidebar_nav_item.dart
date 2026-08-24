@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:workpulse/core/keyboard/shortcut_labels.dart';
 import 'package:workpulse/core/theme/app_colors.dart';
 import 'package:workpulse/core/theme/app_typography.dart';
 import 'package:workpulse/core/theme/design_tokens.dart';
@@ -11,7 +12,7 @@ import 'package:workpulse/features/shell/models/shell_nav_tab.dart';
 /// Carries a live count badge, an active indicator bar, and — when the
 /// sidebar is collapsed — a tooltip naming the destination and its shortcut,
 /// so the icon rail stays usable.
-class SidebarNavItem extends ConsumerWidget {
+class SidebarNavItem extends ConsumerStatefulWidget {
   final ShellNavTab tab;
   final bool isSelected;
   final bool isCollapsed;
@@ -28,10 +29,22 @@ class SidebarNavItem extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<SidebarNavItem> createState() => _SidebarNavItemState();
+}
+
+class _SidebarNavItemState extends ConsumerState<SidebarNavItem> {
+  bool _isFocused = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final tab = widget.tab;
+    final isSelected = widget.isSelected;
+    final isCollapsed = widget.isCollapsed;
+    final countProvider = widget.countProvider;
+
     final colors = context.colors;
     final theme = Theme.of(context);
-    final count = countProvider != null ? ref.watch(countProvider!) : null;
+    final count = countProvider != null ? ref.watch(countProvider) : null;
 
     final foreground = isSelected ? colors.accent : colors.textSecondary;
 
@@ -46,13 +59,23 @@ class SidebarNavItem extends ConsumerWidget {
                 ? colors.selected
                 : (isHovered ? colors.hover : Colors.transparent),
             borderRadius: Radii.smAll,
+            // The rail is the app's primary navigation; without this a
+            // keyboard user tabbing into it had no idea where they were.
+            border: _isFocused
+                ? Border.all(color: colors.focusRing, width: 2)
+                : null,
           ),
           child: Material(
             color: Colors.transparent,
             child: InkWell(
-              onTap: onTap,
+              onTap: widget.onTap,
               borderRadius: Radii.smAll,
+              onFocusChange: (hasFocus) {
+                if (hasFocus == _isFocused) return;
+                setState(() => _isFocused = hasFocus);
+              },
               hoverColor: Colors.transparent,
+              focusColor: Colors.transparent,
               child: Padding(
                 padding: EdgeInsets.symmetric(
                   horizontal: isCollapsed ? Spacing.sm : Spacing.md - 2,
@@ -93,7 +116,8 @@ class SidebarNavItem extends ConsumerWidget {
     // destination name and its shortcut.
     if (isCollapsed) {
       item = Tooltip(
-        message: '${tab.label}   ⌘${tab.shortcutDigit}',
+        message:
+            '${tab.label}   ${ShortcutLabels.primary('${tab.shortcutDigit}')}',
         child: item,
       );
     }

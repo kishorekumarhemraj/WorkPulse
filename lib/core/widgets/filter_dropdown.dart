@@ -55,8 +55,9 @@ class AppFilterDropdown<T> extends StatelessWidget {
     final theme = Theme.of(context);
 
     // Guard against a stale selection whose entity has been deleted.
-    final selectedOption =
-        value != null ? options.where((o) => o.value == value).firstOrNull : null;
+    final selectedOption = value != null
+        ? options.where((o) => o.value == value).firstOrNull
+        : null;
     final hasValue = selectedOption != null;
 
     return MenuAnchor(
@@ -103,7 +104,8 @@ class AppFilterDropdown<T> extends StatelessWidget {
               color: Colors.transparent,
               child: InkWell(
                 borderRadius: Radii.mdAll,
-                onTap: () => controller.isOpen ? controller.close() : controller.open(),
+                onTap: () =>
+                    controller.isOpen ? controller.close() : controller.open(),
                 child: Container(
                   height: ControlSizes.toolbar,
                   constraints: const BoxConstraints(maxWidth: 220),
@@ -126,11 +128,13 @@ class AppFilterDropdown<T> extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: Spacing.sm),
-                      ] else if (selectedOption?.icon != null || leadingIcon != null) ...[
+                      ] else if (selectedOption?.icon != null ||
+                          leadingIcon != null) ...[
                         Icon(
                           selectedOption?.icon ?? leadingIcon,
                           size: IconSizes.sm,
-                          color: hasValue ? colors.accent : colors.textSecondary,
+                          color:
+                              hasValue ? colors.accent : colors.textSecondary,
                         ),
                         const SizedBox(width: Spacing.sm - 2),
                       ],
@@ -140,8 +144,10 @@ class AppFilterDropdown<T> extends StatelessWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: theme.textTheme.bodyMedium?.copyWith(
-                            color: hasValue ? colors.accent : colors.textSecondary,
-                            fontWeight: hasValue ? FontWeight.w600 : FontWeight.w400,
+                            color:
+                                hasValue ? colors.accent : colors.textSecondary,
+                            fontWeight:
+                                hasValue ? FontWeight.w600 : FontWeight.w400,
                           ),
                         ),
                       ),

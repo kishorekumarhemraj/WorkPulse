@@ -68,11 +68,21 @@ void main() {
       final now = DateTime.now().toUtc();
 
       final proj = await projectRepo.create(
-        Project(id: 'proj-1', workspaceId: wsId, name: 'Core', createdAt: now, updatedAt: now),
+        Project(
+            id: 'proj-1',
+            workspaceId: wsId,
+            name: 'Core',
+            createdAt: now,
+            updatedAt: now),
       );
 
       final cat = await categoryRepo.create(
-        Category(id: 'cat-1', workspaceId: wsId, name: 'Dev', createdAt: now, updatedAt: now),
+        Category(
+            id: 'cat-1',
+            workspaceId: wsId,
+            name: 'Dev',
+            createdAt: now,
+            updatedAt: now),
       );
 
       testTask = await workItemRepo.create(
@@ -227,10 +237,20 @@ void main() {
       final now = DateTime.now().toUtc();
 
       final proj = await SqliteProjectRepository(dbService).create(
-        Project(id: 'proj-1', workspaceId: wsId, name: 'Core', createdAt: now, updatedAt: now),
+        Project(
+            id: 'proj-1',
+            workspaceId: wsId,
+            name: 'Core',
+            createdAt: now,
+            updatedAt: now),
       );
       final cat = await SqliteCategoryRepository(dbService).create(
-        Category(id: 'cat-1', workspaceId: wsId, name: 'Dev', createdAt: now, updatedAt: now),
+        Category(
+            id: 'cat-1',
+            workspaceId: wsId,
+            name: 'Dev',
+            createdAt: now,
+            updatedAt: now),
       );
       testTask = await workItemRepo.create(
         WorkItem(
@@ -267,7 +287,8 @@ void main() {
     /// Reproduces the reported bug: a timer left running overnight while the
     /// laptop was switched off, so no live idle poll ever ran.
     Future<Session> leaveSessionRunningOvernight() async {
-      final lastNight = DateTime.now().toUtc().subtract(const Duration(hours: 8));
+      final lastNight =
+          DateTime.now().toUtc().subtract(const Duration(hours: 8));
       final session = await sessionRepo.create(Session(
         id: 'sess-overnight',
         workItemId: testTask.id,
@@ -288,7 +309,9 @@ void main() {
       await container.read(currentWorkspaceProvider.future);
       await container.read(timerProvider.future);
 
-      await container.read(idleNotifierProvider.notifier).checkForUnaccountedGap();
+      await container
+          .read(idleNotifierProvider.notifier)
+          .checkForUnaccountedGap();
 
       final state = container.read(idleNotifierProvider);
       expect(state.isPromptVisible, isTrue);
@@ -310,7 +333,8 @@ void main() {
 
       final notifier = container.read(idleNotifierProvider.notifier);
       await notifier.checkForUnaccountedGap();
-      final gapStart = container.read(idleNotifierProvider).currentEvent!.idleStartTime;
+      final gapStart =
+          container.read(idleNotifierProvider).currentEvent!.idleStartTime;
 
       await notifier.stopSession();
 
@@ -350,7 +374,9 @@ void main() {
       final nextLaunch = createContainer();
       await nextLaunch.read(currentWorkspaceProvider.future);
       await nextLaunch.read(timerProvider.future);
-      await nextLaunch.read(idleNotifierProvider.notifier).checkForUnaccountedGap();
+      await nextLaunch
+          .read(idleNotifierProvider.notifier)
+          .checkForUnaccountedGap();
 
       expect(nextLaunch.read(idleNotifierProvider).isPromptVisible, isFalse);
     });
@@ -380,11 +406,15 @@ void main() {
       await container.read(currentWorkspaceProvider.future);
       await container.read(timerProvider.future);
 
-      await container.read(idleNotifierProvider.notifier).checkForUnaccountedGap();
+      await container
+          .read(idleNotifierProvider.notifier)
+          .checkForUnaccountedGap();
 
       expect(container.read(idleNotifierProvider).isPromptVisible, isFalse);
       expect(
-        await container.read(activityHeartbeatServiceProvider).readLastHeartbeat(),
+        await container
+            .read(activityHeartbeatServiceProvider)
+            .readLastHeartbeat(),
         isNotNull,
       );
     });
@@ -395,7 +425,9 @@ void main() {
       await container.read(timerProvider.future);
 
       await container.read(timerProvider.notifier).startTimer(testTask);
-      await container.read(idleNotifierProvider.notifier).checkForUnaccountedGap();
+      await container
+          .read(idleNotifierProvider.notifier)
+          .checkForUnaccountedGap();
 
       expect(container.read(idleNotifierProvider).isPromptVisible, isFalse);
     });

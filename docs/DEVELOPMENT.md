@@ -1,17 +1,22 @@
 # WorkPulse — Developer Guide
 
 **Document:** `docs/DEVELOPMENT.md`  
-**Platform:** macOS 12+ (Apple Silicon & Intel)  
-**SDK Requirements:** Flutter >= 3.16.0, Dart >= 3.2.0  
+**Platforms:** macOS 12+ (Apple Silicon & Intel), Windows 10 1809+ (x64)  
+**SDK Requirements:** Flutter >= 3.38.4, Dart >= 3.12.0 (see `pubspec.lock`)  
 
 ---
 
 ## 1. Getting Started
 
 ### Prerequisites
-- macOS running on Apple Silicon (arm64) or Intel (x86_64)
-- Flutter SDK (3.16+) and Dart (3.2+) installed
-- Xcode & Command Line Tools installed
+- Flutter SDK and Dart at the versions above
+- **macOS**: Apple Silicon (arm64) or Intel (x86_64), with Xcode & Command Line Tools
+- **Windows**: Visual Studio 2022 with the "Desktop development with C++" workload
+
+Both platforms are first-class: CI compiles and tests each one on every pull
+request (`.github/workflows/ci.yml`). Linux is not a supported target — the app
+runs there for development, but idle detection is unavailable and packaging is
+not configured.
 
 ### Initial Setup
 ```bash
@@ -30,18 +35,19 @@ dart run build_runner build --delete-conflicting-outputs
 
 ## 2. Running the Application
 
-### Running on macOS Desktop
+### Running the app
 ```bash
-flutter run -d macos
+flutter run -d macos     # macOS
+flutter run -d windows   # Windows
 ```
 
 ### Hotkey Access & Focus Isolation
-- Press `⌥ + Space` (Option + Space) from any screen or application to open the Quick Capture floating HUD.
+- Press `⌥ + Space` on macOS or `Alt + Space` on Windows from any screen or application to open the Quick Capture floating HUD. The shortcut is re-bindable from the sidebar footer, and every hint in the UI is spelled for the host platform (see `lib/core/keyboard/shortcut_labels.dart`).
 - Quick Capture opens as a standalone floating panel over your current active application without bringing the full WorkPulse dashboard into focus.
 - Press `Enter` to start/switch tasks, or press `Esc` / click outside to close Quick Capture and return focus seamlessly to your previous application.
 
-### Menu Bar & Top Header
-- When an active timer is running, the macOS status bar (top menu bar) displays the live ticker and active task title: `⏱ 00:14:22  Task Name`.
+### Menu Bar / System Tray & Top Header
+- When an active timer is running, the macOS status bar displays the live ticker and active task title: `⏱ 00:14:22  Task Name`. Windows has no equivalent to a titled tray item, so the same information is carried by the tray tooltip and context menu.
 - Inside the WorkPulse app, the top header bar prominently displays the active timer, project indicator, and quick `Switch` / `Stop` buttons.
 
 ---
@@ -51,26 +57,22 @@ flutter run -d macos
 WorkPulse maintains a comprehensive test suite across database, domain, provider, and widget layers.
 
 ```bash
-# Run the entire test suite
+# What CI runs, in order
+dart format --output=none --set-exit-if-changed lib test
+flutter analyze
 flutter test
 
-# Run database schema & migration tests (V1 and V2)
-flutter test test/data/database_migration_test.dart
-
-# Run SQLite repository CRUD tests
-flutter test test/data/sqlite_repositories_test.dart
-
-# Run domain service tests (Timer, Task Switcher, Idle)
-flutter test test/unit/services/timer_service_test.dart
-flutter test test/unit/services/idle_service_test.dart
-flutter test test/unit/services/window_service_test.dart
-
-# Run provider & state notifier unit tests
-flutter test test/unit/providers/
-
-# Run widget and UI tests
-flutter test test/widget/
+# Focused runs
+flutter test test/data/database_migration_test.dart        # schema & migrations v1 -> v4
+flutter test test/data/sqlite_repositories_test.dart       # repository CRUD
+flutter test test/unit/services/                           # domain services
+flutter test test/unit/providers/                          # Riverpod notifiers
+flutter test test/widget/                                  # widget & UI
+flutter test test/widget/keyboard_navigation_test.dart     # focus & search shortcut
+flutter test test/integration/                             # end-to-end task switching
 ```
+
+`dart format` is enforced by CI, so run it before pushing.
 
 ---
 
@@ -95,9 +97,18 @@ dart run build_runner watch --delete-conflicting-outputs
    - Use `Equatable` and immutable `final` fields on all models.
 
 3. **Platform Mocking in Tests**:
-   - In unit and widget tests, always provide mock platform services (`MockHotKeyService`, `MockTrayService`, `NoOpWindowService`) to prevent desktop plugin crashes in headless environments.
+   - In unit and widget tests, always provide fake platform services (`NoOpHotKeyService`, `NoOpTrayService`, `NoOpWindowService`) to prevent desktop plugin crashes in headless environments.
+   - Idle detection takes a `SystemIdleSource`; tests inject `FakeIdleSource` rather than depending on the host machine's real input state.
 
-4. **Timestamp-Based Session Truth**:
+4. **Keyboard Navigation is a Requirement, Not a Polish Item**:
+   - Every mouse-driven workflow needs a keyboard equivalent, and every focusable control must show where focus is. `AppCard`, `SidebarNavItem` and `AppSelect` draw the palette's `focusRing`; everything else inherits `ThemeData.focusColor`.
+   - Never write a shortcut hint with a literal `⌘` or `⌥`. Use `ShortcutLabels`, which resolves per platform, and bind both the `meta:` and `control:` activator.
+   - A screen with a search field gets it for free: `SearchField` registers with the enclosing `SearchFocusScope`, which is what `⌘F` / `Ctrl+F` focuses.
+
+5. **Platform-Specific Code Stays Behind an Interface**:
+   - Native calls live in `lib/core/platform/` behind an abstract service, with a no-op or "cannot answer" fallback for platforms that lack the capability. Degrade loudly (a `debugPrint`), never silently.
+
+6. **Timestamp-Based Session Truth**:
    - Always calculate elapsed durations from wall-clock timestamps (`endTime - startTime`).
    - Store all database timestamps as ISO-8601 UTC strings.
 
@@ -107,7 +118,12 @@ dart run build_runner watch --delete-conflicting-outputs
 
 ```text
 lib/
-├── core/                  # Database manager, theme, exceptions, platform bridges (WindowService, TrayService, HotKeyService)
+├── core/                  # Foundation: database, theme, widgets, platform bridges
+│   ├── keyboard/          # SearchFocusScope registry, platform shortcut labels
+│   ├── platform/          # WindowService, TrayService, HotKeyService,
+│   │                      #   IdleDetectorService, SystemIdleSource (dart:ffi)
+│   ├── theme/             # WorkPulseColors extension, design tokens, typography
+│   └── widgets/           # AppCard, AppDialog, AppSelect, AppSnackBar, SearchField
 ├── domain/                # Pure models, repository interfaces, services
 │   ├── models/            # WorkItem, Session, Project, Category, Tag, Person, Attribute, IdlePeriod
 │   ├── repositories/      # Abstract repository interfaces
@@ -130,4 +146,8 @@ lib/
     ├── tags/              # Tag management
     ├── tasks/             # Work item management views
     └── timer/             # Active timer bar & task switcher dialog
+
+macos/                     # macOS runner, entitlements, app icons
+windows/                   # Windows runner (CMake, Win32 host, resources)
+docs/adr/                  # Architecture Decision Records
 ```

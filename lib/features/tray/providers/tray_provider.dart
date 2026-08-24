@@ -1,8 +1,17 @@
+import 'dart:async';
 import 'dart:io';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workpulse/core/constants/app_constants.dart';
+import 'package:workpulse/core/platform/hotkey_service.dart';
 import 'package:workpulse/core/platform/tray_service.dart';
 import 'package:workpulse/core/platform/window_service.dart';
+import 'package:workpulse/data/providers/repository_providers.dart';
+import 'package:workpulse/domain/services/activity_heartbeat_service.dart';
+import 'package:workpulse/domain/services/timer_service.dart';
+import 'package:workpulse/features/idle/providers/idle_provider.dart';
+import 'package:workpulse/features/settings/providers/app_settings_provider.dart';
 import 'package:workpulse/features/timer/models/timer_state.dart';
 import 'package:workpulse/features/timer/providers/timer_provider.dart';
 
@@ -16,6 +25,24 @@ final windowServiceProvider = Provider<WindowService>((ref) {
   return DesktopWindowService.instance;
 });
 
+/// The global-shortcut bridge.
+///
+/// Platform-bridges rule 1 requires widgets to reach native services through a
+/// provider rather than constructing them; the shell was building its own
+/// `DesktopHotKeyService` directly, which also made it impossible to assert
+/// hotkey registration in a widget test.
+final hotKeyServiceProvider = Provider<HotKeyService>((ref) {
+  final service = DesktopHotKeyService();
+  ref.onDispose(service.unregisterAll);
+  return service;
+});
+
+/// How the app terminates. Overridden in tests so quitting can be asserted
+/// without taking the test runner down with it.
+final processExitProvider = Provider<Future<void> Function(int code)>(
+  (ref) => (code) async => exit(code),
+);
+
 final trayCoordinatorProvider = Provider<TrayCoordinator>((ref) {
   final trayService = ref.watch(trayServiceProvider);
   final windowService = ref.watch(windowServiceProvider);
@@ -24,6 +51,7 @@ final trayCoordinatorProvider = Provider<TrayCoordinator>((ref) {
     ref: ref,
     trayService: trayService,
     windowService: windowService,
+    exitProcess: ref.watch(processExitProvider),
   );
 
   ref.onDispose(coordinator.dispose);
@@ -34,17 +62,19 @@ class TrayCoordinator {
   final Ref _ref;
   final TrayService _trayService;
   final WindowService _windowService;
+  final Future<void> Function(int code) _exit;
   bool _isDisposed = false;
   bool _isInitializing = false;
-  void Function()? onQuickCaptureRequested;
 
   TrayCoordinator({
     required Ref ref,
     required TrayService trayService,
     required WindowService windowService,
+    Future<void> Function(int code)? exitProcess,
   })  : _ref = ref,
         _trayService = trayService,
-        _windowService = windowService {
+        _windowService = windowService,
+        _exit = exitProcess ?? _defaultExit {
     _trayService.setTrayClickListener(() {
       _windowService.openDashboard();
     });
@@ -59,6 +89,20 @@ class TrayCoordinator {
         updateTrayState(state);
       }
     });
+  }
+
+  static Future<void> _defaultExit(int code) async => exit(code);
+
+  /// The menu entry for Quick Capture, labelled with the shortcut that is
+  /// actually registered. It used to hardcode "⌥ + Space", which was wrong
+  /// both on Windows and after the user changed the shortcut.
+  TrayMenuItem get _quickCaptureItem {
+    final hotKey = _ref.read(appSettingsProvider).value?.quickCaptureHotKey;
+    final label = hotKey == null ? null : hotKeyLabel(hotKey);
+    return TrayMenuItem(
+      key: 'quick_capture',
+      label: label == null ? 'Quick Capture' : 'Quick Capture ($label)',
+    );
   }
 
   Future<void> initialize() async {
@@ -77,13 +121,10 @@ class TrayCoordinator {
     }
   }
 
-  String formatDuration(Duration duration) {
-    final hours = duration.inHours;
-    final minutes = duration.inMinutes.remainder(60);
-    final seconds = duration.inSeconds.remainder(60);
-
-    return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
-  }
+  /// Delegates to the app's single duration formatter so the menu bar clock
+  /// and the in-app timer can never drift apart.
+  String formatDuration(Duration duration) =>
+      TimerService.formatDuration(duration);
 
   Future<void> updateTrayState(TimerState state) async {
     if (_isDisposed) return;
@@ -104,7 +145,7 @@ class TrayCoordinator {
         TrayMenuItem(label: '⏱ $formattedTime', disabled: true),
         const TrayMenuItem.separator(),
         const TrayMenuItem(key: 'stop_timer', label: 'Stop Timer'),
-        const TrayMenuItem(key: 'quick_capture', label: 'Quick Capture (⌥ + Space)'),
+        _quickCaptureItem,
         const TrayMenuItem.separator(),
         const TrayMenuItem(key: 'show_window', label: 'Open WorkPulse'),
         const TrayMenuItem.separator(),
@@ -124,7 +165,7 @@ class TrayCoordinator {
     await _trayService.setContextMenu([
       const TrayMenuItem(label: '● No Active Timer', disabled: true),
       const TrayMenuItem.separator(),
-      const TrayMenuItem(key: 'quick_capture', label: 'Quick Capture (⌥ + Space)'),
+      _quickCaptureItem,
       const TrayMenuItem.separator(),
       const TrayMenuItem(key: 'show_window', label: 'Open WorkPulse'),
       const TrayMenuItem.separator(),
@@ -140,15 +181,49 @@ class TrayCoordinator {
         _windowService.openDashboard();
         break;
       case 'quick_capture':
-        onQuickCaptureRequested?.call();
+        // Exactly one call. This used to also invoke a shell-supplied
+        // callback that opened the window a second time; the second open
+        // saw the mode already switched and so recorded "the dashboard was
+        // not visible", which meant closing Quick Capture hid the app
+        // instead of returning to the dashboard.
         _windowService.openQuickCapture();
         break;
       case 'stop_timer':
         _ref.read(timerProvider.notifier).stopTimer();
         break;
       case 'quit_app':
-        exit(0);
+        unawaited(quitApp());
     }
+  }
+
+  /// Quit, but leave the on-disk state consistent first.
+  ///
+  /// A bare `exit(0)` skips the app lifecycle callbacks, so the last
+  /// heartbeat could be up to [ActivityHeartbeatService.defaultInterval] old
+  /// and the next launch would ask the user to account for time they were
+  /// actually working. Writing one final heartbeat and closing the database
+  /// makes the recovered gap start at the moment of quit.
+  @visibleForTesting
+  Future<void> quitApp() async {
+    try {
+      await _ref.read(activityHeartbeatServiceProvider).beat();
+    } catch (error) {
+      debugPrint('[WorkPulse] Final heartbeat failed on quit: $error');
+    }
+
+    try {
+      await _trayService.destroy();
+    } catch (error) {
+      debugPrint('[WorkPulse] Tray teardown failed on quit: $error');
+    }
+
+    try {
+      await _ref.read(databaseServiceProvider).close();
+    } catch (error) {
+      debugPrint('[WorkPulse] Database close failed on quit: $error');
+    }
+
+    await _exit(0);
   }
 
   void dispose() {

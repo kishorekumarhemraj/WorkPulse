@@ -7,7 +7,8 @@ import 'package:workpulse/domain/models/workspace_model.dart';
 
 const _uuid = Uuid();
 
-final currentWorkspaceProvider = AsyncNotifierProvider<CurrentWorkspaceNotifier, Workspace>(
+final currentWorkspaceProvider =
+    AsyncNotifierProvider<CurrentWorkspaceNotifier, Workspace>(
   CurrentWorkspaceNotifier.new,
 );
 
@@ -64,11 +65,27 @@ class CurrentWorkspaceNotifier extends AsyncNotifier<Workspace> {
 
     // Seed standard starter categories
     final defaultCategories = [
-      ('Engineering', 'Development, coding, bug fixes, and code reviews', 'code'),
-      ('Architecture', 'System design, technical specs, and RFCs', 'architecture'),
+      (
+        'Engineering',
+        'Development, coding, bug fixes, and code reviews',
+        'code'
+      ),
+      (
+        'Architecture',
+        'System design, technical specs, and RFCs',
+        'architecture'
+      ),
       ('Meetings', 'Syncs, 1:1s, sprint ceremonies, and discussions', 'chat'),
-      ('Deep Work', 'Focused, uninterrupted problem solving and research', 'brain'),
-      ('Operations', 'Deployments, monitoring, admin tasks, and triage', 'gear'),
+      (
+        'Deep Work',
+        'Focused, uninterrupted problem solving and research',
+        'brain'
+      ),
+      (
+        'Operations',
+        'Deployments, monitoring, admin tasks, and triage',
+        'gear'
+      ),
     ];
 
     for (final (name, desc, icon) in defaultCategories) {

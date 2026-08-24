@@ -8,10 +8,23 @@ import 'package:workpulse/domain/models/work_item_model.dart';
 import 'package:workpulse/domain/services/activity_heartbeat_service.dart';
 import 'package:workpulse/domain/services/idle_gap_service.dart';
 import 'package:workpulse/domain/services/idle_service.dart';
+import 'package:workpulse/features/settings/providers/app_settings_provider.dart';
 import 'package:workpulse/features/timer/providers/timer_provider.dart';
 
 final idleDetectorServiceProvider = Provider<IdleDetectorService>((ref) {
   final service = DesktopIdleDetectorService();
+
+  // The threshold is a user setting, so the live detector follows it rather
+  // than being rebuilt (which would drop the subscription IdleNotifier holds
+  // and restart the poll from zero).
+  final initial = ref.read(appSettingsProvider).value?.idleThreshold;
+  if (initial != null) service.setIdleThreshold(initial);
+
+  ref.listen<AsyncValue<AppSettings>>(appSettingsProvider, (_, next) {
+    final threshold = next.value?.idleThreshold;
+    if (threshold != null) service.setIdleThreshold(threshold);
+  });
+
   ref.onDispose(service.dispose);
   return service;
 });
@@ -68,7 +81,8 @@ class IdleState extends Equatable {
   }
 
   @override
-  List<Object?> get props => [isPromptVisible, currentEvent, activeWorkItem, activeSession];
+  List<Object?> get props =>
+      [isPromptVisible, currentEvent, activeWorkItem, activeSession];
 }
 
 final idleNotifierProvider = NotifierProvider<IdleNotifier, IdleState>(
@@ -85,7 +99,8 @@ class IdleNotifier extends Notifier<IdleState> {
   bool _hasCheckedForUnaccountedGap = false;
 
   IdleService get _idleService => ref.read(idleServiceProvider);
-  IdleDetectorService get _detectorService => ref.read(idleDetectorServiceProvider);
+  IdleDetectorService get _detectorService =>
+      ref.read(idleDetectorServiceProvider);
   IdleGapService get _gapService => ref.read(idleGapServiceProvider);
   ActivityHeartbeatService get _heartbeatService =>
       ref.read(activityHeartbeatServiceProvider);
@@ -104,7 +119,10 @@ class IdleNotifier extends Notifier<IdleState> {
 
   void _handleIdleDetected(IdleDetectionEvent event) {
     final timerState = ref.read(timerProvider).value;
-    if (timerState == null || !timerState.isRunning || timerState.activeSession == null || timerState.activeWorkItem == null) {
+    if (timerState == null ||
+        !timerState.isRunning ||
+        timerState.activeSession == null ||
+        timerState.activeWorkItem == null) {
       return;
     }
 
@@ -122,7 +140,10 @@ class IdleNotifier extends Notifier<IdleState> {
     DateTime? startTime,
   }) {
     final timerState = ref.read(timerProvider).value;
-    if (timerState == null || !timerState.isRunning || timerState.activeSession == null || timerState.activeWorkItem == null) {
+    if (timerState == null ||
+        !timerState.isRunning ||
+        timerState.activeSession == null ||
+        timerState.activeWorkItem == null) {
       return;
     }
 
@@ -209,7 +230,9 @@ class IdleNotifier extends Notifier<IdleState> {
   /// Option 2: Discard idle time & resume active task
   Future<void> markIdle() async {
     final current = state;
-    if (current.currentEvent == null || current.activeSession == null || current.activeWorkItem == null) {
+    if (current.currentEvent == null ||
+        current.activeSession == null ||
+        current.activeWorkItem == null) {
       dismiss();
       return;
     }
