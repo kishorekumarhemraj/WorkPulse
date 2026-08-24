@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workpulse/core/constants/app_constants.dart';
+import 'package:workpulse/core/platform/hotkey_service.dart';
 import 'package:workpulse/core/platform/tray_service.dart';
 import 'package:workpulse/core/platform/window_service.dart';
 import 'package:workpulse/data/providers/repository_providers.dart';
@@ -22,6 +23,18 @@ final trayServiceProvider = Provider<TrayService>((ref) {
 
 final windowServiceProvider = Provider<WindowService>((ref) {
   return DesktopWindowService.instance;
+});
+
+/// The global-shortcut bridge.
+///
+/// Platform-bridges rule 1 requires widgets to reach native services through a
+/// provider rather than constructing them; the shell was building its own
+/// `DesktopHotKeyService` directly, which also made it impossible to assert
+/// hotkey registration in a widget test.
+final hotKeyServiceProvider = Provider<HotKeyService>((ref) {
+  final service = DesktopHotKeyService();
+  ref.onDispose(service.unregisterAll);
+  return service;
 });
 
 /// How the app terminates. Overridden in tests so quitting can be asserted

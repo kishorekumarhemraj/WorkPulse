@@ -32,6 +32,7 @@ import 'package:workpulse/features/tasks/views/task_form_dialog.dart';
 import 'package:workpulse/features/tasks/views/tasks_view.dart';
 import 'package:workpulse/features/timer/providers/timer_provider.dart';
 import 'package:workpulse/features/timer/views/active_timer_bar.dart';
+import 'package:workpulse/features/tray/providers/tray_provider.dart';
 import 'package:workpulse/features/workspace/providers/workspace_provider.dart';
 
 // Re-exported so existing imports of this library keep resolving ShellNavTab
@@ -89,8 +90,8 @@ class _MainShellViewState extends ConsumerState<MainShellView>
   @override
   void initState() {
     super.initState();
-    _hotKeyService = DesktopHotKeyService();
-    _windowService = DesktopWindowService();
+    _hotKeyService = ref.read(hotKeyServiceProvider);
+    _windowService = ref.read(windowServiceProvider);
     _heartbeat = ref.read(activityHeartbeatServiceProvider);
     WidgetsBinding.instance.addObserver(this);
     Future.microtask(_initializeHotKey);
