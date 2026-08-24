@@ -7,6 +7,7 @@ import 'package:workpulse/core/theme/design_tokens.dart';
 import 'package:workpulse/core/widgets/app_dialog.dart';
 import 'package:workpulse/core/theme/color_utils.dart';
 import 'package:workpulse/core/theme/icon_utils.dart';
+import 'package:workpulse/core/widgets/app_select.dart';
 import 'package:workpulse/core/widgets/searchable_multi_select.dart';
 import 'package:workpulse/domain/models/attribute_model.dart';
 import 'package:workpulse/domain/services/export_service.dart';
@@ -221,58 +222,32 @@ class _SessionEditDialogState extends ConsumerState<SessionEditDialog> {
             DialogField(
               label: 'Category',
               child: categoriesAsync.when(
-                loading: () => const SizedBox.shrink(),
+                loading: () => const AppSelectPlaceholder(
+                  label: 'Loading categories…',
+                ),
                 error: (_, __) => const SizedBox.shrink(),
                 data: (categories) {
-                  return Container(
-                    decoration: BoxDecoration(
-                      color: colors.card,
-                      borderRadius: Radii.mdAll,
-                      border: Border.all(color: colors.divider),
-                    ),
-                    padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<String?>(
-                        value: _selectedCategoryId,
-                        isExpanded: true,
-                        dropdownColor: colors.surface,
-                        hint: Text(
-                          'No Category',
-                          style: TextStyle(color: colors.textSecondary),
-                        ),
-                        items: [
-                          DropdownMenuItem<String?>(
-                            value: null,
-                            child: Text(
-                              'No Category',
-                              style: TextStyle(color: colors.textSecondary),
-                            ),
-                          ),
-                          ...categories.map((c) {
-                            return DropdownMenuItem<String?>(
-                              value: c.id,
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    IconUtils.getIcon(c.iconName),
-                                    size: 14,
-                                    color: colors.accent,
-                                  ),
-                                  const SizedBox(width: Spacing.sm),
-                                  Text(
-                                    c.name,
-                                    style: TextStyle(color: colors.textPrimary),
-                                  ),
-                                ],
-                              ),
-                            );
-                          }),
-                        ],
-                        onChanged: (catId) {
-                          setState(() => _selectedCategoryId = catId);
-                        },
+                  return AppSelect<String?>(
+                    placeholder: 'No Category',
+                    value: _selectedCategoryId,
+                    maxTriggerWidth: double.infinity,
+                    options: [
+                      const SelectOption<String?>(
+                        value: null,
+                        label: 'No Category',
+                        icon: Icons.label_off_outlined,
                       ),
-                    ),
+                      ...categories.map(
+                        (c) => SelectOption<String?>(
+                          value: c.id,
+                          label: c.name,
+                          icon: IconUtils.getIcon(c.iconName),
+                        ),
+                      ),
+                    ],
+                    onChanged: (catId) {
+                      setState(() => _selectedCategoryId = catId);
+                    },
                   );
                 },
               ),

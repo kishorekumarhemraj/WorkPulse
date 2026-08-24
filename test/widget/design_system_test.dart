@@ -228,7 +228,7 @@ void main() {
         ),
       );
 
-      await tester.tap(find.byType(DropdownButton<String?>));
+      await tester.tap(find.byType(AppFilterDropdown<String>));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Beta').last);
       await tester.pumpAndSettle();

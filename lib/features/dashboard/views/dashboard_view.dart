@@ -5,9 +5,7 @@ import 'package:workpulse/core/theme/app_colors.dart';
 import 'package:workpulse/core/theme/design_tokens.dart';
 import 'package:workpulse/core/widgets/error_state.dart';
 import 'package:workpulse/core/widgets/page_header.dart';
-import 'package:workpulse/core/widgets/segmented_control.dart';
 import 'package:workpulse/domain/models/analytics_model.dart';
-import 'package:workpulse/domain/models/date_range.dart';
 import 'package:workpulse/domain/services/timer_service.dart';
 import 'package:workpulse/features/dashboard/providers/dashboard_provider.dart';
 import 'package:workpulse/features/dashboard/widgets/breakdown_card.dart';
@@ -17,41 +15,57 @@ import 'package:workpulse/features/dashboard/widgets/metric_card.dart';
 class DashboardView extends ConsumerWidget {
   const DashboardView({super.key});
 
-  String _formatRangeSubtitle(DateRange range) {
-    final startStr = DateFormat.yMMMd().format(range.start.toLocal());
-    final endStr = DateFormat.yMMMd().format(range.end.toLocal());
-    if (startStr == endStr) return startStr;
-    return '$startStr – $endStr';
+  String _formatSubtitle(DateTime date) {
+    return DateFormat.yMMMMEEEEd().format(date);
   }
 
-  Future<void> _pickCustomRange(BuildContext context, WidgetRef ref) async {
-    final currentCustom = ref.read(customDateRangeProvider);
+  String _formatDateButtonLabel(DateTime date) {
+    final now = DateTime.now();
+    final isToday = date.year == now.year &&
+        date.month == now.month &&
+        date.day == now.day;
+    final yesterday = DateTime(now.year, now.month, now.day - 1);
+    final isYesterday = date.year == yesterday.year &&
+        date.month == yesterday.month &&
+        date.day == yesterday.day;
+    final tomorrow = DateTime(now.year, now.month, now.day + 1);
+    final isTomorrow = date.year == tomorrow.year &&
+        date.month == tomorrow.month &&
+        date.day == tomorrow.day;
+
+    final formatted = DateFormat.yMMMd().format(date);
+    if (isToday) return 'Today, $formatted';
+    if (isYesterday) return 'Yesterday, $formatted';
+    if (isTomorrow) return 'Tomorrow, $formatted';
+    return '${DateFormat.E().format(date)}, $formatted';
+  }
+
+  Future<void> _pickDate(BuildContext context, WidgetRef ref) async {
+    final currentDate = ref.read(dashboardDateProvider);
     final now = DateTime.now();
 
-    final picked = await showDateRangePicker(
+    final picked = await showDatePicker(
       context: context,
-      firstDate: DateTime(now.year - 2),
-      lastDate: DateTime(now.year + 1),
-      initialDateRange: currentCustom ??
-          DateTimeRange(
-            start: now.subtract(const Duration(days: 7)),
-            end: now,
-          ),
+      initialDate: currentDate,
+      firstDate: DateTime(now.year - 5),
+      lastDate: DateTime(now.year + 2),
     );
 
     if (picked != null) {
-      ref.read(customDateRangeProvider.notifier).setCustomRange(picked);
-      ref
-          .read(selectedTimeRangeProvider.notifier)
-          .setRange(DashboardTimeRange.custom);
+      ref.read(dashboardDateProvider.notifier).setDate(picked);
     }
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = context.colors;
-    final selectedRange = ref.watch(selectedTimeRangeProvider);
+    final selectedDate = ref.watch(dashboardDateProvider);
     final dashboardAsync = ref.watch(dashboardDataProvider);
+
+    final now = DateTime.now();
+    final isToday = selectedDate.year == now.year &&
+        selectedDate.month == now.month &&
+        selectedDate.day == now.day;
 
     return Scaffold(
       backgroundColor: colors.background,
@@ -65,10 +79,6 @@ class DashboardView extends ConsumerWidget {
         ),
         data: (data) {
           final summary = data.summary;
-          final isToday = selectedRange == DashboardTimeRange.today ||
-              (data.hourlyActivity.isNotEmpty &&
-                  data.range.duration <= const Duration(days: 1));
-
           final efficiency = summary.totalTrackedDuration.inSeconds > 0
               ? (summary.totalActiveDuration.inSeconds /
                       summary.totalTrackedDuration.inSeconds) *
@@ -78,24 +88,73 @@ class DashboardView extends ConsumerWidget {
           return PageScaffold(
             scrollable: true,
             title: 'Dashboard',
-            subtitle: _formatRangeSubtitle(data.range),
+            subtitle: _formatSubtitle(selectedDate),
             actions: [
-              AppSegmentedControl<DashboardTimeRange>(
-                selected: selectedRange,
-                onChanged: (range) {
-                  if (range == DashboardTimeRange.custom) {
-                    _pickCustomRange(context, ref);
-                  } else {
-                    ref
-                        .read(selectedTimeRangeProvider.notifier)
-                        .setRange(range);
-                  }
-                },
-                options: [
-                  for (final range in DashboardTimeRange.values)
-                    SegmentOption(value: range, label: range.label),
-                ],
+              // Date Navigation Bar
+              Container(
+                decoration: BoxDecoration(
+                  color: colors.surface,
+                  borderRadius: Radii.smAll,
+                  border: Border.all(color: colors.divider),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.chevron_left, size: IconSizes.md),
+                      tooltip: 'Previous day',
+                      onPressed: () =>
+                          ref.read(dashboardDateProvider.notifier).previousDay(),
+                    ),
+                    InkWell(
+                      borderRadius: Radii.xsAll,
+                      onTap: () => _pickDate(context, ref),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: Spacing.sm,
+                          vertical: Spacing.xs,
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.calendar_today_outlined,
+                              size: IconSizes.sm,
+                              color: colors.accent,
+                            ),
+                            const SizedBox(width: Spacing.xs),
+                            Text(
+                              _formatDateButtonLabel(selectedDate),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.copyWith(fontWeight: FontWeight.w500),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.chevron_right, size: IconSizes.md),
+                      tooltip: 'Next day',
+                      onPressed: () =>
+                          ref.read(dashboardDateProvider.notifier).nextDay(),
+                    ),
+                  ],
+                ),
               ),
+              if (!isToday)
+                OutlinedButton(
+                  onPressed: () =>
+                      ref.read(dashboardDateProvider.notifier).goToToday(),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: Spacing.md,
+                      vertical: Spacing.sm,
+                    ),
+                  ),
+                  child: const Text('Today'),
+                ),
               IconButton(
                 onPressed: () => ref.invalidate(dashboardDataProvider),
                 icon: const Icon(Icons.refresh, size: IconSizes.lg),
@@ -147,13 +206,14 @@ class DashboardView extends ConsumerWidget {
                   ],
                 ),
                 const SizedBox(height: Spacing.xxl),
-                if (isToday
-                    ? data.hourlyActivity.isNotEmpty
-                    : data.dailyActivity.isNotEmpty) ...[
+                if (data.hourlyActivity.isNotEmpty) ...[
                   DailyActivityChart(
-                    activities: data.dailyActivity,
                     hourlyActivities: data.hourlyActivity,
-                    isHourly: isToday,
+                    isHourly: true,
+                    isToday: isToday,
+                    title: isToday
+                        ? "Today's Hourly Breakdown"
+                        : 'Hourly Breakdown',
                   ),
                   const SizedBox(height: Spacing.xxl),
                 ],
