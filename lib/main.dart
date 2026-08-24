@@ -108,7 +108,7 @@ class _WorkPulseAppState extends ConsumerState<WorkPulseApp> {
   @override
   void initState() {
     super.initState();
-    _windowService = widget.windowService ?? DesktopWindowService.instance;
+    _windowService = widget.windowService ?? ref.read(windowServiceProvider);
     // The tray owns its own menu actions; the app only has to bring it up.
     // This is the one place it is initialized — MainShellView used to do it a
     // second time, registering a callback that opened Quick Capture twice.
