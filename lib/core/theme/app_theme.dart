@@ -37,6 +37,7 @@ class AppTheme {
 
     return ThemeData(
       useMaterial3: true,
+      splashFactory: InkRipple.splashFactory,
       brightness: brightness,
       fontFamily: AppTypography.fontFamily,
       textTheme: textTheme,

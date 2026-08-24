@@ -271,6 +271,19 @@ void main() {
       expect(closed, isTrue);
     });
 
+    testWidgets('renders 2-column dropdowns with Project and Category labels',
+        (tester) async {
+      final timerNotifier = _FakeTimerNotifier();
+      await tester
+          .pumpWidget(createStandaloneApp(timerNotifier: timerNotifier));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Project'), findsOneWidget);
+      expect(find.text('Category'), findsOneWidget);
+      expect(find.text('App Core'), findsWidgets);
+      expect(find.text('Engineering'), findsWidgets);
+    });
+
     testWidgets(
         'WorkPulseApp dynamically renders QuickCaptureStandaloneView on WindowMode.quickCapture',
         (tester) async {

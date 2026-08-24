@@ -167,12 +167,18 @@ class _QuickCaptureStandaloneViewState
               return KeyEventResult.handled;
             }
             if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
-              ref.read(quickCaptureProvider.notifier).selectNext(totalItems);
-              return KeyEventResult.handled;
+              if (node.hasPrimaryFocus || _inputFocusNode.hasFocus) {
+                ref.read(quickCaptureProvider.notifier).selectNext(totalItems);
+                return KeyEventResult.handled;
+              }
+              return KeyEventResult.ignored;
             }
             if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
-              ref.read(quickCaptureProvider.notifier).selectPrevious();
-              return KeyEventResult.handled;
+              if (node.hasPrimaryFocus || _inputFocusNode.hasFocus) {
+                ref.read(quickCaptureProvider.notifier).selectPrevious();
+                return KeyEventResult.handled;
+              }
+              return KeyEventResult.ignored;
             }
             if (event.logicalKey == LogicalKeyboardKey.tab) {
               if (HardwareKeyboard.instance.isShiftPressed) {
@@ -184,8 +190,11 @@ class _QuickCaptureStandaloneViewState
             }
             if (event.logicalKey == LogicalKeyboardKey.enter ||
                 event.logicalKey == LogicalKeyboardKey.numpadEnter) {
-              _handleConfirm(matchingTasks, showCreateOption, qcState.query);
-              return KeyEventResult.handled;
+              if (node.hasPrimaryFocus || _inputFocusNode.hasFocus) {
+                _handleConfirm(matchingTasks, showCreateOption, qcState.query);
+                return KeyEventResult.handled;
+              }
+              return KeyEventResult.ignored;
             }
           }
           return KeyEventResult.ignored;
@@ -337,62 +346,70 @@ class _QuickCaptureStandaloneViewState
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                          Wrap(
-                            spacing: 12,
-                            runSpacing: 8,
-                            crossAxisAlignment: WrapCrossAlignment.center,
+                        if (projects.isNotEmpty || categories.isNotEmpty) ...[
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               if (projects.isNotEmpty)
-                                AppSelect<String>(
-                                  value: projects.any(
-                                    (p) => p.id == qcState.selectedProjectId,
-                                  )
-                                      ? qcState.selectedProjectId
-                                      : projects.first.id,
-                                  placeholder: 'Select Project',
-                                  maxTriggerWidth: 200,
-                                  options: projects
-                                      .map((p) => SelectOption(
-                                            value: p.id,
-                                            label: p.name,
-                                            color:
-                                                ColorUtils.parseHex(p.colorHex),
-                                          ))
-                                      .toList(),
-                                  onChanged: (val) {
-                                    if (val != null) {
-                                      ref
-                                          .read(quickCaptureProvider.notifier)
-                                          .setProject(val);
-                                    }
-                                  },
+                                Expanded(
+                                  child: AppSelect<String>(
+                                    label: 'Project',
+                                    value: projects.any(
+                                      (p) => p.id == qcState.selectedProjectId,
+                                    )
+                                        ? qcState.selectedProjectId
+                                        : projects.first.id,
+                                    placeholder: 'Select Project',
+                                    maxTriggerWidth: double.infinity,
+                                    options: projects
+                                        .map((p) => SelectOption(
+                                              value: p.id,
+                                              label: p.name,
+                                              color:
+                                                  ColorUtils.parseHex(p.colorHex),
+                                            ))
+                                        .toList(),
+                                    onChanged: (val) {
+                                      if (val != null) {
+                                        ref
+                                            .read(quickCaptureProvider.notifier)
+                                            .setProject(val);
+                                      }
+                                    },
+                                  ),
                                 ),
+                              if (projects.isNotEmpty && categories.isNotEmpty)
+                                const SizedBox(width: 12),
                               if (categories.isNotEmpty)
-                                AppSelect<String>(
-                                  value: categories.any(
-                                    (c) => c.id == qcState.selectedCategoryId,
-                                  )
-                                      ? qcState.selectedCategoryId
-                                      : categories.first.id,
-                                  placeholder: 'Select Category',
-                                  maxTriggerWidth: 200,
-                                  options: categories
-                                      .map((c) => SelectOption(
-                                            value: c.id,
-                                            label: c.name,
-                                            icon: IconUtils.getIcon(c.iconName),
-                                          ))
-                                      .toList(),
-                                  onChanged: (val) {
-                                    if (val != null) {
-                                      ref
-                                          .read(quickCaptureProvider.notifier)
-                                          .setCategory(val);
-                                    }
-                                  },
+                                Expanded(
+                                  child: AppSelect<String>(
+                                    label: 'Category',
+                                    value: categories.any(
+                                      (c) => c.id == qcState.selectedCategoryId,
+                                    )
+                                        ? qcState.selectedCategoryId
+                                        : categories.first.id,
+                                    placeholder: 'Select Category',
+                                    maxTriggerWidth: double.infinity,
+                                    options: categories
+                                        .map((c) => SelectOption(
+                                              value: c.id,
+                                              label: c.name,
+                                              icon: IconUtils.getIcon(c.iconName),
+                                            ))
+                                        .toList(),
+                                    onChanged: (val) {
+                                      if (val != null) {
+                                        ref
+                                            .read(quickCaptureProvider.notifier)
+                                            .setCategory(val);
+                                      }
+                                    },
+                                  ),
                                 ),
                             ],
                           ),
+                        ],
                     if (tags.isNotEmpty || people.isNotEmpty) ...[
                       const SizedBox(height: 10),
                       Wrap(
@@ -473,6 +490,7 @@ class _QuickCaptureStandaloneViewState
             ? context.colors.accent.withValues(alpha: 0.15)
             : Colors.transparent,
         child: InkWell(
+          canRequestFocus: false,
           onTap: () {
             ref.read(quickCaptureProvider.notifier).setSelectedIndex(index);
             _handleConfirm([task], false, '');
@@ -571,6 +589,7 @@ class _QuickCaptureStandaloneViewState
             ? context.colors.success.withValues(alpha: 0.15)
             : Colors.transparent,
         child: InkWell(
+          canRequestFocus: false,
           onTap: () {
             _handleConfirm([], true, query);
           },
