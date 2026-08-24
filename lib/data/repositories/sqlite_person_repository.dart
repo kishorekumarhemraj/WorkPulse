@@ -85,6 +85,7 @@ class SqlitePersonRepository implements PersonRepository {
       'workspace_id': person.workspaceId,
       'name': person.name,
       'email': person.email,
+      'team': person.team,
       'created_at': person.createdAt.toStorageString(),
     };
   }
@@ -95,6 +96,7 @@ class SqlitePersonRepository implements PersonRepository {
       workspaceId: map['workspace_id'] as String,
       name: map['name'] as String,
       email: map['email'] as String?,
+      team: map['team'] as String?,
       createdAt: DateTime.parse(map['created_at'] as String),
     );
   }

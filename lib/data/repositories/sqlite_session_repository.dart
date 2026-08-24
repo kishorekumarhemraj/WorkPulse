@@ -171,6 +171,7 @@ class SqliteSessionRepository implements SessionRepository {
     return {
       'id': session.id,
       'work_item_id': session.workItemId,
+      'category_id': session.categoryId,
       'start_time': session.startTime.toStorageString(),
       'end_time': session.endTime?.toStorageString(),
       'notes': session.notes,
@@ -182,6 +183,7 @@ class SqliteSessionRepository implements SessionRepository {
     return Session(
       id: map['id'] as String,
       workItemId: map['work_item_id'] as String,
+      categoryId: map['category_id'] as String?,
       startTime: DateTime.parse(map['start_time'] as String),
       endTime: map['end_time'] != null
           ? DateTime.parse(map['end_time'] as String)
