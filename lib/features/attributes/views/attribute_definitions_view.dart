@@ -65,6 +65,7 @@ class _AttributeDefinitionsViewState
                   setState(() => _searchQuery = value.trim().toLowerCase()),
             ),
             AppSegmentedControl<_ScopeFilter>(
+              height: ControlSizes.toolbar,
               selected: _scopeFilter,
               onChanged: (value) => setState(() => _scopeFilter = value),
               options: const [

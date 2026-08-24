@@ -109,6 +109,7 @@ class WorkItemsToolbar extends ConsumerWidget {
               onToggle: notifier.toggleIncludeArchived,
             ),
             AppSegmentedControl<ListDensity>(
+              height: ControlSizes.toolbar,
               selected: density,
               iconOnly: true,
               onChanged: (value) =>

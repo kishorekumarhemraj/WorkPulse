@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:workpulse/core/platform/pdf_export_handler.dart';
 import 'package:workpulse/core/theme/app_colors.dart';
 import 'package:workpulse/core/theme/design_tokens.dart';
+import 'package:workpulse/core/widgets/date_stepper.dart';
 import 'package:workpulse/core/widgets/error_state.dart';
 import 'package:workpulse/core/widgets/page_header.dart';
 import 'package:workpulse/core/widgets/segmented_control.dart';
@@ -242,77 +243,33 @@ class DashboardView extends ConsumerWidget {
                 ],
               ),
               // Date Navigation Bar (Previous day, Current Date, Next day)
-              Container(
-                decoration: BoxDecoration(
-                  color: colors.surface,
-                  borderRadius: Radii.smAll,
-                  border: Border.all(color: colors.divider),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.chevron_left, size: IconSizes.md),
-                      tooltip: 'Previous day',
-                      onPressed: () {
-                        ref.read(dashboardDateProvider.notifier).previousDay();
-                        final newDate = ref.read(dashboardDateProvider);
-                        final isNewToday = newDate.year == now.year &&
-                            newDate.month == now.month &&
-                            newDate.day == now.day;
-                        ref.read(selectedTimeRangeProvider.notifier).setRange(
-                              isNewToday
-                                  ? DashboardTimeRange.today
-                                  : DashboardTimeRange.custom,
-                            );
-                      },
-                    ),
-                    InkWell(
-                      borderRadius: Radii.xsAll,
-                      onTap: () => _pickDate(context, ref),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: Spacing.sm,
-                          vertical: Spacing.xs,
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.calendar_today_outlined,
-                              size: IconSizes.sm,
-                              color: colors.accent,
-                            ),
-                            const SizedBox(width: Spacing.xs),
-                            Text(
-                              _formatDateButtonLabel(selectedDate),
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodyMedium
-                                  ?.copyWith(fontWeight: FontWeight.w500),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.chevron_right, size: IconSizes.md),
-                      tooltip: 'Next day',
-                      onPressed: () {
-                        ref.read(dashboardDateProvider.notifier).nextDay();
-                        final newDate = ref.read(dashboardDateProvider);
-                        final isNewToday = newDate.year == now.year &&
-                            newDate.month == now.month &&
-                            newDate.day == now.day;
-                        ref.read(selectedTimeRangeProvider.notifier).setRange(
-                              isNewToday
-                                  ? DashboardTimeRange.today
-                                  : DashboardTimeRange.custom,
-                            );
-                      },
-                    ),
-                  ],
-                ),
+              AppDateStepper(
+                label: _formatDateButtonLabel(selectedDate),
+                onPrevious: () {
+                  ref.read(dashboardDateProvider.notifier).previousDay();
+                  final newDate = ref.read(dashboardDateProvider);
+                  final isNewToday = newDate.year == now.year &&
+                      newDate.month == now.month &&
+                      newDate.day == now.day;
+                  ref.read(selectedTimeRangeProvider.notifier).setRange(
+                        isNewToday
+                            ? DashboardTimeRange.today
+                            : DashboardTimeRange.custom,
+                      );
+                },
+                onNext: () {
+                  ref.read(dashboardDateProvider.notifier).nextDay();
+                  final newDate = ref.read(dashboardDateProvider);
+                  final isNewToday = newDate.year == now.year &&
+                      newDate.month == now.month &&
+                      newDate.day == now.day;
+                  ref.read(selectedTimeRangeProvider.notifier).setRange(
+                        isNewToday
+                            ? DashboardTimeRange.today
+                            : DashboardTimeRange.custom,
+                      );
+                },
+                onPickDate: () => _pickDate(context, ref),
               ),
               Tooltip(
                 message: 'Export colorful daily report as PDF',
@@ -327,8 +284,17 @@ class DashboardView extends ConsumerWidget {
               ),
               IconButton(
                 onPressed: () => ref.invalidate(dashboardDataProvider),
-                icon: const Icon(Icons.refresh, size: IconSizes.lg),
+                icon: const Icon(Icons.refresh, size: IconSizes.md),
                 tooltip: 'Refresh analytics',
+                style: IconButton.styleFrom(
+                  minimumSize:
+                      const Size(ControlSizes.standard, ControlSizes.standard),
+                  maximumSize:
+                      const Size(ControlSizes.standard, ControlSizes.standard),
+                  padding: EdgeInsets.zero,
+                  shape: const RoundedRectangleBorder(
+                      borderRadius: Radii.mdAll),
+                ),
               ),
             ],
             child: Column(
