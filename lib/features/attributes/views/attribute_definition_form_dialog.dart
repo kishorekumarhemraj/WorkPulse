@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workpulse/core/theme/app_colors.dart';
 import 'package:workpulse/core/theme/design_tokens.dart';
 import 'package:workpulse/core/widgets/app_dialog.dart';
+import 'package:workpulse/core/widgets/app_select.dart';
 import 'package:workpulse/domain/models/attribute_model.dart';
 import 'package:workpulse/features/attributes/providers/attribute_definitions_provider.dart';
 
@@ -220,57 +221,40 @@ class _AttributeDefinitionFormDialogState
 
             // Type and Scope Row
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Type Dropdown
                 Expanded(
-                  child: DropdownButtonFormField<AttributeType>(
-                    initialValue: _selectedType,
-                    isDense: true,
-                    isExpanded: true,
-                    dropdownColor: context.colors.surfaceRaised,
-                    style: TextStyle(
-                        fontSize: 13, color: context.colors.textPrimary),
-                    decoration: const InputDecoration(labelText: 'Data Type'),
-                    items: AttributeType.values.map((t) {
-                      return DropdownMenuItem(
-                          value: t, child: Text(_formatType(t)));
-                    }).toList(),
-                    onChanged: isEditing
-                        ? null
-                        : (v) {
-                            if (v != null) {
-                              setState(() => _selectedType = v);
-                            }
-                          },
+                  child: AppSelect<AttributeType>(
+                    label: 'Data Type',
+                    placeholder: 'Select type',
+                    value: _selectedType,
+                    enabled: !isEditing,
+                    options: AttributeType.values
+                        .map((t) =>
+                            SelectOption(value: t, label: _formatType(t)))
+                        .toList(),
+                    onChanged: (v) {
+                      if (v != null) setState(() => _selectedType = v);
+                    },
                   ),
                 ),
                 const SizedBox(width: 14),
-
-                // Scope Dropdown
                 Expanded(
-                  child: DropdownButtonFormField<AttributeScope>(
-                    initialValue: _selectedScope,
-                    isDense: true,
-                    isExpanded: true,
-                    dropdownColor: context.colors.surfaceRaised,
-                    style: TextStyle(
-                        fontSize: 13, color: context.colors.textPrimary),
-                    decoration: const InputDecoration(labelText: 'Scope'),
-                    items: const [
-                      DropdownMenuItem(
-                          value: AttributeScope.task,
-                          child: Text('Task Scope')),
-                      DropdownMenuItem(
+                  child: AppSelect<AttributeScope>(
+                    label: 'Scope',
+                    placeholder: 'Select scope',
+                    value: _selectedScope,
+                    enabled: !isEditing,
+                    options: const [
+                      SelectOption(
+                          value: AttributeScope.task, label: 'Task Scope'),
+                      SelectOption(
                           value: AttributeScope.session,
-                          child: Text('Session Scope')),
+                          label: 'Session Scope'),
                     ],
-                    onChanged: isEditing
-                        ? null
-                        : (v) {
-                            if (v != null) {
-                              setState(() => _selectedScope = v);
-                            }
-                          },
+                    onChanged: (v) {
+                      if (v != null) setState(() => _selectedScope = v);
+                    },
                   ),
                 ),
               ],
