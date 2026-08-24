@@ -90,8 +90,12 @@ class _FakeTimerNotifier extends TimerNotifier {
       const TimerState(status: TimerStatus.idle);
 
   @override
-  Future<void> startTimer(WorkItem workItem,
-      {List<String> peopleIds = const []}) async {
+  Future<void> startTimer(
+    WorkItem workItem, {
+    String? categoryId,
+    List<String> peopleIds = const [],
+    String? notes,
+  }) async {
     startedTask = workItem;
     state = AsyncData(
       TimerState(
@@ -100,6 +104,7 @@ class _FakeTimerNotifier extends TimerNotifier {
         activeSession: Session(
           id: 'sess-new',
           workItemId: workItem.id,
+          categoryId: categoryId ?? workItem.categoryId,
           startTime: DateTime.now().toUtc(),
           createdAt: DateTime.now().toUtc(),
         ),

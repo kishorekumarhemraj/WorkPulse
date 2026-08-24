@@ -56,6 +56,7 @@ class DashboardView extends ConsumerWidget {
     return Scaffold(
       backgroundColor: colors.background,
       body: dashboardAsync.when(
+        skipLoadingOnReload: true,
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, stack) => ErrorState(
           title: 'Could not load the dashboard',

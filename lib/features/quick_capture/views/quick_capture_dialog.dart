@@ -454,13 +454,15 @@ class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
                     ],
                   ),
                 ),
-              ],
+              ),
             ),
-          ),
+          ],
         ),
       ),
-    );
-  }
+    ),
+  ),
+);
+}
 
   Widget _buildTaskResultItem(
     WorkItem task,

@@ -68,9 +68,9 @@ class ActiveTimerBar extends ConsumerWidget {
       child: LayoutBuilder(
         builder: (context, constraints) {
           final showProject = constraints.maxWidth >= 880;
-          final showCategory = constraints.maxWidth >= 780;
-          final showTrackingLabel = constraints.maxWidth >= 680;
-          final showSwitch = constraints.maxWidth >= 580;
+          final showTrackingLabel = constraints.maxWidth >= 780;
+          final showCategory = constraints.maxWidth >= 680;
+          final showSwitch = constraints.maxWidth >= 620;
 
           return Row(
             children: [
