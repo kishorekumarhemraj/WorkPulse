@@ -27,6 +27,9 @@ dependencies:
   hotkey_manager: ^0.2.3
   screen_retriever: ^0.2.2
 
+  # Native platform queries (system idle time via dart:ffi)
+  ffi: ^2.1.4
+
   # Utilities & Formatting
   intl: ^0.20.3
   uuid: ^4.5.1

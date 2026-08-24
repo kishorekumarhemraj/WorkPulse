@@ -8,9 +8,58 @@ on:
 
 jobs:
   test:
-    name: Run Analysis & Tests
+    name: Format, Analyse & Test
     runs-on: macos-latest
 
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Install Dependencies
+        run: flutter pub get
+
+      # Formatting was never enforced, so drift accumulated silently.
+      - name: Check Formatting
+        run: dart format --output=none --set-exit-if-changed lib test
+
+      - name: Analyze Code
+        run: flutter analyze
+
+      - name: Run Unit & Integration Tests
+        run: flutter test --coverage
+
+  # Windows is a supported target, so it is compiled on every change rather
+  # than assumed to work. Without this job, Windows-only breakage (a missing
+  # plugin implementation, a path separator, an FFI signature) is only found
+  # by a user.
+  build-macos:
+    name: Build macOS
+    runs-on: macos-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Install Dependencies
+        run: flutter pub get
+
+      - name: Build macOS App
+        run: flutter build macos --debug
+
+  build-windows:
+    name: Build Windows
+    runs-on: windows-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -27,5 +76,8 @@ jobs:
       - name: Analyze Code
         run: flutter analyze
 
-      - name: Run Unit & Integration Tests
-        run: flutter test --coverage
+      - name: Run Tests
+        run: flutter test
+
+      - name: Build Windows App
+        run: flutter build windows --debug

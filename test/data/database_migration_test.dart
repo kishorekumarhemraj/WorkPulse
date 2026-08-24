@@ -90,7 +90,8 @@ void main() {
       );
     });
 
-    test('sessions table has a notes and category_id column on a fresh database',
+    test(
+        'sessions table has a notes and category_id column on a fresh database',
         () async {
       final db = dbService.database;
       final columns =
@@ -102,8 +103,7 @@ void main() {
 
     test('people table has a team column on a fresh database', () async {
       final db = dbService.database;
-      final columns =
-          await db.rawQuery('PRAGMA table_info(${Tables.people});');
+      final columns = await db.rawQuery('PRAGMA table_info(${Tables.people});');
       final columnNames = columns.map((c) => c['name'] as String).toSet();
       expect(columnNames, contains('team'));
     });
@@ -194,7 +194,8 @@ void main() {
 
         final peopleCols =
             await db.rawQuery('PRAGMA table_info(${Tables.people});');
-        final peopleColNames = peopleCols.map((c) => c['name'] as String).toSet();
+        final peopleColNames =
+            peopleCols.map((c) => c['name'] as String).toSet();
         expect(peopleColNames, contains('team'));
 
         final sessionTagsTable = await db.rawQuery(
@@ -227,7 +228,8 @@ void main() {
           whereArgs: ['session-pre-upgrade'],
         );
         expect(backfilledPeople, hasLength(1));
-        expect(backfilledPeople.first['person_id'], equals('person-pre-upgrade'));
+        expect(
+            backfilledPeople.first['person_id'], equals('person-pre-upgrade'));
 
         await upgraded.close();
       } finally {
@@ -235,8 +237,7 @@ void main() {
       }
     });
 
-    test('MigrationV2, MigrationV3 and MigrationV4 are idempotent',
-        () async {
+    test('MigrationV2, MigrationV3 and MigrationV4 are idempotent', () async {
       final tempDir =
           await Directory.systemTemp.createTemp('workpulse_idempotency_test');
       final dbPath = p.join(tempDir.path, 'idempotent_test.db');

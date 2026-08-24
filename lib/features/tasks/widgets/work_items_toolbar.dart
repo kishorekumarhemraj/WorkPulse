@@ -33,9 +33,7 @@ class ListDensityNotifier extends Notifier<ListDensity> {
 /// nothing "Clear Filters" button, and a filter set on a collapsed control
 /// was easy to forget about.
 class WorkItemsToolbar extends ConsumerWidget {
-  final FocusNode? searchFocusNode;
-
-  const WorkItemsToolbar({super.key, this.searchFocusNode});
+  const WorkItemsToolbar({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -57,7 +55,6 @@ class WorkItemsToolbar extends ConsumerWidget {
           children: [
             SearchField(
               hintText: 'Search work items…',
-              focusNode: searchFocusNode,
               initialValue: filter.searchQuery,
               onChanged: notifier.setSearchQuery,
             ),

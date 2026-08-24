@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:workpulse/core/keyboard/shortcut_labels.dart';
 import 'package:workpulse/core/theme/app_colors.dart';
 import 'package:workpulse/core/theme/app_typography.dart';
 import 'package:workpulse/core/theme/design_tokens.dart';
-import 'package:workpulse/core/widgets/app_dialog.dart';
+import 'package:workpulse/core/widgets/confirm_dialog.dart';
 import 'package:workpulse/core/widgets/date_stepper.dart';
 import 'package:workpulse/core/widgets/empty_state.dart';
 import 'package:workpulse/core/widgets/error_state.dart';
@@ -52,9 +53,8 @@ class SessionHistoryView extends ConsumerWidget {
 
   String _formatDateButtonLabel(DateTime date) {
     final now = DateTime.now();
-    final isToday = date.year == now.year &&
-        date.month == now.month &&
-        date.day == now.day;
+    final isToday =
+        date.year == now.year && date.month == now.month && date.day == now.day;
     final yesterday = DateTime(now.year, now.month, now.day - 1);
     final isYesterday = date.year == yesterday.year &&
         date.month == yesterday.month &&
@@ -99,36 +99,14 @@ class SessionHistoryView extends ConsumerWidget {
     String sessionId,
     String taskName,
   ) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AppDialog(
-        title: 'Delete Session',
-        icon: Icons.delete_outline,
-        iconColor: context.colors.danger,
-        width: DialogWidth.small,
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: context.colors.dangerFill,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Delete'),
-          ),
-        ],
-        child: Text(
-          'Are you sure you want to delete this session for "$taskName"? '
+    final confirmed = await confirmDestructive(
+      context,
+      title: 'Delete Session',
+      message: 'Are you sure you want to delete this session for "$taskName"? '
           'This action cannot be undone.',
-          style: Theme.of(ctx).textTheme.bodyMedium,
-        ),
-      ),
     );
 
-    if (confirmed == true) {
+    if (confirmed) {
       await ref.read(sessionEditorControllerProvider).deleteSession(sessionId);
     }
   }
@@ -198,7 +176,7 @@ class SessionHistoryView extends ConsumerWidget {
             onPickDate: () => _pickDate(context, ref),
           ),
           Tooltip(
-            message: 'Export data   ⌘E',
+            message: 'Export data   ${ShortcutLabels.primary('E')}',
             child: ElevatedButton.icon(
               onPressed: () => ExportDialog.show(context),
               icon: const Icon(
@@ -218,8 +196,7 @@ class SessionHistoryView extends ConsumerWidget {
               maximumSize:
                   const Size(ControlSizes.standard, ControlSizes.standard),
               padding: EdgeInsets.zero,
-              shape: const RoundedRectangleBorder(
-                  borderRadius: Radii.mdAll),
+              shape: const RoundedRectangleBorder(borderRadius: Radii.mdAll),
             ),
           ),
         ],
@@ -235,8 +212,7 @@ class SessionHistoryView extends ConsumerWidget {
               return const EmptyState(
                 icon: Icons.history_toggle_off,
                 title: 'No sessions recorded in this period',
-                message:
-                    'Start a timer on a work item, or navigate dates to '
+                message: 'Start a timer on a work item, or navigate dates to '
                     'see earlier sessions.',
               );
             }

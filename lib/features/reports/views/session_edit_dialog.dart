@@ -8,6 +8,7 @@ import 'package:workpulse/core/widgets/app_dialog.dart';
 import 'package:workpulse/core/theme/color_utils.dart';
 import 'package:workpulse/core/theme/icon_utils.dart';
 import 'package:workpulse/core/widgets/app_select.dart';
+import 'package:workpulse/core/widgets/app_snack_bar.dart';
 import 'package:workpulse/core/widgets/searchable_multi_select.dart';
 import 'package:workpulse/domain/models/attribute_model.dart';
 import 'package:workpulse/domain/services/export_service.dart';
@@ -54,13 +55,17 @@ class _SessionEditDialogState extends ConsumerState<SessionEditDialog> {
     _endTime = s.endTime?.toLocal();
     _selectedCategoryId = s.categoryId ?? widget.record.workItem.categoryId;
     _notesController = TextEditingController(text: s.notes ?? '');
-    _selectedTagIds = List.from(s.tagIds.isNotEmpty ? s.tagIds : widget.record.workItem.tagIds);
-    _selectedPeopleIds = List.from(s.peopleIds.isNotEmpty ? s.peopleIds : widget.record.workItem.peopleIds);
+    _selectedTagIds = List.from(
+        s.tagIds.isNotEmpty ? s.tagIds : widget.record.workItem.tagIds);
+    _selectedPeopleIds = List.from(s.peopleIds.isNotEmpty
+        ? s.peopleIds
+        : widget.record.workItem.peopleIds);
 
     Future.microtask(() async {
       try {
         final existingValues = await ref.read(
-            sessionAttributeValuesFamilyProvider(widget.record.session.id).future);
+            sessionAttributeValuesFamilyProvider(widget.record.session.id)
+                .future);
         if (mounted) {
           setState(() {
             for (final v in existingValues) {
@@ -68,10 +73,12 @@ class _SessionEditDialogState extends ConsumerState<SessionEditDialog> {
                 _sessionAttributeValues[v.attributeDefinitionId] = v.textValue;
               }
               if (v.numberValue != null) {
-                _sessionAttributeValues[v.attributeDefinitionId] = v.numberValue;
+                _sessionAttributeValues[v.attributeDefinitionId] =
+                    v.numberValue;
               }
               if (v.booleanValue != null) {
-                _sessionAttributeValues[v.attributeDefinitionId] = v.booleanValue;
+                _sessionAttributeValues[v.attributeDefinitionId] =
+                    v.booleanValue;
               }
               if (v.dateValue != null) {
                 _sessionAttributeValues[v.attributeDefinitionId] = v.dateValue;
@@ -84,9 +91,7 @@ class _SessionEditDialogState extends ConsumerState<SessionEditDialog> {
         }
       } catch (_) {}
     });
-
   }
-
 
   @override
   void dispose() {
@@ -141,10 +146,10 @@ class _SessionEditDialogState extends ConsumerState<SessionEditDialog> {
     if (!_formKey.currentState!.validate() || _isSubmitting) return;
 
     if (_endTime != null && _endTime!.isBefore(_startTime)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: const Text('End time cannot be before start time'),
-            backgroundColor: context.colors.danger),
+      ScaffoldMessenger.of(context).showAppSnackBar(
+        const AppSnackBar.failure(
+          message: 'End time cannot be before start time',
+        ),
       );
       return;
     }
@@ -169,10 +174,8 @@ class _SessionEditDialogState extends ConsumerState<SessionEditDialog> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text('Failed to update session: $e'),
-              backgroundColor: context.colors.danger),
+        ScaffoldMessenger.of(context).showAppSnackBar(
+          AppSnackBar.failure(message: 'Failed to update session: $e'),
         );
       }
     } finally {
@@ -299,8 +302,7 @@ class _SessionEditDialogState extends ConsumerState<SessionEditDialog> {
                             ))
                         .toList(),
                     selectedIds: _selectedTagIds,
-                    onChanged: (ids) =>
-                        setState(() => _selectedTagIds = ids),
+                    onChanged: (ids) => setState(() => _selectedTagIds = ids),
                     hintText: 'Search tags…',
                     emptyStateText: 'No tags added yet',
                   );
