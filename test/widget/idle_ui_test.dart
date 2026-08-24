@@ -154,7 +154,9 @@ void main() {
         find.text('WorkPulse was closed while the timer kept running.'),
         findsOneWidget,
       );
-      expect(find.text('8h 12m 0s'), findsOneWidget);
+      // Compact formatting drops a trailing zero-second component once the
+      // gap runs to hours: "8h 12m", not "8h 12m 0s".
+      expect(find.text('8h 12m'), findsOneWidget);
       expect(find.text('Stop Timer at Last Activity'), findsOneWidget);
 
       // All three resolutions stay available — the gap is never resolved for

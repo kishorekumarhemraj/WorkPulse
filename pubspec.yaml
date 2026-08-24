@@ -1,5 +1,5 @@
 name: workpulse
-description: "A lightweight, privacy-first, offline-first macOS time-tracking application."
+description: "A lightweight, privacy-first, offline-first desktop time-tracking application for macOS and Windows."
 publish_to: 'none'
 version: 2.7.0+1
 
