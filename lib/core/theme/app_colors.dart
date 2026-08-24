@@ -90,9 +90,6 @@ class WorkPulseColors extends ThemeExtension<WorkPulseColors> {
   /// A pressed/hovered variant of [accent].
   final Color accentHover;
 
-  /// Low-opacity [accent] fill for tinted containers.
-  final Color accentSubtle;
-
   /// The background of a *filled* accent button.
   ///
   /// Distinct from [accent] because the two have opposing contrast needs:
@@ -101,23 +98,45 @@ class WorkPulseColors extends ThemeExtension<WorkPulseColors> {
   /// that text to clear AA. One colour cannot do both.
   final Color accentFill;
 
-  /// Running timers, completed work, positive deltas.
+  /// Low-opacity [accent] fill for tinted containers.
+  final Color accentSubtle;
+
+  /// Running timers, completed work, positive deltas — as *text*.
+  ///
+  /// Text on a light surface must be dark to clear AA, which is why the light
+  /// value is a deep green and not the vivid one below. Anything that is a
+  /// shape rather than a glyph wants [successFill].
   final Color success;
+
+  /// The same role as a *fill*: chart bars, status dots, stripes.
+  ///
+  /// A shape carries no text, so it is free to be the hue the role actually
+  /// means. Making one token serve both is what turned the light theme's
+  /// activity chart forest-green and its idle bars brown. Dark mode needs no
+  /// split — its text values are already vivid — so the two are equal there.
+  final Color successFill;
   final Color successSubtle;
 
-  /// Idle time, archived items, cautions.
+  /// Idle time, archived items, cautions — as *text*. See [success].
   final Color warning;
+
+  /// The same role as a *fill*. See [successFill].
+  final Color warningFill;
   final Color warningSubtle;
 
-  /// Destructive actions and errors.
+  /// Destructive actions and errors — as *text*.
   final Color danger;
+
+  /// The background of a *filled* destructive button, and the fill
+  /// hue for danger shapes. See [accentFill] and [successFill].
+  final Color dangerFill;
   final Color dangerSubtle;
 
-  /// The background of a *filled* destructive button — see [accentFill].
-  final Color dangerFill;
-
-  /// Neutral informational highlights.
+  /// Neutral informational highlights — as *text*. See [success].
   final Color info;
+
+  /// The same role as a *fill*. See [successFill].
+  final Color infoFill;
   final Color infoSubtle;
 
   const WorkPulseColors({
@@ -141,16 +160,19 @@ class WorkPulseColors extends ThemeExtension<WorkPulseColors> {
     required this.shadow,
     required this.accent,
     required this.accentHover,
-    required this.accentSubtle,
     required this.accentFill,
+    required this.accentSubtle,
     required this.success,
+    required this.successFill,
     required this.successSubtle,
     required this.warning,
+    required this.warningFill,
     required this.warningSubtle,
     required this.danger,
-    required this.dangerSubtle,
     required this.dangerFill,
+    required this.dangerSubtle,
     required this.info,
+    required this.infoFill,
     required this.infoSubtle,
   });
 
@@ -180,16 +202,19 @@ class WorkPulseColors extends ThemeExtension<WorkPulseColors> {
     shadow: Color(0x66000000),
     accent: Color(0xFF1C96FF),
     accentHover: Color(0xFF52ABFF),
-    accentSubtle: Color(0x1F1C96FF),
     accentFill: Color(0xFF0076DF),
+    accentSubtle: Color(0x1F1C96FF),
     success: Color(0xFF30D158),
+    successFill: Color(0xFF30D158),
     successSubtle: Color(0x2630D158),
     warning: Color(0xFFFF9F0A),
+    warningFill: Color(0xFFFF9F0A),
     warningSubtle: Color(0x26FF9F0A),
     danger: Color(0xFFFF5A4F),
-    dangerSubtle: Color(0x26FF453A),
     dangerFill: Color(0xFFDC372C),
+    dangerSubtle: Color(0x26FF453A),
     info: Color(0xFF64D2FF),
+    infoFill: Color(0xFF64D2FF),
     infoSubtle: Color(0x2664D2FF),
   );
 
@@ -222,17 +247,20 @@ class WorkPulseColors extends ThemeExtension<WorkPulseColors> {
     shadow: Color(0x1F0B0B14),
     accent: Color(0xFF005FD1),
     accentHover: Color(0xFF0049A3),
-    accentSubtle: Color(0x21005FD1),
     accentFill: Color(0xFF005FD1),
+    accentSubtle: Color(0x1C005FD1),
     success: Color(0xFF0B7333),
-    successSubtle: Color(0x1F30D158),
+    successFill: Color(0xFF16A34A),
+    successSubtle: Color(0x2916A34A),
     warning: Color(0xFF9A5300),
-    warningSubtle: Color(0x1FFF9F0A),
+    warningFill: Color(0xFFEA8C00),
+    warningSubtle: Color(0x2BEA8C00),
     danger: Color(0xFFCE0016),
-    dangerSubtle: Color(0x1FFF453A),
     dangerFill: Color(0xFFCE0016),
+    dangerSubtle: Color(0x13CE0016),
     info: Color(0xFF0A6E93),
-    infoSubtle: Color(0x1F64D2FF),
+    infoFill: Color(0xFF0EA5C6),
+    infoSubtle: Color(0x220EA5C6),
   );
 
   @override
@@ -257,16 +285,19 @@ class WorkPulseColors extends ThemeExtension<WorkPulseColors> {
     Color? shadow,
     Color? accent,
     Color? accentHover,
-    Color? accentSubtle,
     Color? accentFill,
+    Color? accentSubtle,
     Color? success,
+    Color? successFill,
     Color? successSubtle,
     Color? warning,
+    Color? warningFill,
     Color? warningSubtle,
     Color? danger,
-    Color? dangerSubtle,
     Color? dangerFill,
+    Color? dangerSubtle,
     Color? info,
+    Color? infoFill,
     Color? infoSubtle,
   }) {
     return WorkPulseColors(
@@ -290,16 +321,19 @@ class WorkPulseColors extends ThemeExtension<WorkPulseColors> {
       shadow: shadow ?? this.shadow,
       accent: accent ?? this.accent,
       accentHover: accentHover ?? this.accentHover,
-      accentSubtle: accentSubtle ?? this.accentSubtle,
       accentFill: accentFill ?? this.accentFill,
+      accentSubtle: accentSubtle ?? this.accentSubtle,
       success: success ?? this.success,
+      successFill: successFill ?? this.successFill,
       successSubtle: successSubtle ?? this.successSubtle,
       warning: warning ?? this.warning,
+      warningFill: warningFill ?? this.warningFill,
       warningSubtle: warningSubtle ?? this.warningSubtle,
       danger: danger ?? this.danger,
-      dangerSubtle: dangerSubtle ?? this.dangerSubtle,
       dangerFill: dangerFill ?? this.dangerFill,
+      dangerSubtle: dangerSubtle ?? this.dangerSubtle,
       info: info ?? this.info,
+      infoFill: infoFill ?? this.infoFill,
       infoSubtle: infoSubtle ?? this.infoSubtle,
     );
   }
@@ -329,16 +363,19 @@ class WorkPulseColors extends ThemeExtension<WorkPulseColors> {
       shadow: c(shadow, other.shadow),
       accent: c(accent, other.accent),
       accentHover: c(accentHover, other.accentHover),
-      accentSubtle: c(accentSubtle, other.accentSubtle),
       accentFill: c(accentFill, other.accentFill),
+      accentSubtle: c(accentSubtle, other.accentSubtle),
       success: c(success, other.success),
+      successFill: c(successFill, other.successFill),
       successSubtle: c(successSubtle, other.successSubtle),
       warning: c(warning, other.warning),
+      warningFill: c(warningFill, other.warningFill),
       warningSubtle: c(warningSubtle, other.warningSubtle),
       danger: c(danger, other.danger),
-      dangerSubtle: c(dangerSubtle, other.dangerSubtle),
       dangerFill: c(dangerFill, other.dangerFill),
+      dangerSubtle: c(dangerSubtle, other.dangerSubtle),
       info: c(info, other.info),
+      infoFill: c(infoFill, other.infoFill),
       infoSubtle: c(infoSubtle, other.infoSubtle),
     );
   }
