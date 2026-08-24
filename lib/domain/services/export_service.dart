@@ -121,7 +121,7 @@ class ExportService {
       if (workItem == null) continue;
 
       final project = projectMap[workItem.projectId];
-      final category = categoryMap[workItem.categoryId];
+      final category = categoryMap[s.categoryId ?? workItem.categoryId];
 
       // Tags
       final itemTags =

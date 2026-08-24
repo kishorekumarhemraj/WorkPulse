@@ -4,8 +4,10 @@ import 'package:workpulse/core/theme/app_colors.dart';
 import 'package:workpulse/core/theme/app_typography.dart';
 import 'package:workpulse/core/theme/color_utils.dart';
 import 'package:workpulse/core/theme/design_tokens.dart';
+import 'package:workpulse/core/theme/icon_utils.dart';
 import 'package:workpulse/core/widgets/entity_chip.dart';
 import 'package:workpulse/domain/services/timer_service.dart';
+import 'package:workpulse/features/categories/providers/categories_provider.dart';
 import 'package:workpulse/features/projects/providers/projects_provider.dart';
 import 'package:workpulse/features/quick_capture/views/quick_capture_dialog.dart';
 import 'package:workpulse/features/tasks/providers/work_items_provider.dart';
@@ -25,6 +27,7 @@ class ActiveTimerBar extends ConsumerWidget {
     final theme = Theme.of(context);
     final timerState = ref.watch(timerProvider).value;
     final projects = ref.watch(projectsProvider).value ?? [];
+    final categories = ref.watch(categoriesProvider).value ?? [];
     final workItems = ref.watch(workItemsProvider).value ?? [];
 
     if (timerState == null ||
@@ -40,6 +43,12 @@ class ActiveTimerBar extends ConsumerWidget {
     final project =
         projects.where((p) => p.id == activeItem.projectId).firstOrNull;
     final projectColor = ColorUtils.parseHex(project?.colorHex);
+
+    final activeCategoryId =
+        timerState.activeSession?.categoryId ?? activeItem.categoryId;
+    final activeCategory =
+        categories.where((c) => c.id == activeCategoryId).firstOrNull;
+
     final formattedTime =
         TimerService.formatDuration(timerState.elapsed, includeSeconds: true);
 
@@ -58,12 +67,10 @@ class ActiveTimerBar extends ConsumerWidget {
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          // The bar is a single fixed-height row, so it has to shed content
-          // rather than wrap as the window narrows. Least-important pieces
-          // go first; the task name, elapsed time and Stop button always stay.
           final showProject = constraints.maxWidth >= 880;
-          final showTrackingLabel = constraints.maxWidth >= 720;
-          final showSwitch = constraints.maxWidth >= 620;
+          final showCategory = constraints.maxWidth >= 780;
+          final showTrackingLabel = constraints.maxWidth >= 680;
+          final showSwitch = constraints.maxWidth >= 580;
 
           return Row(
             children: [
@@ -84,6 +91,83 @@ class ActiveTimerBar extends ConsumerWidget {
 
               if (showProject && project != null) ...[
                 EntityChip(label: project.name, color: projectColor),
+                const SizedBox(width: Spacing.sm + 2),
+              ],
+
+              if (showCategory && categories.isNotEmpty) ...[
+                PopupMenuButton<String>(
+                  tooltip: 'Change session category',
+                  onSelected: (catId) {
+                    ref
+                        .read(timerProvider.notifier)
+                        .updateActiveSessionCategory(catId);
+                  },
+                  itemBuilder: (context) => [
+                    for (final cat in categories)
+                      PopupMenuItem(
+                        value: cat.id,
+                        child: Row(
+                          children: [
+                            Icon(
+                              IconUtils.getIcon(cat.iconName),
+                              size: 16,
+                              color: cat.id == activeCategoryId
+                                  ? colors.accent
+                                  : colors.textSecondary,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              cat.name,
+                              style: TextStyle(
+                                fontWeight: cat.id == activeCategoryId
+                                    ? FontWeight.bold
+                                    : FontWeight.normal,
+                                color: cat.id == activeCategoryId
+                                    ? colors.accent
+                                    : colors.textPrimary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
+                    decoration: BoxDecoration(
+                      color: colors.surfaceSunken,
+                      borderRadius: Radii.smAll,
+                      border: Border.all(color: colors.divider),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          IconUtils.getIcon(activeCategory?.iconName ?? 'folder'),
+                          size: 13,
+                          color: colors.accent,
+                        ),
+                        const SizedBox(width: 5),
+                        Text(
+                          activeCategory?.name ?? 'Category',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: colors.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Icon(
+                          Icons.arrow_drop_down,
+                          size: 14,
+                          color: colors.textSecondary,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
                 const SizedBox(width: Spacing.sm + 2),
               ],
 

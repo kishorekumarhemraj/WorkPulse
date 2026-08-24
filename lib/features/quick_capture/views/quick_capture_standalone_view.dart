@@ -269,9 +269,8 @@ class _QuickCaptureStandaloneViewState
               ),
 
               // Results List
-              Flexible(
+              Expanded(
                 child: ListView.builder(
-                  shrinkWrap: true,
                   padding: const EdgeInsets.symmetric(vertical: 6),
                   itemCount: totalItems == 0 ? 1 : totalItems,
                   itemBuilder: (context, index) {
@@ -318,7 +317,6 @@ class _QuickCaptureStandaloneViewState
 
               // Bottom Configuration Bar
               Container(
-                padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
                 decoration: BoxDecoration(
                   color: context.colors.card,
                   borderRadius: const BorderRadius.vertical(
@@ -331,11 +329,15 @@ class _QuickCaptureStandaloneViewState
                     ),
                   ),
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxHeight: 220),
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        Row(
+                          children: [
                         if (projects.isNotEmpty) ...[
                           Icon(
                             Icons.folder_outlined,
