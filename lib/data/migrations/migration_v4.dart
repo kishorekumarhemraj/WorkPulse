@@ -13,5 +13,32 @@ class MigrationV4 {
         FOREIGN KEY (tag_id) REFERENCES ${Tables.tags}(id) ON DELETE CASCADE
       );
     ''');
+
+    // 2. Backfill historical sessions with category_id from parent work item if null
+    await db.execute('''
+      UPDATE ${Tables.sessions}
+      SET category_id = (
+        SELECT ${Tables.workItems}.category_id
+        FROM ${Tables.workItems}
+        WHERE ${Tables.workItems}.id = ${Tables.sessions}.work_item_id
+      )
+      WHERE category_id IS NULL;
+    ''');
+
+    // 3. Backfill session_tags from parent work_item_tags
+    await db.execute('''
+      INSERT OR IGNORE INTO ${Tables.sessionTags} (session_id, tag_id)
+      SELECT s.id, wit.tag_id
+      FROM ${Tables.sessions} s
+      JOIN ${Tables.workItemTags} wit ON s.work_item_id = wit.work_item_id;
+    ''');
+
+    // 4. Backfill session_people from parent work_item_people
+    await db.execute('''
+      INSERT OR IGNORE INTO ${Tables.sessionPeople} (session_id, person_id)
+      SELECT s.id, wip.person_id
+      FROM ${Tables.sessions} s
+      JOIN ${Tables.workItemPeople} wip ON s.work_item_id = wip.work_item_id;
+    ''');
   }
 }
