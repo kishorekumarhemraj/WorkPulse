@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workpulse/domain/models/analytics_model.dart';
 import 'package:workpulse/domain/models/date_range.dart';
@@ -18,16 +17,36 @@ class TimeNotesRangeNotifier extends Notifier<DashboardTimeRange> {
   void setRange(DashboardTimeRange range) => state = range;
 }
 
-final timeNotesCustomRangeProvider =
-    NotifierProvider<TimeNotesCustomRangeNotifier, DateTimeRange?>(
-  TimeNotesCustomRangeNotifier.new,
+/// Single-day date provider for the Time Notes date stepper, mirroring
+/// [reportsDateProvider] in Time Log.
+final timeNotesDateProvider =
+    NotifierProvider<TimeNotesDateNotifier, DateTime>(
+  TimeNotesDateNotifier.new,
 );
 
-class TimeNotesCustomRangeNotifier extends Notifier<DateTimeRange?> {
+class TimeNotesDateNotifier extends Notifier<DateTime> {
   @override
-  DateTimeRange? build() => null;
+  DateTime build() {
+    final now = DateTime.now();
+    return DateTime(now.year, now.month, now.day);
+  }
 
-  void setCustomRange(DateTimeRange? range) => state = range;
+  void setDate(DateTime date) {
+    state = DateTime(date.year, date.month, date.day);
+  }
+
+  void previousDay() {
+    state = DateTime(state.year, state.month, state.day - 1);
+  }
+
+  void nextDay() {
+    state = DateTime(state.year, state.month, state.day + 1);
+  }
+
+  void goToToday() {
+    final now = DateTime.now();
+    state = DateTime(now.year, now.month, now.day);
+  }
 }
 
 final timeNotesSearchProvider =
@@ -48,16 +67,35 @@ final timeNotesProvider =
   final workspace = await ref.watch(currentWorkspaceProvider.future);
   final exportService = ref.watch(exportServiceProvider);
   final timeRange = ref.watch(timeNotesRangeProvider);
-  final customRange = ref.watch(timeNotesCustomRangeProvider);
+  final selectedDate = ref.watch(timeNotesDateProvider);
   final searchQuery = ref.watch(timeNotesSearchProvider).trim().toLowerCase();
 
-  final domainCustomRange = customRange != null
-      ? DateRange(
-          start: customRange.start.toUtc(),
-          end: customRange.end.toUtc(),
-        )
-      : null;
-  final calculatedRange = timeRange.toDateRange(customRange: domainCustomRange);
+  DateRange calculatedRange;
+  switch (timeRange) {
+    case DashboardTimeRange.today:
+      final now = DateTime.now();
+      final localStart = DateTime(now.year, now.month, now.day, 0, 0, 0);
+      final localEnd = DateTime(now.year, now.month, now.day, 23, 59, 59, 999);
+      calculatedRange =
+          DateRange(start: localStart.toUtc(), end: localEnd.toUtc());
+      break;
+    case DashboardTimeRange.thisWeek:
+      calculatedRange = DashboardTimeRange.thisWeek.toDateRange();
+      break;
+    case DashboardTimeRange.thisMonth:
+      calculatedRange = DashboardTimeRange.thisMonth.toDateRange();
+      break;
+    case DashboardTimeRange.custom:
+      final localStart = DateTime(
+          selectedDate.year, selectedDate.month, selectedDate.day, 0, 0, 0);
+      final localEnd = DateTime(selectedDate.year, selectedDate.month,
+          selectedDate.day, 23, 59, 59, 999);
+      calculatedRange = DateRange(
+        start: localStart.toUtc(),
+        end: localEnd.toUtc(),
+      );
+      break;
+  }
 
   final records = await exportService.getExportRecords(
     workspaceId: workspace.id,
