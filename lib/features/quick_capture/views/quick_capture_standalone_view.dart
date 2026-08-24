@@ -6,6 +6,7 @@ import 'package:workpulse/core/theme/app_colors.dart';
 import 'package:workpulse/core/widgets/keycap.dart';
 import 'package:workpulse/core/theme/color_utils.dart';
 import 'package:workpulse/core/theme/icon_utils.dart';
+import 'package:workpulse/core/widgets/app_select.dart';
 import 'package:workpulse/domain/models/attribute_model.dart';
 import 'package:workpulse/domain/models/category_model.dart';
 import 'package:workpulse/domain/models/project_model.dart';
@@ -336,111 +337,62 @@ class _QuickCaptureStandaloneViewState
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          children: [
-                        if (projects.isNotEmpty) ...[
-                          Icon(
-                            Icons.folder_outlined,
-                            size: 14,
-                            color: context.colors.textSecondary,
-                          ),
-                          const SizedBox(width: 6),
-                          DropdownButton<String>(
-                            value: projects.any(
-                              (p) => p.id == qcState.selectedProjectId,
-                            )
-                                ? qcState.selectedProjectId
-                                : projects.first.id,
-                            dropdownColor: context.colors.surface,
-                            underline: const SizedBox.shrink(),
-                            isDense: true,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: context.colors.textPrimary,
-                            ),
-                            items: projects.map((p) {
-                              final col = ColorUtils.parseHex(p.colorHex);
-                              return DropdownMenuItem(
-                                value: p.id,
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Container(
-                                      width: 6,
-                                      height: 6,
-                                      decoration: BoxDecoration(
-                                        color: col,
-                                        shape: BoxShape.circle,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 6),
-                                    Text(
-                                      p.name,
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: context.colors.textPrimary,
-                                      ),
-                                    ),
-                                  ],
+                          Wrap(
+                            spacing: 12,
+                            runSpacing: 8,
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            children: [
+                              if (projects.isNotEmpty)
+                                AppSelect<String>(
+                                  value: projects.any(
+                                    (p) => p.id == qcState.selectedProjectId,
+                                  )
+                                      ? qcState.selectedProjectId
+                                      : projects.first.id,
+                                  placeholder: 'Select Project',
+                                  maxTriggerWidth: 200,
+                                  options: projects
+                                      .map((p) => SelectOption(
+                                            value: p.id,
+                                            label: p.name,
+                                            color:
+                                                ColorUtils.parseHex(p.colorHex),
+                                          ))
+                                      .toList(),
+                                  onChanged: (val) {
+                                    if (val != null) {
+                                      ref
+                                          .read(quickCaptureProvider.notifier)
+                                          .setProject(val);
+                                    }
+                                  },
                                 ),
-                              );
-                            }).toList(),
-                            onChanged: (val) => ref
-                                .read(quickCaptureProvider.notifier)
-                                .setProject(val),
-                          ),
-                          const SizedBox(width: 14),
-                        ],
-                        if (categories.isNotEmpty) ...[
-                          Icon(
-                            Icons.category_outlined,
-                            size: 14,
-                            color: context.colors.textSecondary,
-                          ),
-                          const SizedBox(width: 6),
-                          DropdownButton<String>(
-                            value: categories.any(
-                              (c) => c.id == qcState.selectedCategoryId,
-                            )
-                                ? qcState.selectedCategoryId
-                                : categories.first.id,
-                            dropdownColor: context.colors.surface,
-                            underline: const SizedBox.shrink(),
-                            isDense: true,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: context.colors.textPrimary,
-                            ),
-                            items: categories.map((c) {
-                              return DropdownMenuItem(
-                                value: c.id,
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      IconUtils.getIcon(c.iconName),
-                                      size: 12,
-                                      color: context.colors.accent,
-                                    ),
-                                    const SizedBox(width: 6),
-                                    Text(
-                                      c.name,
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: context.colors.textPrimary,
-                                      ),
-                                    ),
-                                  ],
+                              if (categories.isNotEmpty)
+                                AppSelect<String>(
+                                  value: categories.any(
+                                    (c) => c.id == qcState.selectedCategoryId,
+                                  )
+                                      ? qcState.selectedCategoryId
+                                      : categories.first.id,
+                                  placeholder: 'Select Category',
+                                  maxTriggerWidth: 200,
+                                  options: categories
+                                      .map((c) => SelectOption(
+                                            value: c.id,
+                                            label: c.name,
+                                            icon: IconUtils.getIcon(c.iconName),
+                                          ))
+                                      .toList(),
+                                  onChanged: (val) {
+                                    if (val != null) {
+                                      ref
+                                          .read(quickCaptureProvider.notifier)
+                                          .setCategory(val);
+                                    }
+                                  },
                                 ),
-                              );
-                            }).toList(),
-                            onChanged: (val) => ref
-                                .read(quickCaptureProvider.notifier)
-                                .setCategory(val),
+                            ],
                           ),
-                        ],
-                      ],
-                    ),
                     if (tags.isNotEmpty || people.isNotEmpty) ...[
                       const SizedBox(height: 10),
                       Wrap(
