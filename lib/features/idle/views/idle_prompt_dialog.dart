@@ -9,6 +9,7 @@ import 'package:workpulse/core/theme/design_tokens.dart';
 import 'package:workpulse/core/widgets/app_dialog.dart';
 import 'package:workpulse/core/widgets/keycap.dart';
 import 'package:workpulse/domain/models/work_item_model.dart';
+import 'package:workpulse/domain/services/timer_service.dart';
 import 'package:workpulse/features/idle/providers/idle_provider.dart';
 
 class IdlePromptDialog extends ConsumerStatefulWidget {
@@ -76,19 +77,10 @@ class _IdlePromptDialogState extends ConsumerState<IdlePromptDialog> {
         : DateFormat.MMMd().add_jm().format(local);
   }
 
-  String _formatDuration(Duration duration) {
-    final hours = duration.inHours;
-    final minutes = duration.inMinutes.remainder(60);
-    final seconds = duration.inSeconds.remainder(60);
-
-    if (hours > 0) {
-      return '${hours}h ${minutes}m ${seconds}s';
-    } else if (minutes > 0) {
-      return '${minutes}m ${seconds}s';
-    } else {
-      return '${seconds}s';
-    }
-  }
+  /// Delegates to the app's single duration formatter. This screen used to
+  /// carry its own third implementation.
+  String _formatDuration(Duration duration) =>
+      TimerService.formatDuration(duration, compact: true);
 
   Future<void> _handleKeepTracking() async {
     if (_isProcessing) return;

@@ -77,6 +77,17 @@ class AnalyticsService {
       sessionIdleMap[s.id] = idles;
     }
 
+    // Work item attribute values, fetched once per *work item* rather than
+    // once per (definition x session). A month of tracking against a handful
+    // of reportable attributes used to issue thousands of queries here; the
+    // same rows were re-read for every session of the same work item, and
+    // again for every definition.
+    final attributeValuesByWorkItem = <String, List<WorkItemAttributeValue>>{};
+    for (final workItemId in uniqueSessionWorkItemIds(allSessions)) {
+      attributeValuesByWorkItem[workItemId] =
+          await _attributeRepository.getWorkItemValues(workItemId);
+    }
+
     // 4. Calculate total tracked, active, and idle durations
     Duration totalTracked = Duration.zero;
     Duration totalIdle = Duration.zero;
@@ -291,8 +302,7 @@ class AnalyticsService {
 
       for (final s in allSessions) {
         final dur = sessionActiveDurations[s.id] ?? Duration.zero;
-        final itemValues =
-            await _attributeRepository.getWorkItemValues(s.workItemId);
+        final itemValues = attributeValuesByWorkItem[s.workItemId] ?? const [];
         final attrVal = itemValues
             .where(
                 (WorkItemAttributeValue v) => v.attributeDefinitionId == def.id)
@@ -497,6 +507,10 @@ class AnalyticsService {
       hourlyActivity: hourlyActivity,
     );
   }
+
+  /// The distinct work items a set of sessions belongs to.
+  static Set<String> uniqueSessionWorkItemIds(List<Session> sessions) =>
+      sessions.map((s) => s.workItemId).toSet();
 
   /// Splits a time range [start, end] into per-day slices at local midnight boundaries.
   static List<DateRange> _splitAcrossDays(DateTime start, DateTime end) {
