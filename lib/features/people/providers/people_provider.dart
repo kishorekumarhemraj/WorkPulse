@@ -21,6 +21,7 @@ class PeopleNotifier extends AsyncNotifier<List<Person>> {
   Future<Person> createPerson({
     required String name,
     String? email,
+    String? team,
   }) async {
     final workspace = await ref.read(currentWorkspaceProvider.future);
     final personRepo = ref.read(personRepositoryProvider);
@@ -31,6 +32,7 @@ class PeopleNotifier extends AsyncNotifier<List<Person>> {
       workspaceId: workspace.id,
       name: name.trim(),
       email: email?.trim().isEmpty == true ? null : email?.trim(),
+      team: team?.trim().isEmpty == true ? null : team?.trim(),
       createdAt: now,
     );
 

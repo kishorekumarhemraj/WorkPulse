@@ -58,7 +58,8 @@ class _PeopleViewState extends ConsumerState<PeopleView> {
             final filtered = people.where((p) {
               if (_searchQuery.isEmpty) return true;
               return p.name.toLowerCase().contains(_searchQuery) ||
-                  (p.email?.toLowerCase().contains(_searchQuery) ?? false);
+                  (p.email?.toLowerCase().contains(_searchQuery) ?? false) ||
+                  (p.team?.toLowerCase().contains(_searchQuery) ?? false);
             }).toList();
 
             if (filtered.isEmpty) {
@@ -89,6 +90,11 @@ class _PeopleViewState extends ConsumerState<PeopleView> {
                     name: person.name,
                     icon: Icons.person_outline,
                     details: [
+                      if ((person.team ?? '').isNotEmpty)
+                        EntityDetail(
+                          icon: Icons.groups_outlined,
+                          value: person.team!,
+                        ),
                       if ((person.email ?? '').isNotEmpty)
                         EntityDetail(
                           icon: Icons.mail_outline,

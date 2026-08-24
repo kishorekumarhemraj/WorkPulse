@@ -22,6 +22,7 @@ import 'package:workpulse/domain/services/timer_service.dart';
 import 'package:workpulse/features/reports/views/session_edit_dialog.dart';
 import 'package:workpulse/features/tasks/providers/task_sessions_provider.dart';
 import 'package:workpulse/features/timer/providers/task_duration_provider.dart';
+import 'package:workpulse/features/timer/providers/timer_provider.dart';
 
 /// The detail pane beside the Work Items list.
 ///
@@ -56,6 +57,9 @@ class WorkItemInspector extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = context.colors;
     final theme = Theme.of(context);
+    final timerState = ref.watch(timerProvider).value;
+    final isTrackingThisItem = timerState?.isRunning == true &&
+        timerState?.activeWorkItem?.id == item.id;
     final sessionsAsync = ref.watch(sessionsForWorkItemProvider(item.id));
     final totalAsync = ref.watch(taskTotalDurationProvider(item.id));
 
@@ -85,18 +89,96 @@ class WorkItemInspector extends ConsumerWidget {
                     children: [
                       Text(item.name, style: theme.textTheme.titleLarge),
                       const SizedBox(height: Spacing.xs),
-                      totalAsync.maybeWhen(
-                        data: (total) => Text(
-                          total == Duration.zero
-                              ? 'No time tracked yet'
-                              : '${TimerService.formatDuration(total, includeSeconds: false)} tracked in total',
-                          style: theme.textTheme.bodySmall,
+                      if (isTrackingThisItem) ...[
+                        Container(
+                          margin: const EdgeInsets.only(top: Spacing.xs),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: Spacing.md,
+                            vertical: Spacing.xs,
+                          ),
+                          decoration: BoxDecoration(
+                            color: colors.successSubtle,
+                            borderRadius: Radii.mdAll,
+                            border: Border.all(
+                              color: colors.success.withValues(alpha: 0.3),
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                width: 8,
+                                height: 8,
+                                decoration: BoxDecoration(
+                                  color: colors.success,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              const SizedBox(width: Spacing.sm),
+                              Text(
+                                'TRACKING NOW • ${TimerService.formatDuration(timerState!.elapsed, includeSeconds: true)}',
+                                style:
+                                    AppTypography.ticker(color: colors.success),
+                              ),
+                              const SizedBox(width: Spacing.md),
+                              InkWell(
+                                onTap: () => ref
+                                    .read(timerProvider.notifier)
+                                    .stopTimer(),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 4,
+                                    vertical: 2,
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.stop_circle_outlined,
+                                        size: 14,
+                                        color: colors.danger,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        'Stop',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                          color: colors.danger,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                        orElse: () => const SizedBox.shrink(),
-                      ),
+                      ] else ...[
+                        totalAsync.maybeWhen(
+                          data: (total) => Text(
+                            total == Duration.zero
+                                ? 'No time tracked yet'
+                                : '${TimerService.formatDuration(total, includeSeconds: false)} tracked in total',
+                            style: theme.textTheme.bodySmall,
+                          ),
+                          orElse: () => const SizedBox.shrink(),
+                        ),
+                      ],
                     ],
                   ),
                 ),
+                if (!item.isArchived && !isTrackingThisItem)
+                  IconButton(
+                    icon: Icon(
+                      Icons.play_circle_fill,
+                      color: colors.success,
+                      size: IconSizes.lg,
+                    ),
+                    tooltip: 'Start tracking',
+                    onPressed: () =>
+                        ref.read(timerProvider.notifier).startTimer(item),
+                  ),
                 IconButton(
                   icon: const Icon(Icons.edit_outlined, size: IconSizes.md),
                   tooltip: 'Edit work item',
@@ -228,6 +310,10 @@ class WorkItemInspector extends ConsumerWidget {
                                   session: sessions[i],
                                   workItem: item,
                                   peopleMap: peopleMap,
+                                  liveElapsed: (sessions[i].endTime == null &&
+                                          isTrackingThisItem)
+                                      ? timerState?.elapsed
+                                      : null,
                                   onEdited: () {
                                     ref.invalidate(
                                       sessionsForWorkItemProvider(item.id),
@@ -284,12 +370,14 @@ class _InspectorSessionRow extends StatelessWidget {
   final Session session;
   final WorkItem workItem;
   final Map<String, Person> peopleMap;
+  final Duration? liveElapsed;
   final VoidCallback onEdited;
 
   const _InspectorSessionRow({
     required this.session,
     required this.workItem,
     required this.peopleMap,
+    this.liveElapsed,
     required this.onEdited,
   });
 
@@ -386,7 +474,7 @@ class _InspectorSessionRow extends StatelessWidget {
                   const SizedBox(width: Spacing.sm),
                   Text(
                     TimerService.formatDuration(
-                      session.duration,
+                      liveElapsed ?? session.duration,
                       includeSeconds: true,
                     ),
                     style: AppTypography.numeric(

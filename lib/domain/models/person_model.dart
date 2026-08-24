@@ -5,6 +5,7 @@ class Person extends Equatable {
   final String workspaceId;
   final String name;
   final String? email;
+  final String? team;
   final DateTime createdAt;
 
   const Person({
@@ -12,6 +13,7 @@ class Person extends Equatable {
     required this.workspaceId,
     required this.name,
     this.email,
+    this.team,
     required this.createdAt,
   });
 
@@ -20,17 +22,21 @@ class Person extends Equatable {
     String? workspaceId,
     String? name,
     String? email,
+    String? team,
+    bool clearEmail = false,
+    bool clearTeam = false,
     DateTime? createdAt,
   }) {
     return Person(
       id: id ?? this.id,
       workspaceId: workspaceId ?? this.workspaceId,
       name: name ?? this.name,
-      email: email ?? this.email,
+      email: clearEmail ? null : (email ?? this.email),
+      team: clearTeam ? null : (team ?? this.team),
       createdAt: createdAt ?? this.createdAt,
     );
   }
 
   @override
-  List<Object?> get props => [id, workspaceId, name, email, createdAt];
+  List<Object?> get props => [id, workspaceId, name, email, team, createdAt];
 }
