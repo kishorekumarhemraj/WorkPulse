@@ -19,6 +19,7 @@ import 'package:workpulse/domain/repositories/session_repository.dart';
 import 'package:workpulse/domain/repositories/tag_repository.dart';
 import 'package:workpulse/domain/repositories/work_item_repository.dart';
 import 'package:workpulse/domain/repositories/workspace_repository.dart';
+import 'package:workpulse/core/platform/user_info_service.dart';
 import 'package:workpulse/domain/services/pdf_report_service.dart';
 import 'package:workpulse/domain/services/timer_service.dart';
 
@@ -409,6 +410,7 @@ class ExportService {
   Future<Uint8List> generatePdf({
     required String workspaceId,
     required DateRange range,
+    String? userName,
   }) async {
     final workspace = await _workspaceRepository.getById(workspaceId);
     final records =
@@ -418,11 +420,15 @@ class ExportService {
             .where((d) => d.enabled && !d.isArchived)
             .toList();
 
+    final effectiveUserName =
+        userName ?? await UserInfoService.getCurrentUserFullName();
+
     return _pdfReportService.generateReportPdf(
       workspaceName: workspace?.name ?? 'Default Workspace',
       range: range,
       records: records,
       attributeDefinitions: definitions,
+      userName: effectiveUserName,
     );
   }
 
