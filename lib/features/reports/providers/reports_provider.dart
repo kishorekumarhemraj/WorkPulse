@@ -95,6 +95,7 @@ class SessionEditorController {
     bool clearCategory = false,
     String? notes,
     bool clearNotes = false,
+    List<String>? tagIds,
     List<String>? peopleIds,
     Map<String, dynamic> attributeValues = const {},
   }) async {
@@ -106,6 +107,7 @@ class SessionEditorController {
       startTime: startTime ?? session.startTime,
       endTime: endTime ?? session.endTime,
       categoryId: clearCategory ? null : (categoryId ?? session.categoryId),
+      tagIds: tagIds ?? session.tagIds,
       peopleIds: peopleIds ?? session.peopleIds,
       notes: notes,
       clearNotes: clearNotes,

@@ -80,6 +80,7 @@ class TimerNotifier extends AsyncNotifier<TimerState> {
   Future<void> startTimer(
     WorkItem workItem, {
     String? categoryId,
+    List<String> tagIds = const [],
     List<String> peopleIds = const [],
     String? notes,
   }) async {
@@ -102,7 +103,8 @@ class TimerNotifier extends AsyncNotifier<TimerState> {
     final newSession = await timerService.startSession(
       workItem.id,
       categoryId: categoryId ?? workItem.categoryId,
-      peopleIds: peopleIds,
+      tagIds: tagIds.isNotEmpty ? tagIds : workItem.tagIds,
+      peopleIds: peopleIds.isNotEmpty ? peopleIds : workItem.peopleIds,
       notes: notes,
       startTime: now,
     );
@@ -132,6 +134,48 @@ class TimerNotifier extends AsyncNotifier<TimerState> {
     final updated = await timerService.updateSessionCategory(
       current.activeSession!.id,
       categoryId,
+    );
+
+    if (updated != null) {
+      state = AsyncData(
+        current.copyWith(activeSession: updated),
+      );
+      ref.invalidate(workItemsProvider);
+    }
+  }
+
+  /// Updates the tags of the currently running session in real-time.
+  Future<void> updateActiveSessionTags(List<String> tagIds) async {
+    final current = state.value;
+    if (current == null || !current.isRunning || current.activeSession == null) {
+      return;
+    }
+
+    final timerService = ref.read(timerServiceProvider);
+    final updated = await timerService.updateSessionTags(
+      current.activeSession!.id,
+      tagIds,
+    );
+
+    if (updated != null) {
+      state = AsyncData(
+        current.copyWith(activeSession: updated),
+      );
+      ref.invalidate(workItemsProvider);
+    }
+  }
+
+  /// Updates the assigned people of the currently running session in real-time.
+  Future<void> updateActiveSessionPeople(List<String> peopleIds) async {
+    final current = state.value;
+    if (current == null || !current.isRunning || current.activeSession == null) {
+      return;
+    }
+
+    final timerService = ref.read(timerServiceProvider);
+    final updated = await timerService.updateSessionPeople(
+      current.activeSession!.id,
+      peopleIds,
     );
 
     if (updated != null) {
@@ -199,6 +243,8 @@ class TimerNotifier extends AsyncNotifier<TimerState> {
     WorkItem? targetItem,
     String? notes,
     String? targetCategoryId,
+    List<String>? targetTagIds,
+    List<String>? targetPeopleIds,
   }) async {
     final current = state.value;
     final targetWorkItem = targetItem ?? current?.pendingSwitchWorkItem;
@@ -213,6 +259,8 @@ class TimerNotifier extends AsyncNotifier<TimerState> {
         targetWorkItem: targetWorkItem,
         currentSessionNotes: notes,
         targetCategoryId: targetCategoryId,
+        targetTagIds: targetTagIds ?? const [],
+        targetPeopleIds: targetPeopleIds ?? const [],
         switchTime: now,
       );
 
@@ -231,6 +279,8 @@ class TimerNotifier extends AsyncNotifier<TimerState> {
       final newSession = await timerService.startSession(
         targetWorkItem.id,
         categoryId: targetCategoryId ?? targetWorkItem.categoryId,
+        tagIds: targetTagIds ?? targetWorkItem.tagIds,
+        peopleIds: targetPeopleIds ?? targetWorkItem.peopleIds,
         startTime: now,
       );
 

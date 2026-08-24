@@ -103,9 +103,12 @@ class QuickCaptureNotifier extends Notifier<QuickCaptureState> {
     await ref.read(timerProvider.notifier).startTimer(
           task,
           categoryId: sessionCatId,
+          tagIds: state.selectedTagIds.isNotEmpty
+              ? state.selectedTagIds
+              : task.tagIds,
           peopleIds: state.selectedPeopleIds.isNotEmpty
               ? state.selectedPeopleIds
-              : const [],
+              : task.peopleIds,
         );
     reset();
   }
@@ -247,6 +250,7 @@ class QuickCaptureNotifier extends Notifier<QuickCaptureState> {
     await ref.read(timerProvider.notifier).startTimer(
           created,
           categoryId: categoryId,
+          tagIds: state.selectedTagIds,
           peopleIds: state.selectedPeopleIds,
         );
     reset();
