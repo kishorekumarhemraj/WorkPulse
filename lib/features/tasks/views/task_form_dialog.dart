@@ -6,6 +6,7 @@ import 'package:uuid/uuid.dart';
 import 'package:workpulse/core/theme/design_tokens.dart';
 import 'package:workpulse/core/theme/app_colors.dart';
 import 'package:workpulse/core/widgets/app_dialog.dart';
+import 'package:workpulse/core/widgets/app_select.dart';
 import 'package:workpulse/core/theme/color_utils.dart';
 import 'package:workpulse/core/theme/icon_utils.dart';
 import 'package:workpulse/core/widgets/searchable_multi_select.dart';
@@ -384,56 +385,27 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
                         ),
                         const SizedBox(height: 6),
                         projectsAsync.when(
-                          loading: () => SizedBox(
-                              height: 38,
-                              child: Align(
-                                  alignment: Alignment.centerLeft,
-                                  child: Text('Loading projects...',
-                                      style: TextStyle(
-                                          fontSize: 12,
-                                          color:
-                                              context.colors.textSecondary)))),
+                          loading: () => const AppSelectPlaceholder(
+                              label: 'Loading projects…'),
                           error: (_, __) =>
                               const Text('Error loading projects'),
                           data: (projects) {
-                            return DropdownButtonFormField<String>(
-                              isDense: true,
-                              isExpanded: true,
-                              initialValue: projects
+                            return AppSelect<String>(
+                              placeholder: 'Select project',
+                              value: projects
                                       .any((p) => p.id == _selectedProjectId)
                                   ? _selectedProjectId
-                                  : (projects.isNotEmpty
-                                      ? projects.first.id
-                                      : null),
-                              items: projects.map((p) {
-                                return DropdownMenuItem(
-                                  value: p.id,
-                                  child: Row(
-                                    children: [
-                                      Container(
-                                        width: 8,
-                                        height: 8,
-                                        decoration: BoxDecoration(
-                                          color:
-                                              ColorUtils.parseHex(p.colorHex),
-                                          shape: BoxShape.circle,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Expanded(
-                                        child: Text(p.name,
-                                            overflow: TextOverflow.ellipsis),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                              }).toList(),
+                                  : null,
+                              options: projects
+                                  .map((p) => SelectOption(
+                                        value: p.id,
+                                        label: p.name,
+                                        color:
+                                            ColorUtils.parseHex(p.colorHex),
+                                      ))
+                                  .toList(),
                               onChanged: (val) =>
                                   setState(() => _selectedProjectId = val),
-                              decoration: const InputDecoration(
-                                  contentPadding: EdgeInsets.symmetric(
-                                      horizontal: 10, vertical: 8)),
-                              dropdownColor: context.colors.surface,
                             );
                           },
                         ),
@@ -473,50 +445,26 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
                         ),
                         const SizedBox(height: 6),
                         categoriesAsync.when(
-                          loading: () => SizedBox(
-                              height: 38,
-                              child: Align(
-                                  alignment: Alignment.centerLeft,
-                                  child: Text('Loading categories...',
-                                      style: TextStyle(
-                                          fontSize: 12,
-                                          color:
-                                              context.colors.textSecondary)))),
+                          loading: () => const AppSelectPlaceholder(
+                              label: 'Loading categories…'),
                           error: (_, __) =>
                               const Text('Error loading categories'),
                           data: (categories) {
-                            return DropdownButtonFormField<String>(
-                              isDense: true,
-                              isExpanded: true,
-                              initialValue: categories
+                            return AppSelect<String>(
+                              placeholder: 'Select category',
+                              value: categories
                                       .any((c) => c.id == _selectedCategoryId)
                                   ? _selectedCategoryId
-                                  : (categories.isNotEmpty
-                                      ? categories.first.id
-                                      : null),
-                              items: categories.map((c) {
-                                return DropdownMenuItem(
-                                  value: c.id,
-                                  child: Row(
-                                    children: [
-                                      Icon(IconUtils.getIcon(c.iconName),
-                                          size: 14,
-                                          color: context.colors.accent),
-                                      const SizedBox(width: 8),
-                                      Expanded(
-                                        child: Text(c.name,
-                                            overflow: TextOverflow.ellipsis),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                              }).toList(),
+                                  : null,
+                              options: categories
+                                  .map((c) => SelectOption(
+                                        value: c.id,
+                                        label: c.name,
+                                        icon: IconUtils.getIcon(c.iconName),
+                                      ))
+                                  .toList(),
                               onChanged: (val) =>
                                   setState(() => _selectedCategoryId = val),
-                              decoration: const InputDecoration(
-                                  contentPadding: EdgeInsets.symmetric(
-                                      horizontal: 10, vertical: 8)),
-                              dropdownColor: context.colors.surface,
                             );
                           },
                         ),

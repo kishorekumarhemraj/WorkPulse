@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,6 +10,7 @@ import 'package:workpulse/core/theme/app_colors.dart';
 import 'package:workpulse/core/theme/design_tokens.dart';
 import 'package:workpulse/core/widgets/app_dialog.dart';
 import 'package:workpulse/core/widgets/error_state.dart';
+import 'package:workpulse/domain/services/activity_heartbeat_service.dart';
 import 'package:workpulse/features/attributes/views/attribute_definitions_view.dart';
 import 'package:workpulse/features/categories/views/categories_view.dart';
 import 'package:workpulse/features/dashboard/views/dashboard_view.dart';
@@ -69,16 +72,26 @@ class MainShellView extends ConsumerStatefulWidget {
   ConsumerState<MainShellView> createState() => _MainShellViewState();
 }
 
-class _MainShellViewState extends ConsumerState<MainShellView> {
+class _MainShellViewState extends ConsumerState<MainShellView>
+    with WidgetsBindingObserver {
   late final HotKeyService _hotKeyService;
   late final WindowService _windowService;
+  late final ActivityHeartbeatService _heartbeat;
 
   @override
   void initState() {
     super.initState();
     _hotKeyService = DesktopHotKeyService();
     _windowService = DesktopWindowService();
+    _heartbeat = ref.read(activityHeartbeatServiceProvider);
+    WidgetsBinding.instance.addObserver(this);
     Future.microtask(_initializeHotKey);
+
+    // Deferred to after the first frame so the idle listener registered in
+    // build() exists to catch the prompt this may raise.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) unawaited(_runStartupRecovery());
+    });
 
     // Initialize macOS Tray Coordinator
     final trayCoordinator = ref.read(trayCoordinatorProvider);
@@ -90,8 +103,63 @@ class _MainShellViewState extends ConsumerState<MainShellView> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    // The heartbeat deliberately outlives this widget: it tracks "the app is
+    // alive with a session running", and the shell is torn down and rebuilt
+    // every time the Quick Capture window takes over. It is stopped by
+    // [_syncActivityMonitors] when tracking actually ends, and by the provider
+    // scope when the app exits.
     _hotKeyService.unregisterAll();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState lifecycleState) {
+    super.didChangeAppLifecycleState(lifecycleState);
+
+    // Hiding the window, closing it, or quitting is the last chance to mark the
+    // app as alive. Without this the gap reported on the next launch would
+    // start at the previous 30s tick instead of the moment the user left.
+    if (lifecycleState != AppLifecycleState.resumed && _heartbeat.isBeating) {
+      unawaited(_heartbeat.beat().catchError((Object _) {}));
+    }
+  }
+
+  /// Reconciles a session left open by a previous run before anything else
+  /// starts writing heartbeats over the evidence.
+  Future<void> _runStartupRecovery() async {
+    try {
+      await ref.read(idleNotifierProvider.notifier).checkForUnaccountedGap();
+    } catch (error, stack) {
+      // Best-effort: a failure here must not keep the shell from coming up,
+      // and it leaves the open session exactly as it was found rather than
+      // guessing at how to split it.
+      debugPrint('[WorkPulse] Idle gap recovery failed: $error\n$stack');
+    }
+
+    if (!mounted) return;
+    _syncActivityMonitors();
+  }
+
+  /// Idle polling and the persisted heartbeat both mean "a session is running
+  /// and WorkPulse is watching it", so they start and stop together.
+  ///
+  /// While an idle prompt is open the heartbeat is deliberately held back:
+  /// beating would move the baseline past the very gap the user has not
+  /// answered for yet, and a force-quit at that point would lose it for good.
+  void _syncActivityMonitors() {
+    final isTracking = ref.read(timerProvider).value?.isRunning ?? false;
+    final isPromptVisible = ref.read(idleNotifierProvider).isPromptVisible;
+
+    ref
+        .read(idleDetectorServiceProvider)
+        .startMonitoring(isTracking: isTracking);
+
+    if (isTracking && !isPromptVisible) {
+      _heartbeat.start();
+    } else {
+      _heartbeat.stop();
+    }
   }
 
   Future<void> _initializeHotKey() async {
@@ -226,14 +294,14 @@ class _MainShellViewState extends ConsumerState<MainShellView> {
       if (next.isPromptVisible && previous?.isPromptVisible != true) {
         IdlePromptDialog.show(context);
       }
+      if (previous?.isPromptVisible != next.isPromptVisible) {
+        _syncActivityMonitors();
+      }
     });
 
-    // Start/stop idle monitoring based on active timer status
+    // Start/stop idle monitoring and heartbeats with the active timer.
     ref.listen<AsyncValue<TimerState>>(timerProvider, (previous, next) {
-      final isRunning = next.value?.isRunning ?? false;
-      ref
-          .read(idleDetectorServiceProvider)
-          .startMonitoring(isTracking: isRunning);
+      _syncActivityMonitors();
     });
 
     return Scaffold(

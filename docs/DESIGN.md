@@ -132,8 +132,18 @@ The schema consists of 16 normalized tables configured with `PRAGMA foreign_keys
 ```
 
 ### 4.2. Inactivity & Idle Resolution Flow
+
+Unaccounted time reaches the same prompt from two independent detectors, because
+they fail in opposite ways: the live poller only sees time that passes while the
+process is running, and the startup check only sees time that passed while it
+was not.
+
 ```text
-[Tracking Session] ──(No input for > 10 min)──> [Idle Prompt Dialog]
+[Tracking Session] ──(No input for > threshold)────────┐
+                                                       │
+[App Launch] ──(open session + heartbeat gap)──────────┤
+                                                       ▼
+                                              [Idle Prompt Dialog]
                                                         │
          ┌──────────────────────────────┬───────────────┴──────────────┐
          ▼                              ▼                              ▼
@@ -141,6 +151,29 @@ The schema consists of 16 normalized tables configured with `PRAGMA foreign_keys
   (Resolution logged)            (Idle period logged,           (Session ended at
   (Session continues)             duration deducted)             idle start time)
 ```
+
+**Live inactivity** (`IdleDetectorService`) polls elapsed time against the idle
+threshold while WorkPulse runs.
+
+**Unaccounted gaps** (`ActivityHeartbeatService` + `IdleGapService`) cover the
+case the poller structurally cannot: quitting the app, logging out, or shutting
+the Mac down with a timer left running. The poll loop dies with the process,
+while `sessions.end_time` stays `NULL` and duration keeps accruing off
+wall-clock — so the next launch would silently show hours nobody worked.
+
+While a session is running, WorkPulse writes a `last_activity_heartbeat_at`
+timestamp to the `settings` table every 30s, plus on every app lifecycle change.
+On the next launch, `IdleGapService` compares that heartbeat against now:
+
+- The gap starts at the last heartbeat, or at `session.start_time` when no
+  heartbeat covers the session (fresh install, or an upgrade from a build that
+  never wrote one) — always the honest lower bound on unverified time.
+- A gap at or above the idle threshold raises the prompt with
+  `IdleTrigger.appNotRunning`, which only changes the wording; all three
+  resolutions behave identically.
+- The heartbeat is re-baselined once a prompt is resolved, and deliberately
+  held back while one is open, so a force-quit mid-prompt does not erase the
+  very gap the user has not answered for yet.
 
 ---
 
@@ -159,4 +192,4 @@ All native OS bindings are abstracted behind clean interfaces:
   - **`WindowMode.dashboard`**:
     - Restores standard window decorations (`TitleBarStyle.normal`), disables `alwaysOnTop`, and expands to full dashboard dimensions (`1200x800` or saved bounds).
     - Top header hosts `ActiveTimerBar` with pulsing status indicator, project badge, live monospace duration ticker, and quick Switch / Stop actions.
-- **`IdleDetectorService`**: Dispatches inactivity alerts based on user input thresholds.
+- **`IdleDetectorService`**: Dispatches inactivity alerts based on user input thresholds while the app is running.
