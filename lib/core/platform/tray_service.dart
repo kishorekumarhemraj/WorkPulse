@@ -40,7 +40,10 @@ class DesktopTrayService with TrayListener implements TrayService {
   @override
   Future<void> initialize() async {
     if (_isInitialized) return;
-    if (kIsWeb || (!Platform.isMacOS && !Platform.isWindows && !Platform.isLinux)) return;
+    if (kIsWeb ||
+        (!Platform.isMacOS && !Platform.isWindows && !Platform.isLinux)) {
+      return;
+    }
 
     try {
       trayManager.addListener(this);

@@ -17,7 +17,8 @@ void main() {
       expect(windowService.visible, isTrue);
     });
 
-    test('openQuickCapture sets mode to quickCapture and makes visible', () async {
+    test('openQuickCapture sets mode to quickCapture and makes visible',
+        () async {
       await windowService.openQuickCapture();
 
       expect(windowService.currentMode, WindowMode.quickCapture);
@@ -26,7 +27,8 @@ void main() {
       expect(windowService.focused, isTrue);
     });
 
-    test('closeQuickCapture sets mode back to dashboard and hides window', () async {
+    test('closeQuickCapture sets mode back to dashboard and hides window',
+        () async {
       await windowService.openQuickCapture();
       expect(windowService.currentMode, WindowMode.quickCapture);
 

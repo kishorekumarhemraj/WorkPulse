@@ -1,18 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:workpulse/core/platform/pdf_export_handler.dart';
+import 'package:workpulse/core/keyboard/shortcut_labels.dart';
 import 'package:workpulse/core/theme/app_colors.dart';
 import 'package:workpulse/core/theme/design_tokens.dart';
 import 'package:workpulse/core/widgets/keycap.dart';
 import 'package:workpulse/domain/models/analytics_model.dart';
 import 'package:workpulse/domain/models/work_item_model.dart';
-import 'package:workpulse/features/reports/providers/reports_provider.dart';
+import 'package:workpulse/features/reports/pdf_report_export.dart';
 import 'package:workpulse/features/shell/models/shell_nav_tab.dart';
 import 'package:workpulse/features/tasks/providers/work_items_provider.dart';
 import 'package:workpulse/features/timer/providers/timer_provider.dart';
 import 'package:workpulse/features/timer/views/task_switch_dialog.dart';
-import 'package:workpulse/features/workspace/providers/workspace_provider.dart';
 
 /// What a palette entry does when chosen.
 enum CommandKind { navigate, action, workItem }
@@ -41,7 +40,8 @@ class PaletteCommand {
   });
 }
 
-/// An in-app launcher for navigation and actions, opened with ⌘K.
+/// An in-app launcher for navigation and actions, opened with the primary
+/// modifier plus K.
 ///
 /// Deliberately separate from the global Quick Capture HUD: that window is a
 /// latency-critical path (AGENTS.md rule 3) that exists to start a timer from
@@ -145,7 +145,7 @@ class _CommandPaletteState extends ConsumerState<CommandPalette> {
           icon: tab.icon,
           kind: CommandKind.navigate,
           keywords: tab.searchKeywords,
-          shortcut: '⌘${tab.shortcutDigit}',
+          shortcut: ShortcutLabels.primary('${tab.shortcutDigit}'),
           invoke: () async => widget.onNavigate(tab),
         ),
       PaletteCommand(
@@ -164,7 +164,7 @@ class _CommandPaletteState extends ConsumerState<CommandPalette> {
         icon: Icons.add_task,
         kind: CommandKind.action,
         keywords: const ['create', 'task', 'add'],
-        shortcut: '⌘N',
+        shortcut: ShortcutLabels.primary('N'),
         invoke: () async => widget.onNewTask(),
       ),
       PaletteCommand(
@@ -184,7 +184,7 @@ class _CommandPaletteState extends ConsumerState<CommandPalette> {
           icon: Icons.stop_circle_outlined,
           kind: CommandKind.action,
           keywords: const ['stop', 'pause', 'end'],
-          shortcut: '⌘.',
+          shortcut: ShortcutLabels.primary('.'),
           invoke: () async => ref.read(timerProvider.notifier).stopTimer(),
         ),
       PaletteCommand(
@@ -193,7 +193,15 @@ class _CommandPaletteState extends ConsumerState<CommandPalette> {
         section: 'Actions',
         icon: Icons.picture_as_pdf_outlined,
         kind: CommandKind.action,
-        keywords: const ['pdf', 'report', 'today', 'daily', 'manager', 'standup', 'export'],
+        keywords: const [
+          'pdf',
+          'report',
+          'today',
+          'daily',
+          'manager',
+          'standup',
+          'export'
+        ],
         invoke: _exportTodayPdf,
       ),
       PaletteCommand(
@@ -203,7 +211,7 @@ class _CommandPaletteState extends ConsumerState<CommandPalette> {
         icon: Icons.file_download_outlined,
         kind: CommandKind.action,
         keywords: const ['csv', 'json', 'download', 'backup'],
-        shortcut: '⌘E',
+        shortcut: ShortcutLabels.primary('E'),
         invoke: () async => widget.onExport(),
       ),
       PaletteCommand(
@@ -253,84 +261,12 @@ class _CommandPaletteState extends ConsumerState<CommandPalette> {
   }
 
   Future<void> _exportTodayPdf() async {
-    try {
-      final workspace = await ref.read(currentWorkspaceProvider.future);
-      final exportService = ref.read(exportServiceProvider);
-      final todayRange = DashboardTimeRange.today.toDateRange();
-
-      final pdfBytes = await exportService.generatePdf(
-        workspaceId: workspace.id,
-        range: todayRange,
-      );
-
-      final fileName = PdfExportHandler.formatReportFileName(
-        prefix: 'WorkPulse_Daily_Report',
-        startDate: todayRange.start,
-      );
-
-      final result = await PdfExportHandler.savePdf(
-        bytes: pdfBytes,
-        fileName: fileName,
-      );
-
-      await PdfExportHandler.openPdfInPreview(result.filePath);
-
-      if (mounted) {
-        final messenger = ScaffoldMessenger.of(context);
-        messenger.clearSnackBars();
-        messenger.showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.check_circle_outline, color: Colors.white, size: 18),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'Today\'s report saved: ${result.fileName}',
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
-                  ),
-                ),
-              ],
-            ),
-            backgroundColor: context.colors.success,
-            duration: const Duration(seconds: 4),
-            showCloseIcon: true,
-            closeIconColor: Colors.white,
-            action: SnackBarAction(
-              label: 'Show in Finder',
-              textColor: Colors.white,
-              onPressed: () =>
-                  PdfExportHandler.revealInFinder(result.filePath),
-            ),
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        final messenger = ScaffoldMessenger.of(context);
-        messenger.clearSnackBars();
-        messenger.showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.error_outline, color: Colors.white, size: 18),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'PDF export failed: $e',
-                    style: const TextStyle(color: Colors.white),
-                  ),
-                ),
-              ],
-            ),
-            backgroundColor: context.colors.danger,
-            duration: const Duration(seconds: 5),
-            showCloseIcon: true,
-            closeIconColor: Colors.white,
-          ),
-        );
-      }
-    }
+    await PdfReportExport.run(
+      context,
+      ref,
+      range: DashboardTimeRange.today.toDateRange(),
+      fileNamePrefix: 'WorkPulse_Daily_Report',
+    );
   }
 
   Future<void> _run(PaletteCommand command) async {
@@ -338,10 +274,12 @@ class _CommandPaletteState extends ConsumerState<CommandPalette> {
     await command.invoke();
   }
 
-  void _move(int delta, int length) {
+  void _move(int delta, int length) => _moveTo(_selectedIndex + delta, length);
+
+  void _moveTo(int index, int length) {
     if (length == 0) return;
     setState(() {
-      _selectedIndex = (_selectedIndex + delta).clamp(0, length - 1);
+      _selectedIndex = index.clamp(0, length - 1);
     });
     _scrollSelectedIntoView();
   }
@@ -399,6 +337,14 @@ class _CommandPaletteState extends ConsumerState<CommandPalette> {
           if (event.logicalKey == LogicalKeyboardKey.enter ||
               event.logicalKey == LogicalKeyboardKey.numpadEnter) {
             if (results.isNotEmpty) _run(results[safeIndex]);
+            return KeyEventResult.handled;
+          }
+          if (event.logicalKey == LogicalKeyboardKey.home) {
+            _moveTo(0, results.length);
+            return KeyEventResult.handled;
+          }
+          if (event.logicalKey == LogicalKeyboardKey.end) {
+            _moveTo(results.length - 1, results.length);
             return KeyEventResult.handled;
           }
           if (event.logicalKey == LogicalKeyboardKey.escape) {
@@ -506,14 +452,24 @@ class _CommandPaletteState extends ConsumerState<CommandPalette> {
                 ),
                 child: Row(
                   children: [
-                    const KeycapGroup(['↑', '↓']),
-                    const SizedBox(width: Spacing.sm - 2),
-                    Text('navigate', style: theme.textTheme.bodySmall),
-                    const SizedBox(width: Spacing.lg),
-                    const Keycap('↩'),
-                    const SizedBox(width: Spacing.sm - 2),
-                    Text('run', style: theme.textTheme.bodySmall),
-                    const Spacer(),
+                    // Wrapped, not a fixed Row: these hints are wider on
+                    // Windows ("Ctrl+Enter" against "⌘↩") and overflowed.
+                    Expanded(
+                      child: Wrap(
+                        spacing: Spacing.lg,
+                        runSpacing: Spacing.xs,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          const _KeyHint(keys: ['↑', '↓'], label: 'navigate'),
+                          const _KeyHint(keys: ['home', 'end'], label: 'jump'),
+                          _KeyHint(
+                            keys: [ShortcutLabels.enterKey],
+                            label: 'run',
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: Spacing.md),
                     Text(
                       '${results.length} result'
                       '${results.length == 1 ? '' : 's'}',
@@ -526,6 +482,26 @@ class _CommandPaletteState extends ConsumerState<CommandPalette> {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// One "these keys do this" hint in the palette footer.
+class _KeyHint extends StatelessWidget {
+  final List<String> keys;
+  final String label;
+
+  const _KeyHint({required this.keys, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        KeycapGroup(keys),
+        const SizedBox(width: Spacing.sm - 2),
+        Text(label, style: Theme.of(context).textTheme.bodySmall),
+      ],
     );
   }
 }

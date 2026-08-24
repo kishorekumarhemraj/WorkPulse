@@ -9,7 +9,13 @@ import 'package:workpulse/core/widgets/hoverable.dart';
 /// Container + BoxDecoration with slightly different radius and border
 /// treatment; this centralises that so surfaces are consistent and hover /
 /// selection / emphasis states behave the same everywhere.
-class AppCard extends StatelessWidget {
+///
+/// A tappable card is also a *focusable* card: it draws the palette's
+/// [WorkPulseColors.focusRing] when keyboard focus lands on it. Without that,
+/// tabbing through Work Items, the library grids or the dashboard tiles moved
+/// an invisible cursor — the design system defined a focus ring token that
+/// only text inputs ever used.
+class AppCard extends StatefulWidget {
   final Widget child;
   final EdgeInsetsGeometry padding;
   final VoidCallback? onTap;
@@ -41,41 +47,55 @@ class AppCard extends StatelessWidget {
   });
 
   @override
+  State<AppCard> createState() => _AppCardState();
+}
+
+class _AppCardState extends State<AppCard> {
+  bool _isFocused = false;
+
+  @override
   Widget build(BuildContext context) {
     final colors = context.colors;
-    final borderRadius = BorderRadius.circular(radius);
+    final borderRadius = BorderRadius.circular(widget.radius);
+    final isTappable = widget.onTap != null;
 
     return Hoverable(
-      cursor:
-          onTap != null ? SystemMouseCursors.click : SystemMouseCursors.basic,
+      cursor: isTappable ? SystemMouseCursors.click : SystemMouseCursors.basic,
       builder: (context, isHovered) {
         final Color borderColor;
-        if (emphasisColor != null) {
-          borderColor = emphasisColor!.withValues(alpha: 0.7);
-        } else if (isSelected) {
+        final double borderWidth;
+        // Focus outranks the other states: it answers "where am I?", which the
+        // user only asks while the answer is not otherwise visible.
+        if (_isFocused) {
+          borderColor = colors.focusRing;
+          borderWidth = 2;
+        } else if (widget.emphasisColor != null) {
+          borderColor = widget.emphasisColor!.withValues(alpha: 0.7);
+          borderWidth = 1.5;
+        } else if (widget.isSelected) {
           borderColor = colors.accent.withValues(alpha: 0.7);
-        } else if (isHovered && onTap != null) {
+          borderWidth = 1.5;
+        } else if (isHovered && isTappable) {
           borderColor = colors.borderStrong;
+          borderWidth = 1;
         } else {
           borderColor = colors.divider;
+          borderWidth = 1;
         }
 
         return AnimatedContainer(
           duration: Motion.duration(context, Motion.fast),
           curve: Motion.curve,
           decoration: BoxDecoration(
-            color: isSelected ? colors.selected : colors.surface,
+            color: widget.isSelected ? colors.selected : colors.surface,
             borderRadius: borderRadius,
-            border: showBorder
-                ? Border.all(
-                    color: borderColor,
-                    width: (emphasisColor != null || isSelected) ? 1.5 : 1,
-                  )
+            border: widget.showBorder || _isFocused
+                ? Border.all(color: borderColor, width: borderWidth)
                 : null,
-            boxShadow: emphasisColor != null
+            boxShadow: widget.emphasisColor != null
                 ? [
                     BoxShadow(
-                      color: emphasisColor!.withValues(alpha: 0.12),
+                      color: widget.emphasisColor!.withValues(alpha: 0.12),
                       blurRadius: 10,
                       spreadRadius: 1,
                     ),
@@ -83,20 +103,26 @@ class AppCard extends StatelessWidget {
                 : null,
           ),
           child: Material(
-            color:
-                isHovered && onTap != null ? colors.hover : Colors.transparent,
+            color: isHovered && isTappable ? colors.hover : Colors.transparent,
             borderRadius: borderRadius,
             child: InkWell(
-              onTap: onTap,
+              onTap: widget.onTap,
               borderRadius: borderRadius,
+              onFocusChange: (hasFocus) {
+                if (hasFocus == _isFocused) return;
+                setState(() => _isFocused = hasFocus);
+              },
               // The card paints its own hover fill above, so suppress the
-              // default ink highlight and keep only the ripple.
+              // default ink highlight and keep only the ripple. The focus ring
+              // is drawn on the border instead of as an overlay so it reads
+              // the same on selected, emphasised and plain cards.
               hoverColor: Colors.transparent,
+              focusColor: Colors.transparent,
               // Without a stripe there is no Row at all: a stretch Row needs a
               // bounded height, which a card laid out inside a scroll view or
               // a shrink-wrapping Wrap does not have.
-              child: leadingStripe == null
-                  ? Padding(padding: padding, child: child)
+              child: widget.leadingStripe == null
+                  ? Padding(padding: widget.padding, child: widget.child)
                   : IntrinsicHeight(
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -104,15 +130,18 @@ class AppCard extends StatelessWidget {
                           Container(
                             width: 3,
                             decoration: BoxDecoration(
-                              color: leadingStripe,
+                              color: widget.leadingStripe,
                               borderRadius: BorderRadius.only(
-                                topLeft: Radius.circular(radius),
-                                bottomLeft: Radius.circular(radius),
+                                topLeft: Radius.circular(widget.radius),
+                                bottomLeft: Radius.circular(widget.radius),
                               ),
                             ),
                           ),
                           Expanded(
-                            child: Padding(padding: padding, child: child),
+                            child: Padding(
+                              padding: widget.padding,
+                              child: widget.child,
+                            ),
                           ),
                         ],
                       ),

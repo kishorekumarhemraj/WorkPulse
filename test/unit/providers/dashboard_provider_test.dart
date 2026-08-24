@@ -58,11 +58,21 @@ void main() {
       final now = DateTime.now().toUtc();
 
       final proj = await projectRepo.create(
-        Project(id: 'proj-1', workspaceId: wsId, name: 'Engine Dev', createdAt: now, updatedAt: now),
+        Project(
+            id: 'proj-1',
+            workspaceId: wsId,
+            name: 'Engine Dev',
+            createdAt: now,
+            updatedAt: now),
       );
 
       final cat = await categoryRepo.create(
-        Category(id: 'cat-1', workspaceId: wsId, name: 'Feature', createdAt: now, updatedAt: now),
+        Category(
+            id: 'cat-1',
+            workspaceId: wsId,
+            name: 'Feature',
+            createdAt: now,
+            updatedAt: now),
       );
 
       final task = await workItemRepo.create(
@@ -150,7 +160,9 @@ void main() {
       expect(container.read(dashboardDateProvider), today);
     });
 
-    test('dashboardDataProvider loads DashboardData for active workspace on selected date', () async {
+    test(
+        'dashboardDataProvider loads DashboardData for active workspace on selected date',
+        () async {
       final container = createContainer();
       await container.read(currentWorkspaceProvider.future);
 

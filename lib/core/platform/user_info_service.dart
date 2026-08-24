@@ -30,7 +30,7 @@ class UserInfoService {
             '-NoProfile',
             '-NonInteractive',
             '-Command',
-            r"""[System.Security.Principal.WindowsIdentity]::GetCurrent().Name""",
+            r'''[System.Security.Principal.WindowsIdentity]::GetCurrent().Name''',
           ]);
           if (result.exitCode == 0) {
             final name = (result.stdout as String).trim();

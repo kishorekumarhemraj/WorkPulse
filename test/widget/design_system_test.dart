@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:workpulse/core/keyboard/shortcut_labels.dart';
 import 'package:workpulse/core/theme/app_colors.dart';
 import 'package:workpulse/core/theme/app_theme.dart';
 import 'package:workpulse/core/theme/app_typography.dart';
@@ -356,8 +357,10 @@ void main() {
       await tester.tap(find.text('Open'));
       await tester.pumpAndSettle();
       expect(find.text('Edit Task'), findsOneWidget);
-      // The submit affordance is advertised in the footer.
-      expect(find.text('⌘'), findsOneWidget);
+      // The submit affordance is advertised in the footer, spelled the way
+      // the host platform writes it.
+      expect(find.text(ShortcutLabels.primaryModifier), findsOneWidget);
+      expect(find.text(ShortcutLabels.enterKey), findsOneWidget);
 
       await tester.tap(find.byType(TextField));
       await tester.pumpAndSettle();

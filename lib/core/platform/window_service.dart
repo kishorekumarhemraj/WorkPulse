@@ -28,7 +28,8 @@ abstract class WindowService {
 }
 
 class DesktopWindowService with WindowListener implements WindowService {
-  static final DesktopWindowService _instance = DesktopWindowService._internal();
+  static final DesktopWindowService _instance =
+      DesktopWindowService._internal();
   factory DesktopWindowService() => _instance;
   DesktopWindowService._internal();
 
@@ -319,6 +320,12 @@ class DesktopWindowService with WindowListener implements WindowService {
 class NoOpWindowService implements WindowService {
   bool visible = true;
   bool focused = false;
+
+  /// How many times Quick Capture has been asked to open. Tests assert this is
+  /// exactly one per user gesture: opening twice used to lose the record of
+  /// whether the dashboard should be restored afterwards.
+  int openQuickCaptureCount = 0;
+
   WindowMode _currentMode = WindowMode.dashboard;
   final ValueNotifier<WindowMode> _modeNotifier =
       ValueNotifier<WindowMode>(WindowMode.dashboard);
@@ -367,6 +374,7 @@ class NoOpWindowService implements WindowService {
 
   @override
   Future<void> openQuickCapture() async {
+    openQuickCaptureCount++;
     _currentMode = WindowMode.quickCapture;
     _modeNotifier.value = WindowMode.quickCapture;
     visible = true;

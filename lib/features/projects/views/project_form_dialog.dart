@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:workpulse/core/theme/app_colors.dart';
 import 'package:workpulse/core/theme/color_utils.dart';
 import 'package:workpulse/core/theme/design_tokens.dart';
 import 'package:workpulse/core/widgets/app_dialog.dart';
+import 'package:workpulse/core/widgets/app_snack_bar.dart';
 import 'package:workpulse/core/widgets/color_swatch_picker.dart';
 import 'package:workpulse/domain/models/project_model.dart';
 import 'package:workpulse/features/projects/providers/projects_provider.dart';
@@ -72,11 +72,8 @@ class _ProjectFormDialogState extends ConsumerState<ProjectFormDialog> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to save project: $e'),
-            backgroundColor: context.colors.danger,
-          ),
+        ScaffoldMessenger.of(context).showAppSnackBar(
+          AppSnackBar.failure(message: 'Failed to save project: $e'),
         );
       }
     } finally {

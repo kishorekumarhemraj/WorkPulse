@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hotkey_manager/hotkey_manager.dart';
+import 'package:workpulse/core/keyboard/search_focus.dart';
 import 'package:workpulse/core/platform/hotkey_service.dart';
 import 'package:workpulse/core/platform/window_service.dart';
 import 'package:workpulse/core/theme/app_colors.dart';
@@ -29,7 +30,6 @@ import 'package:workpulse/features/shell/widgets/app_sidebar.dart';
 import 'package:workpulse/features/tags/views/tags_view.dart';
 import 'package:workpulse/features/tasks/views/task_form_dialog.dart';
 import 'package:workpulse/features/tasks/views/tasks_view.dart';
-import 'package:workpulse/features/timer/models/timer_state.dart';
 import 'package:workpulse/features/timer/providers/timer_provider.dart';
 import 'package:workpulse/features/timer/views/active_timer_bar.dart';
 import 'package:workpulse/features/tray/providers/tray_provider.dart';
@@ -66,6 +66,10 @@ class _QuickCaptureIntent extends Intent {
   const _QuickCaptureIntent();
 }
 
+class _FocusSearchIntent extends Intent {
+  const _FocusSearchIntent();
+}
+
 class MainShellView extends ConsumerStatefulWidget {
   const MainShellView({super.key});
 
@@ -79,11 +83,15 @@ class _MainShellViewState extends ConsumerState<MainShellView>
   late final WindowService _windowService;
   late final ActivityHeartbeatService _heartbeat;
 
+  /// Owned here so the shell's "focus search" shortcut and the screen's search
+  /// field agree on which node that is.
+  final _searchFocus = SearchFocusRegistry();
+
   @override
   void initState() {
     super.initState();
-    _hotKeyService = DesktopHotKeyService();
-    _windowService = DesktopWindowService();
+    _hotKeyService = ref.read(hotKeyServiceProvider);
+    _windowService = ref.read(windowServiceProvider);
     _heartbeat = ref.read(activityHeartbeatServiceProvider);
     WidgetsBinding.instance.addObserver(this);
     Future.microtask(_initializeHotKey);
@@ -93,13 +101,6 @@ class _MainShellViewState extends ConsumerState<MainShellView>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) unawaited(_runStartupRecovery());
     });
-
-    // Initialize macOS Tray Coordinator
-    final trayCoordinator = ref.read(trayCoordinatorProvider);
-    trayCoordinator.onQuickCaptureRequested = () {
-      _showQuickCapture();
-    };
-    trayCoordinator.initialize();
   }
 
   @override
@@ -148,6 +149,11 @@ class _MainShellViewState extends ConsumerState<MainShellView>
   /// While an idle prompt is open the heartbeat is deliberately held back:
   /// beating would move the baseline past the very gap the user has not
   /// answered for yet, and a force-quit at that point would lose it for good.
+  ///
+  /// This runs on transitions only. It used to be driven by an unfiltered
+  /// `ref.listen` on the whole timer state, which emits once a second while a
+  /// session runs — restarting the detector's poll timer before it could ever
+  /// fire, so live idle detection never triggered.
   void _syncActivityMonitors() {
     final isTracking = ref.read(timerProvider).value?.isRunning ?? false;
     final isPromptVisible = ref.read(idleNotifierProvider).isPromptVisible;
@@ -184,8 +190,8 @@ class _MainShellViewState extends ConsumerState<MainShellView>
   void _setTab(ShellNavTab tab) =>
       ref.read(activeNavTabProvider.notifier).setTab(tab);
 
-  /// Creates the entity that makes sense for the current screen, so ⌘N always
-  /// does the obvious thing.
+  /// Creates the entity that makes sense for the current screen, so the "new"
+  /// shortcut always does the obvious thing.
   Future<void> _newInContext() async {
     switch (ref.read(activeNavTabProvider)) {
       case ShellNavTab.projects:
@@ -302,9 +308,12 @@ class _MainShellViewState extends ConsumerState<MainShellView>
     });
 
     // Start/stop idle monitoring and heartbeats with the active timer.
-    ref.listen<AsyncValue<TimerState>>(timerProvider, (previous, next) {
-      _syncActivityMonitors();
-    });
+    // Selected down to the running flag: the timer republishes its state every
+    // second, and reacting to each tick restarted the idle poll timer.
+    ref.listen<bool>(
+      timerProvider.select((s) => s.value?.isRunning ?? false),
+      (previous, next) => _syncActivityMonitors(),
+    );
 
     return Scaffold(
       backgroundColor: colors.background,
@@ -328,9 +337,9 @@ class _MainShellViewState extends ConsumerState<MainShellView>
           onRetry: () => ref.invalidate(currentWorkspaceProvider),
         ),
         data: (workspace) {
-          final label = settings == null
-              ? '⌥ Space'
-              : hotKeyLabel(settings.quickCaptureHotKey);
+          final label = hotKeyLabel(
+            settings?.quickCaptureHotKey ?? defaultQuickCaptureHotKey(),
+          );
 
           return _ShellShortcuts(
             onNavigate: _setTab,
@@ -339,6 +348,7 @@ class _MainShellViewState extends ConsumerState<MainShellView>
             onStopTimer: () => ref.read(timerProvider.notifier).stopTimer(),
             onExport: () => ExportDialog.show(context),
             onQuickCapture: _showQuickCapture,
+            onFocusSearch: _searchFocus.requestFocus,
             child: Column(
               children: [
                 const ActiveTimerBar(),
@@ -358,9 +368,16 @@ class _MainShellViewState extends ConsumerState<MainShellView>
                             : () => _showShortcutRecorder(
                                   settings.quickCaptureHotKey,
                                 ),
+                        idleThreshold: settings?.idleThreshold,
+                        onIdleThresholdChanged: (threshold) => ref
+                            .read(appSettingsProvider.notifier)
+                            .setIdleThreshold(threshold),
                       ),
                       Expanded(
-                        child: _ContentViewport(activeTab: activeTab),
+                        child: SearchFocusScope(
+                          registry: _searchFocus,
+                          child: _ContentViewport(activeTab: activeTab),
+                        ),
                       ),
                     ],
                   ),
@@ -386,6 +403,7 @@ class _ShellShortcuts extends StatelessWidget {
   final VoidCallback onStopTimer;
   final VoidCallback onExport;
   final VoidCallback onQuickCapture;
+  final VoidCallback onFocusSearch;
   final Widget child;
 
   const _ShellShortcuts({
@@ -395,6 +413,7 @@ class _ShellShortcuts extends StatelessWidget {
     required this.onStopTimer,
     required this.onExport,
     required this.onQuickCapture,
+    required this.onFocusSearch,
     required this.child,
   });
 
@@ -412,8 +431,14 @@ class _ShellShortcuts extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Guarded so adding a tenth destination cannot throw a RangeError at
+    // runtime; the extra tab simply has no digit shortcut until one is added.
+    final digitCount = ShellNavTab.values.length < _digitKeys.length
+        ? ShellNavTab.values.length
+        : _digitKeys.length;
+
     final shortcuts = <ShortcutActivator, Intent>{
-      for (var i = 0; i < ShellNavTab.values.length; i++) ...{
+      for (var i = 0; i < digitCount; i++) ...{
         SingleActivator(_digitKeys[i], meta: true):
             _NavigateIntent(ShellNavTab.values[i]),
         SingleActivator(_digitKeys[i], control: true):
@@ -439,6 +464,12 @@ class _ShellShortcuts extends StatelessWidget {
       // when the main window already has focus.
       const SingleActivator(LogicalKeyboardKey.space, alt: true):
           const _QuickCaptureIntent(),
+      // Jumps to the visible screen's search box. Six screens carry one and
+      // none of them could be reached without a mouse.
+      const SingleActivator(LogicalKeyboardKey.keyF, meta: true):
+          const _FocusSearchIntent(),
+      const SingleActivator(LogicalKeyboardKey.keyF, control: true):
+          const _FocusSearchIntent(),
     };
 
     return Shortcuts(
@@ -478,6 +509,12 @@ class _ShellShortcuts extends StatelessWidget {
           _QuickCaptureIntent: CallbackAction<_QuickCaptureIntent>(
             onInvoke: (_) {
               onQuickCapture();
+              return null;
+            },
+          ),
+          _FocusSearchIntent: CallbackAction<_FocusSearchIntent>(
+            onInvoke: (_) {
+              onFocusSearch();
               return null;
             },
           ),

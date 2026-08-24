@@ -4,6 +4,7 @@ import 'package:workpulse/core/theme/app_colors.dart';
 import 'package:workpulse/core/theme/design_tokens.dart';
 import 'package:workpulse/core/theme/icon_utils.dart';
 import 'package:workpulse/core/widgets/app_dialog.dart';
+import 'package:workpulse/core/widgets/app_snack_bar.dart';
 import 'package:workpulse/domain/models/category_model.dart';
 import 'package:workpulse/features/categories/providers/categories_provider.dart';
 
@@ -73,11 +74,8 @@ class _CategoryFormDialogState extends ConsumerState<CategoryFormDialog> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to save category: $e'),
-            backgroundColor: context.colors.danger,
-          ),
+        ScaffoldMessenger.of(context).showAppSnackBar(
+          AppSnackBar.failure(message: 'Failed to save category: $e'),
         );
       }
     } finally {
