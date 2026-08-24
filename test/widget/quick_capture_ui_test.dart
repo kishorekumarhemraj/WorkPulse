@@ -283,6 +283,50 @@ void main() {
       // Menu should be open with menu item
       expect(find.byType(MenuItemButton), findsWidgets);
     });
+
+    testWidgets('arrow down navigates to second task and enter starts it',
+        (tester) async {
+      final container = FakeTimerProviderContainer();
+      await tester.pumpWidget(createTestApp(container));
+      await tester.pumpAndSettle();
+
+      // Press ArrowDown to select index 1 (Review Security Policy)
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pumpAndSettle();
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pumpAndSettle();
+
+      expect(container.fakeTimer.startedTask, isNotNull);
+      expect(container.fakeTimer.startedTask!.id, testTask2.id);
+    });
+
+    testWidgets('tapping on non-zero task index starts that specific task',
+        (tester) async {
+      final container = FakeTimerProviderContainer();
+      await tester.pumpWidget(createTestApp(container));
+      await tester.pumpAndSettle();
+
+      // Tap on second task directly
+      await tester.tap(find.text('Review Security Policy'));
+      await tester.pumpAndSettle();
+
+      expect(container.fakeTimer.startedTask, isNotNull);
+      expect(container.fakeTimer.startedTask!.id, testTask2.id);
+    });
+
+    testWidgets('pressing Escape key closes quick capture', (tester) async {
+      final container = FakeTimerProviderContainer();
+      await tester.pumpWidget(createTestApp(container));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(TextField), findsOneWidget);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(TextField), findsNothing);
+    });
   });
 }
 
