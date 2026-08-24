@@ -82,6 +82,9 @@ class AppDialog extends StatelessWidget {
         color: colors.surfaceRaised,
         borderRadius: Radii.xlAll,
         border: Border.all(color: colors.divider),
+        // A light dialog is white on a near-white page; the hairline alone
+        // does not read as "in front of".
+        boxShadow: Elevation.high(colors.shadow),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,

@@ -269,8 +269,8 @@ class _AppSelectState<T> extends State<AppSelect<T>> {
                   padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
                   decoration: BoxDecoration(
                     color: widget.enabled
-                        ? colors.card
-                        : colors.card.withValues(alpha: 0.5),
+                        ? colors.field
+                        : colors.field.withValues(alpha: 0.5),
                     borderRadius: Radii.mdAll,
                     border: Border.all(color: borderColor, width: borderWidth),
                   ),
@@ -463,7 +463,7 @@ class AppSelectPlaceholder extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
         alignment: Alignment.centerLeft,
         decoration: BoxDecoration(
-          color: colors.card.withValues(alpha: 0.5),
+          color: colors.field.withValues(alpha: 0.5),
           borderRadius: Radii.mdAll,
           border: Border.all(color: colors.divider.withValues(alpha: 0.5)),
         ),

@@ -126,7 +126,7 @@ class DynamicAttributeFields extends ConsumerWidget {
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: context.colors.card,
+            color: context.colors.field,
             borderRadius: Radii.mdAll,
             border: Border.all(color: context.colors.divider),
           ),
@@ -263,7 +263,7 @@ class DynamicAttributeFields extends ConsumerWidget {
             border: Border.all(color: context.colors.divider),
           ),
           child: Material(
-            color: context.colors.card,
+            color: context.colors.field,
             borderRadius: Radii.mdAll,
             child: InkWell(
               onTap: () async {

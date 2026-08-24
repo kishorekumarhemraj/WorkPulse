@@ -111,7 +111,7 @@ class AppFilterDropdown<T> extends StatelessWidget {
                   constraints: const BoxConstraints(maxWidth: 220),
                   padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
                   decoration: BoxDecoration(
-                    color: hasValue ? colors.accentSubtle : colors.card,
+                    color: hasValue ? colors.accentSubtle : colors.field,
                     borderRadius: Radii.mdAll,
                     border: Border.all(color: borderColor),
                   ),

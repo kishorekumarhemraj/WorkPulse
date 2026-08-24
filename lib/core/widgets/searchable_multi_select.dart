@@ -158,7 +158,7 @@ class _SearchableMultiSelectState extends State<SearchableMultiSelect> {
             ),
           Container(
             decoration: BoxDecoration(
-              color: colors.card,
+              color: colors.field,
               border: Border.all(
                 color: _focusNode.hasFocus ? colors.accent : colors.divider,
                 width: _focusNode.hasFocus ? 1.5 : 1.0,
