@@ -31,11 +31,11 @@ class PageHeader extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: Column(
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final isCompact = constraints.maxWidth < 1150;
+            if (isCompact) {
+              return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
@@ -53,18 +53,56 @@ class PageHeader extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ],
+                  if (actions.isNotEmpty) ...[
+                    const SizedBox(height: Spacing.md),
+                    Wrap(
+                      spacing: Spacing.sm,
+                      runSpacing: Spacing.sm,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: actions,
+                    ),
+                  ],
                 ],
-              ),
-            ),
-            if (actions.isNotEmpty) ...[
-              const SizedBox(width: Spacing.lg),
-              Wrap(
-                spacing: Spacing.sm,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                children: actions,
-              ),
-            ],
-          ],
+              );
+            }
+
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: theme.textTheme.headlineSmall,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      if (subtitle != null) ...[
+                        const SizedBox(height: Spacing.xs),
+                        Text(
+                          subtitle!,
+                          style: theme.textTheme.bodySmall,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                if (actions.isNotEmpty) ...[
+                  const SizedBox(width: Spacing.lg),
+                  Wrap(
+                    spacing: Spacing.sm,
+                    runSpacing: Spacing.sm,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: actions,
+                  ),
+                ],
+              ],
+            );
+          },
         ),
         if (toolbar != null) ...[
           const SizedBox(height: Spacing.lg),

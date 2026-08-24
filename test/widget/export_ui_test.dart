@@ -130,6 +130,13 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Time Log'), findsOneWidget);
+      expect(find.text('Today'), findsOneWidget);
+      expect(find.text('This Week'), findsOneWidget);
+      expect(find.text('This Month'), findsOneWidget);
+      expect(find.text('Date'), findsOneWidget);
+      expect(find.byIcon(Icons.chevron_left), findsOneWidget);
+      expect(find.byIcon(Icons.chevron_right), findsOneWidget);
+      expect(find.byIcon(Icons.calendar_today_outlined), findsOneWidget);
       expect(find.text('Export Data'), findsOneWidget);
       expect(find.text('Build Export & Hardening Feature'), findsOneWidget);
       expect(find.text('WorkPulse Core'), findsOneWidget);
@@ -141,6 +148,18 @@ void main() {
       // longer repeated on every row.
       expect(find.text('Range total'), findsOneWidget);
       expect(find.text('1 session across 1 day'), findsOneWidget);
+
+      // Tap Today tab
+      await tester.tap(find.text('Today'));
+      await tester.pumpAndSettle();
+
+      // Tap Next Day
+      await tester.tap(find.byTooltip('Next day'));
+      await tester.pumpAndSettle();
+
+      // Tap Previous Day
+      await tester.tap(find.byTooltip('Previous day'));
+      await tester.pumpAndSettle();
     });
 
     testWidgets(
