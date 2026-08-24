@@ -9,6 +9,7 @@ import 'package:workpulse/core/widgets/app_dialog.dart';
 import 'package:workpulse/core/widgets/app_select.dart';
 import 'package:workpulse/core/theme/color_utils.dart';
 import 'package:workpulse/core/theme/icon_utils.dart';
+import 'package:workpulse/core/widgets/app_snack_bar.dart';
 import 'package:workpulse/core/widgets/searchable_multi_select.dart';
 import 'package:workpulse/data/providers/repository_providers.dart';
 import 'package:workpulse/domain/models/attribute_model.dart';
@@ -91,7 +92,8 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
       Future.microtask(() async {
         try {
           final existingValues = await ref.read(
-              workItemAttributeValuesFamilyProvider(widget.workItem!.id).future);
+              workItemAttributeValuesFamilyProvider(widget.workItem!.id)
+                  .future);
           if (mounted) {
             setState(() {
               for (final v in existingValues) {
@@ -116,7 +118,6 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
         } catch (_) {}
       });
     }
-
   }
 
   @override
@@ -146,19 +147,15 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
     if (!_formKey.currentState!.validate() || _isSubmitting) return;
 
     if (_selectedProjectId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: const Text('Please select a project'),
-            backgroundColor: context.colors.danger),
+      ScaffoldMessenger.of(context).showAppSnackBar(
+        const AppSnackBar.failure(message: 'Please select a project'),
       );
       return;
     }
 
     if (_selectedCategoryId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: const Text('Please select a category'),
-            backgroundColor: context.colors.danger),
+      ScaffoldMessenger.of(context).showAppSnackBar(
+        const AppSnackBar.failure(message: 'Please select a category'),
       );
       return;
     }
@@ -255,10 +252,8 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
       if (mounted) Navigator.of(context).pop(result);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text('Failed to save task: $e'),
-              backgroundColor: context.colors.danger),
+        ScaffoldMessenger.of(context).showAppSnackBar(
+          AppSnackBar.failure(message: 'Failed to save task: $e'),
         );
       }
     } finally {
@@ -403,8 +398,7 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
                                   .map((p) => SelectOption(
                                         value: p.id,
                                         label: p.name,
-                                        color:
-                                            ColorUtils.parseHex(p.colorHex),
+                                        color: ColorUtils.parseHex(p.colorHex),
                                       ))
                                   .toList(),
                               onChanged: (val) =>

@@ -41,6 +41,8 @@ class AppSidebar extends ConsumerWidget {
   final ValueChanged<ThemeMode> onThemeModeChanged;
   final VoidCallback onQuickCapture;
   final VoidCallback? onEditShortcut;
+  final Duration? idleThreshold;
+  final ValueChanged<Duration> onIdleThresholdChanged;
 
   const AppSidebar({
     super.key,
@@ -50,6 +52,8 @@ class AppSidebar extends ConsumerWidget {
     required this.onThemeModeChanged,
     required this.onQuickCapture,
     required this.onEditShortcut,
+    required this.idleThreshold,
+    required this.onIdleThresholdChanged,
   });
 
   @override
@@ -121,6 +125,8 @@ class AppSidebar extends ConsumerWidget {
                 onThemeModeChanged: onThemeModeChanged,
                 hotKeyLabel: hotKeyLabel,
                 onEditShortcut: onEditShortcut,
+                idleThreshold: idleThreshold,
+                onIdleThresholdChanged: onIdleThresholdChanged,
                 isCollapsed: isCollapsed,
               ),
             ],

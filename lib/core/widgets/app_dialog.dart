@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:workpulse/core/keyboard/shortcut_labels.dart';
 import 'package:workpulse/core/theme/app_colors.dart';
 import 'package:workpulse/core/theme/design_tokens.dart';
 import 'package:workpulse/core/widgets/keycap.dart';
@@ -22,8 +23,9 @@ abstract class DialogWidth {
 /// The dialogs previously mixed `AlertDialog` and bare `Dialog` with
 /// per-dialog padding and title styling, and several put Save below a long
 /// scrolling form where it could be scrolled out of reach. Here the footer is
-/// always visible, and `⌘↩` submits from anywhere in the form — which
-/// matters most in the task form, the longest one in the app.
+/// always visible, and the platform's submit chord (`⌘↩` on macOS,
+/// `Ctrl+Enter` on Windows) submits from anywhere in the form — which matters
+/// most in the task form, the longest one in the app.
 class AppDialog extends StatelessWidget {
   final String title;
   final String? subtitle;
@@ -41,7 +43,7 @@ class AppDialog extends StatelessWidget {
 
   final double width;
 
-  /// Invoked by `⌘↩` / `Ctrl↩`. Wire this to the same callback as the
+  /// Invoked by `⌘↩` / `Ctrl+Enter`. Wire this to the same callback as the
   /// primary footer button.
   final VoidCallback? onSubmit;
 
@@ -154,16 +156,31 @@ class AppDialog extends StatelessWidget {
               padding: const EdgeInsets.all(Spacing.lg),
               child: Row(
                 children: [
-                  if (leadingFooter != null) leadingFooter!,
-                  const Spacer(),
-                  if (onSubmit != null) ...[
-                    const KeycapGroup(['⌘', '↩']),
+                  if (leadingFooter != null) ...[
+                    leadingFooter!,
                     const SizedBox(width: Spacing.md),
                   ],
-                  ...actions.expand(
-                    (a) => [a, const SizedBox(width: Spacing.sm)],
+                  // A Wrap rather than a Row: the submit hint is wider on
+                  // Windows ("Ctrl" "Enter" against "⌘" "↩") and a fixed row
+                  // overflowed the narrower dialogs. It drops to its own line
+                  // instead of being clipped.
+                  Expanded(
+                    child: Wrap(
+                      alignment: WrapAlignment.end,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: Spacing.sm,
+                      runSpacing: Spacing.sm,
+                      children: [
+                        if (onSubmit != null)
+                          Padding(
+                            padding: const EdgeInsets.only(right: Spacing.sm),
+                            child: KeycapGroup(ShortcutLabels.submitKeys),
+                          ),
+                        ...actions,
+                      ],
+                    ),
                   ),
-                ]..removeLast(),
+                ],
               ),
             ),
           ],

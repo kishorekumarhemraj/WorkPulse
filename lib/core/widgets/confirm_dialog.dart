@@ -7,6 +7,11 @@ import 'package:workpulse/core/widgets/app_dialog.dart';
 /// Each screen previously built its own AlertDialog for this, so the wording,
 /// button styling and even whether the consequence was explained varied
 /// screen to screen.
+///
+/// Keyboard: the confirm button takes initial focus, so `Enter` confirms and
+/// `Escape` (handled by the modal route) cancels. Before that, focus landed on
+/// the header's close button and `Enter` did nothing at all until the user had
+/// tabbed twice.
 Future<bool> confirmDestructive(
   BuildContext context, {
   required String title,
@@ -29,6 +34,7 @@ Future<bool> confirmDestructive(
             child: const Text('Cancel'),
           ),
           ElevatedButton(
+            autofocus: true,
             onPressed: () => Navigator.of(ctx).pop(true),
             style: ElevatedButton.styleFrom(
               backgroundColor: colors.dangerFill,

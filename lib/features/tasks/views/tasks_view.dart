@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:workpulse/core/keyboard/shortcut_labels.dart';
 import 'package:workpulse/core/theme/app_colors.dart';
 import 'package:workpulse/core/theme/design_tokens.dart';
-import 'package:workpulse/core/widgets/app_dialog.dart';
+import 'package:workpulse/core/widgets/confirm_dialog.dart';
 import 'package:workpulse/core/widgets/empty_state.dart';
 import 'package:workpulse/core/widgets/error_state.dart';
 import 'package:workpulse/core/widgets/page_header.dart';
@@ -32,17 +33,9 @@ class TasksView extends ConsumerStatefulWidget {
 }
 
 class _TasksViewState extends ConsumerState<TasksView> {
-  final _searchFocusNode = FocusNode();
-
   /// The item shown in the inspector, or expanded inline when the window is
   /// too narrow for two panes.
   String? _selectedId;
-
-  @override
-  void dispose() {
-    _searchFocusNode.dispose();
-    super.dispose();
-  }
 
   Future<void> _toggleTimer(WorkItem item, bool isActive) async {
     if (isActive) {
@@ -71,36 +64,14 @@ class _TasksViewState extends ConsumerState<TasksView> {
   }
 
   Future<void> _confirmDelete(WorkItem item, bool isActive) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AppDialog(
-        title: 'Delete Work Item',
-        icon: Icons.delete_outline,
-        iconColor: ctx.colors.danger,
-        width: DialogWidth.small,
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: ctx.colors.dangerFill,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Delete'),
-          ),
-        ],
-        child: Text(
-          'Are you sure you want to permanently delete "${item.name}"? '
+    final confirmed = await confirmDestructive(
+      context,
+      title: 'Delete Work Item',
+      message: 'Are you sure you want to permanently delete "${item.name}"? '
           'Its recorded sessions will be removed with it.',
-          style: Theme.of(ctx).textTheme.bodyMedium,
-        ),
-      ),
     );
 
-    if (confirmed != true) return;
+    if (!confirmed) return;
     if (isActive) {
       await ref.read(timerProvider.notifier).stopTimer();
     }
@@ -146,7 +117,7 @@ class _TasksViewState extends ConsumerState<TasksView> {
         subtitle: 'Tracked tasks, issues, and activities across all projects',
         actions: [
           Tooltip(
-            message: 'New work item   ⌘N',
+            message: 'New work item   ${ShortcutLabels.primary('N')}',
             child: ElevatedButton.icon(
               onPressed: () => TaskFormDialog.show(context),
               icon: const Icon(Icons.add, size: IconSizes.lg),
@@ -154,7 +125,7 @@ class _TasksViewState extends ConsumerState<TasksView> {
             ),
           ),
         ],
-        toolbar: WorkItemsToolbar(searchFocusNode: _searchFocusNode),
+        toolbar: const WorkItemsToolbar(),
         child: workItemsAsync.when(
           loading: () => const SkeletonList(),
           error: (error, _) => ErrorState(

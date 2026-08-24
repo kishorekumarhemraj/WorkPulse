@@ -1,5 +1,6 @@
 import 'dart:io';
-import 'dart:typed_data';
+
+import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
@@ -47,9 +48,11 @@ class PdfExportHandler {
       }
     } catch (_) {}
 
-    // 2. Direct user home Downloads directory on macOS if accessible
+    // 2. The user's home Downloads directory, when path_provider could not
+    //    resolve one. HOME on macOS/Linux, USERPROFILE on Windows.
     try {
-      final home = Platform.environment['HOME'];
+      final home =
+          Platform.environment['HOME'] ?? Platform.environment['USERPROFILE'];
       if (home != null && home.isNotEmpty) {
         candidateDirs.add(Directory(p.join(home, 'Downloads')));
       }
@@ -90,31 +93,69 @@ class PdfExportHandler {
     }
 
     throw lastError ??
-        const FileSystemException('Could not save PDF to any accessible directory');
+        const FileSystemException(
+            'Could not save PDF to any accessible directory');
   }
 
-  /// Opens the PDF file using macOS's default handler (Preview.app).
-  static Future<bool> openPdfInPreview(String filePath) async {
-    try {
-      if (!Platform.isMacOS) {
-        return false;
-      }
-      final res = await Process.run('open', [filePath]);
-      return res.exitCode == 0;
-    } catch (_) {
-      return false;
+  /// Opens the exported file in whatever the OS considers its default
+  /// handler — Preview on macOS, the shell association on Windows, the
+  /// desktop portal on Linux.
+  ///
+  /// Used to be macOS-only and silently returned false everywhere else, so on
+  /// Windows the export appeared to succeed and then nothing opened.
+  static Future<bool> openInDefaultApp(String filePath) {
+    if (Platform.isMacOS) {
+      return _run('open', [filePath]);
     }
+    if (Platform.isWindows) {
+      // `start` is a cmd builtin, not an executable, and its first quoted
+      // argument is taken as the window title — hence the empty one.
+      return _run('cmd', ['/c', 'start', '', filePath]);
+    }
+    if (Platform.isLinux) {
+      return _run('xdg-open', [filePath]);
+    }
+    return Future.value(false);
   }
 
-  /// Reveals the generated file in macOS Finder.
-  static Future<bool> revealInFinder(String filePath) async {
+  /// Reveals the generated file in the platform's file manager, selected.
+  static Future<bool> revealInFileManager(String filePath) {
+    if (Platform.isMacOS) {
+      return _run('open', ['-R', filePath]);
+    }
+    if (Platform.isWindows) {
+      // explorer.exe returns a non-zero exit code even when it succeeds, so
+      // its result is deliberately not treated as failure.
+      return _run(
+        'explorer',
+        ['/select,', _windowsPath(filePath)],
+        ignoreExitCode: true,
+      );
+    }
+    if (Platform.isLinux) {
+      // No portable "reveal"; opening the containing directory is the closest
+      // equivalent that works across desktop environments.
+      return _run('xdg-open', [p.dirname(filePath)]);
+    }
+    return Future.value(false);
+  }
+
+  /// Windows Explorer only accepts backslash-separated paths in `/select,`.
+  @visibleForTesting
+  static String windowsSelectPath(String filePath) => _windowsPath(filePath);
+
+  static String _windowsPath(String filePath) => filePath.replaceAll('/', r'\');
+
+  static Future<bool> _run(
+    String executable,
+    List<String> arguments, {
+    bool ignoreExitCode = false,
+  }) async {
     try {
-      if (!Platform.isMacOS) {
-        return false;
-      }
-      final res = await Process.run('open', ['-R', filePath]);
-      return res.exitCode == 0;
-    } catch (_) {
+      final result = await Process.run(executable, arguments);
+      return ignoreExitCode || result.exitCode == 0;
+    } catch (error) {
+      debugPrint('[WorkPulse] Could not run $executable: $error');
       return false;
     }
   }

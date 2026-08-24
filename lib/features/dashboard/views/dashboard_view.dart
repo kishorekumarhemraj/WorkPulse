@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:workpulse/core/platform/pdf_export_handler.dart';
 import 'package:workpulse/core/theme/app_colors.dart';
 import 'package:workpulse/core/theme/design_tokens.dart';
 import 'package:workpulse/core/widgets/date_stepper.dart';
@@ -15,8 +14,7 @@ import 'package:workpulse/features/dashboard/providers/dashboard_provider.dart';
 import 'package:workpulse/features/dashboard/widgets/breakdown_card.dart';
 import 'package:workpulse/features/dashboard/widgets/daily_activity_chart.dart';
 import 'package:workpulse/features/dashboard/widgets/metric_card.dart';
-import 'package:workpulse/features/reports/providers/reports_provider.dart';
-import 'package:workpulse/features/workspace/providers/workspace_provider.dart';
+import 'package:workpulse/features/reports/pdf_report_export.dart';
 
 class DashboardView extends ConsumerWidget {
   const DashboardView({super.key});
@@ -50,9 +48,8 @@ class DashboardView extends ConsumerWidget {
 
   String _formatDateButtonLabel(DateTime date) {
     final now = DateTime.now();
-    final isToday = date.year == now.year &&
-        date.month == now.month &&
-        date.day == now.day;
+    final isToday =
+        date.year == now.year && date.month == now.month && date.day == now.day;
     final yesterday = DateTime(now.year, now.month, now.day - 1);
     final isYesterday = date.year == yesterday.year &&
         date.month == yesterday.month &&
@@ -95,88 +92,13 @@ class DashboardView extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref,
     DateRange range,
-  ) async {
-    try {
-      final workspace = await ref.read(currentWorkspaceProvider.future);
-      final exportService = ref.read(exportServiceProvider);
-
-      final pdfBytes = await exportService.generatePdf(
-        workspaceId: workspace.id,
-        range: range,
-      );
-
-      final fileName = PdfExportHandler.formatReportFileName(
-        prefix: 'WorkPulse_Daily_Report',
-        startDate: range.start,
-        endDate: range.end,
-      );
-
-      final result = await PdfExportHandler.savePdf(
-        bytes: pdfBytes,
-        fileName: fileName,
-      );
-
-      await PdfExportHandler.openPdfInPreview(result.filePath);
-
-      if (context.mounted) {
-        final messenger = ScaffoldMessenger.of(context);
-        messenger.clearSnackBars();
-        messenger.showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.check_circle_outline, color: Colors.white, size: 18),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'Report saved to Downloads: ${result.fileName}',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            backgroundColor: context.colors.success,
-            duration: const Duration(seconds: 4),
-            showCloseIcon: true,
-            closeIconColor: Colors.white,
-            action: SnackBarAction(
-              label: 'Show in Finder',
-              textColor: Colors.white,
-              onPressed: () =>
-                  PdfExportHandler.revealInFinder(result.filePath),
-            ),
-          ),
-        );
-      }
-    } catch (e) {
-      if (context.mounted) {
-        final messenger = ScaffoldMessenger.of(context);
-        messenger.clearSnackBars();
-        messenger.showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.error_outline, color: Colors.white, size: 18),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'PDF export failed: $e',
-                    style: const TextStyle(color: Colors.white),
-                  ),
-                ),
-              ],
-            ),
-            backgroundColor: context.colors.danger,
-            duration: const Duration(seconds: 5),
-            showCloseIcon: true,
-            closeIconColor: Colors.white,
-          ),
-        );
-      }
-    }
+  ) {
+    return PdfReportExport.run(
+      context,
+      ref,
+      range: range,
+      fileNamePrefix: 'WorkPulse_Daily_Report',
+    );
   }
 
   @override
@@ -222,9 +144,7 @@ class DashboardView extends ConsumerWidget {
               AppSegmentedControl<DashboardTimeRange>(
                 selected: selectedRange,
                 onChanged: (range) {
-                  ref
-                      .read(selectedTimeRangeProvider.notifier)
-                      .setRange(range);
+                  ref.read(selectedTimeRangeProvider.notifier).setRange(range);
                   if (range == DashboardTimeRange.today) {
                     ref.read(dashboardDateProvider.notifier).goToToday();
                   } else if (range == DashboardTimeRange.custom) {
@@ -292,8 +212,8 @@ class DashboardView extends ConsumerWidget {
                   maximumSize:
                       const Size(ControlSizes.standard, ControlSizes.standard),
                   padding: EdgeInsets.zero,
-                  shape: const RoundedRectangleBorder(
-                      borderRadius: Radii.mdAll),
+                  shape:
+                      const RoundedRectangleBorder(borderRadius: Radii.mdAll),
                 ),
               ),
             ],

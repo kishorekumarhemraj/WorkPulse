@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:workpulse/core/theme/app_colors.dart';
 import 'package:workpulse/core/theme/design_tokens.dart';
 import 'package:workpulse/core/widgets/app_dialog.dart';
+import 'package:workpulse/core/widgets/app_snack_bar.dart';
 import 'package:workpulse/domain/models/person_model.dart';
 import 'package:workpulse/features/people/providers/people_provider.dart';
 
@@ -79,11 +79,8 @@ class _PersonFormDialogState extends ConsumerState<PersonFormDialog> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to save person: $e'),
-            backgroundColor: context.colors.danger,
-          ),
+        ScaffoldMessenger.of(context).showAppSnackBar(
+          AppSnackBar.failure(message: 'Failed to save person: $e'),
         );
       }
     } finally {

@@ -108,14 +108,11 @@ class _WorkPulseAppState extends ConsumerState<WorkPulseApp> {
   @override
   void initState() {
     super.initState();
-    _windowService = widget.windowService ?? DesktopWindowService.instance;
-    Future.microtask(() {
-      final tray = ref.read(trayCoordinatorProvider);
-      tray.onQuickCaptureRequested = () {
-        _windowService.openQuickCapture();
-      };
-      tray.initialize();
-    });
+    _windowService = widget.windowService ?? ref.read(windowServiceProvider);
+    // The tray owns its own menu actions; the app only has to bring it up.
+    // This is the one place it is initialized — MainShellView used to do it a
+    // second time, registering a callback that opened Quick Capture twice.
+    Future.microtask(() => ref.read(trayCoordinatorProvider).initialize());
   }
 
   @override

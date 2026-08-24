@@ -137,7 +137,8 @@ void main() {
       return container;
     }
 
-    test('atomic task switch stops Session A with notes and starts Session B', () async {
+    test('atomic task switch stops Session A with notes and starts Session B',
+        () async {
       final container = createContainer();
       await container.read(currentWorkspaceProvider.future);
       await container.read(timerProvider.future);
@@ -155,8 +156,10 @@ void main() {
 
       // 2. Request switch to Task B
       notifier.requestSwitch(taskB);
-      expect(container.read(timerProvider).value!.status, TimerStatus.switching);
-      expect(container.read(timerProvider).value!.pendingSwitchWorkItem!.id, taskB.id);
+      expect(
+          container.read(timerProvider).value!.status, TimerStatus.switching);
+      expect(container.read(timerProvider).value!.pendingSwitchWorkItem!.id,
+          taskB.id);
 
       // 3. Confirm switch with closing session note
       await notifier.confirmSwitch(notes: 'Completed initial architecture');
@@ -180,7 +183,9 @@ void main() {
       expect(timerState.activeWorkItem!.id, taskB.id);
     });
 
-    test('multiple sequential switches maintain single active session invariant', () async {
+    test(
+        'multiple sequential switches maintain single active session invariant',
+        () async {
       final container = createContainer();
       await container.read(currentWorkspaceProvider.future);
       await container.read(timerProvider.future);
@@ -217,7 +222,8 @@ void main() {
       expect(active.endTime, isNull);
     });
 
-    test('cancelling switch request preserves active session untouched', () async {
+    test('cancelling switch request preserves active session untouched',
+        () async {
       final container = createContainer();
       await container.read(currentWorkspaceProvider.future);
       await container.read(timerProvider.future);

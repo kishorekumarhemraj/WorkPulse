@@ -38,7 +38,7 @@ WorkPulse strictly adheres to a 4-layer clean architecture:
                               │
 ┌─────────────────────────────▼─────────────────────────────┐
 │                         Data Layer                        │
-│   (SQLite Tables, Migrations V1-V2, Concrete Repositories)│
+│   (SQLite Tables, Migrations V1-V4, Concrete Repositories)│
 └─────────────────────────────┬─────────────────────────────┘
                               │
 ┌─────────────────────────────▼─────────────────────────────┐
@@ -48,9 +48,9 @@ WorkPulse strictly adheres to a 4-layer clean architecture:
 ```
 
 ### Layer Details:
-- **`lib/core/`**: Platform adapters (`HotKeyService`, `TrayService`, `IdleDetectorService`, `WindowService`), database initialization, error types (`AppException`), and color/icon utilities.
+- **`lib/core/`**: Platform adapters (`HotKeyService`, `TrayService`, `IdleDetectorService`, `SystemIdleSource`, `WindowService`), database initialization, error types (`AppException`), the design system (`WorkPulseColors`, `design_tokens.dart`, `core/widgets/`), and the keyboard layer (`core/keyboard/`: platform shortcut labels and the search-focus registry).
 - **`lib/domain/`**: Pure Dart models (`WorkItem`, `Session`, `Project`, `Category`, `Tag`, `Person`, `AttributeDefinition`, `AttributeOption`, `IdlePeriod`), repository contracts, and business logic services (`TimerService`, `TaskSwitchService`, `IdleService`).
-- **`lib/data/`**: SQLite table schemas (`Tables`), versioned migrations (`MigrationV1`, `MigrationV2`), DAOs, and repository implementations (`SqliteWorkItemRepository`, `SqliteSessionRepository`, etc.).
+- **`lib/data/`**: SQLite table schemas (`Tables`), versioned migrations (`MigrationV1`–`MigrationV4`), DAOs, and repository implementations (`SqliteWorkItemRepository`, `SqliteSessionRepository`, etc.).
 - **`lib/features/`**: Feature-specific UI, view models, and Riverpod providers (`quick_capture/`, `tasks/`, `timer/`, `idle/`, `attributes/`, `projects/`, `categories/`, `tags/`, `people/`, `dashboard/`, `reports/`, `settings/`, `shell/`).
 
 ---
@@ -177,11 +177,29 @@ On the next launch, `IdleGapService` compares that heartbeat against now:
 
 ---
 
-## 5. macOS Native Integrations & Window Modes
+## 5. Desktop Native Integrations & Window Modes
 
-All native OS bindings are abstracted behind clean interfaces:
-- **`HotKeyService`**: Handles system-wide `⌥ + Space` (Option + Space) registration via `hotkey_manager`.
-- **`TrayService`**: Manages menu bar icon, dynamic live status bar ticker (`⏱ 00:14:22  Task Name`), and context menu via `tray_manager`.
+macOS is the primary target and Windows is a supported one. All native OS
+bindings sit behind interfaces in `lib/core/platform/`, each with a fallback
+that no-ops (or reports "cannot answer") where a platform lacks the capability,
+so a missing native path degrades rather than crashes.
+
+| Concern | macOS | Windows | Linux |
+| :--- | :--- | :--- | :--- |
+| Global hotkey | `hotkey_manager` | `hotkey_manager` | `hotkey_manager` |
+| Tray / menu bar | icon **and** live title ticker | icon, tooltip, context menu | icon, tooltip, context menu |
+| Window & HUD | `window_manager` + `screen_retriever` | same | same |
+| System idle time | `CGEventSourceSecondsSinceLastEventType` (FFI) | `GetLastInputInfo` (FFI) | **unavailable** — never prompts |
+| Open an export | `open` | `cmd /c start` | `xdg-open` |
+| Reveal an export | `open -R` (Finder) | `explorer /select,` | `xdg-open` on the folder |
+| Packaging | `.app` bundle, sandboxed | `Release/` directory | not configured |
+
+`tray_manager` only supports a *titled* tray item on macOS, so the live
+`⏱ 00:14:22  Task Name` ticker is macOS-only by platform convention; on Windows
+the same information is carried by the tooltip and the context menu.
+
+- **`HotKeyService`**: Handles system-wide `⌥ + Space` / `Alt + Space` registration via `hotkey_manager`. The binding is user-configurable and persisted; `NoOpHotKeyService` stands in for tests.
+- **`TrayService`**: Manages the tray icon, the macOS live status bar ticker (`⏱ 00:14:22  Task Name`), and the context menu via `tray_manager`. `TrayCoordinator` owns every menu action; quitting from it writes a final heartbeat and closes the database before exiting, so the next launch does not attribute the shutdown moment to unaccounted time.
 - **`WindowService` & Window Modes**:
   - **`WindowMode.quickCapture`**:
     - Invoked via global shortcut `⌥ + Space` or Tray "Quick Capture".
@@ -192,4 +210,4 @@ All native OS bindings are abstracted behind clean interfaces:
   - **`WindowMode.dashboard`**:
     - Restores standard window decorations (`TitleBarStyle.normal`), disables `alwaysOnTop`, and expands to full dashboard dimensions (`1200x800` or saved bounds).
     - Top header hosts `ActiveTimerBar` with pulsing status indicator, project badge, live monospace duration ticker, and quick Switch / Stop actions.
-- **`IdleDetectorService`**: Dispatches inactivity alerts based on user input thresholds while the app is running.
+- **`IdleDetectorService`**: Polls `SystemIdleSource` — the OS's own "seconds since last input" counter — every 10 seconds while a session runs, and raises one event per uninterrupted idle stretch once the user's configured threshold (3–30 minutes, default 10) is crossed. It queries an aggregate the OS already maintains; it never observes input itself. See [ADR 001](adr/001-system-idle-detection.md) for why, and for the defect this replaced.

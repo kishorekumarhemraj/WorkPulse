@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:workpulse/core/constants/app_constants.dart';
+import 'package:workpulse/core/keyboard/shortcut_labels.dart';
 import 'package:workpulse/core/theme/app_theme.dart';
 import 'package:workpulse/domain/models/category_model.dart';
 import 'package:workpulse/domain/models/person_model.dart';
@@ -172,10 +173,12 @@ void main() {
       // are named by their tooltips instead.
       expect(find.text('Quick Capture'), findsNothing);
       expect(find.text('Dashboard'), findsNothing);
-      expect(find.byTooltip('Dashboard   \u23181'), findsOneWidget);
+      // Spelled for the host platform: '⌘1' on macOS, 'Ctrl+1' on Windows.
+      final dashboardTooltip = 'Dashboard   ${ShortcutLabels.primary('1')}';
+      expect(find.byTooltip(dashboardTooltip), findsOneWidget);
 
       // Collapsed nav still switches views.
-      await tester.tap(find.byTooltip('Dashboard   \u23181'));
+      await tester.tap(find.byTooltip(dashboardTooltip));
       await tester.pumpAndSettle();
       expect(find.byType(DashboardView), findsOneWidget);
 

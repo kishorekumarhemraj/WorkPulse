@@ -74,14 +74,21 @@ extension ShellNavTabInfo on ShellNavTab {
         ShellNavTab.attributes => ShellNavGroup.configure,
       };
 
-  /// The digit paired with Cmd to jump straight here.
+  /// The digit paired with the primary modifier to jump straight here.
   int get shortcutDigit => index + 1;
 
   /// What the command palette should match against, beyond the label.
   List<String> get searchKeywords => switch (this) {
         ShellNavTab.dashboard => ['insights', 'analytics', 'summary', 'charts'],
         ShellNavTab.history => ['sessions', 'log', 'history', 'timesheet'],
-        ShellNavTab.notes => ['notes', 'standup', 'daily', 'summary', 'journal', 'log'],
+        ShellNavTab.notes => [
+            'notes',
+            'standup',
+            'daily',
+            'summary',
+            'journal',
+            'log'
+          ],
         ShellNavTab.tasks => ['tasks', 'items', 'issues', 'work'],
         ShellNavTab.projects => ['clients', 'projects'],
         ShellNavTab.categories => ['categories', 'types'],

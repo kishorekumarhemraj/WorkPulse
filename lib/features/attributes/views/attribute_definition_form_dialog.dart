@@ -4,6 +4,7 @@ import 'package:workpulse/core/theme/app_colors.dart';
 import 'package:workpulse/core/theme/design_tokens.dart';
 import 'package:workpulse/core/widgets/app_dialog.dart';
 import 'package:workpulse/core/widgets/app_select.dart';
+import 'package:workpulse/core/widgets/app_snack_bar.dart';
 import 'package:workpulse/domain/models/attribute_model.dart';
 import 'package:workpulse/features/attributes/providers/attribute_definitions_provider.dart';
 
@@ -129,10 +130,8 @@ class _AttributeDefinitionFormDialogState
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text('Error saving attribute: $e'),
-              backgroundColor: context.colors.danger),
+        ScaffoldMessenger.of(context).showAppSnackBar(
+          AppSnackBar.failure(message: 'Error saving attribute: $e'),
         );
       }
     } finally {

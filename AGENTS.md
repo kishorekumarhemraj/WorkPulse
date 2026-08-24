@@ -1,6 +1,6 @@
 # WorkPulse — AI Agent & Developer Guidelines
 
-WorkPulse is a privacy-first, offline-first macOS time-tracking and work-awareness application built with Flutter, Riverpod, and SQLite.
+WorkPulse is a privacy-first, offline-first desktop time-tracking and work-awareness application built with Flutter, Riverpod, and SQLite. macOS is the primary target; Windows is a supported platform, built and tested in CI.
 
 ## 10 Critical Architectural Rules
 
@@ -37,7 +37,9 @@ WorkPulse is a privacy-first, offline-first macOS time-tracking and work-awarene
    - Zero telemetry, analytics, or background outbound network calls in V1.
 
 9. **Platform-Specific Code Must Be Isolated**:
-   - Native macOS integrations (menu bar tray, global shortcut `⌥ + Space`, idle detection, notifications, window management) live behind clean platform service interfaces in `lib/core/platform/`.
+   - Native integrations (tray, global shortcut `⌥ + Space` / `Alt + Space`, idle detection, window management, opening and revealing exported files) live behind clean platform service interfaces in `lib/core/platform/`.
+   - Every interface has a fallback for platforms lacking the capability. Where a platform cannot answer at all — system idle time on Linux — report "unknown" and stay quiet rather than guessing.
+   - Keyboard shortcuts bind both the `meta:` and `control:` activator, and are *labelled* through `ShortcutLabels` so hints read correctly on each platform. Never hardcode `⌘` or `⌥` in UI text.
 
 10. **Migration-Based Database with Stable UUIDs**:
     - All entity IDs are stable UUIDs.

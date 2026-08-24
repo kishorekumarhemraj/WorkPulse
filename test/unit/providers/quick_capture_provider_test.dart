@@ -176,7 +176,8 @@ void main() {
       notifier.setProject(defaultProject.id);
       notifier.setCategory(defaultCategory.id);
 
-      final created = await notifier.createAndStartTask(name: 'New Feature Fast');
+      final created =
+          await notifier.createAndStartTask(name: 'New Feature Fast');
       expect(created, isNotNull);
       expect(created!.name, 'New Feature Fast');
       expect(created.projectId, defaultProject.id);

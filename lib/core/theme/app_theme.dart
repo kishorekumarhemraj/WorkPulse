@@ -44,6 +44,10 @@ class AppTheme {
       scaffoldBackgroundColor: c.background,
       canvasColor: c.surface,
       dividerColor: c.divider,
+      // Material's default (12% black/white) is barely visible on these
+      // surfaces. Controls that draw their own ring — AppCard, SidebarNavItem,
+      // AppSelect — opt out locally; everything else inherits this.
+      focusColor: c.focusRing.withValues(alpha: 0.28),
       extensions: <ThemeExtension<dynamic>>[c],
       colorScheme: ColorScheme(
         brightness: brightness,

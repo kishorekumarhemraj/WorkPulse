@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:workpulse/core/keyboard/shortcut_labels.dart';
 import 'package:workpulse/core/theme/app_colors.dart';
 import 'package:workpulse/core/theme/app_typography.dart';
 import 'package:workpulse/core/theme/color_utils.dart';
@@ -145,7 +146,8 @@ class ActiveTimerBar extends ConsumerWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(
-                          IconUtils.getIcon(activeCategory?.iconName ?? 'folder'),
+                          IconUtils.getIcon(
+                              activeCategory?.iconName ?? 'folder'),
                           size: 13,
                           color: colors.accent,
                         ),
@@ -225,7 +227,7 @@ class ActiveTimerBar extends ConsumerWidget {
               ],
 
               Tooltip(
-                message: 'Stop tracking   ⌘.',
+                message: 'Stop tracking   ${ShortcutLabels.primary('.')}',
                 child: ElevatedButton.icon(
                   onPressed: () => ref.read(timerProvider.notifier).stopTimer(),
                   icon: const Icon(Icons.stop, size: IconSizes.md),

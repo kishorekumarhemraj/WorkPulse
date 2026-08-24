@@ -240,19 +240,32 @@ class MigrationV1 {
     ''');
 
     // Performance & Search Indices
-    batch.execute('CREATE INDEX idx_work_items_name ON ${Tables.workItems}(name);');
-    batch.execute('CREATE INDEX idx_work_items_workspace_id ON ${Tables.workItems}(workspace_id);');
-    batch.execute('CREATE INDEX idx_work_items_project_id ON ${Tables.workItems}(project_id);');
-    batch.execute('CREATE INDEX idx_work_items_category_id ON ${Tables.workItems}(category_id);');
-    batch.execute('CREATE INDEX idx_work_items_last_worked ON ${Tables.workItems}(last_worked_at);');
-    batch.execute('CREATE INDEX idx_sessions_work_item_id ON ${Tables.sessions}(work_item_id);');
-    batch.execute('CREATE INDEX idx_sessions_start_time ON ${Tables.sessions}(start_time);');
-    batch.execute('CREATE INDEX idx_sessions_end_time ON ${Tables.sessions}(end_time);');
-    batch.execute('CREATE INDEX idx_idle_periods_session_id ON ${Tables.idlePeriods}(session_id);');
-    batch.execute('CREATE INDEX idx_attr_def_workspace_key ON ${Tables.attributeDefinitions}(workspace_id, key);');
-    batch.execute('CREATE INDEX idx_attr_opt_def_id ON ${Tables.attributeOptions}(attribute_definition_id);');
-    batch.execute('CREATE INDEX idx_wi_attr_val_item ON ${Tables.workItemAttributeValues}(work_item_id);');
-    batch.execute('CREATE INDEX idx_sess_attr_val_session ON ${Tables.sessionAttributeValues}(session_id);');
+    batch.execute(
+        'CREATE INDEX idx_work_items_name ON ${Tables.workItems}(name);');
+    batch.execute(
+        'CREATE INDEX idx_work_items_workspace_id ON ${Tables.workItems}(workspace_id);');
+    batch.execute(
+        'CREATE INDEX idx_work_items_project_id ON ${Tables.workItems}(project_id);');
+    batch.execute(
+        'CREATE INDEX idx_work_items_category_id ON ${Tables.workItems}(category_id);');
+    batch.execute(
+        'CREATE INDEX idx_work_items_last_worked ON ${Tables.workItems}(last_worked_at);');
+    batch.execute(
+        'CREATE INDEX idx_sessions_work_item_id ON ${Tables.sessions}(work_item_id);');
+    batch.execute(
+        'CREATE INDEX idx_sessions_start_time ON ${Tables.sessions}(start_time);');
+    batch.execute(
+        'CREATE INDEX idx_sessions_end_time ON ${Tables.sessions}(end_time);');
+    batch.execute(
+        'CREATE INDEX idx_idle_periods_session_id ON ${Tables.idlePeriods}(session_id);');
+    batch.execute(
+        'CREATE INDEX idx_attr_def_workspace_key ON ${Tables.attributeDefinitions}(workspace_id, key);');
+    batch.execute(
+        'CREATE INDEX idx_attr_opt_def_id ON ${Tables.attributeOptions}(attribute_definition_id);');
+    batch.execute(
+        'CREATE INDEX idx_wi_attr_val_item ON ${Tables.workItemAttributeValues}(work_item_id);');
+    batch.execute(
+        'CREATE INDEX idx_sess_attr_val_session ON ${Tables.sessionAttributeValues}(session_id);');
 
     // Seed default workspace
     final nowIso = DateTime.now().toUtc().toIso8601String();

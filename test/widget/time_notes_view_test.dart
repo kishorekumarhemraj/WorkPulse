@@ -86,12 +86,15 @@ void main() {
       duration: const Duration(minutes: 45),
     );
 
-    testWidgets('TimeNotesView renders empty state when no notes exist', (tester) async {
+    testWidgets('TimeNotesView renders empty state when no notes exist',
+        (tester) async {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            currentWorkspaceProvider.overrideWith(() => _FakeWorkspaceNotifier(testWorkspace)),
-            timeNotesProvider.overrideWith((ref) async => <DateTime, List<TimeNoteEntry>>{}),
+            currentWorkspaceProvider
+                .overrideWith(() => _FakeWorkspaceNotifier(testWorkspace)),
+            timeNotesProvider
+                .overrideWith((ref) async => <DateTime, List<TimeNoteEntry>>{}),
           ],
           child: MaterialApp(
             theme: AppTheme.darkTheme,
@@ -107,7 +110,9 @@ void main() {
       expect(find.text('This Week'), findsOneWidget);
     });
 
-    testWidgets('TimeNotesView displays note cards grouped by date with metadata chips', (tester) async {
+    testWidgets(
+        'TimeNotesView displays note cards grouped by date with metadata chips',
+        (tester) async {
       final dateKey = DateTime(now.year, now.month, now.day);
       final groups = <DateTime, List<TimeNoteEntry>>{
         dateKey: [testNoteEntry],
@@ -116,7 +121,8 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            currentWorkspaceProvider.overrideWith(() => _FakeWorkspaceNotifier(testWorkspace)),
+            currentWorkspaceProvider
+                .overrideWith(() => _FakeWorkspaceNotifier(testWorkspace)),
             timeNotesProvider.overrideWith((ref) async => groups),
           ],
           child: MaterialApp(
@@ -130,7 +136,8 @@ void main() {
 
       // Note text
       expect(
-        find.text('Refactored token refresh interceptor and resolved edge cases'),
+        find.text(
+            'Refactored token refresh interceptor and resolved edge cases'),
         findsOneWidget,
       );
 
