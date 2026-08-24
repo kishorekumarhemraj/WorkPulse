@@ -261,6 +261,21 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
     }
   }
 
+  /// Creates a tag named [name] and selects it, so the user does not have to
+  /// leave a half-filled form to add one.
+  Future<void> _createAndSelectTag(String name) async {
+    try {
+      final tag = await ref.read(tagsProvider.notifier).createTag(name: name);
+      if (!mounted) return;
+      setState(() => _selectedTagIds = [..._selectedTagIds, tag.id]);
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showAppSnackBar(
+        AppSnackBar.failure(message: 'Could not create tag: $error'),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isEditing = widget.workItem != null;
@@ -513,6 +528,8 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
                     onChanged: (ids) => setState(() => _selectedTagIds = ids),
                     hintText: 'Search tags...',
                     emptyStateText: 'No tags created yet',
+                    onCreateNew: _createAndSelectTag,
+                    createLabelBuilder: (query) => 'Create tag "$query"',
                   );
                 },
               ),
