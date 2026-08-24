@@ -247,26 +247,31 @@ class _QuickCaptureDialogState extends ConsumerState<QuickCaptureDialog> {
                                 fontSize: 15,
                                 color: context.colors.textSecondary),
                             border: InputBorder.none,
-                            contentPadding: EdgeInsets.zero,
-                            isDense: true,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 10,
+                            ),
+                            suffixIcon: qcState.query.isNotEmpty
+                                ? IconButton(
+                                    tooltip: 'Clear search',
+                                    icon: Icon(Icons.close,
+                                        size: 16,
+                                        color: context.colors.textSecondary),
+                                    onPressed: () {
+                                      _searchController.clear();
+                                      ref
+                                          .read(quickCaptureProvider.notifier)
+                                          .setQuery('');
+                                    },
+                                  )
+                                : null,
                           ),
                           onChanged: (val) => ref
                               .read(quickCaptureProvider.notifier)
                               .setQuery(val),
                         ),
                       ),
-                      if (qcState.query.isNotEmpty)
-                        IconButton(
-                          tooltip: 'Clear search',
-                          icon: Icon(Icons.close,
-                              size: 16, color: context.colors.textSecondary),
-                          onPressed: () {
-                            _searchController.clear();
-                            ref
-                                .read(quickCaptureProvider.notifier)
-                                .setQuery('');
-                          },
-                        ),
+                      const SizedBox(width: 12),
                       // Shortcut Pill Badges
                       const Keycap('↵ Track'),
                       const SizedBox(width: 6),
