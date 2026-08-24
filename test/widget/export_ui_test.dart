@@ -85,8 +85,15 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Export Work Data'), findsOneWidget);
+      expect(find.text('PDF (Visual Work Report)'), findsOneWidget);
       expect(find.text('CSV (Spreadsheet / Excel)'), findsOneWidget);
       expect(find.text('JSON (Structured Backup)'), findsOneWidget);
+      expect(find.text('Export & Open PDF'), findsOneWidget);
+
+      // Tap CSV format
+      await tester.tap(find.text('CSV (Spreadsheet / Excel)'));
+      await tester.pumpAndSettle();
+
       expect(find.text('Copy to Clipboard'), findsOneWidget);
 
       // Tap JSON format
@@ -94,6 +101,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('JSON (Structured Backup)'), findsOneWidget);
+      expect(find.text('Copy to Clipboard'), findsOneWidget);
     });
 
     testWidgets(
