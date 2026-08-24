@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:workpulse/core/platform/idle_detector_service.dart';
 import 'package:workpulse/core/theme/app_colors.dart';
 import 'package:workpulse/core/theme/app_typography.dart';
 import 'package:workpulse/core/theme/design_tokens.dart';
@@ -15,11 +16,17 @@ class IdlePromptDialog extends ConsumerStatefulWidget {
   final DateTime idleStartTime;
   final WorkItem activeWorkItem;
 
+  /// Whether the time in question passed with the app watching (the user sat
+  /// still) or with the app gone (quit, logged out, machine off). The
+  /// resolutions are identical; only the wording differs.
+  final IdleTrigger trigger;
+
   const IdlePromptDialog({
     super.key,
     required this.idleDuration,
     required this.idleStartTime,
     required this.activeWorkItem,
+    this.trigger = IdleTrigger.inactivity,
   });
 
   static Future<void> show(BuildContext context) {
@@ -39,6 +46,7 @@ class IdlePromptDialog extends ConsumerStatefulWidget {
             idleDuration: idleState.currentEvent!.idleDuration,
             idleStartTime: idleState.currentEvent!.idleStartTime,
             activeWorkItem: idleState.activeWorkItem!,
+            trigger: idleState.currentEvent!.trigger,
           );
         },
       ),
@@ -51,6 +59,22 @@ class IdlePromptDialog extends ConsumerStatefulWidget {
 
 class _IdlePromptDialogState extends ConsumerState<IdlePromptDialog> {
   bool _isProcessing = false;
+
+  bool get _isAppNotRunning => widget.trigger == IdleTrigger.appNotRunning;
+
+  /// Gaps from a closed app routinely span the night, so the date is shown
+  /// whenever "6:42 PM" alone would be ambiguous.
+  String _formatTimestamp(DateTime utc) {
+    final local = utc.toLocal();
+    final now = DateTime.now();
+    final isToday = local.year == now.year &&
+        local.month == now.month &&
+        local.day == now.day;
+
+    return isToday
+        ? DateFormat.jm().format(local)
+        : DateFormat.MMMd().add_jm().format(local);
+  }
 
   String _formatDuration(Duration duration) {
     final hours = duration.inHours;
@@ -91,7 +115,7 @@ class _IdlePromptDialogState extends ConsumerState<IdlePromptDialog> {
   Widget build(BuildContext context) {
     final colors = context.colors;
     final theme = Theme.of(context);
-    final timeStr = DateFormat.jm().format(widget.idleStartTime.toLocal());
+    final timeStr = _formatTimestamp(widget.idleStartTime);
     final durationStr = _formatDuration(widget.idleDuration);
 
     return Focus(
@@ -113,8 +137,12 @@ class _IdlePromptDialogState extends ConsumerState<IdlePromptDialog> {
         return KeyEventResult.ignored;
       },
       child: AppDialog(
-        title: 'Inactivity Detected',
-        subtitle: 'You were away while the timer was running.',
+        title: _isAppNotRunning
+            ? 'Unaccounted Time Detected'
+            : 'Inactivity Detected',
+        subtitle: _isAppNotRunning
+            ? 'WorkPulse was closed while the timer kept running.'
+            : 'You were away while the timer was running.',
         icon: Icons.nightlight_round,
         iconColor: colors.warning,
         width: DialogWidth.medium,
@@ -146,7 +174,9 @@ class _IdlePromptDialogState extends ConsumerState<IdlePromptDialog> {
                   ),
                   const SizedBox(height: Spacing.xs),
                   Text(
-                    'Idle period started at $timeStr',
+                    _isAppNotRunning
+                        ? 'WorkPulse last saw activity at $timeStr'
+                        : 'Idle period started at $timeStr',
                     style: theme.textTheme.bodySmall,
                   ),
                 ],
@@ -220,8 +250,12 @@ class _IdlePromptDialogState extends ConsumerState<IdlePromptDialog> {
             ),
             const SizedBox(height: Spacing.sm),
             _buildOptionTile(
-              title: 'Stop Timer at Inactivity',
-              subtitle: 'End tracking at $timeStr, when the inactivity began',
+              title: _isAppNotRunning
+                  ? 'Stop Timer at Last Activity'
+                  : 'Stop Timer at Inactivity',
+              subtitle: _isAppNotRunning
+                  ? 'End tracking at $timeStr, when WorkPulse last saw you'
+                  : 'End tracking at $timeStr, when the inactivity began',
               shortcut: 'S',
               icon: Icons.stop_circle_outlined,
               color: colors.danger,
