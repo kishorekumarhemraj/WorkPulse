@@ -5,6 +5,8 @@ import 'package:workpulse/core/platform/idle_detector_service.dart';
 import 'package:workpulse/data/providers/repository_providers.dart';
 import 'package:workpulse/domain/models/session_model.dart';
 import 'package:workpulse/domain/models/work_item_model.dart';
+import 'package:workpulse/domain/services/activity_heartbeat_service.dart';
+import 'package:workpulse/domain/services/idle_gap_service.dart';
 import 'package:workpulse/domain/services/idle_service.dart';
 import 'package:workpulse/features/timer/providers/timer_provider.dart';
 
@@ -12,6 +14,22 @@ final idleDetectorServiceProvider = Provider<IdleDetectorService>((ref) {
   final service = DesktopIdleDetectorService();
   ref.onDispose(service.dispose);
   return service;
+});
+
+final activityHeartbeatServiceProvider =
+    Provider<ActivityHeartbeatService>((ref) {
+  final service = ActivityHeartbeatService(
+    settingsRepository: ref.watch(settingsRepositoryProvider),
+  );
+  ref.onDispose(service.dispose);
+  return service;
+});
+
+final idleGapServiceProvider = Provider<IdleGapService>((ref) {
+  return IdleGapService(
+    sessionRepository: ref.watch(sessionRepositoryProvider),
+    heartbeatService: ref.watch(activityHeartbeatServiceProvider),
+  );
 });
 
 final idleServiceProvider = Provider<IdleService>((ref) {
@@ -60,8 +78,17 @@ final idleNotifierProvider = NotifierProvider<IdleNotifier, IdleState>(
 class IdleNotifier extends Notifier<IdleState> {
   StreamSubscription<IdleDetectionEvent>? _subscription;
 
+  /// Startup recovery is a once-per-launch job. The shell that kicks it off is
+  /// torn down and rebuilt every time the Quick Capture window takes over, and
+  /// a second pass would only ever measure against a heartbeat this same run
+  /// just wrote.
+  bool _hasCheckedForUnaccountedGap = false;
+
   IdleService get _idleService => ref.read(idleServiceProvider);
   IdleDetectorService get _detectorService => ref.read(idleDetectorServiceProvider);
+  IdleGapService get _gapService => ref.read(idleGapServiceProvider);
+  ActivityHeartbeatService get _heartbeatService =>
+      ref.read(activityHeartbeatServiceProvider);
 
   @override
   IdleState build() {
@@ -114,6 +141,50 @@ class IdleNotifier extends Notifier<IdleState> {
     );
   }
 
+  /// Startup recovery for time the app was not around to watch.
+  ///
+  /// The live detector's polling timer dies with the process, so quitting
+  /// WorkPulse — or shutting the Mac down — with a timer running leaves a
+  /// session whose `end_time` is still null and whose elapsed time keeps
+  /// growing off wall-clock alone. On the next launch that reads back as hours
+  /// of solid work that nobody did. Reconstruct that gap from the persisted
+  /// heartbeat and offer the same three resolutions as live inactivity.
+  Future<void> checkForUnaccountedGap() async {
+    if (_hasCheckedForUnaccountedGap || state.isPromptVisible) return;
+    _hasCheckedForUnaccountedGap = true;
+
+    final timerState = await ref.read(timerProvider.future);
+    if (!timerState.isRunning ||
+        timerState.activeSession == null ||
+        timerState.activeWorkItem == null) {
+      // Nothing is being tracked, so nothing can be over-counted. Re-baseline
+      // so the next launch measures from here.
+      await _heartbeatService.beat();
+      return;
+    }
+
+    final gap = await _gapService.detectUnaccountedGap(
+      threshold: _detectorService.idleThreshold,
+    );
+
+    if (gap == null || gap.session.id != timerState.activeSession!.id) {
+      await _heartbeatService.beat();
+      return;
+    }
+
+    state = state.copyWith(
+      isPromptVisible: true,
+      currentEvent: IdleDetectionEvent(
+        idleDuration: gap.duration,
+        idleStartTime: gap.startTime,
+        idleEndTime: gap.endTime,
+        trigger: IdleTrigger.appNotRunning,
+      ),
+      activeWorkItem: timerState.activeWorkItem,
+      activeSession: timerState.activeSession,
+    );
+  }
+
   /// Option 1: Keep tracking current task
   Future<void> keepTracking() async {
     final current = state;
@@ -127,6 +198,10 @@ class IdleNotifier extends Notifier<IdleState> {
       idleStartTime: current.currentEvent!.idleStartTime,
       idleEndTime: current.currentEvent!.idleEndTime,
     );
+
+    // The gap is now resolved; re-baseline so the next launch does not ask
+    // about the same stretch of time again.
+    await _heartbeatService.beat();
 
     dismiss();
   }
@@ -151,6 +226,8 @@ class IdleNotifier extends Notifier<IdleState> {
       await ref.read(timerProvider.notifier).recoverActiveSession();
     }
 
+    await _heartbeatService.beat();
+
     dismiss();
   }
 
@@ -170,6 +247,8 @@ class IdleNotifier extends Notifier<IdleState> {
 
     // Update timer state to idle
     await ref.read(timerProvider.notifier).recoverActiveSession();
+
+    await _heartbeatService.beat();
 
     dismiss();
   }

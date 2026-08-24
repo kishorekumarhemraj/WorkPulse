@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:workpulse/core/theme/design_tokens.dart';
 import 'package:workpulse/core/theme/app_colors.dart';
 import 'package:workpulse/core/theme/color_utils.dart';
+import 'package:workpulse/core/widgets/app_select.dart';
 import 'package:workpulse/domain/models/attribute_model.dart';
 import 'package:workpulse/features/attributes/providers/attribute_definitions_provider.dart';
 
@@ -143,44 +144,23 @@ class DynamicAttributeFields extends ConsumerWidget {
           loading: () => const LinearProgressIndicator(),
           error: (_, __) => const SizedBox.shrink(),
           data: (options) {
-            return DropdownButtonFormField<String>(
-              isDense: true,
-              isExpanded: true,
-              initialValue: options.any((o) => o.id == currentValue)
+            return AppSelect<String>(
+              label: def.name,
+              isRequired: def.required,
+              placeholder: 'Select ${def.name}',
+              value: options.any((o) => o.id == currentValue)
                   ? currentValue as String?
                   : null,
-              dropdownColor: context.colors.surface,
-              style: TextStyle(fontSize: 13, color: context.colors.textPrimary),
-              decoration: InputDecoration(
-                labelText: '${def.name}${def.required ? ' *' : ''}',
-                hintText: 'Select ${def.name}',
-              ),
+              options: options
+                  .map((opt) => SelectOption(
+                        value: opt.id,
+                        label: opt.label,
+                        color: ColorUtils.parseHex(opt.colorHex),
+                      ))
+                  .toList(),
               validator: def.required
                   ? (v) => v == null ? 'Please select ${def.name}' : null
                   : null,
-              items: options.map((opt) {
-                final col = ColorUtils.parseHex(opt.colorHex);
-                return DropdownMenuItem(
-                  value: opt.id,
-                  child: Row(
-                    children: [
-                      Container(
-                          width: 8,
-                          height: 8,
-                          decoration: BoxDecoration(
-                              color: col, shape: BoxShape.circle)),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(opt.label,
-                            style: TextStyle(
-                                fontSize: 13,
-                                color: context.colors.textPrimary),
-                            overflow: TextOverflow.ellipsis),
-                      ),
-                    ],
-                  ),
-                );
-              }).toList(),
               onChanged: (val) => onValueChanged(def.id, val),
             );
           },

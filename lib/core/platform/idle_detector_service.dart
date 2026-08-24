@@ -1,19 +1,35 @@
 import 'dart:async';
 import 'package:equatable/equatable.dart';
 
+/// What produced an [IdleDetectionEvent]. The two cases are detected by
+/// completely different means and read very differently to the user, so the
+/// prompt words itself from this.
+enum IdleTrigger {
+  /// No activity for longer than the threshold while WorkPulse was running.
+  inactivity,
+
+  /// Wall-clock time a still-open session covers but WorkPulse was not running
+  /// for: the app was quit, the user logged out, or the Mac was shut down.
+  /// Reconstructed at startup from the persisted activity heartbeat.
+  appNotRunning,
+}
+
 class IdleDetectionEvent extends Equatable {
   final Duration idleDuration;
   final DateTime idleStartTime;
   final DateTime idleEndTime;
+  final IdleTrigger trigger;
 
   const IdleDetectionEvent({
     required this.idleDuration,
     required this.idleStartTime,
     required this.idleEndTime,
+    this.trigger = IdleTrigger.inactivity,
   });
 
   @override
-  List<Object?> get props => [idleDuration, idleStartTime, idleEndTime];
+  List<Object?> get props =>
+      [idleDuration, idleStartTime, idleEndTime, trigger];
 }
 
 abstract class IdleDetectorService {
