@@ -5,6 +5,7 @@ import 'package:workpulse/core/theme/app_colors.dart';
 import 'package:workpulse/core/theme/app_typography.dart';
 import 'package:workpulse/core/theme/design_tokens.dart';
 import 'package:workpulse/core/widgets/app_dialog.dart';
+import 'package:workpulse/core/widgets/date_stepper.dart';
 import 'package:workpulse/core/widgets/empty_state.dart';
 import 'package:workpulse/core/widgets/error_state.dart';
 import 'package:workpulse/core/widgets/page_header.dart';
@@ -168,77 +169,33 @@ class SessionHistoryView extends ConsumerWidget {
             ],
           ),
           // Date Navigation Bar (Previous day, Current Date, Next day)
-          Container(
-            decoration: BoxDecoration(
-              color: colors.surface,
-              borderRadius: Radii.smAll,
-              border: Border.all(color: colors.divider),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.chevron_left, size: IconSizes.md),
-                  tooltip: 'Previous day',
-                  onPressed: () {
-                    ref.read(reportsDateProvider.notifier).previousDay();
-                    final newDate = ref.read(reportsDateProvider);
-                    final isNewToday = newDate.year == now.year &&
-                        newDate.month == now.month &&
-                        newDate.day == now.day;
-                    ref.read(reportsTimeRangeProvider.notifier).setRange(
-                          isNewToday
-                              ? DashboardTimeRange.today
-                              : DashboardTimeRange.custom,
-                        );
-                  },
-                ),
-                InkWell(
-                  borderRadius: Radii.xsAll,
-                  onTap: () => _pickDate(context, ref),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: Spacing.sm,
-                      vertical: Spacing.xs,
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.calendar_today_outlined,
-                          size: IconSizes.sm,
-                          color: colors.accent,
-                        ),
-                        const SizedBox(width: Spacing.xs),
-                        Text(
-                          _formatDateButtonLabel(selectedDate),
-                          style: Theme.of(context)
-                              .textTheme
-                              .bodyMedium
-                              ?.copyWith(fontWeight: FontWeight.w500),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.chevron_right, size: IconSizes.md),
-                  tooltip: 'Next day',
-                  onPressed: () {
-                    ref.read(reportsDateProvider.notifier).nextDay();
-                    final newDate = ref.read(reportsDateProvider);
-                    final isNewToday = newDate.year == now.year &&
-                        newDate.month == now.month &&
-                        newDate.day == now.day;
-                    ref.read(reportsTimeRangeProvider.notifier).setRange(
-                          isNewToday
-                              ? DashboardTimeRange.today
-                              : DashboardTimeRange.custom,
-                        );
-                  },
-                ),
-              ],
-            ),
+          AppDateStepper(
+            label: _formatDateButtonLabel(selectedDate),
+            onPrevious: () {
+              ref.read(reportsDateProvider.notifier).previousDay();
+              final newDate = ref.read(reportsDateProvider);
+              final isNewToday = newDate.year == now.year &&
+                  newDate.month == now.month &&
+                  newDate.day == now.day;
+              ref.read(reportsTimeRangeProvider.notifier).setRange(
+                    isNewToday
+                        ? DashboardTimeRange.today
+                        : DashboardTimeRange.custom,
+                  );
+            },
+            onNext: () {
+              ref.read(reportsDateProvider.notifier).nextDay();
+              final newDate = ref.read(reportsDateProvider);
+              final isNewToday = newDate.year == now.year &&
+                  newDate.month == now.month &&
+                  newDate.day == now.day;
+              ref.read(reportsTimeRangeProvider.notifier).setRange(
+                    isNewToday
+                        ? DashboardTimeRange.today
+                        : DashboardTimeRange.custom,
+                  );
+            },
+            onPickDate: () => _pickDate(context, ref),
           ),
           Tooltip(
             message: 'Export data   ⌘E',
@@ -253,8 +210,17 @@ class SessionHistoryView extends ConsumerWidget {
           ),
           IconButton(
             onPressed: () => ref.invalidate(sessionHistoryProvider),
-            icon: const Icon(Icons.refresh, size: IconSizes.lg),
+            icon: const Icon(Icons.refresh, size: IconSizes.md),
             tooltip: 'Refresh session log',
+            style: IconButton.styleFrom(
+              minimumSize:
+                  const Size(ControlSizes.standard, ControlSizes.standard),
+              maximumSize:
+                  const Size(ControlSizes.standard, ControlSizes.standard),
+              padding: EdgeInsets.zero,
+              shape: const RoundedRectangleBorder(
+                  borderRadius: Radii.mdAll),
+            ),
           ),
         ],
         child: sessionsAsync.when(

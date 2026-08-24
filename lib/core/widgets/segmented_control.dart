@@ -37,6 +37,9 @@ class AppSegmentedControl<T> extends StatelessWidget {
   /// space available, so those callers pass true.
   final bool fillWidth;
 
+  /// The total height of the segmented control. Defaults to [ControlSizes.standard].
+  final double height;
+
   const AppSegmentedControl({
     super.key,
     required this.options,
@@ -44,6 +47,7 @@ class AppSegmentedControl<T> extends StatelessWidget {
     required this.onChanged,
     this.iconOnly = false,
     this.fillWidth = false,
+    this.height = ControlSizes.standard,
   });
 
   @override
@@ -52,6 +56,7 @@ class AppSegmentedControl<T> extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Container(
+      height: height,
       padding: const EdgeInsets.all(3),
       decoration: BoxDecoration(
         color: colors.surfaceSunken,
@@ -60,6 +65,7 @@ class AppSegmentedControl<T> extends StatelessWidget {
       ),
       child: Row(
         mainAxisSize: fillWidth ? MainAxisSize.max : MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: options.map((option) {
           final isSelected = option.value == selected;
           final foreground =
@@ -68,12 +74,12 @@ class AppSegmentedControl<T> extends StatelessWidget {
           Widget segment = AnimatedContainer(
             duration: Motion.duration(context, Motion.fast),
             curve: Motion.curve,
+            alignment: Alignment.center,
             padding: EdgeInsets.symmetric(
               // Stretched segments share a fixed width, so they take less
               // padding to leave room for the label itself.
               horizontal:
                   iconOnly ? Spacing.sm : (fillWidth ? Spacing.sm : Spacing.md),
-              vertical: Spacing.xs + 2,
             ),
             decoration: BoxDecoration(
               color: isSelected ? colors.surface : Colors.transparent,
@@ -91,6 +97,7 @@ class AppSegmentedControl<T> extends StatelessWidget {
             child: Row(
               mainAxisSize: fillWidth ? MainAxisSize.max : MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 if (option.icon != null)
                   Icon(option.icon, size: IconSizes.sm, color: foreground),

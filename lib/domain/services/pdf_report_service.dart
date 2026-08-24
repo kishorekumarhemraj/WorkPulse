@@ -49,7 +49,10 @@ class PdfReportService {
     required DateRange range,
     required List<SessionExportRecord> records,
     List<AttributeDefinition> attributeDefinitions = const [],
+    String? userName,
   }) async {
+    final effectiveUserName =
+        (userName != null && userName.trim().isNotEmpty) ? userName.trim() : 'User';
     final doc = pw.Document();
 
     pw.ThemeData theme;
@@ -150,15 +153,20 @@ class PdfReportService {
         header: (context) => _buildPageHeader(
           context: context,
           workspaceName: workspaceName,
+          userName: effectiveUserName,
           dateSubtitle: dateSubtitle,
           isSingleDay: isSingleDay,
         ),
-        footer: (context) => _buildPageFooter(context),
+        footer: (context) => _buildPageFooter(
+          context: context,
+          userName: effectiveUserName,
+        ),
         build: (context) {
           return [
             // Title & Workspace Banner
             _buildBanner(
               workspaceName: workspaceName,
+              userName: effectiveUserName,
               dateSubtitle: dateSubtitle,
               isSingleDay: isSingleDay,
               totalNet: totalNet,
@@ -220,6 +228,7 @@ class PdfReportService {
   static pw.Widget _buildPageHeader({
     required pw.Context context,
     required String workspaceName,
+    required String userName,
     required String dateSubtitle,
     required bool isSingleDay,
   }) {
@@ -236,7 +245,7 @@ class PdfReportService {
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
         children: [
           pw.Text(
-            'WorkPulse | $workspaceName | $dateSubtitle',
+            'WorkPulse | $userName | $workspaceName | $dateSubtitle',
             style: const pw.TextStyle(
               fontSize: 8,
               color: _slate500,
@@ -254,7 +263,10 @@ class PdfReportService {
     );
   }
 
-  static pw.Widget _buildPageFooter(pw.Context context) {
+  static pw.Widget _buildPageFooter({
+    required pw.Context context,
+    required String userName,
+  }) {
     return pw.Container(
       margin: const pw.EdgeInsets.only(top: 14),
       padding: const pw.EdgeInsets.only(top: 8),
@@ -265,7 +277,7 @@ class PdfReportService {
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
         children: [
           pw.Text(
-            'Generated locally with WorkPulse - Privacy-First & Offline-First',
+            'Generated locally for $userName with WorkPulse - Privacy-First & Offline-First',
             style: const pw.TextStyle(fontSize: 7.5, color: _slate400),
           ),
           pw.Text(
@@ -283,6 +295,7 @@ class PdfReportService {
 
   static pw.Widget _buildBanner({
     required String workspaceName,
+    required String userName,
     required String dateSubtitle,
     required bool isSingleDay,
     required Duration totalNet,
@@ -323,10 +336,28 @@ class PdfReportService {
                       ),
                     ),
                     pw.SizedBox(width: 8),
+                    pw.Container(
+                      padding: const pw.EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 2),
+                      decoration: const pw.BoxDecoration(
+                        color: _indigoLight,
+                        borderRadius:
+                            pw.BorderRadius.all(pw.Radius.circular(4)),
+                      ),
+                      child: pw.Text(
+                        'Report for $userName',
+                        style: pw.TextStyle(
+                          fontSize: 8,
+                          fontWeight: pw.FontWeight.bold,
+                          color: _indigoDark,
+                        ),
+                      ),
+                    ),
+                    pw.SizedBox(width: 8),
                     pw.Text(
                       workspaceName,
                       style: const pw.TextStyle(
-                        fontSize: 10,
+                        fontSize: 9.5,
                         color: _indigoLight,
                       ),
                     ),
@@ -343,7 +374,7 @@ class PdfReportService {
                 ),
                 pw.SizedBox(height: 2),
                 pw.Text(
-                  'Prepared for Manager / Standup Review | $sessionCount sessions recorded',
+                  'Team Member: $userName | Prepared for Manager / Standup Review | $sessionCount sessions recorded',
                   style: const pw.TextStyle(fontSize: 8.5, color: _indigoLight),
                 ),
               ],
