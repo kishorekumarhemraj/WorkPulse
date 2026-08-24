@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:workpulse/core/platform/pdf_export_handler.dart';
 import 'package:workpulse/core/theme/app_colors.dart';
 import 'package:workpulse/core/theme/design_tokens.dart';
 import 'package:workpulse/core/widgets/app_dialog.dart';
@@ -12,6 +13,8 @@ import 'package:workpulse/features/reports/providers/reports_provider.dart';
 import 'package:workpulse/features/workspace/providers/workspace_provider.dart';
 
 enum ExportFormat {
+  pdf('PDF (Visual Work Report)',
+      'Colorful, executive daily/period report with KPIs, breakdowns & notes'),
   csv('CSV (Spreadsheet / Excel)',
       'Exports tabular data compatible with Excel, Google Sheets, Numbers'),
   json('JSON (Structured Backup)',
@@ -40,7 +43,7 @@ class ExportDialog extends ConsumerStatefulWidget {
 class _ExportDialogState extends ConsumerState<ExportDialog> {
   DashboardTimeRange _selectedRange = DashboardTimeRange.thisWeek;
   DateTimeRange? _customRange;
-  ExportFormat _format = ExportFormat.csv;
+  ExportFormat _format = ExportFormat.pdf;
   bool _isExporting = false;
   String? _exportedContent;
 
@@ -77,30 +80,70 @@ class _ExportDialogState extends ConsumerState<ExportDialog> {
       final range = _selectedRange.toDateRange(customRange: domainCustom);
       final exportService = ref.read(exportServiceProvider);
 
-      String content;
-      if (_format == ExportFormat.csv) {
-        content = await exportService.generateCsv(
-            workspaceId: workspace.id, range: range);
-      } else {
-        content = await exportService.generateJson(
-            workspaceId: workspace.id, range: range);
-      }
-
-      await Clipboard.setData(ClipboardData(text: content));
-
-      if (mounted) {
-        setState(() {
-          _exportedContent = content;
-          _isExporting = false;
-        });
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-                '${_format == ExportFormat.csv ? 'CSV' : 'JSON'} exported and copied to clipboard!'),
-            backgroundColor: context.colors.success,
-          ),
+      if (_format == ExportFormat.pdf) {
+        final pdfBytes = await exportService.generatePdf(
+          workspaceId: workspace.id,
+          range: range,
         );
+
+        final fileName = PdfExportHandler.formatReportFileName(
+          prefix: 'WorkPulse_Report',
+          startDate: range.start,
+          endDate: range.end,
+        );
+
+        final result = await PdfExportHandler.savePdf(
+          bytes: pdfBytes,
+          fileName: fileName,
+        );
+
+        await PdfExportHandler.openPdfInPreview(result.filePath);
+
+        if (mounted) {
+          setState(() {
+            _exportedContent = result.filePath;
+            _isExporting = false;
+          });
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('PDF saved to Downloads: ${result.fileName}'),
+              backgroundColor: context.colors.success,
+              action: SnackBarAction(
+                label: 'Show in Finder',
+                textColor: Colors.white,
+                onPressed: () =>
+                    PdfExportHandler.revealInFinder(result.filePath),
+              ),
+            ),
+          );
+        }
+      } else {
+        String content;
+        if (_format == ExportFormat.csv) {
+          content = await exportService.generateCsv(
+              workspaceId: workspace.id, range: range);
+        } else {
+          content = await exportService.generateJson(
+              workspaceId: workspace.id, range: range);
+        }
+
+        await Clipboard.setData(ClipboardData(text: content));
+
+        if (mounted) {
+          setState(() {
+            _exportedContent = content;
+            _isExporting = false;
+          });
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                  '${_format == ExportFormat.csv ? 'CSV' : 'JSON'} exported and copied to clipboard!'),
+              backgroundColor: context.colors.success,
+            ),
+          );
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -123,6 +166,11 @@ class _ExportDialogState extends ConsumerState<ExportDialog> {
     final range = _selectedRange.toDateRange(customRange: domainCustomBuild);
     final rangeLabel =
         '${DateFormat.yMMMd().format(range.start.toLocal())} – ${DateFormat.yMMMd().format(range.end.toLocal())}';
+
+    final isPdf = _format == ExportFormat.pdf;
+    final buttonLabel = isPdf
+        ? (_exportedContent != null ? 'PDF Exported & Opened!' : 'Export & Open PDF')
+        : (_exportedContent != null ? 'Copied to Clipboard!' : 'Copy to Clipboard');
 
     return AppDialog(
       title: 'Export Work Data',
@@ -147,14 +195,14 @@ class _ExportDialogState extends ConsumerState<ExportDialog> {
                   ),
                 )
               : Icon(
-                  _exportedContent != null ? Icons.check : Icons.copy,
+                  _exportedContent != null
+                      ? Icons.check
+                      : (isPdf
+                          ? Icons.picture_as_pdf_outlined
+                          : Icons.copy),
                   size: IconSizes.md,
                 ),
-          label: Text(
-            _exportedContent != null
-                ? 'Copied to Clipboard!'
-                : 'Copy to Clipboard',
-          ),
+          label: Text(buttonLabel),
         ),
       ],
       child: Column(
@@ -244,9 +292,11 @@ class _FormatOption extends StatelessWidget {
             child: Row(
               children: [
                 Icon(
-                  format == ExportFormat.csv
-                      ? Icons.table_chart_outlined
-                      : Icons.code,
+                  format == ExportFormat.pdf
+                      ? Icons.picture_as_pdf_outlined
+                      : (format == ExportFormat.csv
+                          ? Icons.table_chart_outlined
+                          : Icons.code),
                   size: IconSizes.lg,
                   color: foreground,
                 ),

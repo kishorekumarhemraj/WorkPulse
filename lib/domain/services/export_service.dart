@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:workpulse/domain/models/date_range.dart';
 import 'package:intl/intl.dart';
 import 'package:workpulse/domain/models/attribute_model.dart';
@@ -18,6 +19,7 @@ import 'package:workpulse/domain/repositories/session_repository.dart';
 import 'package:workpulse/domain/repositories/tag_repository.dart';
 import 'package:workpulse/domain/repositories/work_item_repository.dart';
 import 'package:workpulse/domain/repositories/workspace_repository.dart';
+import 'package:workpulse/domain/services/pdf_report_service.dart';
 import 'package:workpulse/domain/services/timer_service.dart';
 
 class SessionExportRecord {
@@ -58,6 +60,7 @@ class ExportService {
   final PersonRepository _personRepository;
   final AttributeRepository _attributeRepository;
   final IdlePeriodRepository _idlePeriodRepository;
+  final PdfReportService _pdfReportService;
 
   ExportService({
     required WorkspaceRepository workspaceRepository,
@@ -69,6 +72,7 @@ class ExportService {
     required PersonRepository personRepository,
     required AttributeRepository attributeRepository,
     required IdlePeriodRepository idlePeriodRepository,
+    PdfReportService? pdfReportService,
   })  : _workspaceRepository = workspaceRepository,
         _sessionRepository = sessionRepository,
         _workItemRepository = workItemRepository,
@@ -77,7 +81,8 @@ class ExportService {
         _tagRepository = tagRepository,
         _personRepository = personRepository,
         _attributeRepository = attributeRepository,
-        _idlePeriodRepository = idlePeriodRepository;
+        _idlePeriodRepository = idlePeriodRepository,
+        _pdfReportService = pdfReportService ?? PdfReportService();
 
   /// Retrieves structured export records within a date range.
   Future<List<SessionExportRecord>> getExportRecords({
@@ -398,6 +403,27 @@ class ExportService {
     };
 
     return const JsonEncoder.withIndent('  ').convert(payload);
+  }
+
+  /// Generates colorful, modern executive PDF report bytes.
+  Future<Uint8List> generatePdf({
+    required String workspaceId,
+    required DateRange range,
+  }) async {
+    final workspace = await _workspaceRepository.getById(workspaceId);
+    final records =
+        await getExportRecords(workspaceId: workspaceId, range: range);
+    final definitions =
+        (await _attributeRepository.getDefinitions(workspaceId: workspaceId))
+            .where((d) => d.enabled && !d.isArchived)
+            .toList();
+
+    return _pdfReportService.generateReportPdf(
+      workspaceName: workspace?.name ?? 'Default Workspace',
+      range: range,
+      records: records,
+      attributeDefinitions: definitions,
+    );
   }
 
   String _formatAttributeValue(

@@ -6,6 +6,7 @@ import 'package:workpulse/domain/models/analytics_model.dart';
 import 'package:workpulse/domain/models/attribute_model.dart';
 import 'package:workpulse/domain/models/date_range.dart';
 import 'package:workpulse/domain/services/export_service.dart';
+import 'package:workpulse/domain/services/pdf_report_service.dart';
 import 'package:workpulse/features/attributes/providers/attribute_definitions_provider.dart';
 import 'package:workpulse/features/tasks/providers/task_sessions_provider.dart';
 import 'package:workpulse/features/tasks/providers/work_items_provider.dart';
@@ -13,6 +14,10 @@ import 'package:workpulse/features/timer/providers/timer_provider.dart';
 import 'package:workpulse/features/workspace/providers/workspace_provider.dart';
 
 const _uuid = Uuid();
+
+final pdfReportServiceProvider = Provider<PdfReportService>((ref) {
+  return PdfReportService();
+});
 
 final exportServiceProvider = Provider<ExportService>((ref) {
   return ExportService(
@@ -25,6 +30,7 @@ final exportServiceProvider = Provider<ExportService>((ref) {
     personRepository: ref.watch(personRepositoryProvider),
     attributeRepository: ref.watch(attributeRepositoryProvider),
     idlePeriodRepository: ref.watch(idlePeriodRepositoryProvider),
+    pdfReportService: ref.watch(pdfReportServiceProvider),
   );
 });
 
