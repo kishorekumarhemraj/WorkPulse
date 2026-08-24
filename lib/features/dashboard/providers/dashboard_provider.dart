@@ -50,8 +50,10 @@ final dashboardDataProvider = FutureProvider<DashboardData>((ref) async {
   final customRange = ref.watch(customDateRangeProvider);
   final analyticsService = ref.watch(analyticsServiceProvider);
 
-  // Invalidate when active session starts/stops/switches
-  ref.watch(timerProvider.select((s) => s.value?.activeSession?.id));
+  // Invalidate in real-time when running, or when active session starts/stops/switches
+  ref.watch(timerProvider.select((s) => s.value?.isRunning == true
+      ? s.value?.elapsed.inSeconds
+      : s.value?.activeSession?.id));
 
   // Bridge Flutter DateTimeRange to pure-Dart DateRange for domain layer.
   // .toUtc() matters here: DateTimeRange is local wall-clock time from the

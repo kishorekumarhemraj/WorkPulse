@@ -7,6 +7,7 @@ import 'package:workpulse/core/database/database_service.dart';
 import 'package:workpulse/data/database/tables.dart';
 import 'package:workpulse/data/migrations/migration_v1.dart';
 import 'package:workpulse/data/migrations/migration_v2.dart';
+import 'package:workpulse/data/migrations/migration_v3.dart';
 
 void main() {
   setUpAll(() {
@@ -87,12 +88,22 @@ void main() {
       );
     });
 
-    test('sessions table has a notes column on a fresh database', () async {
+    test('sessions table has a notes and category_id column on a fresh database',
+        () async {
       final db = dbService.database;
       final columns =
           await db.rawQuery('PRAGMA table_info(${Tables.sessions});');
       final columnNames = columns.map((c) => c['name'] as String).toSet();
       expect(columnNames, contains('notes'));
+      expect(columnNames, contains('category_id'));
+    });
+
+    test('people table has a team column on a fresh database', () async {
+      final db = dbService.database;
+      final columns =
+          await db.rawQuery('PRAGMA table_info(${Tables.people});');
+      final columnNames = columns.map((c) => c['name'] as String).toSet();
+      expect(columnNames, contains('team'));
     });
   });
 
@@ -147,8 +158,8 @@ void main() {
         await v1Db.close();
 
         // 2. Re-open the same file through DatabaseService, which now
-        // targets AppConstants.dbVersion (2) - this exercises the real
-        // onUpgrade(db, 1, 2) path, not onCreate.
+        // targets AppConstants.dbVersion (3) - this exercises the real
+        // onUpgrade(db, 1, 3) path, not onCreate.
         final upgraded = DatabaseService();
         await upgraded.initialize(customPath: dbPath);
         final db = upgraded.database;
@@ -157,6 +168,12 @@ void main() {
             await db.rawQuery('PRAGMA table_info(${Tables.sessions});');
         final columnNames = columns.map((c) => c['name'] as String).toSet();
         expect(columnNames, contains('notes'));
+        expect(columnNames, contains('category_id'));
+
+        final peopleCols =
+            await db.rawQuery('PRAGMA table_info(${Tables.people});');
+        final peopleColNames = peopleCols.map((c) => c['name'] as String).toSet();
+        expect(peopleColNames, contains('team'));
 
         final rows = await db.query(
           Tables.sessions,
@@ -165,6 +182,7 @@ void main() {
         );
         expect(rows, hasLength(1));
         expect(rows.first['notes'], isNull);
+        expect(rows.first['category_id'], isNull);
 
         await upgraded.close();
       } finally {
@@ -172,7 +190,8 @@ void main() {
       }
     });
 
-    test('MigrationV2 is idempotent when column already exists', () async {
+    test('MigrationV2 and MigrationV3 are idempotent when columns already exist',
+        () async {
       final tempDir =
           await Directory.systemTemp.createTemp('workpulse_idempotency_test');
       final dbPath = p.join(tempDir.path, 'idempotent_test.db');
@@ -186,10 +205,12 @@ void main() {
           ),
         );
 
-        // Run MigrationV2 once
+        // Run MigrationV2 and MigrationV3 once
         await MigrationV2.execute(db);
-        // Run MigrationV2 a second time - should not throw duplicate column error
-        expect(() async => await MigrationV2.execute(db), returnsNormally);
+        await MigrationV3.execute(db);
+        // Run a second time - should not throw duplicate column error
+        await expectLater(MigrationV2.execute(db), completes);
+        await expectLater(MigrationV3.execute(db), completes);
 
         await db.close();
       } finally {

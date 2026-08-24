@@ -91,6 +91,8 @@ class SessionEditorController {
     required String sessionId,
     DateTime? startTime,
     DateTime? endTime,
+    String? categoryId,
+    bool clearCategory = false,
     String? notes,
     bool clearNotes = false,
     List<String>? peopleIds,
@@ -103,6 +105,7 @@ class SessionEditorController {
     final updated = session.copyWith(
       startTime: startTime ?? session.startTime,
       endTime: endTime ?? session.endTime,
+      categoryId: clearCategory ? null : (categoryId ?? session.categoryId),
       peopleIds: peopleIds ?? session.peopleIds,
       notes: notes,
       clearNotes: clearNotes,

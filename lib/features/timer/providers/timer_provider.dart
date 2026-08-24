@@ -79,7 +79,9 @@ class TimerNotifier extends AsyncNotifier<TimerState> {
   /// Starts tracking time on a work item.
   Future<void> startTimer(
     WorkItem workItem, {
+    String? categoryId,
     List<String> peopleIds = const [],
+    String? notes,
   }) async {
     final current = state.value;
 
@@ -99,7 +101,9 @@ class TimerNotifier extends AsyncNotifier<TimerState> {
 
     final newSession = await timerService.startSession(
       workItem.id,
+      categoryId: categoryId ?? workItem.categoryId,
       peopleIds: peopleIds,
+      notes: notes,
       startTime: now,
     );
 
@@ -115,6 +119,47 @@ class TimerNotifier extends AsyncNotifier<TimerState> {
     );
 
     ref.invalidate(workItemsProvider);
+  }
+
+  /// Updates the category of the currently running session in real-time.
+  Future<void> updateActiveSessionCategory(String? categoryId) async {
+    final current = state.value;
+    if (current == null || !current.isRunning || current.activeSession == null) {
+      return;
+    }
+
+    final timerService = ref.read(timerServiceProvider);
+    final updated = await timerService.updateSessionCategory(
+      current.activeSession!.id,
+      categoryId,
+    );
+
+    if (updated != null) {
+      state = AsyncData(
+        current.copyWith(activeSession: updated),
+      );
+      ref.invalidate(workItemsProvider);
+    }
+  }
+
+  /// Updates the notes of the currently running session.
+  Future<void> updateActiveSessionNotes(String? notes) async {
+    final current = state.value;
+    if (current == null || !current.isRunning || current.activeSession == null) {
+      return;
+    }
+
+    final timerService = ref.read(timerServiceProvider);
+    final updated = await timerService.updateSessionNotes(
+      current.activeSession!.id,
+      notes,
+    );
+
+    if (updated != null) {
+      state = AsyncData(
+        current.copyWith(activeSession: updated),
+      );
+    }
   }
 
   /// Stops tracking the active session.
@@ -150,7 +195,11 @@ class TimerNotifier extends AsyncNotifier<TimerState> {
   }
 
   /// Confirms and executes switching from active task to pending task with optional session note.
-  Future<void> confirmSwitch({WorkItem? targetItem, String? notes}) async {
+  Future<void> confirmSwitch({
+    WorkItem? targetItem,
+    String? notes,
+    String? targetCategoryId,
+  }) async {
     final current = state.value;
     final targetWorkItem = targetItem ?? current?.pendingSwitchWorkItem;
     if (current == null || targetWorkItem == null) return;
@@ -163,6 +212,7 @@ class TimerNotifier extends AsyncNotifier<TimerState> {
         currentWorkItem: current.activeWorkItem!,
         targetWorkItem: targetWorkItem,
         currentSessionNotes: notes,
+        targetCategoryId: targetCategoryId,
         switchTime: now,
       );
 
@@ -180,6 +230,7 @@ class TimerNotifier extends AsyncNotifier<TimerState> {
       final timerService = ref.read(timerServiceProvider);
       final newSession = await timerService.startSession(
         targetWorkItem.id,
+        categoryId: targetCategoryId ?? targetWorkItem.categoryId,
         startTime: now,
       );
 

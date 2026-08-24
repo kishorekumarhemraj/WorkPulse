@@ -323,5 +323,155 @@ void main() {
       expect(saturdayRange.end.toLocal().weekday, DateTime.saturday);
       expect(saturdayRange.end.toLocal().day, 29);
     });
+
+    test('getDashboardData excludes archived work items from active task count', () async {
+      final now = DateTime.now().toUtc();
+      final todayRange = DateRange(
+        start: now.subtract(const Duration(hours: 1)),
+        end: now.add(const Duration(hours: 1)),
+      );
+
+      final testProject = await projectRepo.create(
+        Project(
+          id: 'proj-analytics-test',
+          workspaceId: wsId,
+          name: 'Analytics Test Project',
+          colorHex: '#3B82F6',
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+
+      final testCategory = await categoryRepo.create(
+        Category(
+          id: 'cat-analytics-test',
+          workspaceId: wsId,
+          name: 'General',
+          iconName: 'folder',
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+
+      final activeTask = WorkItem(
+        id: 'task-active-1',
+        workspaceId: wsId,
+        projectId: testProject.id,
+        categoryId: testCategory.id,
+        name: 'Active Task',
+        createdAt: now,
+        updatedAt: now,
+      );
+      final archivedTask = WorkItem(
+        id: 'task-archived-1',
+        workspaceId: wsId,
+        projectId: testProject.id,
+        categoryId: testCategory.id,
+        name: 'Archived Task',
+        createdAt: now,
+        updatedAt: now,
+        archivedAt: now,
+      );
+      await workItemRepo.create(activeTask);
+      await workItemRepo.create(archivedTask);
+
+      // Session on active task
+      await sessionRepo.create(Session(
+        id: 'sess-active',
+        workItemId: activeTask.id,
+        startTime: now.subtract(const Duration(minutes: 30)),
+        endTime: now.subtract(const Duration(minutes: 15)),
+        createdAt: now,
+      ));
+
+      // Session on archived task
+      await sessionRepo.create(Session(
+        id: 'sess-archived',
+        workItemId: archivedTask.id,
+        startTime: now.subtract(const Duration(minutes: 15)),
+        endTime: now,
+        createdAt: now,
+      ));
+
+      final data = await analyticsService.getDashboardData(workspaceId: wsId, range: todayRange);
+      // Active tasks count must ONLY count activeTask (1), excluding archivedTask
+      expect(data.summary.taskCount, 1);
+    });
+
+    test('getDashboardData groups time by session category overrides', () async {
+      final now = DateTime.now().toUtc();
+      final range = DateRange(
+        start: now.subtract(const Duration(hours: 2)),
+        end: now.add(const Duration(hours: 2)),
+      );
+
+      final testProject = await projectRepo.create(
+        Project(
+          id: 'proj-cat-override',
+          workspaceId: wsId,
+          name: 'Override Project',
+          colorHex: '#10B981',
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+
+      final designCat = Category(
+        id: 'cat-design',
+        workspaceId: wsId,
+        name: 'Design',
+        iconName: 'brush',
+        createdAt: now,
+        updatedAt: now,
+      );
+      final devCat = Category(
+        id: 'cat-dev',
+        workspaceId: wsId,
+        name: 'Engineering',
+        iconName: 'code',
+        createdAt: now,
+        updatedAt: now,
+      );
+      await categoryRepo.create(designCat);
+      await categoryRepo.create(devCat);
+
+      // Task is assigned to Design
+      final task = WorkItem(
+        id: 'task-override',
+        workspaceId: wsId,
+        projectId: testProject.id,
+        categoryId: designCat.id,
+        name: 'Feature UI & Implementation',
+        createdAt: now,
+        updatedAt: now,
+      );
+      await workItemRepo.create(task);
+
+      // Session 1: uses task category (Design)
+      await sessionRepo.create(Session(
+        id: 'sess-cat-1',
+        workItemId: task.id,
+        startTime: now.subtract(const Duration(minutes: 60)),
+        endTime: now.subtract(const Duration(minutes: 30)),
+        createdAt: now,
+      ));
+
+      // Session 2: overrides category to Engineering at session level
+      await sessionRepo.create(Session(
+        id: 'sess-cat-2',
+        workItemId: task.id,
+        categoryId: devCat.id,
+        startTime: now.subtract(const Duration(minutes: 30)),
+        endTime: now,
+        createdAt: now,
+      ));
+
+      final data = await analyticsService.getDashboardData(workspaceId: wsId, range: range);
+      final designItem = data.categoryBreakdown.firstWhere((c) => c.name == 'Design');
+      final devItem = data.categoryBreakdown.firstWhere((c) => c.name == 'Engineering');
+
+      expect(designItem.duration, const Duration(minutes: 30));
+      expect(devItem.duration, const Duration(minutes: 30));
+    });
   });
 }

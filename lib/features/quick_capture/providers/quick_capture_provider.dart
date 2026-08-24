@@ -99,7 +99,14 @@ class QuickCaptureNotifier extends Notifier<QuickCaptureState> {
 
   /// Starts tracking an existing work item.
   Future<void> startExistingTask(WorkItem task) async {
-    await ref.read(timerProvider.notifier).startTimer(task);
+    final sessionCatId = state.selectedCategoryId ?? task.categoryId;
+    await ref.read(timerProvider.notifier).startTimer(
+          task,
+          categoryId: sessionCatId,
+          peopleIds: state.selectedPeopleIds.isNotEmpty
+              ? state.selectedPeopleIds
+              : const [],
+        );
     reset();
   }
 
@@ -237,7 +244,11 @@ class QuickCaptureNotifier extends Notifier<QuickCaptureState> {
       }
     }
 
-    await ref.read(timerProvider.notifier).startTimer(created);
+    await ref.read(timerProvider.notifier).startTimer(
+          created,
+          categoryId: categoryId,
+          peopleIds: state.selectedPeopleIds,
+        );
     reset();
     return created;
   }

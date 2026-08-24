@@ -6,10 +6,12 @@ import 'package:workpulse/core/theme/app_typography.dart';
 import 'package:workpulse/core/theme/design_tokens.dart';
 import 'package:workpulse/core/widgets/app_dialog.dart';
 import 'package:workpulse/core/widgets/searchable_multi_select.dart';
+import 'package:workpulse/core/theme/icon_utils.dart';
 import 'package:workpulse/domain/models/attribute_model.dart';
 import 'package:workpulse/domain/services/export_service.dart';
 import 'package:workpulse/features/attributes/providers/attribute_definitions_provider.dart';
 import 'package:workpulse/features/attributes/widgets/dynamic_attribute_fields.dart';
+import 'package:workpulse/features/categories/providers/categories_provider.dart';
 import 'package:workpulse/features/people/providers/people_provider.dart';
 import 'package:workpulse/features/reports/providers/reports_provider.dart';
 
@@ -34,6 +36,7 @@ class _SessionEditDialogState extends ConsumerState<SessionEditDialog> {
   final _formKey = GlobalKey<FormState>();
   late DateTime _startTime;
   late DateTime? _endTime;
+  late String? _selectedCategoryId;
   late final TextEditingController _notesController;
   late List<String> _selectedPeopleIds;
   final Map<String, dynamic> _sessionAttributeValues = {};
@@ -45,6 +48,7 @@ class _SessionEditDialogState extends ConsumerState<SessionEditDialog> {
     final s = widget.record.session;
     _startTime = s.startTime.toLocal();
     _endTime = s.endTime?.toLocal();
+    _selectedCategoryId = s.categoryId ?? widget.record.workItem.categoryId;
     _notesController = TextEditingController(text: s.notes ?? '');
     _selectedPeopleIds = List.from(s.peopleIds);
   }
@@ -117,6 +121,7 @@ class _SessionEditDialogState extends ConsumerState<SessionEditDialog> {
             sessionId: widget.record.session.id,
             startTime: _startTime.toUtc(),
             endTime: _endTime?.toUtc(),
+            categoryId: _selectedCategoryId,
             notes: trimmedNotes.isEmpty ? null : trimmedNotes,
             clearNotes: trimmedNotes.isEmpty,
             peopleIds: _selectedPeopleIds,
@@ -148,6 +153,7 @@ class _SessionEditDialogState extends ConsumerState<SessionEditDialog> {
         .where((d) =>
             d.scope == AttributeScope.session && d.enabled && !d.isArchived)
         .toList();
+    final categoriesAsync = ref.watch(categoriesProvider);
     final peopleAsync = ref.watch(peopleProvider);
     final colors = context.colors;
     final dateFormat = DateFormat('yyyy-MM-dd HH:mm');
@@ -203,6 +209,43 @@ class _SessionEditDialogState extends ConsumerState<SessionEditDialog> {
                     : 'In Progress',
                 valueColor: _endTime == null ? colors.success : null,
                 onTap: _pickEndTime,
+              ),
+            ),
+            const SizedBox(height: Spacing.lg),
+            DialogField(
+              label: 'Category',
+              child: categoriesAsync.when(
+                loading: () => const SizedBox.shrink(),
+                error: (_, __) => const SizedBox.shrink(),
+                data: (categories) {
+                  return DropdownButtonFormField<String>(
+                    value: categories.any((c) => c.id == _selectedCategoryId)
+                        ? _selectedCategoryId
+                        : null,
+                    decoration: const InputDecoration(
+                      hintText: 'Select category…',
+                    ),
+                    items: [
+                      for (final cat in categories)
+                        DropdownMenuItem(
+                          value: cat.id,
+                          child: Row(
+                            children: [
+                              Icon(
+                                IconUtils.getIcon(cat.iconName),
+                                size: 16,
+                                color: colors.accent,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(cat.name),
+                            ],
+                          ),
+                        ),
+                    ],
+                    onChanged: (val) =>
+                        setState(() => _selectedCategoryId = val),
+                  );
+                },
               ),
             ),
             const SizedBox(height: Spacing.lg),
