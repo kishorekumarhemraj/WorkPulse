@@ -99,7 +99,6 @@ class TimeNotesView extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = context.colors;
-    final theme = Theme.of(context);
     final selectedRange = ref.watch(timeNotesRangeProvider);
     final notesAsync = ref.watch(timeNotesProvider);
 
