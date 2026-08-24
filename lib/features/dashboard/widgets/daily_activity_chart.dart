@@ -144,9 +144,9 @@ class _DailyActivityChartState extends State<DailyActivityChart> {
               Expanded(
                 child: Text(title, style: theme.textTheme.titleMedium),
               ),
-              _LegendSwatch(label: 'Active', color: colors.success),
+              _LegendSwatch(label: 'Active', color: colors.successFill),
               const SizedBox(width: Spacing.md),
-              _LegendSwatch(label: 'Idle', color: colors.warning),
+              _LegendSwatch(label: 'Idle', color: colors.warningFill),
             ],
           ),
           const SizedBox(height: Spacing.xl),
@@ -280,14 +280,14 @@ class _Bar extends StatelessWidget {
                     if (idleHeight > 0)
                       _Segment(
                         height: idleHeight,
-                        color: colors.warning,
+                        color: colors.warningFill,
                         isHovered: isHovered,
                         isTop: true,
                       ),
                     if (activeHeight > 0)
                       _Segment(
                         height: activeHeight,
-                        color: colors.success,
+                        color: colors.successFill,
                         isHovered: isHovered,
                         isTop: idleHeight <= 0,
                       ),
