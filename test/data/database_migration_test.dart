@@ -141,6 +141,18 @@ void main() {
           'created_at': now,
           'updated_at': now,
         });
+        await v1Db.insert(Tables.tags, {
+          'id': 'tag-pre-upgrade',
+          'workspace_id': MigrationV1.defaultWorkspaceId,
+          'name': 'Pre-upgrade Tag',
+          'created_at': now,
+        });
+        await v1Db.insert(Tables.people, {
+          'id': 'person-pre-upgrade',
+          'workspace_id': MigrationV1.defaultWorkspaceId,
+          'name': 'Pre-upgrade Person',
+          'created_at': now,
+        });
         await v1Db.insert(Tables.workItems, {
           'id': 'wi-pre-upgrade',
           'workspace_id': MigrationV1.defaultWorkspaceId,
@@ -149,6 +161,14 @@ void main() {
           'category_id': 'cat-pre-upgrade',
           'created_at': now,
           'updated_at': now,
+        });
+        await v1Db.insert(Tables.workItemTags, {
+          'work_item_id': 'wi-pre-upgrade',
+          'tag_id': 'tag-pre-upgrade',
+        });
+        await v1Db.insert(Tables.workItemPeople, {
+          'work_item_id': 'wi-pre-upgrade',
+          'person_id': 'person-pre-upgrade',
         });
         await v1Db.insert(Tables.sessions, {
           'id': 'session-pre-upgrade',
@@ -160,8 +180,8 @@ void main() {
         await v1Db.close();
 
         // 2. Re-open the same file through DatabaseService, which now
-        // targets AppConstants.dbVersion (3) - this exercises the real
-        // onUpgrade(db, 1, 3) path, not onCreate.
+        // targets AppConstants.dbVersion (4) - this exercises the real
+        // onUpgrade(db, 1, 4) path, not onCreate.
         final upgraded = DatabaseService();
         await upgraded.initialize(customPath: dbPath);
         final db = upgraded.database;
@@ -190,7 +210,24 @@ void main() {
         );
         expect(rows, hasLength(1));
         expect(rows.first['notes'], isNull);
-        expect(rows.first['category_id'], isNull);
+        // Backfilled from parent work item:
+        expect(rows.first['category_id'], equals('cat-pre-upgrade'));
+
+        final backfilledTags = await db.query(
+          Tables.sessionTags,
+          where: 'session_id = ?',
+          whereArgs: ['session-pre-upgrade'],
+        );
+        expect(backfilledTags, hasLength(1));
+        expect(backfilledTags.first['tag_id'], equals('tag-pre-upgrade'));
+
+        final backfilledPeople = await db.query(
+          Tables.sessionPeople,
+          where: 'session_id = ?',
+          whereArgs: ['session-pre-upgrade'],
+        );
+        expect(backfilledPeople, hasLength(1));
+        expect(backfilledPeople.first['person_id'], equals('person-pre-upgrade'));
 
         await upgraded.close();
       } finally {
