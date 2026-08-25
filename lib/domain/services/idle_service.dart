@@ -89,10 +89,17 @@ class IdleService {
     );
     await _idlePeriodRepository.createIdlePeriod(idlePeriod);
 
-    // 3. Start a new session starting now (at idleEndTime)
+    // 3. Start a new session starting now (at idleEndTime).
+    //
+    // This half is a continuation of the work that was interrupted, not a
+    // fresh start on the work item, so it carries the stopped half's own
+    // classification forward. Without that, one coffee break would split an
+    // afternoon into a classified half and an unclassified one.
     final newSession = await _timerService.startSession(
       workItemId,
       startTime: idleEndTime,
+      categoryId: session.categoryId,
+      tagIds: session.tagIds,
       peopleIds: peopleIds.isNotEmpty ? peopleIds : session.peopleIds,
     );
 

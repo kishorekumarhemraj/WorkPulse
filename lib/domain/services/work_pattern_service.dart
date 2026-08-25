@@ -162,14 +162,14 @@ class WorkPatternService {
         byProject.putIfAbsent(item.projectId, _SubjectStats.new).add(t);
       }
 
-      final categoryId = t.session.categoryId ?? item?.categoryId;
+      // The session's own category, never the work item's: a routine-work
+      // finding has to be about what the user actually classified.
+      final categoryId = t.session.categoryId;
       if (categoryId != null) {
         byCategory.putIfAbsent(categoryId, _SubjectStats.new).add(t);
       }
 
-      final peopleIds = t.session.peopleIds.isNotEmpty
-          ? t.session.peopleIds
-          : (item?.peopleIds ?? const <String>[]);
+      final peopleIds = t.session.peopleIds;
       if (peopleIds.isNotEmpty) {
         collaborative += t.active;
         for (final personId in peopleIds) {
