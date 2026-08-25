@@ -23,6 +23,41 @@ class SqliteIdlePeriodRepository implements IdlePeriodRepository {
     return rows.map(_fromRow).toList();
   }
 
+  /// Chunked because SQLite caps how many placeholders one statement may
+  /// carry, and a ninety-day window can hold more sessions than that.
+  @override
+  Future<Map<String, List<IdlePeriod>>> getIdlePeriodsForSessions(
+    List<String> sessionIds,
+  ) async {
+    if (sessionIds.isEmpty) return const {};
+
+    const chunkSize = 500;
+    final grouped = <String, List<IdlePeriod>>{};
+
+    for (var start = 0; start < sessionIds.length; start += chunkSize) {
+      final end = start + chunkSize < sessionIds.length
+          ? start + chunkSize
+          : sessionIds.length;
+      final chunk = sessionIds.sublist(start, end);
+      final placeholders = List.filled(chunk.length, '?').join(', ');
+
+      final rows = await _db.query(
+        Tables.idlePeriods,
+        where: 'session_id IN ($placeholders)',
+        whereArgs: chunk,
+        orderBy: 'start_time ASC',
+      );
+
+      for (final row in rows) {
+        grouped
+            .putIfAbsent(row['session_id'] as String, () => <IdlePeriod>[])
+            .add(_fromRow(row));
+      }
+    }
+
+    return grouped;
+  }
+
   @override
   Future<IdlePeriod?> getIdlePeriodById(String id) async {
     final rows = await _db.query(

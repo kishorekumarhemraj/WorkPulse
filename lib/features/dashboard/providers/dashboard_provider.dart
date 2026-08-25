@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workpulse/data/providers/repository_providers.dart';
 import 'package:workpulse/domain/models/analytics_model.dart';
 import 'package:workpulse/domain/models/date_range.dart';
+import 'package:workpulse/domain/models/work_pattern_model.dart';
 import 'package:workpulse/domain/services/analytics_service.dart';
 import 'package:workpulse/features/timer/providers/timer_provider.dart';
 import 'package:workpulse/features/workspace/providers/workspace_provider.dart';
@@ -101,5 +102,39 @@ final dashboardDataProvider = FutureProvider<DashboardData>((ref) async {
   return analyticsService.getDashboardData(
     workspaceId: workspace.id,
     range: calculatedRange,
+  );
+});
+
+/// How far back the insights panel looks.
+///
+/// Separate from [selectedTimeRangeProvider] on purpose: the breakdowns answer
+/// "where did today go", the pattern scan answers "what keeps happening", and
+/// the second question needs weeks of history to have an answer at all.
+final patternWindowProvider =
+    NotifierProvider<PatternWindowNotifier, PatternWindow>(
+  PatternWindowNotifier.new,
+);
+
+class PatternWindowNotifier extends Notifier<PatternWindow> {
+  @override
+  PatternWindow build() => PatternWindow.oneMonth;
+
+  void setWindow(PatternWindow window) => state = window;
+}
+
+final workPatternReportProvider =
+    FutureProvider<WorkPatternReport>((ref) async {
+  final workspace = await ref.watch(currentWorkspaceProvider.future);
+  final window = ref.watch(patternWindowProvider);
+  final analyticsService = ref.watch(analyticsServiceProvider);
+
+  // Recompute when a session is committed, but *not* on every tick of the
+  // running timer: the scan reads weeks of history and ignores the in-flight
+  // session anyway.
+  ref.watch(timerProvider.select((s) => s.value?.activeSession?.id));
+
+  return analyticsService.getWorkPatternReport(
+    workspaceId: workspace.id,
+    window: window,
   );
 });
