@@ -99,6 +99,11 @@ class WorkPulseColors extends ThemeExtension<WorkPulseColors> {
   final Color accentFill;
 
   /// Low-opacity [accent] fill for tinted containers.
+  ///
+  /// The alpha is not a free choice: a badge is a label on a translucent
+  /// tint, so the label has to clear AA against the tint *composited over*
+  /// whichever surface the badge landed on. These are the highest alphas
+  /// that still do, which design_system_test.dart checks.
   final Color accentSubtle;
 
   /// Running timers, completed work, positive deltas — as *text*.
@@ -203,7 +208,7 @@ class WorkPulseColors extends ThemeExtension<WorkPulseColors> {
     accent: Color(0xFF1C96FF),
     accentHover: Color(0xFF52ABFF),
     accentFill: Color(0xFF0076DF),
-    accentSubtle: Color(0x1F1C96FF),
+    accentSubtle: Color(0x161C96FF),
     success: Color(0xFF30D158),
     successFill: Color(0xFF30D158),
     successSubtle: Color(0x2630D158),
@@ -212,7 +217,7 @@ class WorkPulseColors extends ThemeExtension<WorkPulseColors> {
     warningSubtle: Color(0x26FF9F0A),
     danger: Color(0xFFFF5A4F),
     dangerFill: Color(0xFFDC372C),
-    dangerSubtle: Color(0x26FF453A),
+    dangerSubtle: Color(0x16FF5A4F),
     info: Color(0xFF64D2FF),
     infoFill: Color(0xFF64D2FF),
     infoSubtle: Color(0x2664D2FF),

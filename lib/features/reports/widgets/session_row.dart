@@ -72,8 +72,7 @@ class SessionRow extends StatelessWidget {
                         width: 8,
                         height: 8,
                         decoration: BoxDecoration(
-                          color:
-                              isRunning ? colors.successFill : projectColor,
+                          color: isRunning ? colors.successFill : projectColor,
                           shape: BoxShape.circle,
                           border: Border.all(color: colors.surface, width: 2),
                         ),
