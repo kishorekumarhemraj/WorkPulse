@@ -32,8 +32,7 @@ class ListCursor extends ChangeNotifier {
   ///
   /// Results shrink as the user types; without this a cursor parked on the
   /// ninth match reads off the end of a list that just became two long.
-  int clampedIn(int length) =>
-      length == 0 ? 0 : _index.clamp(0, length - 1);
+  int clampedIn(int length) => length == 0 ? 0 : _index.clamp(0, length - 1);
 
   /// Moves the cursor [delta] rows. Returns whether it actually moved.
   bool moveBy(int delta, int length) =>
