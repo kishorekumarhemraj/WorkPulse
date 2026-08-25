@@ -255,12 +255,7 @@ navigation item and input, so the current position is always visible.
    flutter pub get
    ```
 
-3. **Generate code (Riverpod & Models):**
-   ```bash
-   dart run build_runner build --delete-conflicting-outputs
-   ```
-
-4. **Launch WorkPulse:**
+3. **Launch WorkPulse:**
    ```bash
    flutter run -d macos     # macOS
    flutter run -d windows   # Windows

@@ -26,10 +26,11 @@ cd WorkPulse
 
 # Install dependencies
 flutter pub get
-
-# Run code generator (for Riverpod and models)
-dart run build_runner build --delete-conflicting-outputs
 ```
+
+WorkPulse uses no code generation — providers are written by hand with
+`NotifierProvider`/`FutureProvider`, and models are plain Dart. There is no
+`build_runner` step.
 
 ---
 
@@ -76,17 +77,7 @@ flutter test test/integration/                             # end-to-end task swi
 
 ---
 
-## 4. Code Generation & Riverpod Watcher
-
-When modifying `@riverpod` annotations or Riverpod models, keep the build runner active in watch mode:
-
-```bash
-dart run build_runner watch --delete-conflicting-outputs
-```
-
----
-
-## 5. Development Invariants & Guidelines
+## 4. Development Invariants & Guidelines
 
 1. **Zero External Tool Hardcoding**:
    - Never introduce `jiraId`, `azureId`, or external tool columns into core models or database tables.
@@ -114,7 +105,7 @@ dart run build_runner watch --delete-conflicting-outputs
 
 ---
 
-## 6. Project Structure Reference
+## 5. Project Structure Reference
 
 ```text
 lib/
