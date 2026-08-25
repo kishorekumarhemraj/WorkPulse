@@ -69,8 +69,8 @@ class WorkItemRow extends ConsumerWidget {
     return AppCard(
       radius: Radii.lg,
       isSelected: isSelected,
-      emphasisColor: isItemActive ? colors.success : null,
-      leadingStripe: isItemActive ? colors.success : projectColor,
+      emphasisColor: isItemActive ? colors.successFill : null,
+      leadingStripe: isItemActive ? colors.successFill : projectColor,
       onTap: onTap,
       padding: EdgeInsets.symmetric(
         horizontal: Spacing.md + 2,

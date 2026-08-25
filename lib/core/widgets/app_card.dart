@@ -100,7 +100,7 @@ class _AppCardState extends State<AppCard> {
                       spreadRadius: 1,
                     ),
                   ]
-                : null,
+                : Elevation.low(colors.shadow),
           ),
           child: Material(
             color: isHovered && isTappable ? colors.hover : Colors.transparent,
