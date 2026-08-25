@@ -21,7 +21,3 @@ class ValidationException extends AppException {
 class NotFoundException extends AppException {
   const NotFoundException(super.message, [super.details]);
 }
-
-class SessionConflictException extends AppException {
-  const SessionConflictException(super.message, [super.details]);
-}
