@@ -1,7 +1,7 @@
 name: workpulse
 description: "A lightweight, privacy-first, offline-first desktop time-tracking application for macOS and Windows."
 publish_to: 'none'
-version: 3.1.0+1
+version: 3.2.0+1
 
 environment:
   sdk: '>=3.2.0 <4.0.0'
