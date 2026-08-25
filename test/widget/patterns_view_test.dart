@@ -65,8 +65,24 @@ void main() {
     timeInvolved: Duration(hours: 2, minutes: 30),
   );
 
+  const held = WorkPatternInsight(
+    id: 'deep-work-held',
+    action: InsightAction.sustain,
+    severity: InsightSeverity.informational,
+    subject: PatternSubject.schedule,
+    title: 'Deep work is up 8 points on the window before',
+    finding: '6h in stretches of 45m or more.',
+    recommendation: 'Defend whatever is buying you these blocks.',
+    timeInvolved: Duration(hours: 6),
+  );
+
   WorkPatternReport report({
-    List<WorkPatternInsight> insights = const [fragmented, routine, atRisk],
+    List<WorkPatternInsight> insights = const [
+      held,
+      fragmented,
+      routine,
+      atRisk,
+    ],
     int sessionCount = 24,
     FocusRhythm focus = rhythm,
   }) =>
@@ -123,10 +139,13 @@ void main() {
         findsOneWidget,
       );
 
+      // Continue leads: a page that only ever lists faults stops being opened.
+      expect(find.text('Continue'), findsOneWidget);
       expect(find.text('Reclaim'), findsOneWidget);
       expect(find.text('Delegate'), findsOneWidget);
       expect(find.text('Plan'), findsOneWidget);
 
+      expect(find.text(held.title), findsOneWidget);
       expect(find.text(fragmented.title), findsOneWidget);
       expect(find.text(routine.title), findsOneWidget);
       expect(find.text(atRisk.title), findsOneWidget);
@@ -175,7 +194,8 @@ void main() {
       expect(find.text('Visits'), findsNothing);
     });
 
-    testWidgets('changing lookback segmented control updates patternWindowProvider',
+    testWidgets(
+        'changing lookback segmented control updates patternWindowProvider',
         (tester) async {
       final container = containerFor(report());
       addTearDown(container.dispose);
@@ -237,7 +257,7 @@ void main() {
       expect(find.text('Try Again'), findsOneWidget);
     });
 
-    for (final width in <double>[1440, 1200, 1000, 860, 640]) {
+    for (final width in <double>[1600, 1440, 1320, 1200, 1000, 860, 640]) {
       testWidgets('renders responsively without overflow at ${width.toInt()}px',
           (tester) async {
         final container = containerFor(report());

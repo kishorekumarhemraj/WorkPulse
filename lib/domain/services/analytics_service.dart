@@ -546,6 +546,16 @@ class AnalyticsService {
       return WorkPatternReport(window: range, lookback: window);
     }
 
+    // The window immediately before this one, same length. It is what lets a
+    // finding say "up from" rather than only "is" — without it the scan still
+    // runs, it just cannot speak about direction.
+    final previousLocalStart =
+        DateTime(now.year, now.month, now.day - ((window.days * 2) - 1));
+    final previousSessions = await _sessionRepository.getByDateRange(
+      previousLocalStart.toUtc(),
+      localStart.toUtc().subtract(const Duration(milliseconds: 1)),
+    );
+
     // includeArchived throughout: archiving a task, project or category must
     // not erase the history it already accumulated, only stop it being
     // recommended as live work.
@@ -557,8 +567,12 @@ class AnalyticsService {
         workspaceId: workspaceId, includeArchived: true);
     final people = await _personRepository.getAll(workspaceId: workspaceId);
 
+    // One batched read covering both windows.
     final idlePeriods = await _idlePeriodRepository.getIdlePeriodsForSessions(
-      [for (final s in sessions) s.id],
+      [
+        for (final s in sessions) s.id,
+        for (final s in previousSessions) s.id,
+      ],
     );
 
     final idleBySession = <String, Duration>{};
@@ -581,6 +595,10 @@ class AnalyticsService {
       categories: {for (final c in categories) c.id: c},
       people: {for (final p in people) p.id: p},
       idleBySession: idleBySession,
+      previousSessions: previousSessions,
+      // The same map deliberately: it is keyed by session id and was built
+      // from one batched read covering both windows.
+      previousIdleBySession: idleBySession,
       now: now,
     );
   }

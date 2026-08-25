@@ -68,6 +68,13 @@ WorkPulse is a privacy-first, offline-first desktop time-tracking and work-aware
 - Refer to [workpulse-domain](file:///Users/kkh/Code/WorkPulse/.agents/skills/workpulse-domain/SKILL.md) for domain models and state machines.
 - Consult [DESIGN.md](file:///Users/kkh/Code/WorkPulse/docs/DESIGN.md) for technical design and [DEVELOPMENT.md](file:///Users/kkh/Code/WorkPulse/docs/DEVELOPMENT.md) for local dev commands.
 
+## Pattern Insights
+- Every finding lands in exactly one of four lanes — `sustain` (Continue), `reclaim`, `delegate`, `plan` — and carries the figures it was derived from. A finding with no evidence is a bug.
+- `sustain` is first in `InsightAction` on purpose: a page that only ever lists faults stops being opened, and an unnoticed habit is the easiest one to lose. (`sustain`, not `continue`, because `continue` is a Dart keyword.)
+- One topic never appears in two lanes. The peak focus band and out-of-hours work each emit *either* the positive card or the warning, never both.
+- Comparative findings ("up from", "down from") require the preceding window of equal length and at least `recurrenceDays` of tracked history in it; without that, `WorkPatternReport.hasComparison` is false and those detectors stay silent rather than guess.
+- `WorkPatternService` is pure — sessions in, insights out, no repositories and no clock of its own. All I/O belongs to `AnalyticsService`.
+
 ## Git Commit & Attribution Guidelines
 All Git commits created with AI agents should include standard GitHub co-author attribution trailers in the commit message body:
 - **Antigravity / Gemini**:

@@ -18,8 +18,8 @@ import 'package:workpulse/features/tasks/providers/work_items_provider.dart';
 
 /// Live item counts shown beside each nav destination.
 final _navCountProviders = <ShellNavTab, Provider<int?>>{
-  ShellNavTab.patterns:
-      Provider((r) => r.watch(workPatternReportProvider).value?.insights.length),
+  ShellNavTab.patterns: Provider(
+      (r) => r.watch(workPatternReportProvider).value?.insights.length),
   ShellNavTab.history:
       Provider((r) => r.watch(sessionHistoryProvider).value?.length),
   ShellNavTab.tasks: Provider((r) => r.watch(workItemsProvider).value?.length),

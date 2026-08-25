@@ -108,10 +108,12 @@ finding into the one thing you can do about it. It scans its own rolling window
 
 | Lane | What it surfaces |
 | :--- | :--- |
+| ✅ **Continue** | What is already working and is worth defending — deep-work share that is healthy or climbing, switching that has fallen since last period, a focus window you are keeping clear, work you picked back up before it became a surprise, and simply turning up on most working days. |
 | ♻️ **Reclaim** | Time leaving the day without you choosing to send it — a task picked up nine times before lunch, a switching rate that has become the tax rather than the work, hours captured and then written off as idle. |
 | 🤝 **Delegate** | Work that hands over cleanly: tasks that recur on most days and *never once* needed an unbroken block, whole categories that are always shallow, and short standing sessions with the same person that read as a check-in rather than a decision. |
 | 🗓️ **Plan** | What next week needs room for — commitments that went quiet after real investment, work that only fitted after 7pm or at weekends, one project starving the others, and the two-hour band where your deep blocks actually land. |
 
+- **It compares like for like**: findings that say "up from" are measured against the window immediately before this one, of equal length. With no history behind it the scan still runs — it just stops speaking about direction rather than guessing at it.
 - **Every claim shows its working**: each card carries the figures it was derived from (visits, median session, longest stretch, days recurred) behind a **Show numbers** toggle. Nothing asks to be trusted.
 - **A rhythm strip for context**: deep-work share, longest unbroken stretch, sessions per tracked day, and your genuine focus window — an hour of fragmentation means something different if you never get an unbroken hour.
 - **Copy as Markdown**: one click puts the findings on the clipboard, ready to paste into a 1:1 agenda or a handover note. Delegating something means telling somebody about it.
