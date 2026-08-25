@@ -24,6 +24,13 @@ enum PatternWindow {
 /// reader cannot act on is just another number on a dashboard that already
 /// has plenty.
 enum InsightAction {
+  /// What is already working, and is worth defending.
+  ///
+  /// First on purpose. A page that only ever lists faults trains the reader to
+  /// stop opening it, and a habit nobody notices is the easiest one to lose.
+  /// `sustain` rather than `continue` because `continue` is a Dart keyword.
+  sustain('Continue', 'What is working — protect it'),
+
   /// Time leaving the day without anyone deciding it should.
   reclaim('Reclaim', 'Time going somewhere you did not choose to send it'),
 
@@ -189,6 +196,10 @@ class WorkPatternReport extends Equatable {
   final FocusRhythm rhythm;
   final List<WorkPatternInsight> insights;
 
+  /// Whether the window before this one held enough tracked work to compare
+  /// against. Findings phrased as "up from" only exist when this is true.
+  final bool hasComparison;
+
   const WorkPatternReport({
     required this.window,
     required this.lookback,
@@ -196,6 +207,7 @@ class WorkPatternReport extends Equatable {
     this.sessionCount = 0,
     this.rhythm = const FocusRhythm(),
     this.insights = const [],
+    this.hasComparison = false,
   });
 
   List<WorkPatternInsight> forAction(InsightAction action) =>
@@ -214,5 +226,6 @@ class WorkPatternReport extends Equatable {
         sessionCount,
         rhythm,
         insights,
+        hasComparison,
       ];
 }
