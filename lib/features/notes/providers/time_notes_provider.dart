@@ -19,8 +19,7 @@ class TimeNotesRangeNotifier extends Notifier<DashboardTimeRange> {
 
 /// Single-day date provider for the Time Notes date stepper, mirroring
 /// [reportsDateProvider] in Time Log.
-final timeNotesDateProvider =
-    NotifierProvider<TimeNotesDateNotifier, DateTime>(
+final timeNotesDateProvider = NotifierProvider<TimeNotesDateNotifier, DateTime>(
   TimeNotesDateNotifier.new,
 );
 
