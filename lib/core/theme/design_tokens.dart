@@ -63,6 +63,54 @@ abstract class Radii {
   static const BorderRadius pillAll = BorderRadius.all(Radius.circular(pill));
 }
 
+/// Drop-shadow scale.
+///
+/// Dark surfaces separate from one another by luminance, so shadow there is
+/// only reinforcement. Light surfaces are all within a few percent of white —
+/// a menu, a dialog and the page behind it are very nearly the same colour —
+/// so shadow is the only thing that says which one is in front. Every level
+/// takes the palette's [WorkPulseColors.shadow] rather than a hardcoded black,
+/// which is what let the old tooltip look correct in dark and like grime in
+/// light.
+abstract class Elevation {
+  /// Resting cards and inset panels. Barely there by design.
+  static List<BoxShadow> low(Color shadow) => [
+        BoxShadow(
+          color: shadow,
+          blurRadius: 2,
+          offset: const Offset(0, 1),
+        ),
+      ];
+
+  /// Menus, popovers, tooltips — anything anchored to a control.
+  static List<BoxShadow> medium(Color shadow) => [
+        BoxShadow(
+          color: shadow,
+          blurRadius: 3,
+          offset: const Offset(0, 1),
+        ),
+        BoxShadow(
+          color: shadow,
+          blurRadius: 12,
+          offset: const Offset(0, 6),
+        ),
+      ];
+
+  /// Modal dialogs and floating panels, which must clear the whole page.
+  static List<BoxShadow> high(Color shadow) => [
+        BoxShadow(
+          color: shadow,
+          blurRadius: 6,
+          offset: const Offset(0, 2),
+        ),
+        BoxShadow(
+          color: shadow,
+          blurRadius: 32,
+          offset: const Offset(0, 16),
+        ),
+      ];
+}
+
 /// Animation durations and curves.
 ///
 /// Desktop utilities should feel instant. Nothing here is longer than a

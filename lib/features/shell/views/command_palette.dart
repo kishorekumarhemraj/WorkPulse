@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:workpulse/core/keyboard/list_cursor.dart';
 import 'package:workpulse/core/keyboard/shortcut_labels.dart';
 import 'package:workpulse/core/theme/app_colors.dart';
 import 'package:workpulse/core/theme/design_tokens.dart';
@@ -97,22 +98,37 @@ class _CommandPaletteState extends ConsumerState<CommandPalette> {
   final _focusNode = FocusNode();
   final _scrollController = ScrollController();
   String _query = '';
-  int _selectedIndex = 0;
+
+  /// A command row is 44pt, which is all the cursor needs to keep itself on
+  /// screen. Rows carrying a section header are taller, so the nudge is an
+  /// approximation — as it was before this moved into [ListCursor] — but it
+  /// only has to land the row inside the viewport, not at a precise offset.
+  late final ListCursor _cursor = ListCursor(
+    rowExtent: _rowHeight,
+    scrollController: _scrollController,
+  );
+
+  static const double _rowHeight = 44;
 
   @override
   void initState() {
     super.initState();
+    _cursor.addListener(_onCursorMoved);
     WidgetsBinding.instance
         .addPostFrameCallback((_) => _focusNode.requestFocus());
   }
 
   @override
   void dispose() {
+    _cursor.removeListener(_onCursorMoved);
+    _cursor.dispose();
     _controller.dispose();
     _focusNode.dispose();
     _scrollController.dispose();
     super.dispose();
   }
+
+  void _onCursorMoved() => setState(() {});
 
   /// Subsequence match, so "wkit" finds "Work Items" the way editors do.
   bool _matches(String haystack, String needle) {
@@ -274,30 +290,6 @@ class _CommandPaletteState extends ConsumerState<CommandPalette> {
     await command.invoke();
   }
 
-  void _move(int delta, int length) => _moveTo(_selectedIndex + delta, length);
-
-  void _moveTo(int index, int length) {
-    if (length == 0) return;
-    setState(() {
-      _selectedIndex = index.clamp(0, length - 1);
-    });
-    _scrollSelectedIntoView();
-  }
-
-  void _scrollSelectedIntoView() {
-    if (!_scrollController.hasClients) return;
-    const rowHeight = 44.0;
-    final target = _selectedIndex * rowHeight;
-    final viewport = _scrollController.position.viewportDimension;
-    final offset = _scrollController.offset;
-
-    if (target < offset) {
-      _scrollController.jumpTo(target);
-    } else if (target + rowHeight > offset + viewport) {
-      _scrollController.jumpTo(target + rowHeight - viewport);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
@@ -310,8 +302,7 @@ class _CommandPaletteState extends ConsumerState<CommandPalette> {
           c.keywords.any((k) => _matches(k, _query));
     }).toList();
 
-    final safeIndex =
-        results.isEmpty ? 0 : _selectedIndex.clamp(0, results.length - 1);
+    final safeIndex = _cursor.clampedIn(results.length);
 
     return Dialog(
       backgroundColor: Colors.transparent,
@@ -326,25 +317,12 @@ class _CommandPaletteState extends ConsumerState<CommandPalette> {
         onKeyEvent: (node, event) {
           if (event is! KeyDownEvent) return KeyEventResult.ignored;
 
-          if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
-            _move(1, results.length);
-            return KeyEventResult.handled;
-          }
-          if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
-            _move(-1, results.length);
+          if (_cursor.handleKey(event, results.length)) {
             return KeyEventResult.handled;
           }
           if (event.logicalKey == LogicalKeyboardKey.enter ||
               event.logicalKey == LogicalKeyboardKey.numpadEnter) {
             if (results.isNotEmpty) _run(results[safeIndex]);
-            return KeyEventResult.handled;
-          }
-          if (event.logicalKey == LogicalKeyboardKey.home) {
-            _moveTo(0, results.length);
-            return KeyEventResult.handled;
-          }
-          if (event.logicalKey == LogicalKeyboardKey.end) {
-            _moveTo(results.length - 1, results.length);
             return KeyEventResult.handled;
           }
           if (event.logicalKey == LogicalKeyboardKey.escape) {
@@ -401,10 +379,11 @@ class _CommandPaletteState extends ConsumerState<CommandPalette> {
                           isDense: true,
                           contentPadding: EdgeInsets.zero,
                         ),
-                        onChanged: (value) => setState(() {
-                          _query = value.trim();
-                          _selectedIndex = 0;
-                        }),
+                        onChanged: (value) {
+                          setState(() => _query = value.trim());
+                          // The results underneath are a different list now.
+                          _cursor.reset();
+                        },
                       ),
                     ),
                     const Keycap('esc'),
@@ -438,7 +417,7 @@ class _CommandPaletteState extends ConsumerState<CommandPalette> {
                             sectionHeader: showSection ? command.section : null,
                             onTap: () => _run(command),
                             onHover: () =>
-                                setState(() => _selectedIndex = index),
+                                _cursor.moveTo(index, results.length),
                           );
                         },
                       ),
