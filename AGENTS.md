@@ -67,3 +67,15 @@ WorkPulse is a privacy-first, offline-first desktop time-tracking and work-aware
 - Build in vertical slices following the 10 Sprints defined in [workpulse-sprint-guide](file:///Users/kkh/Code/WorkPulse/.agents/skills/workpulse-sprint-guide/SKILL.md).
 - Refer to [workpulse-domain](file:///Users/kkh/Code/WorkPulse/.agents/skills/workpulse-domain/SKILL.md) for domain models and state machines.
 - Consult [DESIGN.md](file:///Users/kkh/Code/WorkPulse/docs/DESIGN.md) for technical design and [DEVELOPMENT.md](file:///Users/kkh/Code/WorkPulse/docs/DEVELOPMENT.md) for local dev commands.
+
+## Git Commit & Attribution Guidelines
+All Git commits created with AI agents should include standard GitHub co-author attribution trailers in the commit message body:
+- **Antigravity / Gemini**:
+  ```text
+  Co-Authored-By: Antigravity <antigravity@users.noreply.github.com>
+  ```
+- **Claude**:
+  ```text
+  Co-Authored-By: Claude <noreply@anthropic.com>
+  ```
+
