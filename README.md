@@ -92,6 +92,25 @@ WorkPulse is built from the ground up as a **personal productivity companion**, 
 
 ---
 
+### 🧭 Patterns & Signals — Where Your Time Actually Goes
+Breakdowns tell you *where* the hours went. The **Patterns & Signals** panel at
+the foot of the Dashboard tells you *what keeps happening*, and sorts every
+finding into the one thing you can do about it. It scans its own rolling window
+— **14, 30 or 90 days** — because a pattern needs history to be a pattern.
+
+| Lane | What it surfaces |
+| :--- | :--- |
+| ♻️ **Reclaim** | Time leaving the day without you choosing to send it — a task picked up nine times before lunch, a switching rate that has become the tax rather than the work, hours captured and then written off as idle. |
+| 🤝 **Delegate** | Work that hands over cleanly: tasks that recur on most days and *never once* needed an unbroken block, whole categories that are always shallow, and short standing sessions with the same person that read as a check-in rather than a decision. |
+| 🗓️ **Plan** | What next week needs room for — commitments that went quiet after real investment, work that only fitted after 7pm or at weekends, one project starving the others, and the two-hour band where your deep blocks actually land. |
+
+- **Every claim shows its working**: each card carries the figures it was derived from (visits, median session, longest stretch, days recurred) behind a **Show numbers** toggle. Nothing asks to be trusted.
+- **A rhythm strip for context**: deep-work share, longest unbroken stretch, sessions per tracked day, and your genuine focus window — an hour of fragmentation means something different if you never get an unbroken hour.
+- **Copy as Markdown**: one click puts the findings on the clipboard, ready to paste into a 1:1 agenda or a handover note. Delegating something means telling somebody about it.
+- **Rule-based and 100% local**: no model, no network, no telemetry. Every sentence is derived from a figure you could add up by hand from your own Time Log.
+
+---
+
 ### 📤 Multi-Format Export & Data Portability
 - **Executive Visual PDF Reports**: Generate colorful, high-fidelity PDF work summaries with KPI metric cards, project distributions, and session tables—instantly previewed in macOS Preview.app.
 - **RFC 4180 CSV Spreadsheets**: Export tabular session data with custom attribute columns, gross/net durations, and timestamps ready for Excel, Google Sheets, or Numbers.
@@ -147,7 +166,7 @@ lib/
 └── features/     # Feature vertical slices (UI, Riverpod state notifiers, dialogs, widgets)
     ├── quick_capture/ # Floating & standalone Quick Capture HUD
     ├── timer/         # Active timer bar, switch dialog, ticker providers
-    ├── dashboard/     # Metric cards, activity charts, breakdown widgets
+    ├── dashboard/     # Metric cards, activity charts, breakdowns, pattern insights
     ├── notes/         # Time notes view, standup generator, search
     ├── tasks/         # Work items, inspector panel, filter toolbar
     ├── projects/      # Project management & color coding
