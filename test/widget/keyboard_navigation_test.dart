@@ -5,7 +5,9 @@ import 'package:workpulse/core/keyboard/search_focus.dart';
 import 'package:workpulse/core/theme/app_colors.dart';
 import 'package:workpulse/core/theme/app_theme.dart';
 import 'package:workpulse/core/widgets/app_card.dart';
+import 'package:workpulse/core/widgets/filter_dropdown.dart';
 import 'package:workpulse/core/widgets/search_field.dart';
+import 'package:workpulse/core/widgets/searchable_multi_select.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -184,6 +186,229 @@ void main() {
       expect(changes.last, '');
       expect(tester.widget<TextField>(find.byType(TextField)).controller?.text,
           isEmpty);
+    });
+  });
+
+  group('SearchableMultiSelect keyboard', () {
+    const items = [
+      SearchableMultiSelectItem(id: 'a', label: 'Alpha'),
+      SearchableMultiSelectItem(id: 'b', label: 'Beta'),
+      SearchableMultiSelectItem(id: 'c', label: 'Gamma'),
+    ];
+
+    /// Hosts the control the way every real caller does: inside a form that
+    /// pops itself on Escape.
+    Widget hostInDialog({
+      required List<String> selectedIds,
+      required ValueChanged<List<String>> onChanged,
+      required VoidCallback onDialogPopped,
+    }) {
+      return MaterialApp(
+        theme: AppTheme.darkTheme,
+        home: Scaffold(
+          body: Focus(
+            autofocus: true,
+            onKeyEvent: (node, event) {
+              if (event is KeyDownEvent &&
+                  event.logicalKey == LogicalKeyboardKey.escape) {
+                onDialogPopped();
+                return KeyEventResult.handled;
+              }
+              return KeyEventResult.ignored;
+            },
+            child: SearchableMultiSelect(
+              allItems: items,
+              selectedIds: selectedIds,
+              onChanged: onChanged,
+              hintText: 'Search tags...',
+              emptyStateText: 'No tags yet',
+            ),
+          ),
+        ),
+      );
+    }
+
+    Future<void> openList(WidgetTester tester) async {
+      await tester.tap(find.byType(TextField));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('Enter takes the row the arrows landed on', (tester) async {
+      List<String>? picked;
+      await tester.pumpWidget(hostInDialog(
+        selectedIds: const [],
+        onChanged: (ids) => picked = ids,
+        onDialogPopped: () {},
+      ));
+      await openList(tester);
+
+      // The cursor starts on the first match, so one Down reaches Beta.
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pumpAndSettle();
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pumpAndSettle();
+
+      expect(picked, ['b']);
+    });
+
+    testWidgets('End jumps to the last row', (tester) async {
+      List<String>? picked;
+      await tester.pumpWidget(hostInDialog(
+        selectedIds: const [],
+        onChanged: (ids) => picked = ids,
+        onDialogPopped: () {},
+      ));
+      await openList(tester);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.end);
+      await tester.pumpAndSettle();
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pumpAndSettle();
+
+      expect(picked, ['c']);
+    });
+
+    testWidgets('Escape closes the list without closing the form',
+        (tester) async {
+      // The bug this encodes: every form hosting this control pops on
+      // Escape, so dismissing an open dropdown used to discard the whole
+      // half-filled form.
+      var dialogPopped = false;
+      await tester.pumpWidget(hostInDialog(
+        selectedIds: const [],
+        onChanged: (_) {},
+        onDialogPopped: () => dialogPopped = true,
+      ));
+      await openList(tester);
+      expect(find.text('Gamma'), findsOneWidget);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Gamma'), findsNothing, reason: 'the list should close');
+      expect(dialogPopped, isFalse, reason: 'the form should survive');
+    });
+
+    testWidgets('Escape reaches the form once the list is already closed',
+        (tester) async {
+      var dialogPopped = false;
+      await tester.pumpWidget(hostInDialog(
+        selectedIds: const [],
+        onChanged: (_) {},
+        onDialogPopped: () => dialogPopped = true,
+      ));
+      await openList(tester);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pumpAndSettle();
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pumpAndSettle();
+
+      expect(dialogPopped, isTrue);
+    });
+
+    testWidgets('Backspace on an empty query removes the last chip',
+        (tester) async {
+      List<String>? updated;
+      await tester.pumpWidget(hostInDialog(
+        selectedIds: const ['a', 'b'],
+        onChanged: (ids) => updated = ids,
+        onDialogPopped: () {},
+      ));
+      await openList(tester);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.backspace);
+      await tester.pumpAndSettle();
+
+      expect(updated, ['a']);
+    });
+
+    testWidgets('Backspace stays a text edit while there is text to edit',
+        (tester) async {
+      List<String>? updated;
+      await tester.pumpWidget(hostInDialog(
+        selectedIds: const ['a', 'b'],
+        onChanged: (ids) => updated = ids,
+        onDialogPopped: () {},
+      ));
+      await openList(tester);
+      await tester.enterText(find.byType(TextField), 'Gam');
+      await tester.pumpAndSettle();
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.backspace);
+      await tester.pumpAndSettle();
+
+      expect(updated, isNull, reason: 'no chip should have been removed');
+    });
+
+    testWidgets('a chip remove button is reachable and labelled',
+        (tester) async {
+      List<String>? updated;
+      await tester.pumpWidget(hostInDialog(
+        selectedIds: const ['a'],
+        onChanged: (ids) => updated = ids,
+        onDialogPopped: () {},
+      ));
+      await tester.pumpAndSettle();
+
+      final remove = find.byTooltip('Remove Alpha');
+      expect(remove, findsOneWidget);
+      await tester.tap(remove);
+      await tester.pumpAndSettle();
+
+      expect(updated, isEmpty);
+    });
+  });
+
+  group('AppFilterDropdown focus', () {
+    testWidgets('draws the focus ring when tabbed onto', (tester) async {
+      // The trigger used to be a bare InkWell: tabbing onto it moved the
+      // keyboard cursor somewhere with nothing to show for it.
+      late WorkPulseColors colors;
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.darkTheme,
+          home: Scaffold(
+            body: Builder(
+              builder: (context) {
+                colors = context.colors;
+                return AppFilterDropdown<String>(
+                  placeholder: 'All Projects',
+                  value: null,
+                  options: const [
+                    FilterOption(value: 'p1', label: 'Apollo'),
+                  ],
+                  onChanged: (_) {},
+                );
+              },
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      Border? triggerBorder() {
+        final container = tester
+            .widgetList<Container>(
+          find.descendant(
+            of: find.byType(AppFilterDropdown<String>),
+            matching: find.byType(Container),
+          ),
+        )
+            .firstWhere((c) {
+          final d = c.decoration;
+          return d is BoxDecoration && d.border != null;
+        });
+        return (container.decoration as BoxDecoration).border as Border?;
+      }
+
+      expect(triggerBorder()?.top.color, isNot(colors.focusRing));
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+      await tester.pumpAndSettle();
+
+      expect(triggerBorder()?.top.color, colors.focusRing);
+      expect(triggerBorder()?.top.width, 1.5);
     });
   });
 }

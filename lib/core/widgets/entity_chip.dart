@@ -74,9 +74,11 @@ class EntityChip extends StatelessWidget {
       decoration: BoxDecoration(
         color: color?.withValues(alpha: 0.13) ?? colors.card,
         borderRadius: Radii.smAll,
-        border: color != null
-            ? Border.all(color: color!.withValues(alpha: 0.28))
-            : null,
+        // The neutral fill sits close to the page behind it, so the border is
+        // what gives an uncoloured chip an edge rather than pure decoration.
+        border: Border.all(
+          color: color?.withValues(alpha: 0.28) ?? colors.divider,
+        ),
       ),
       child: content,
     );
@@ -125,9 +127,9 @@ class MetricChip extends StatelessWidget {
       decoration: BoxDecoration(
         color: color?.withValues(alpha: 0.13) ?? colors.card,
         borderRadius: Radii.smAll,
-        border: color != null
-            ? Border.all(color: color!.withValues(alpha: 0.3))
-            : null,
+        border: Border.all(
+          color: color?.withValues(alpha: 0.3) ?? colors.divider,
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
