@@ -78,6 +78,14 @@ WorkPulse is built from the ground up as a **personal productivity companion**, 
 
 ---
 
+### 🎯 Per-Session Classification
+- **The Work Item Seeds, It Does Not Stamp**: A work item's category, tags and people are applied to its **first** session only. Every session after that starts unclassified, because the second hour on a task is rarely the same kind of work as the first — the same ticket can be reading, then a call about it, then the change itself.
+- **Classify Where You Are**: Set the running session's category straight from the timer bar's dropdown, or edit any past session from the Time Log.
+- **What You See Is What You Logged**: Dashboards and exports show exactly what each session says. Time you haven't classified appears as **Uncategorized** rather than being quietly filed under the work item's category — so the gap is visible and fixable instead of invisible and wrong.
+- **Interruptions Don't Reclassify You**: When an idle gap splits a session in two, the resumed half carries the interrupted half's classification forward. One coffee break never splits an afternoon into a classified half and an unclassified one.
+
+---
+
 ### 📝 Time Notes & Daily Standup Journaling
 - **Session & Task Notes**: Log detailed markdown notes directly against sessions or parent work items.
 - **1-Click Standup Summaries**: Instantly compile and copy daily/weekly accomplishments into clean, bulleted Markdown ready to paste into Slack, Teams, or daily standup meetings.
@@ -188,7 +196,7 @@ lib/
 4. **Single Active Session**: Exactly one work session active at any given moment.
 5. **Timestamp-Based Session Truth**: Elapsed durations calculated exclusively via `endTime - startTime`.
 6. **No Silent Data Loss**: Deletions use soft-archiving (`archived_at`) to preserve historical accuracy.
-7. **Session Independence**: Stopping a timer closes the session, but leaves the work item open to resume later.
+7. **Session Independence**: Stopping a timer closes the session, but leaves the work item open to resume later. A work item's category, tags and people seed only its *first* session; every session after that is classified per session, and nothing is borrowed from the work item at read time.
 8. **Offline-First & Zero Telemetry**: 100% local persistence via SQLite (`sqflite_common_ffi`).
 9. **Isolated Platform Bridges**: Native macOS integrations (Hotkeys, Tray, Window management) live behind abstract interfaces.
 10. **Strict Database Versioning**: All schema modifications are version-controlled with `PRAGMA user_version` migrations.

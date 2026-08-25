@@ -29,8 +29,12 @@ WorkPulse is a privacy-first, offline-first desktop time-tracking and work-aware
    - Disabling/deleting an attribute or option archives it (`archived_at`), preserving historical work item values.
    - Idle periods and stopped sessions are never silently discarded.
 
-7. **Stopping a Session Does Not Complete the WorkItem**:
+7. **A Session Is Not Its WorkItem**:
    - Stopping a session simply closes the time tracking block. The WorkItem remains available to resume later.
+   - A WorkItem's `categoryId`, `tagIds` and `peopleIds` seed its **first** session only. Every session after that starts unclassified and is the user's to set — the second hour on a task is often not the same kind of work as the first.
+   - Nothing borrows the WorkItem's classification at **read time**. Analytics, exports and the session editor show exactly what each session says; unclassified time is bucketed as `Uncategorized` rather than dropped or silently attributed upward.
+   - The one exception is an idle split: the resumed half is a continuation, so it carries the interrupted half's own classification forward.
+   - Anything a caller passes to `TimerService.startSession` explicitly always wins, on any session.
 
 8. **Offline-First & Zero Network (V1)**:
    - All data is stored locally in SQLite (`sqflite_common_ffi`).

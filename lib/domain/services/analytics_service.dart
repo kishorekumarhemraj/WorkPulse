@@ -14,6 +14,11 @@ import 'package:workpulse/domain/repositories/tag_repository.dart';
 import 'package:workpulse/domain/repositories/work_item_repository.dart';
 import 'package:workpulse/domain/services/work_pattern_service.dart';
 
+/// The bucket that carries time the user has not classified yet.
+///
+/// A real category id is a UUID, so this cannot collide with one.
+const String uncategorizedId = '__uncategorised__';
+
 class AnalyticsService {
   final SessionRepository _sessionRepository;
   final WorkItemRepository _workItemRepository;
@@ -172,26 +177,32 @@ class AnalyticsService {
     final categoryDurations = <String, Duration>{};
     final categorySessionCounts = <String, int>{};
 
+    // A session's own category, never the work item's. Time the user has not
+    // classified is bucketed rather than dropped: silently omitting it would
+    // leave the category card summing to less than the hours above it, which
+    // reads as a bug rather than as work waiting to be classified.
     for (final s in allSessions) {
-      final workItem = workItemMap[s.workItemId];
-      final catId = s.categoryId ?? workItem?.categoryId;
-      if (catId != null) {
-        final dur = sessionActiveDurations[s.id] ?? Duration.zero;
-        categoryDurations[catId] =
-            (categoryDurations[catId] ?? Duration.zero) + dur;
-        categorySessionCounts[catId] = (categorySessionCounts[catId] ?? 0) + 1;
-      }
+      final catId = s.categoryId ?? uncategorizedId;
+      final dur = sessionActiveDurations[s.id] ?? Duration.zero;
+      categoryDurations[catId] =
+          (categoryDurations[catId] ?? Duration.zero) + dur;
+      categorySessionCounts[catId] = (categorySessionCounts[catId] ?? 0) + 1;
     }
 
     final categoryBreakdown = categoryDurations.entries.map((entry) {
+      final isUncategorized = entry.key == uncategorizedId;
       final cat = categoryMap[entry.key];
       final dur = entry.value;
       final pct = (dur.inSeconds / baseActiveSeconds) * 100.0;
       return BreakdownItem(
         id: entry.key,
-        name: cat?.name ?? 'Unknown Category',
-        iconName: cat?.iconName ?? 'folder',
-        colorHex: '#30D158',
+        name: isUncategorized
+            ? 'Uncategorized'
+            : (cat?.name ?? 'Unknown Category'),
+        // No icon: a grey dot among the category glyphs is what marks
+        // this row as the absence of a category rather than one of them.
+        iconName: isUncategorized ? null : (cat?.iconName ?? 'folder'),
+        colorHex: isUncategorized ? '#8E8E93' : '#30D158',
         duration: dur,
         percentage: pct.clamp(0.0, 100.0),
         sessionCount: categorySessionCounts[entry.key] ?? 0,
@@ -232,8 +243,7 @@ class AnalyticsService {
     final tagSessionCounts = <String, int>{};
 
     for (final s in allSessions) {
-      final item = workItemMap[s.workItemId];
-      final tagIds = s.tagIds.isNotEmpty ? s.tagIds : (item?.tagIds ?? []);
+      final tagIds = s.tagIds;
       if (tagIds.isNotEmpty) {
         final dur = sessionActiveDurations[s.id] ?? Duration.zero;
         for (final tagId in tagIds) {
@@ -264,10 +274,7 @@ class AnalyticsService {
 
     for (final s in allSessions) {
       final dur = sessionActiveDurations[s.id] ?? Duration.zero;
-      final peopleIds = s.peopleIds.isNotEmpty
-          ? s.peopleIds
-          : (workItemMap[s.workItemId]?.peopleIds ?? []);
-      for (final personId in peopleIds) {
+      for (final personId in s.peopleIds) {
         personDurations[personId] =
             (personDurations[personId] ?? Duration.zero) + dur;
         personSessionCounts[personId] =
