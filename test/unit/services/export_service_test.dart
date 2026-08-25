@@ -154,6 +154,10 @@ void main() {
       );
 
       // Seed Session: 60 minutes with 10 min idle -> 50 min net
+      //
+      // The session carries its own category and tags. An export records what
+      // each session actually said, so nothing is borrowed from the work item
+      // at read time any more.
       final sessStart = now.subtract(const Duration(hours: 2));
       final sessEnd = sessStart.add(const Duration(minutes: 60));
 
@@ -161,8 +165,10 @@ void main() {
         Session(
           id: 'sess-1',
           workItemId: task.id,
+          categoryId: cat.id,
           startTime: sessStart,
           endTime: sessEnd,
+          tagIds: [tag.id],
           peopleIds: [person.id],
           createdAt: sessStart,
         ),

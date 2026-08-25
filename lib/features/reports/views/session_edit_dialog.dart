@@ -53,13 +53,13 @@ class _SessionEditDialogState extends ConsumerState<SessionEditDialog> {
     final s = widget.record.session;
     _startTime = s.startTime.toLocal();
     _endTime = s.endTime?.toLocal();
-    _selectedCategoryId = s.categoryId ?? widget.record.workItem.categoryId;
+    // The session's own values, not the work item's. Pre-filling from the work
+    // item made an unclassified session look classified, and saving the form
+    // silently wrote those borrowed values onto it.
+    _selectedCategoryId = s.categoryId;
     _notesController = TextEditingController(text: s.notes ?? '');
-    _selectedTagIds = List.from(
-        s.tagIds.isNotEmpty ? s.tagIds : widget.record.workItem.tagIds);
-    _selectedPeopleIds = List.from(s.peopleIds.isNotEmpty
-        ? s.peopleIds
-        : widget.record.workItem.peopleIds);
+    _selectedTagIds = List.from(s.tagIds);
+    _selectedPeopleIds = List.from(s.peopleIds);
 
     Future.microtask(() async {
       try {

@@ -92,11 +92,9 @@ class TaskSwitchService {
     // 3. Start new session for target work item starting exactly at effectiveSwitchTime
     final newSession = await _timerService.startSession(
       targetWorkItem.id,
-      categoryId: targetCategoryId ?? targetWorkItem.categoryId,
-      tagIds: targetTagIds.isNotEmpty ? targetTagIds : targetWorkItem.tagIds,
-      peopleIds: targetPeopleIds.isNotEmpty
-          ? targetPeopleIds
-          : targetWorkItem.peopleIds,
+      categoryId: targetCategoryId,
+      tagIds: targetTagIds,
+      peopleIds: targetPeopleIds,
       startTime: effectiveSwitchTime,
     );
 

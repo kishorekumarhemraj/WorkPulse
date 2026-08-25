@@ -162,6 +162,31 @@ void main() {
       expect(idlePeriods.first.resolution, IdleResolution.markIdle);
     });
 
+    test('resolveMarkIdle carries the interrupted session\'s classification',
+        () async {
+      final now = DateTime.now().toUtc();
+      final startTime = now.subtract(const Duration(minutes: 45));
+
+      // The half before the break is classified — by seeding, or because the
+      // user set it. The half after is a continuation of the same work, so it
+      // must not come back unclassified just because a break happened.
+      final sessionA = await timerService.startSession(
+        testTask.id,
+        startTime: startTime,
+        categoryId: 'cat-1',
+      );
+      expect(sessionA.categoryId, 'cat-1');
+
+      final result = await idleService.resolveMarkIdle(
+        sessionId: sessionA.id,
+        workItemId: testTask.id,
+        idleStartTime: now.subtract(const Duration(minutes: 20)),
+        idleEndTime: now,
+      );
+
+      expect(result.newSession!.categoryId, 'cat-1');
+    });
+
     test(
         'resolveStopSession stops active session at idle start and records period',
         () async {
