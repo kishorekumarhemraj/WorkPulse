@@ -4,7 +4,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:workpulse/core/theme/app_theme.dart';
 import 'package:workpulse/domain/models/analytics_model.dart';
 import 'package:workpulse/domain/models/date_range.dart';
-import 'package:workpulse/domain/models/work_pattern_model.dart';
 import 'package:workpulse/features/dashboard/providers/dashboard_provider.dart';
 import 'package:workpulse/features/dashboard/views/dashboard_view.dart';
 import 'package:workpulse/features/dashboard/widgets/metric_card.dart';
@@ -96,58 +95,6 @@ void main() {
     hourlyActivity: mockHourlyActivity,
   );
 
-  final mockPatternReport = WorkPatternReport(
-    window: mockRange,
-    lookback: PatternWindow.oneMonth,
-    totalActive: const Duration(hours: 20),
-    sessionCount: 24,
-    rhythm: const FocusRhythm(
-      peakFocusHours: [10, 11],
-      longestUnbrokenBlock: Duration(minutes: 95),
-      medianSessionLength: Duration(minutes: 25),
-      deepWorkTotal: Duration(hours: 6),
-      deepWorkShare: 0.3,
-      switchesPerTrackedDay: 4.8,
-      trackedDayCount: 5,
-    ),
-    insights: const [
-      WorkPatternInsight(
-        id: 'fragmented:task-1',
-        action: InsightAction.reclaim,
-        severity: InsightSeverity.high,
-        subject: PatternSubject.workItem,
-        subjectId: 'task-1',
-        title: 'Release checklist arrives in fragments',
-        finding: 'Picked up nine times across two days.',
-        recommendation: 'Give it one booked block.',
-        timeInvolved: Duration(hours: 1, minutes: 20),
-        evidence: [InsightEvidence('Visits', '9')],
-      ),
-      WorkPatternInsight(
-        id: 'routine-task:task-2',
-        action: InsightAction.delegate,
-        severity: InsightSeverity.notable,
-        subject: PatternSubject.workItem,
-        subjectId: 'task-2',
-        title: 'Weekly status pack repeats and never goes deep',
-        finding: 'It came up on five of five tracked days.',
-        recommendation: 'Write the steps down once.',
-        timeInvolved: Duration(hours: 2),
-      ),
-      WorkPatternInsight(
-        id: 'at-risk:task-3',
-        action: InsightAction.plan,
-        severity: InsightSeverity.notable,
-        subject: PatternSubject.workItem,
-        subjectId: 'task-3',
-        title: 'Migration write-up has been quiet for 11 days',
-        finding: 'Two and a half hours went in, then nothing.',
-        recommendation: 'Give it a slot this week or close it out.',
-        timeInvolved: Duration(hours: 2, minutes: 30),
-      ),
-    ],
-  );
-
   group('DashboardView UI Widget Tests', () {
     testWidgets(
         'renders header, metric cards, range filters, and breakdown lists',
@@ -164,8 +111,6 @@ void main() {
           overrides: [
             dashboardDataProvider
                 .overrideWith((ref) => Future.value(mockDashboardData)),
-            workPatternReportProvider
-                .overrideWith((ref) => Future.value(mockPatternReport)),
           ],
           child: MaterialApp(
             theme: AppTheme.darkTheme,
@@ -231,8 +176,6 @@ void main() {
         overrides: [
           dashboardDataProvider
               .overrideWith((ref) => Future.value(mockDashboardData)),
-          workPatternReportProvider
-              .overrideWith((ref) => Future.value(mockPatternReport)),
         ],
       );
       addTearDown(container.dispose);

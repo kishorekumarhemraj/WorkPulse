@@ -18,6 +18,7 @@ import 'package:workpulse/features/dashboard/views/dashboard_view.dart';
 import 'package:workpulse/features/idle/providers/idle_provider.dart';
 import 'package:workpulse/features/idle/views/idle_prompt_dialog.dart';
 import 'package:workpulse/features/notes/views/time_notes_view.dart';
+import 'package:workpulse/features/patterns/views/patterns_view.dart';
 import 'package:workpulse/features/people/views/people_view.dart';
 import 'package:workpulse/features/projects/views/project_form_dialog.dart';
 import 'package:workpulse/features/projects/views/projects_view.dart';
@@ -197,6 +198,7 @@ class _MainShellViewState extends ConsumerState<MainShellView>
       case ShellNavTab.projects:
         await ProjectFormDialog.show(context);
       case ShellNavTab.dashboard:
+      case ShellNavTab.patterns:
       case ShellNavTab.history:
       case ShellNavTab.notes:
       case ShellNavTab.tasks:
@@ -555,6 +557,7 @@ class _ContentViewport extends StatelessWidget {
         key: ValueKey(activeTab),
         child: switch (activeTab) {
           ShellNavTab.dashboard => const DashboardView(),
+          ShellNavTab.patterns => const PatternsView(),
           ShellNavTab.history => const SessionHistoryView(),
           ShellNavTab.tasks => const TasksView(),
           ShellNavTab.notes => const TimeNotesView(),

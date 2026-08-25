@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// The sections reachable from the sidebar.
 enum ShellNavTab {
   dashboard,
+  patterns,
   history,
   tasks,
   notes,
@@ -38,6 +39,7 @@ enum ShellNavGroup {
 extension ShellNavTabInfo on ShellNavTab {
   String get label => switch (this) {
         ShellNavTab.dashboard => 'Dashboard',
+        ShellNavTab.patterns => 'Patterns & Signals',
         ShellNavTab.history => 'Time Log',
         ShellNavTab.notes => 'Time Notes',
         ShellNavTab.tasks => 'Work Items',
@@ -50,6 +52,7 @@ extension ShellNavTabInfo on ShellNavTab {
 
   IconData get icon => switch (this) {
         ShellNavTab.dashboard => Icons.space_dashboard_outlined,
+        ShellNavTab.patterns => Icons.insights_outlined,
         ShellNavTab.history => Icons.history,
         ShellNavTab.notes => Icons.edit_note_outlined,
         ShellNavTab.tasks => Icons.check_circle_outline,
@@ -62,6 +65,7 @@ extension ShellNavTabInfo on ShellNavTab {
 
   ShellNavGroup get group => switch (this) {
         ShellNavTab.dashboard ||
+        ShellNavTab.patterns ||
         ShellNavTab.history ||
         ShellNavTab.notes ||
         ShellNavTab.tasks =>
@@ -79,7 +83,16 @@ extension ShellNavTabInfo on ShellNavTab {
 
   /// What the command palette should match against, beyond the label.
   List<String> get searchKeywords => switch (this) {
-        ShellNavTab.dashboard => ['insights', 'analytics', 'summary', 'charts'],
+        ShellNavTab.dashboard => ['analytics', 'summary', 'charts'],
+        ShellNavTab.patterns => [
+            'patterns',
+            'signals',
+            'insights',
+            'reclaim',
+            'delegate',
+            'focus',
+            'rhythm',
+          ],
         ShellNavTab.history => ['sessions', 'log', 'history', 'timesheet'],
         ShellNavTab.notes => [
             'notes',
