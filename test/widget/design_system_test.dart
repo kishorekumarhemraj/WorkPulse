@@ -99,6 +99,9 @@ void main() {
           'background': c.background,
           'surface': c.surface,
           'card': c.card,
+          // Split out of card once light inputs stopped being grey slabs;
+          // text sits on it just the same.
+          'field': c.field,
         };
 
         for (final fg in foregrounds.entries) {
@@ -124,7 +127,97 @@ void main() {
           greaterThanOrEqualTo(4.5),
           reason: '${entry.key}: white on dangerFill is below WCAG AA',
         );
+
+        // A badge is a label on its own tinted fill, and the fill is
+        // translucent -- so the real question is not whether the label
+        // clears the surface, but whether it clears the fill *once
+        // composited over* whichever surface the badge landed on. The old
+        // light palette derived these tints from the dark-mode hues, which
+        // is how its labels and fills ended up different colours.
+        final tinted = {
+          'accent': (c.accent, c.accentSubtle),
+          'success': (c.success, c.successSubtle),
+          'warning': (c.warning, c.warningSubtle),
+          'danger': (c.danger, c.dangerSubtle),
+          'info': (c.info, c.infoSubtle),
+        };
+        for (final tint in tinted.entries) {
+          final (label, fill) = tint.value;
+          for (final base in ['background', 'surface']) {
+            final composited = Color.alphaBlend(fill, backgrounds[base]!);
+            expect(
+              contrast(label, composited),
+              greaterThanOrEqualTo(4.5),
+              reason: '${entry.key}: ${tint.key} label on its own subtle '
+                  'fill over $base is below WCAG AA',
+            );
+          }
+        }
       }
+    });
+
+    test('the fill variants stay the vivid reading of their role', () {
+      // success/warning/info are darkened for AA as text, which on light
+      // turns them into forest green, brown and slate. The *Fill tokens
+      // exist so shapes -- chart bars, dots, stripes -- keep the hue the
+      // role actually means. If a fill ever equals its text token on light,
+      // that split has silently collapsed.
+      const light = WorkPulseColors.light;
+      expect(light.successFill, isNot(light.success));
+      expect(light.warningFill, isNot(light.warning));
+      expect(light.infoFill, isNot(light.info));
+
+      // Dark's text values are already vivid, so there the two are equal on
+      // purpose -- pinned so a future edit to one remembers the other.
+      const dark = WorkPulseColors.dark;
+      expect(dark.successFill, dark.success);
+      expect(dark.warningFill, dark.warning);
+      expect(dark.infoFill, dark.info);
+    });
+
+    test('light surfaces separate far enough to be told apart', () {
+      // The complaint that started this was "too grayish", and the cause was
+      // measurable: background and card were 1.044:1 apart, so a filled
+      // control was invisible on the page it sat on. These floors are what
+      // stop the palette drifting back.
+      double relativeLuminance(Color c) {
+        double channel(double v) => v <= 0.03928
+            ? v / 12.92
+            : math.pow((v + 0.055) / 1.055, 2.4) as double;
+        return 0.2126 * channel(c.r) +
+            0.7152 * channel(c.g) +
+            0.0722 * channel(c.b);
+      }
+
+      double contrast(Color a, Color b) {
+        final la = relativeLuminance(a);
+        final lb = relativeLuminance(b);
+        final hi = la > lb ? la : lb;
+        final lo = la > lb ? lb : la;
+        return (hi + 0.05) / (lo + 0.05);
+      }
+
+      const c = WorkPulseColors.light;
+      expect(
+        contrast(c.background, c.surface),
+        greaterThanOrEqualTo(1.10),
+        reason: 'a panel must lift off the page it sits on',
+      );
+      expect(
+        contrast(c.surface, c.divider),
+        greaterThanOrEqualTo(1.35),
+        reason: 'a hairline must read on white',
+      );
+      expect(
+        contrast(Color.alphaBlend(c.hover, c.surface), c.surface),
+        greaterThanOrEqualTo(1.15),
+        reason: 'hover must be visible, not theoretical',
+      );
+      expect(
+        contrast(c.textSecondary, c.textTertiary),
+        greaterThanOrEqualTo(1.15),
+        reason: 'the text ramp needs three steps, not two wearing a disguise',
+      );
     });
 
     test('body text never drops below 12pt', () {

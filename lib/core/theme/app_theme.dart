@@ -78,7 +78,10 @@ class AppTheme {
       dialogTheme: DialogThemeData(
         backgroundColor: c.surfaceRaised,
         surfaceTintColor: Colors.transparent,
+        // Painted by AppDialog via Elevation.high; Material's own elevation
+        // would tint the surface as well as shadow it.
         elevation: 0,
+        shadowColor: c.shadow,
         barrierColor: c.overlay,
         titleTextStyle: textTheme.titleLarge,
         contentTextStyle: textTheme.bodyMedium,
@@ -91,6 +94,7 @@ class AppTheme {
         color: c.surfaceRaised,
         surfaceTintColor: Colors.transparent,
         elevation: 8,
+        shadowColor: c.shadow,
         textStyle: textTheme.bodyMedium,
         shape: RoundedRectangleBorder(
           borderRadius: Radii.mdAll,
@@ -101,6 +105,10 @@ class AppTheme {
         style: MenuStyle(
           backgroundColor: WidgetStatePropertyAll(c.surfaceRaised),
           surfaceTintColor: const WidgetStatePropertyAll(Colors.transparent),
+          // A light menu is white on white; without a shadow the only thing
+          // separating it from the page is a hairline.
+          elevation: const WidgetStatePropertyAll(8),
+          shadowColor: WidgetStatePropertyAll(c.shadow),
           shape: WidgetStatePropertyAll(
             RoundedRectangleBorder(
               borderRadius: Radii.mdAll,
@@ -124,13 +132,7 @@ class AppTheme {
           color: c.surfaceRaised,
           borderRadius: Radii.smAll,
           border: Border.all(color: c.divider),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.2),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
+          boxShadow: Elevation.medium(c.shadow),
         ),
         textStyle: textTheme.bodySmall?.copyWith(color: c.textPrimary),
       ),
@@ -270,7 +272,7 @@ class AppTheme {
       inputDecorationTheme: InputDecorationTheme(
         isDense: true,
         filled: true,
-        fillColor: c.card,
+        fillColor: c.field,
         hintStyle: textTheme.bodyMedium?.copyWith(color: c.textTertiary),
         labelStyle: textTheme.bodySmall,
         floatingLabelStyle: textTheme.bodySmall?.copyWith(color: c.accent),
@@ -294,6 +296,8 @@ class AppTheme {
         menuStyle: MenuStyle(
           backgroundColor: WidgetStatePropertyAll(c.surfaceRaised),
           surfaceTintColor: const WidgetStatePropertyAll(Colors.transparent),
+          elevation: const WidgetStatePropertyAll(8),
+          shadowColor: WidgetStatePropertyAll(c.shadow),
           shape: WidgetStatePropertyAll(
             RoundedRectangleBorder(
               borderRadius: Radii.mdAll,

@@ -152,7 +152,7 @@ class _ArchivedToggle extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Material(
-      color: isOn ? colors.warningSubtle : colors.card,
+      color: isOn ? colors.warningSubtle : colors.field,
       borderRadius: Radii.mdAll,
       child: InkWell(
         onTap: onToggle,

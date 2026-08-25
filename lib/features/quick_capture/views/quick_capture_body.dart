@@ -587,12 +587,12 @@ class _QuickCaptureBodyState extends ConsumerState<QuickCaptureBody> {
     return Container(
       decoration: BoxDecoration(
         border: isSelected
-            ? Border(left: BorderSide(color: colors.success, width: 3))
+            ? Border(left: BorderSide(color: colors.successFill, width: 3))
             : null,
       ),
       child: Material(
         color: isSelected
-            ? colors.success.withValues(alpha: 0.15)
+            ? colors.successFill.withValues(alpha: 0.15)
             : Colors.transparent,
         child: InkWell(
           canRequestFocus: false,

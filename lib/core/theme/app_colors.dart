@@ -19,8 +19,19 @@ class WorkPulseColors extends ThemeExtension<WorkPulseColors> {
   /// Panels and content sheets sitting on [background] (sidebar, cards).
   final Color surface;
 
-  /// Inset fills on [surface] — input fields, badge backgrounds.
+  /// Inset tinted fills on [surface] — badge and chip backgrounds.
+  ///
+  /// Not the fill for text inputs; those use [field]. The two were one token
+  /// until the light theme showed why they cannot be: a tint that reads as a
+  /// quiet badge on white is the same tint that makes every input look like a
+  /// grey slab.
   final Color card;
+
+  /// The fill for text inputs and other editable controls.
+  ///
+  /// Light inputs are white with a border, following the platform
+  /// convention, rather than a grey fill that competes with [card].
+  final Color field;
 
   /// Surfaces lifted above [surface] — menus, dialogs, floating panels.
   final Color surfaceRaised;
@@ -63,15 +74,21 @@ class WorkPulseColors extends ThemeExtension<WorkPulseColors> {
   /// Selected row / active nav item fill.
   final Color selected;
 
+  /// The colour drop shadows are drawn in — see [Elevation].
+  ///
+  /// Dark surfaces separate by luminance alone, so their shadows only need to
+  /// deepen the gap. Light surfaces are all within a few percent of white and
+  /// have nothing to separate them but a hairline, which is why the light
+  /// value is tinted rather than neutral black: a cool grey shadow reads as
+  /// depth where flat black reads as dirt.
+  final Color shadow;
+
   // --- Semantic roles ----------------------------------------------------
   /// Interactive accent — buttons, links, selection.
   final Color accent;
 
   /// A pressed/hovered variant of [accent].
   final Color accentHover;
-
-  /// Low-opacity [accent] fill for tinted containers.
-  final Color accentSubtle;
 
   /// The background of a *filled* accent button.
   ///
@@ -81,29 +98,57 @@ class WorkPulseColors extends ThemeExtension<WorkPulseColors> {
   /// that text to clear AA. One colour cannot do both.
   final Color accentFill;
 
-  /// Running timers, completed work, positive deltas.
+  /// Low-opacity [accent] fill for tinted containers.
+  ///
+  /// The alpha is not a free choice: a badge is a label on a translucent
+  /// tint, so the label has to clear AA against the tint *composited over*
+  /// whichever surface the badge landed on. These are the highest alphas
+  /// that still do, which design_system_test.dart checks.
+  final Color accentSubtle;
+
+  /// Running timers, completed work, positive deltas — as *text*.
+  ///
+  /// Text on a light surface must be dark to clear AA, which is why the light
+  /// value is a deep green and not the vivid one below. Anything that is a
+  /// shape rather than a glyph wants [successFill].
   final Color success;
+
+  /// The same role as a *fill*: chart bars, status dots, stripes.
+  ///
+  /// A shape carries no text, so it is free to be the hue the role actually
+  /// means. Making one token serve both is what turned the light theme's
+  /// activity chart forest-green and its idle bars brown. Dark mode needs no
+  /// split — its text values are already vivid — so the two are equal there.
+  final Color successFill;
   final Color successSubtle;
 
-  /// Idle time, archived items, cautions.
+  /// Idle time, archived items, cautions — as *text*. See [success].
   final Color warning;
+
+  /// The same role as a *fill*. See [successFill].
+  final Color warningFill;
   final Color warningSubtle;
 
-  /// Destructive actions and errors.
+  /// Destructive actions and errors — as *text*.
   final Color danger;
+
+  /// The background of a *filled* destructive button, and the fill
+  /// hue for danger shapes. See [accentFill] and [successFill].
+  final Color dangerFill;
   final Color dangerSubtle;
 
-  /// The background of a *filled* destructive button — see [accentFill].
-  final Color dangerFill;
-
-  /// Neutral informational highlights.
+  /// Neutral informational highlights — as *text*. See [success].
   final Color info;
+
+  /// The same role as a *fill*. See [successFill].
+  final Color infoFill;
   final Color infoSubtle;
 
   const WorkPulseColors({
     required this.background,
     required this.surface,
     required this.card,
+    required this.field,
     required this.surfaceRaised,
     required this.surfaceSunken,
     required this.textPrimary,
@@ -117,29 +162,35 @@ class WorkPulseColors extends ThemeExtension<WorkPulseColors> {
     required this.focusRing,
     required this.overlay,
     required this.selected,
+    required this.shadow,
     required this.accent,
     required this.accentHover,
-    required this.accentSubtle,
     required this.accentFill,
+    required this.accentSubtle,
     required this.success,
+    required this.successFill,
     required this.successSubtle,
     required this.warning,
+    required this.warningFill,
     required this.warningSubtle,
     required this.danger,
-    required this.dangerSubtle,
     required this.dangerFill,
+    required this.dangerSubtle,
     required this.info,
+    required this.infoFill,
     required this.infoSubtle,
   });
 
   /// Dark appearance — the app's default.
   ///
   /// Every text and semantic colour here clears WCAG AA (4.5:1) against
-  /// [background], [surface] and [card]; design_system_test.dart enforces it.
+  /// [background], [surface], [card] and [field]; design_system_test.dart
+  /// enforces it.
   static const WorkPulseColors dark = WorkPulseColors(
     background: Color(0xFF1A1A1C),
     surface: Color(0xFF232326),
     card: Color(0xFF2C2C30),
+    field: Color(0xFF2C2C30),
     surfaceRaised: Color(0xFF303034),
     surfaceSunken: Color(0xFF151517),
     textPrimary: Color(0xFFF5F5F7),
@@ -153,55 +204,68 @@ class WorkPulseColors extends ThemeExtension<WorkPulseColors> {
     focusRing: Color(0xFF1C96FF),
     overlay: Color(0x99000000),
     selected: Color(0x261C96FF),
+    shadow: Color(0x66000000),
     accent: Color(0xFF1C96FF),
     accentHover: Color(0xFF52ABFF),
-    accentSubtle: Color(0x1F1C96FF),
     accentFill: Color(0xFF0076DF),
+    accentSubtle: Color(0x161C96FF),
     success: Color(0xFF30D158),
+    successFill: Color(0xFF30D158),
     successSubtle: Color(0x2630D158),
     warning: Color(0xFFFF9F0A),
+    warningFill: Color(0xFFFF9F0A),
     warningSubtle: Color(0x26FF9F0A),
     danger: Color(0xFFFF5A4F),
-    dangerSubtle: Color(0x26FF453A),
     dangerFill: Color(0xFFDC372C),
+    dangerSubtle: Color(0x16FF5A4F),
     info: Color(0xFF64D2FF),
+    infoFill: Color(0xFF64D2FF),
     infoSubtle: Color(0x2664D2FF),
   );
 
   /// Light appearance.
+  ///
+  /// Retuned so the surfaces actually separate: the old palette placed
+  /// [background], [card] and [surfaceSunken] within 4% luminance of each
+  /// other, which left every filled control invisible on the page and grey on
+  /// a white sheet at the same time. Depth now comes from a real
+  /// [background]/[surface] step, a [divider] heavy enough to read on white,
+  /// and [Elevation] shadows — not from stacking near-identical greys.
   static const WorkPulseColors light = WorkPulseColors(
-    background: Color(0xFFF7F7F9),
+    background: Color(0xFFF1F2F5),
     surface: Color(0xFFFFFFFF),
-    card: Color(0xFFF2F2F5),
+    card: Color(0xFFEDEEF2),
+    field: Color(0xFFFFFFFF),
     surfaceRaised: Color(0xFFFFFFFF),
-    surfaceSunken: Color(0xFFEDEDF0),
-    textPrimary: Color(0xFF1C1C1E),
-    textSecondary: Color(0xFF60606A),
-    textTertiary: Color(0xFF6B6B73),
+    surfaceSunken: Color(0xFFE9EAEF),
+    textPrimary: Color(0xFF16161A),
+    textSecondary: Color(0xFF53535E),
+    textTertiary: Color(0xFF63636D),
     onAccent: Color(0xFFFFFFFF),
-    divider: Color(0xFFE2E2E7),
-    borderStrong: Color(0xFFC9C9D0),
-    hover: Color(0x0A000000),
-    pressed: Color(0x14000000),
-    focusRing: Color(0xFF0067EC),
-    overlay: Color(0x40000000),
-    selected: Color(0x1A0067EC),
-    accent: Color(0xFF0067EC),
-    accentHover: Color(0xFF0052BE),
-    accentSubtle: Color(0x140067EC),
-    accentFill: Color(0xFF0067EC),
-    // Darkened from the dark-mode values so every one of them clears WCAG
-    // AA (4.5:1) as text on background, surface and card. Enforced by
-    // design_system_test.dart.
-    success: Color(0xFF197F32),
-    successSubtle: Color(0x1F30D158),
-    warning: Color(0xFFB25000),
-    warningSubtle: Color(0x1FFF9F0A),
-    danger: Color(0xFFD70015),
-    dangerSubtle: Color(0x1FFF453A),
-    dangerFill: Color(0xFFD70015),
-    info: Color(0xFF0071A4),
-    infoSubtle: Color(0x1F64D2FF),
+    divider: Color(0xFFD8D9E0),
+    borderStrong: Color(0xFFB6B7C1),
+    hover: Color(0x14000000),
+    pressed: Color(0x24000000),
+    focusRing: Color(0xFF005FD1),
+    overlay: Color(0x59000000),
+    selected: Color(0x24005FD1),
+    shadow: Color(0x1F0B0B14),
+    accent: Color(0xFF005FD1),
+    accentHover: Color(0xFF0049A3),
+    accentFill: Color(0xFF005FD1),
+    accentSubtle: Color(0x1C005FD1),
+    success: Color(0xFF0B7333),
+    successFill: Color(0xFF16A34A),
+    successSubtle: Color(0x2916A34A),
+    warning: Color(0xFF9A5300),
+    warningFill: Color(0xFFEA8C00),
+    warningSubtle: Color(0x2BEA8C00),
+    danger: Color(0xFFCE0016),
+    dangerFill: Color(0xFFCE0016),
+    dangerSubtle: Color(0x13CE0016),
+    info: Color(0xFF0A6E93),
+    infoFill: Color(0xFF0EA5C6),
+    infoSubtle: Color(0x220EA5C6),
   );
 
   @override
@@ -209,6 +273,7 @@ class WorkPulseColors extends ThemeExtension<WorkPulseColors> {
     Color? background,
     Color? surface,
     Color? card,
+    Color? field,
     Color? surfaceRaised,
     Color? surfaceSunken,
     Color? textPrimary,
@@ -222,24 +287,29 @@ class WorkPulseColors extends ThemeExtension<WorkPulseColors> {
     Color? focusRing,
     Color? overlay,
     Color? selected,
+    Color? shadow,
     Color? accent,
     Color? accentHover,
-    Color? accentSubtle,
     Color? accentFill,
+    Color? accentSubtle,
     Color? success,
+    Color? successFill,
     Color? successSubtle,
     Color? warning,
+    Color? warningFill,
     Color? warningSubtle,
     Color? danger,
-    Color? dangerSubtle,
     Color? dangerFill,
+    Color? dangerSubtle,
     Color? info,
+    Color? infoFill,
     Color? infoSubtle,
   }) {
     return WorkPulseColors(
       background: background ?? this.background,
       surface: surface ?? this.surface,
       card: card ?? this.card,
+      field: field ?? this.field,
       surfaceRaised: surfaceRaised ?? this.surfaceRaised,
       surfaceSunken: surfaceSunken ?? this.surfaceSunken,
       textPrimary: textPrimary ?? this.textPrimary,
@@ -253,18 +323,22 @@ class WorkPulseColors extends ThemeExtension<WorkPulseColors> {
       focusRing: focusRing ?? this.focusRing,
       overlay: overlay ?? this.overlay,
       selected: selected ?? this.selected,
+      shadow: shadow ?? this.shadow,
       accent: accent ?? this.accent,
       accentHover: accentHover ?? this.accentHover,
-      accentSubtle: accentSubtle ?? this.accentSubtle,
       accentFill: accentFill ?? this.accentFill,
+      accentSubtle: accentSubtle ?? this.accentSubtle,
       success: success ?? this.success,
+      successFill: successFill ?? this.successFill,
       successSubtle: successSubtle ?? this.successSubtle,
       warning: warning ?? this.warning,
+      warningFill: warningFill ?? this.warningFill,
       warningSubtle: warningSubtle ?? this.warningSubtle,
       danger: danger ?? this.danger,
-      dangerSubtle: dangerSubtle ?? this.dangerSubtle,
       dangerFill: dangerFill ?? this.dangerFill,
+      dangerSubtle: dangerSubtle ?? this.dangerSubtle,
       info: info ?? this.info,
+      infoFill: infoFill ?? this.infoFill,
       infoSubtle: infoSubtle ?? this.infoSubtle,
     );
   }
@@ -277,6 +351,7 @@ class WorkPulseColors extends ThemeExtension<WorkPulseColors> {
       background: c(background, other.background),
       surface: c(surface, other.surface),
       card: c(card, other.card),
+      field: c(field, other.field),
       surfaceRaised: c(surfaceRaised, other.surfaceRaised),
       surfaceSunken: c(surfaceSunken, other.surfaceSunken),
       textPrimary: c(textPrimary, other.textPrimary),
@@ -290,18 +365,22 @@ class WorkPulseColors extends ThemeExtension<WorkPulseColors> {
       focusRing: c(focusRing, other.focusRing),
       overlay: c(overlay, other.overlay),
       selected: c(selected, other.selected),
+      shadow: c(shadow, other.shadow),
       accent: c(accent, other.accent),
       accentHover: c(accentHover, other.accentHover),
-      accentSubtle: c(accentSubtle, other.accentSubtle),
       accentFill: c(accentFill, other.accentFill),
+      accentSubtle: c(accentSubtle, other.accentSubtle),
       success: c(success, other.success),
+      successFill: c(successFill, other.successFill),
       successSubtle: c(successSubtle, other.successSubtle),
       warning: c(warning, other.warning),
+      warningFill: c(warningFill, other.warningFill),
       warningSubtle: c(warningSubtle, other.warningSubtle),
       danger: c(danger, other.danger),
-      dangerSubtle: c(dangerSubtle, other.dangerSubtle),
       dangerFill: c(dangerFill, other.dangerFill),
+      dangerSubtle: c(dangerSubtle, other.dangerSubtle),
       info: c(info, other.info),
+      infoFill: c(infoFill, other.infoFill),
       infoSubtle: c(infoSubtle, other.infoSubtle),
     );
   }
