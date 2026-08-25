@@ -64,6 +64,28 @@ class PatternThresholds {
   /// Local hour the working day is assumed to end.
   final int workdayEndHour;
 
+  /// Deep-work share at or above which focus is healthy on its own terms,
+  /// with no previous window to compare against.
+  final double deepWorkHealthyShare;
+
+  /// Movement in a share (deep work, out-of-hours) that counts as a real
+  /// change rather than noise.
+  final double improvementDelta;
+
+  /// Drop in sessions-per-day that counts as switching less.
+  final double switchImprovement;
+
+  /// Share of a window's working days that must carry tracked time before the
+  /// habit itself is worth crediting.
+  final double consistentTrackingShare;
+
+  /// Out-of-hours share at or below which the working day is being respected.
+  final double quietHoursCleanShare;
+
+  /// Share of the peak focus band that may go to short sessions before the
+  /// band counts as being eaten into rather than protected.
+  final double bandIntrusionShare;
+
   /// Cards shown per lane, so the panel stays readable.
   final int maxInsightsPerAction;
 
@@ -83,6 +105,12 @@ class PatternThresholds {
     this.starvedShare = 0.10,
     this.workdayStartHour = 8,
     this.workdayEndHour = 19,
+    this.deepWorkHealthyShare = 0.30,
+    this.improvementDelta = 0.05,
+    this.switchImprovement = 1.0,
+    this.consistentTrackingShare = 0.80,
+    this.quietHoursCleanShare = 0.05,
+    this.bandIntrusionShare = 0.25,
     this.maxInsightsPerAction = 4,
   });
 }
@@ -113,22 +141,15 @@ class WorkPatternService {
     required Map<String, Person> people,
     required Map<String, Duration> idleBySession,
     required DateTime now,
+    List<Session> previousSessions = const [],
+    Map<String, Duration> previousIdleBySession = const {},
   }) {
-    final tracked = <_Tracked>[];
-    for (final session in sessions) {
-      // A running session's duration is still moving. Including it would let
-      // the panel change its mind every second the timer bar ticks.
-      if (session.isActive) continue;
+    final tracked = _track(sessions, idleBySession);
 
-      final gross = session.duration;
-      if (gross <= Duration.zero) continue;
-
-      final idle = idleBySession[session.id] ?? Duration.zero;
-      final active = gross > idle ? gross - idle : Duration.zero;
-      if (active <= Duration.zero) continue;
-
-      tracked.add(_Tracked(session, gross, active));
-    }
+    // The window before this one, of equal length. Optional: with no history
+    // behind it the scan still runs, and only the findings that need no
+    // baseline — a share that is good on its own terms — can fire.
+    final previousTracked = _track(previousSessions, previousIdleBySession);
 
     final totalActive = tracked.fold<Duration>(
       Duration.zero,
@@ -180,6 +201,13 @@ class WorkPatternService {
 
     final rhythm = _rhythm(tracked, totalActive, trackedDays.length);
 
+    final current = _WindowStats.from(tracked, thresholds);
+    final previous = previousTracked.isEmpty
+        ? null
+        : _WindowStats.from(previousTracked, thresholds);
+    final comparable = previous != null &&
+        previous.trackedDayCount >= thresholds.recurrenceDays;
+
     final insights = <WorkPatternInsight>[
       ..._fragmentedDays(byWorkItem, workItems, projects, totalActive),
       ..._switchingLoad(tracked, trackedDays.length, totalActive),
@@ -194,6 +222,12 @@ class WorkPatternService {
       ..._atRiskCommitments(byWorkItem, workItems, projects, totalActive, now),
       ..._concentration(byProject, projects, totalActive),
       ..._peakFocusWindow(tracked, rhythm, totalActive),
+      // What is going right. Same evidence discipline as everything above:
+      // each one names the figure it is built on.
+      ..._deepWorkHeld(rhythm, current, comparable ? previous : null),
+      ..._switchingImproved(current, comparable ? previous : null),
+      ..._commitmentsResumed(byWorkItem, workItems, projects, totalActive, now),
+      ..._consistentTracking(window, trackedDays),
     ];
 
     return WorkPatternReport(
@@ -203,7 +237,33 @@ class WorkPatternService {
       sessionCount: tracked.length,
       rhythm: rhythm,
       insights: _rank(insights),
+      hasComparison: comparable,
     );
+  }
+
+  /// Completed sessions with idle deducted, ready for any detector.
+  static List<_Tracked> _track(
+    List<Session> sessions,
+    Map<String, Duration> idleBySession,
+  ) {
+    final tracked = <_Tracked>[];
+
+    for (final session in sessions) {
+      // A running session's duration is still moving. Including it would let
+      // the panel change its mind every second the timer bar ticks.
+      if (session.isActive) continue;
+
+      final gross = session.duration;
+      if (gross <= Duration.zero) continue;
+
+      final idle = idleBySession[session.id] ?? Duration.zero;
+      final active = gross > idle ? gross - idle : Duration.zero;
+      if (active <= Duration.zero) continue;
+
+      tracked.add(_Tracked(session, gross, active));
+    }
+
+    return tracked;
   }
 
   // ---------------------------------------------------------------------
@@ -380,9 +440,38 @@ class WorkPatternService {
       weekendTime += _activeWhere(t, _isWeekend);
     }
 
+    final share = totalActive.inSeconds == 0
+        ? 0.0
+        : outside.inSeconds / totalActive.inSeconds;
+
+    // Clean enough to be worth saying so — but only once there is enough work
+    // in the window for the silence to mean anything.
+    if (share <= thresholds.quietHoursCleanShare &&
+        totalActive >= thresholds.deepWorkBlock * 4) {
+      return [
+        WorkPatternInsight(
+          id: 'hours-respected',
+          action: InsightAction.sustain,
+          severity: InsightSeverity.informational,
+          subject: PatternSubject.schedule,
+          title: 'Work stayed inside working hours',
+          finding: 'Only ${_compact(outside)} of ${_compact(totalActive)} — '
+              '${_pct(share)} — fell before '
+              '${_hourLabel(thresholds.workdayStartHour)}, after '
+              '${_hourLabel(thresholds.workdayEndHour)}, or at a weekend.',
+          recommendation: 'Evenings staying empty is usually a sign the plan '
+              'is the right size. It is the first thing to go when it is not, '
+              'so watch this number rather than the total.',
+          evidence: [
+            InsightEvidence('Out of hours', _compact(outside)),
+            InsightEvidence('Of active time', _pct(share)),
+          ],
+        ),
+      ];
+    }
+
     if (outside < thresholds.minimumTimeInvolved) return const [];
 
-    final share = outside.inSeconds / totalActive.inSeconds;
     final weekendClause = weekendTime > Duration.zero
         ? ', ${_compact(weekendTime)} of it at weekends'
         : '';
@@ -734,10 +823,42 @@ class WorkPatternService {
 
     final bandLabel = '${_hourLabel(band.first)}–${_hourLabel(band.last + 1)}';
 
-    final competition = shortInBand > Duration.zero
-        ? '${_compact(shortInBand)} of the same band went to sessions under '
-            '${_compact(thresholds.shortSession)}.'
-        : 'Nothing short is competing for it yet.';
+    // One card about the band either way — the lane is what changes. A page
+    // that warned about the band *and* congratulated it in the next column
+    // would be arguing with itself.
+    final bandTotal = deepInBand + shortInBand;
+    final intrusion = bandTotal.inSeconds == 0
+        ? 0.0
+        : shortInBand.inSeconds / bandTotal.inSeconds;
+    final protectedBand = intrusion <= thresholds.bandIntrusionShare;
+
+    final evidence = [
+      InsightEvidence('Deep work in band', _compact(deepInBand)),
+      InsightEvidence('Deep work overall', _compact(rhythm.deepWorkTotal)),
+      if (shortInBand > Duration.zero)
+        InsightEvidence('Short sessions in band', _compact(shortInBand)),
+    ];
+
+    if (protectedBand) {
+      return [
+        WorkPatternInsight(
+          id: 'peak-focus',
+          action: InsightAction.sustain,
+          severity: InsightSeverity.informational,
+          subject: PatternSubject.schedule,
+          title: 'You are keeping $bandLabel clear',
+          finding: '${_compact(deepInBand)} of your longest blocks land in '
+              'those two hours, and only ${_compact(shortInBand)} of the same '
+              'band went to sessions under '
+              '${_compact(thresholds.shortSession)}. The window is doing its '
+              'job.',
+          recommendation: 'Two protected hours is the whole ballgame. Book '
+              'them out standingly, before something reasonable asks for them.',
+          timeInvolved: deepInBand,
+          evidence: evidence,
+        ),
+      ];
+    }
 
     return [
       WorkPatternInsight(
@@ -747,18 +868,237 @@ class WorkPatternService {
         subject: PatternSubject.schedule,
         title: 'Your deep work happens $bandLabel',
         finding: '${_compact(deepInBand)} of your blocks over '
-            '${_compact(thresholds.deepWorkBlock)} fall in those two hours. '
-            '$competition',
+            '${_compact(thresholds.deepWorkBlock)} fall in those two hours, '
+            'but ${_compact(shortInBand)} of the same band — ${_pct(intrusion)} '
+            'of it — went to sessions under '
+            '${_compact(thresholds.shortSession)}.',
         recommendation: 'Book that band out before anything else claims it, '
             'and put the fragmented work somewhere it costs you less.',
+        evidence: evidence,
+      ),
+    ];
+  }
+
+  // ---------------------------------------------------------------------
+  // Detectors — what is going right
+  // ---------------------------------------------------------------------
+
+  /// Focus that is either healthy on its own terms, or better than last time.
+  List<WorkPatternInsight> _deepWorkHeld(
+    FocusRhythm rhythm,
+    _WindowStats current,
+    _WindowStats? previous,
+  ) {
+    if (rhythm.deepWorkTotal < thresholds.minimumTimeInvolved) return const [];
+
+    final delta =
+        previous == null ? 0.0 : current.deepWorkShare - previous.deepWorkShare;
+    final improved = delta >= thresholds.improvementDelta;
+    final healthy = current.deepWorkShare >= thresholds.deepWorkHealthyShare;
+    if (!improved && !healthy) return const [];
+
+    // Improvement is the better story when both are true: it is the thing the
+    // reader did, rather than a level they happen to be at.
+    final title = improved
+        ? 'Deep work is up ${_points(delta)} on the window before'
+        : '${_pct(current.deepWorkShare)} of your time went to real blocks';
+
+    final finding = improved
+        ? '${_compact(rhythm.deepWorkTotal)} in stretches of '
+            '${_compact(thresholds.deepWorkBlock)} or more — '
+            '${_pct(current.deepWorkShare)} of your active time, against '
+            '${_pct(previous!.deepWorkShare)} last window. Your longest single '
+            'stretch was ${_compact(rhythm.longestUnbrokenBlock)}.'
+        : '${_compact(rhythm.deepWorkTotal)} came in stretches of '
+            '${_compact(thresholds.deepWorkBlock)} or more, the longest '
+            '${_compact(rhythm.longestUnbrokenBlock)}. Most calendars do not '
+            'leave that much room by accident.';
+
+    return [
+      WorkPatternInsight(
+        id: 'deep-work-held',
+        action: InsightAction.sustain,
+        severity: InsightSeverity.informational,
+        subject: PatternSubject.schedule,
+        title: title,
+        finding: finding,
+        recommendation: 'Whatever is buying you these blocks — a blocked '
+            'calendar, a late start on mail, saying no to something — is the '
+            'part of the week to defend first.',
+        timeInvolved: rhythm.deepWorkTotal,
         evidence: [
-          InsightEvidence('Deep work in band', _compact(deepInBand)),
-          InsightEvidence('Deep work overall', _compact(rhythm.deepWorkTotal)),
-          if (shortInBand > Duration.zero)
-            InsightEvidence('Short sessions in band', _compact(shortInBand)),
+          InsightEvidence('Deep work', _compact(rhythm.deepWorkTotal)),
+          InsightEvidence('Of active time', _pct(current.deepWorkShare)),
+          if (previous != null)
+            InsightEvidence('Last window', _pct(previous.deepWorkShare)),
+          InsightEvidence(
+              'Longest stretch', _compact(rhythm.longestUnbrokenBlock)),
         ],
       ),
     ];
+  }
+
+  /// Fewer switches than last window — the fragmentation finding, in reverse.
+  List<WorkPatternInsight> _switchingImproved(
+    _WindowStats current,
+    _WindowStats? previous,
+  ) {
+    if (previous == null) return const [];
+
+    final drop = previous.switchesPerDay - current.switchesPerDay;
+    if (drop < thresholds.switchImprovement) return const [];
+    if (current.sessionCount == 0) return const [];
+
+    return [
+      WorkPatternInsight(
+        id: 'switching-improved',
+        action: InsightAction.sustain,
+        severity: InsightSeverity.informational,
+        subject: PatternSubject.schedule,
+        title: 'You are switching ${drop.toStringAsFixed(1)} times a day less',
+        finding: '${current.switchesPerDay.toStringAsFixed(1)} sessions a '
+            'tracked day, down from '
+            '${previous.switchesPerDay.toStringAsFixed(1)}. Fewer starts for '
+            '${_compact(current.active)} of work means longer runs at each '
+            'thing you did start.',
+        recommendation: 'This is the change that makes every other number on '
+            'this page better. Whatever you stopped interrupting yourself for, '
+            'keep not doing it.',
+        evidence: [
+          InsightEvidence(
+              'Sessions a day', current.switchesPerDay.toStringAsFixed(1)),
+          InsightEvidence(
+              'Last window', previous.switchesPerDay.toStringAsFixed(1)),
+          InsightEvidence('Sessions', '${current.sessionCount}'),
+        ],
+      ),
+    ];
+  }
+
+  /// Work that went quiet and then got picked back up.
+  ///
+  /// The success case of [_atRiskCommitments]: the same silence, caught before
+  /// it became a surprise. Detected inside the window from the gap between a
+  /// work item's own sessions, so it needs no baseline.
+  List<WorkPatternInsight> _commitmentsResumed(
+    Map<String, _SubjectStats> byWorkItem,
+    Map<String, WorkItem> workItems,
+    Map<String, Project> projects,
+    Duration totalActive,
+    DateTime now,
+  ) {
+    final results = <WorkPatternInsight>[];
+    final localNow = now.toLocal();
+
+    byWorkItem.forEach((workItemId, stats) {
+      final item = workItems[workItemId];
+      if (item == null || item.isArchived) return;
+      if (stats.sessions.length < 2) return;
+      if (stats.total < thresholds.minimumTimeInvolved) return;
+
+      // Still quiet now is not a comeback — that is the at-risk finding.
+      final last = stats.lastActivity;
+      if (last == null) return;
+      if (_wholeDaysBetween(last, localNow) >=
+          thresholds.quietDaysBeforeAtRisk) {
+        return;
+      }
+
+      final days = stats.days.toList()..sort();
+      var longestGap = 0;
+      DateTime? resumedOn;
+      for (var i = 1; i < days.length; i++) {
+        final gap = _wholeDaysBetween(days[i - 1], days[i]);
+        if (gap > longestGap) {
+          longestGap = gap;
+          resumedOn = days[i];
+        }
+      }
+
+      final resumed = resumedOn;
+      if (longestGap < thresholds.quietDaysBeforeAtRisk || resumed == null) {
+        return;
+      }
+
+      final since = stats.sessions
+          .where((t) => !t.day.isBefore(resumed))
+          .fold<Duration>(Duration.zero, (sum, t) => sum + t.active);
+
+      results.add(WorkPatternInsight(
+        id: 'resumed:$workItemId',
+        action: InsightAction.sustain,
+        severity: InsightSeverity.informational,
+        subject: PatternSubject.workItem,
+        subjectId: workItemId,
+        colorHex: projects[item.projectId]?.colorHex,
+        title: '“${item.name}” came back from $longestGap quiet days',
+        finding: 'It sat untouched for $longestGap days, then picked up again '
+            'on ${_dayLabel(resumed)} — ${_compact(since)} since, and last '
+            'worked on ${_dayLabel(last)}.',
+        recommendation: 'This is the one that usually becomes a surprise. You '
+            'caught it. Whatever prompted the return is worth doing on purpose '
+            'for the rest of them.',
+        timeInvolved: since,
+        evidence: [
+          InsightEvidence('Quiet for', '$longestGap days'),
+          InsightEvidence('Since resuming', _compact(since)),
+          InsightEvidence('Picked up', _dayLabel(resumed)),
+          InsightEvidence('Total invested', _compact(stats.total)),
+        ],
+      ));
+    });
+
+    return results;
+  }
+
+  /// Turning up. The habit the whole page depends on.
+  List<WorkPatternInsight> _consistentTracking(
+    DateRange window,
+    Set<DateTime> trackedDays,
+  ) {
+    final workingDays = _workingDaysIn(window);
+    if (workingDays < 5) return const [];
+
+    final covered = trackedDays.where((d) => !_isWeekend(d)).length;
+    final share = covered / workingDays;
+    if (share < thresholds.consistentTrackingShare) return const [];
+
+    return [
+      WorkPatternInsight(
+        id: 'consistent-tracking',
+        action: InsightAction.sustain,
+        severity: InsightSeverity.informational,
+        subject: PatternSubject.schedule,
+        title: 'You tracked on $covered of $workingDays working days',
+        finding: '${_pct(share)} coverage. Every other finding on this page is '
+            'only as honest as that number.',
+        recommendation: 'Keep it up — the gaps are where the flattering '
+            'conclusions hide.',
+        evidence: [
+          InsightEvidence('Days tracked', '$covered'),
+          InsightEvidence('Working days', '$workingDays'),
+          InsightEvidence('Coverage', _pct(share)),
+        ],
+      ),
+    ];
+  }
+
+  /// Whole weekdays inside a window, as the calendar counts them.
+  static int _workingDaysIn(DateRange window) {
+    var cursor = DateTime(
+      window.start.toLocal().year,
+      window.start.toLocal().month,
+      window.start.toLocal().day,
+    );
+    final localEnd = window.end.toLocal();
+    var count = 0;
+
+    while (!cursor.isAfter(localEnd)) {
+      if (!_isWeekend(cursor)) count++;
+      cursor = DateTime(cursor.year, cursor.month, cursor.day + 1);
+    }
+
+    return count;
   }
 
   // ---------------------------------------------------------------------
@@ -955,6 +1295,12 @@ class WorkPatternService {
 
   static String _pct(double fraction) => '${(fraction * 100).round()}%';
 
+  /// A change in a share, in percentage points rather than percent — "up 8
+  /// points" is a different claim from "up 8 percent", and the second one
+  /// would be wrong here.
+  static String _points(double delta) =>
+      '${(delta.abs() * 100).round()} points';
+
   static String _hourLabel(int hour) {
     final normalised = hour % 24;
     if (normalised == 0) return '12am';
@@ -980,6 +1326,53 @@ class WorkPatternService {
     ];
     return '${local.day} ${months[local.month - 1]}';
   }
+}
+
+/// The handful of figures a window can be compared on.
+///
+/// Deliberately small: comparing two windows is only honest for measures that
+/// are already normalised — a share, or a per-day rate. Raw totals would just
+/// report that one window had more days in it.
+class _WindowStats {
+  final Duration active;
+  final Duration deepWork;
+  final int sessionCount;
+  final int trackedDayCount;
+
+  const _WindowStats({
+    required this.active,
+    required this.deepWork,
+    required this.sessionCount,
+    required this.trackedDayCount,
+  });
+
+  factory _WindowStats.from(
+    List<_Tracked> tracked,
+    PatternThresholds thresholds,
+  ) {
+    var active = Duration.zero;
+    var deepWork = Duration.zero;
+    final days = <DateTime>{};
+
+    for (final t in tracked) {
+      active += t.active;
+      days.add(t.day);
+      if (t.active >= thresholds.deepWorkBlock) deepWork += t.active;
+    }
+
+    return _WindowStats(
+      active: active,
+      deepWork: deepWork,
+      sessionCount: tracked.length,
+      trackedDayCount: days.length,
+    );
+  }
+
+  double get deepWorkShare =>
+      active.inSeconds == 0 ? 0 : deepWork.inSeconds / active.inSeconds;
+
+  double get switchesPerDay =>
+      trackedDayCount == 0 ? 0 : sessionCount / trackedDayCount;
 }
 
 /// A completed session with its idle time already deducted and its local

@@ -344,7 +344,17 @@ class _InsightLanes extends StatelessWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        if (constraints.maxWidth < Breakpoints.medium || lanes.length == 1) {
+        // Four lanes in one row need real width; below that they wrap two-up
+        // and then stack. A column narrower than about 300px turns every
+        // finding into a ladder of two-word lines.
+        final fits = switch (constraints.maxWidth) {
+          >= Breakpoints.wide => 4,
+          >= Breakpoints.medium => 2,
+          _ => 1,
+        };
+        final columns = fits > lanes.length ? lanes.length : fits;
+
+        if (columns == 1) {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -356,12 +366,34 @@ class _InsightLanes extends StatelessWidget {
           );
         }
 
-        return Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        final rows = <List<_Lane>>[
+          for (var i = 0; i < lanes.length; i += columns)
+            lanes.sublist(
+              i,
+              i + columns > lanes.length ? lanes.length : i + columns,
+            ),
+        ];
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            for (var i = 0; i < lanes.length; i++) ...[
-              if (i > 0) const SizedBox(width: Spacing.lg),
-              Expanded(child: lane(lanes[i])),
+            for (var r = 0; r < rows.length; r++) ...[
+              if (r > 0) const SizedBox(height: Spacing.xl),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  for (var i = 0; i < columns; i++) ...[
+                    if (i > 0) const SizedBox(width: Spacing.lg),
+                    // A short final row keeps the column widths of the rows
+                    // above it rather than stretching to fill.
+                    Expanded(
+                      child: i < rows[r].length
+                          ? lane(rows[r][i])
+                          : const SizedBox.shrink(),
+                    ),
+                  ],
+                ],
+              ),
             ],
           ],
         );
@@ -461,7 +493,11 @@ class _InsightCardState extends State<_InsightCard> {
                     includeSeconds: false,
                   ),
                   icon: Icons.schedule,
-                  tone: _severityTone(insight.severity),
+                  // Severity grades a problem. On a Continue card the hours
+                  // are the good news, so they are not graded at all.
+                  tone: insight.action == InsightAction.sustain
+                      ? BadgeTone.success
+                      : _severityTone(insight.severity),
                 ),
               ],
             ],
@@ -622,12 +658,14 @@ class _PanelSkeleton extends StatelessWidget {
 
 Color _toneFor(InsightAction action, WorkPulseColors colors) =>
     switch (action) {
+      InsightAction.sustain => colors.success,
       InsightAction.reclaim => colors.warning,
       InsightAction.delegate => colors.info,
       InsightAction.plan => colors.accent,
     };
 
 IconData _iconFor(InsightAction action) => switch (action) {
+      InsightAction.sustain => Icons.verified_outlined,
       InsightAction.reclaim => Icons.restore,
       InsightAction.delegate => Icons.group_add_outlined,
       InsightAction.plan => Icons.event_available_outlined,
