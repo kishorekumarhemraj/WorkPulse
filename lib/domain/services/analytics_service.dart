@@ -3,6 +3,7 @@ import 'package:workpulse/domain/models/analytics_model.dart';
 import 'package:workpulse/domain/models/attribute_model.dart';
 import 'package:workpulse/domain/models/idle_period_model.dart';
 import 'package:workpulse/domain/models/session_model.dart';
+import 'package:workpulse/domain/models/work_pattern_model.dart';
 import 'package:workpulse/domain/repositories/attribute_repository.dart';
 import 'package:workpulse/domain/repositories/category_repository.dart';
 import 'package:workpulse/domain/repositories/idle_period_repository.dart';
@@ -11,6 +12,12 @@ import 'package:workpulse/domain/repositories/project_repository.dart';
 import 'package:workpulse/domain/repositories/session_repository.dart';
 import 'package:workpulse/domain/repositories/tag_repository.dart';
 import 'package:workpulse/domain/repositories/work_item_repository.dart';
+import 'package:workpulse/domain/services/work_pattern_service.dart';
+
+/// The bucket that carries time the user has not classified yet.
+///
+/// A real category id is a UUID, so this cannot collide with one.
+const String uncategorizedId = '__uncategorised__';
 
 class AnalyticsService {
   final SessionRepository _sessionRepository;
@@ -21,6 +28,7 @@ class AnalyticsService {
   final PersonRepository _personRepository;
   final AttributeRepository _attributeRepository;
   final IdlePeriodRepository _idlePeriodRepository;
+  final WorkPatternService _workPatternService;
 
   AnalyticsService({
     required SessionRepository sessionRepository,
@@ -31,7 +39,9 @@ class AnalyticsService {
     required PersonRepository personRepository,
     required AttributeRepository attributeRepository,
     required IdlePeriodRepository idlePeriodRepository,
-  })  : _sessionRepository = sessionRepository,
+    WorkPatternService workPatternService = const WorkPatternService(),
+  })  : _workPatternService = workPatternService,
+        _sessionRepository = sessionRepository,
         _workItemRepository = workItemRepository,
         _projectRepository = projectRepository,
         _categoryRepository = categoryRepository,
@@ -70,12 +80,12 @@ class AnalyticsService {
     final tagMap = {for (final t in allTags) t.id: t};
     final personMap = {for (final p in allPeople) p.id: p};
 
-    // 3. Collect idle periods for sessions
-    final sessionIdleMap = <String, List<IdlePeriod>>{};
-    for (final s in allSessions) {
-      final idles = await _idlePeriodRepository.getIdlePeriodsForSession(s.id);
-      sessionIdleMap[s.id] = idles;
-    }
+    // 3. Collect idle periods for sessions, in one batched read rather than
+    // one query per session.
+    final sessionIdleMap =
+        await _idlePeriodRepository.getIdlePeriodsForSessions(
+      [for (final s in allSessions) s.id],
+    );
 
     // Work item attribute values, fetched once per *work item* rather than
     // once per (definition x session). A month of tracking against a handful
@@ -167,26 +177,32 @@ class AnalyticsService {
     final categoryDurations = <String, Duration>{};
     final categorySessionCounts = <String, int>{};
 
+    // A session's own category, never the work item's. Time the user has not
+    // classified is bucketed rather than dropped: silently omitting it would
+    // leave the category card summing to less than the hours above it, which
+    // reads as a bug rather than as work waiting to be classified.
     for (final s in allSessions) {
-      final workItem = workItemMap[s.workItemId];
-      final catId = s.categoryId ?? workItem?.categoryId;
-      if (catId != null) {
-        final dur = sessionActiveDurations[s.id] ?? Duration.zero;
-        categoryDurations[catId] =
-            (categoryDurations[catId] ?? Duration.zero) + dur;
-        categorySessionCounts[catId] = (categorySessionCounts[catId] ?? 0) + 1;
-      }
+      final catId = s.categoryId ?? uncategorizedId;
+      final dur = sessionActiveDurations[s.id] ?? Duration.zero;
+      categoryDurations[catId] =
+          (categoryDurations[catId] ?? Duration.zero) + dur;
+      categorySessionCounts[catId] = (categorySessionCounts[catId] ?? 0) + 1;
     }
 
     final categoryBreakdown = categoryDurations.entries.map((entry) {
+      final isUncategorized = entry.key == uncategorizedId;
       final cat = categoryMap[entry.key];
       final dur = entry.value;
       final pct = (dur.inSeconds / baseActiveSeconds) * 100.0;
       return BreakdownItem(
         id: entry.key,
-        name: cat?.name ?? 'Unknown Category',
-        iconName: cat?.iconName ?? 'folder',
-        colorHex: '#30D158',
+        name: isUncategorized
+            ? 'Uncategorized'
+            : (cat?.name ?? 'Unknown Category'),
+        // No icon: a grey dot among the category glyphs is what marks
+        // this row as the absence of a category rather than one of them.
+        iconName: isUncategorized ? null : (cat?.iconName ?? 'folder'),
+        colorHex: isUncategorized ? '#8E8E93' : '#30D158',
         duration: dur,
         percentage: pct.clamp(0.0, 100.0),
         sessionCount: categorySessionCounts[entry.key] ?? 0,
@@ -227,8 +243,7 @@ class AnalyticsService {
     final tagSessionCounts = <String, int>{};
 
     for (final s in allSessions) {
-      final item = workItemMap[s.workItemId];
-      final tagIds = s.tagIds.isNotEmpty ? s.tagIds : (item?.tagIds ?? []);
+      final tagIds = s.tagIds;
       if (tagIds.isNotEmpty) {
         final dur = sessionActiveDurations[s.id] ?? Duration.zero;
         for (final tagId in tagIds) {
@@ -259,10 +274,7 @@ class AnalyticsService {
 
     for (final s in allSessions) {
       final dur = sessionActiveDurations[s.id] ?? Duration.zero;
-      final peopleIds = s.peopleIds.isNotEmpty
-          ? s.peopleIds
-          : (workItemMap[s.workItemId]?.peopleIds ?? []);
-      for (final personId in peopleIds) {
+      for (final personId in s.peopleIds) {
         personDurations[personId] =
             (personDurations[personId] ?? Duration.zero) + dur;
         personSessionCounts[personId] =
@@ -505,6 +517,71 @@ class AnalyticsService {
       attributeBreakdowns: attributeBreakdowns,
       dailyActivity: dailyActivity,
       hourlyActivity: hourlyActivity,
+    );
+  }
+
+  /// The pattern scan behind the dashboard's insights panel.
+  ///
+  /// Reads its own trailing window rather than the dashboard's selected range.
+  /// A pattern is, by definition, a thing that happened more than once, and
+  /// "Today" cannot show that a task keeps coming back or that a commitment
+  /// has gone quiet.
+  ///
+  /// [referenceTime] exists so tests can pin "now" — the at-risk detector
+  /// measures silence against it.
+  Future<WorkPatternReport> getWorkPatternReport({
+    required String workspaceId,
+    PatternWindow window = PatternWindow.oneMonth,
+    DateTime? referenceTime,
+  }) async {
+    final now = (referenceTime ?? DateTime.now()).toLocal();
+    final localEnd = DateTime(now.year, now.month, now.day, 23, 59, 59, 999);
+    final localStart =
+        DateTime(now.year, now.month, now.day - (window.days - 1));
+    final range = DateRange(start: localStart.toUtc(), end: localEnd.toUtc());
+
+    final sessions =
+        await _sessionRepository.getByDateRange(range.start, range.end);
+    if (sessions.isEmpty) {
+      return WorkPatternReport(window: range, lookback: window);
+    }
+
+    // includeArchived throughout: archiving a task, project or category must
+    // not erase the history it already accumulated, only stop it being
+    // recommended as live work.
+    final workItems = await _workItemRepository.getAll(
+        workspaceId: workspaceId, includeArchived: true);
+    final projects = await _projectRepository.getAll(
+        workspaceId: workspaceId, includeArchived: true);
+    final categories = await _categoryRepository.getAll(
+        workspaceId: workspaceId, includeArchived: true);
+    final people = await _personRepository.getAll(workspaceId: workspaceId);
+
+    final idlePeriods = await _idlePeriodRepository.getIdlePeriodsForSessions(
+      [for (final s in sessions) s.id],
+    );
+
+    final idleBySession = <String, Duration>{};
+    idlePeriods.forEach((sessionId, periods) {
+      var idle = Duration.zero;
+      for (final period in periods) {
+        if (period.resolution == IdleResolution.markIdle) {
+          idle += period.duration;
+        }
+      }
+      idleBySession[sessionId] = idle;
+    });
+
+    return _workPatternService.analyse(
+      window: range,
+      lookback: window,
+      sessions: sessions,
+      workItems: {for (final w in workItems) w.id: w},
+      projects: {for (final p in projects) p.id: p},
+      categories: {for (final c in categories) c.id: c},
+      people: {for (final p in people) p.id: p},
+      idleBySession: idleBySession,
+      now: now,
     );
   }
 

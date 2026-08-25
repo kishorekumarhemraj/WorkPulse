@@ -14,6 +14,7 @@ import 'package:workpulse/features/dashboard/providers/dashboard_provider.dart';
 import 'package:workpulse/features/dashboard/widgets/breakdown_card.dart';
 import 'package:workpulse/features/dashboard/widgets/daily_activity_chart.dart';
 import 'package:workpulse/features/dashboard/widgets/metric_card.dart';
+import 'package:workpulse/features/dashboard/widgets/work_pattern_panel.dart';
 import 'package:workpulse/features/reports/pdf_report_export.dart';
 
 class DashboardView extends ConsumerWidget {
@@ -203,7 +204,12 @@ class DashboardView extends ConsumerWidget {
                 ),
               ),
               IconButton(
-                onPressed: () => ref.invalidate(dashboardDataProvider),
+                onPressed: () {
+                  ref.invalidate(dashboardDataProvider);
+                  // The insights below read the same sessions; refreshing one
+                  // and not the other leaves the page disagreeing with itself.
+                  ref.invalidate(workPatternReportProvider);
+                },
                 icon: const Icon(Icons.refresh, size: IconSizes.md),
                 tooltip: 'Refresh analytics',
                 style: IconButton.styleFrom(
@@ -279,6 +285,13 @@ class DashboardView extends ConsumerWidget {
                   const SizedBox(height: Spacing.xxl),
                 ],
                 _BreakdownColumns(data: data),
+                const SizedBox(height: Spacing.xxl),
+                Divider(color: colors.divider, height: 1),
+                const SizedBox(height: Spacing.xxl),
+                // Below the breakdowns on purpose: the panel interprets the
+                // same hours the cards above have just accounted for, and it
+                // reads its own multi-week window rather than the selector's.
+                const WorkPatternPanel(),
               ],
             ),
           );

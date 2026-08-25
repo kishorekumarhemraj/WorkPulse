@@ -3,11 +3,15 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:workpulse/core/database/database_service.dart';
 import 'package:workpulse/data/migrations/migration_v1.dart';
 import 'package:workpulse/data/repositories/sqlite_category_repository.dart';
+import 'package:workpulse/data/repositories/sqlite_person_repository.dart';
 import 'package:workpulse/data/repositories/sqlite_project_repository.dart';
 import 'package:workpulse/data/repositories/sqlite_session_repository.dart';
+import 'package:workpulse/data/repositories/sqlite_tag_repository.dart';
 import 'package:workpulse/data/repositories/sqlite_work_item_repository.dart';
 import 'package:workpulse/domain/models/category_model.dart';
+import 'package:workpulse/domain/models/person_model.dart';
 import 'package:workpulse/domain/models/project_model.dart';
+import 'package:workpulse/domain/models/tag_model.dart';
 import 'package:workpulse/domain/models/work_item_model.dart';
 import 'package:workpulse/domain/services/timer_service.dart';
 
@@ -216,6 +220,104 @@ void main() {
           TimerService.formatDuration(const Duration(hours: 2, minutes: 30),
               compact: true),
           '2h 30m');
+    });
+
+    /// A work item's classification is a starting point, not a stamp applied
+    /// to everything ever tracked against it.
+    group('a work item seeds only its first session', () {
+      late WorkItem classified;
+
+      setUp(() async {
+        final now = DateTime.now().toUtc();
+
+        final tag = await SqliteTagRepository(dbService).create(Tag(
+          id: 'tag-seed',
+          workspaceId: wsId,
+          name: 'Urgent',
+          colorHex: '#FF453A',
+          createdAt: now,
+        ));
+        final person = await SqlitePersonRepository(dbService).create(Person(
+          id: 'person-seed',
+          workspaceId: wsId,
+          name: 'Alice',
+          createdAt: now,
+        ));
+
+        classified = await workItemRepo.create(WorkItem(
+          id: 'task-classified',
+          workspaceId: wsId,
+          projectId: defaultProject.id,
+          categoryId: defaultCategory.id,
+          name: 'Fully classified task',
+          tagIds: [tag.id],
+          peopleIds: [person.id],
+          createdAt: now,
+          updatedAt: now,
+        ));
+      });
+
+      test('the first session inherits category, tags and people', () async {
+        final first = await timerService.startSession(classified.id);
+
+        expect(first.categoryId, defaultCategory.id);
+        expect(first.tagIds, ['tag-seed']);
+        expect(first.peopleIds, ['person-seed']);
+      });
+
+      test('every session after the first starts unclassified', () async {
+        await timerService.startSession(classified.id);
+        final second = await timerService.startSession(classified.id);
+
+        expect(second.categoryId, isNull);
+        expect(second.tagIds, isEmpty);
+        expect(second.peopleIds, isEmpty);
+
+        // The first session is untouched by the second starting.
+        final all = await sessionRepo.getByWorkItemId(classified.id);
+        expect(all, hasLength(2));
+        final firstAgain = all.firstWhere((s) => s.id != second.id);
+        expect(firstAgain.categoryId, defaultCategory.id);
+      });
+
+      test('an explicit choice always wins, on any session', () async {
+        // Quick Capture lets the user classify as they start; that is never
+        // second-guessed, whether it is the first session or the tenth.
+        final first = await timerService.startSession(
+          classified.id,
+          categoryId: 'cat-1',
+          tagIds: const ['tag-seed'],
+        );
+        expect(first.categoryId, 'cat-1');
+
+        final second = await timerService.startSession(
+          classified.id,
+          categoryId: 'cat-1',
+          peopleIds: const ['person-seed'],
+        );
+        expect(second.categoryId, 'cat-1');
+        expect(second.peopleIds, ['person-seed']);
+        // Not asked for, so not invented.
+        expect(second.tagIds, isEmpty);
+      });
+
+      test('each work item is judged on its own session history', () async {
+        await timerService.startSession(classified.id);
+
+        // taskA has never been tracked, so its own first session still seeds.
+        final firstOnA = await timerService.startSession(taskA.id);
+        expect(firstOnA.categoryId, defaultCategory.id);
+      });
+
+      test('countByWorkItemId counts only that work item', () async {
+        await timerService.startSession(taskA.id);
+        await timerService.startSession(taskB.id);
+        await timerService.startSession(taskA.id);
+
+        expect(await sessionRepo.countByWorkItemId(taskA.id), 2);
+        expect(await sessionRepo.countByWorkItemId(taskB.id), 1);
+        expect(await sessionRepo.countByWorkItemId('never-tracked'), 0);
+      });
     });
   });
 }
