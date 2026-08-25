@@ -139,8 +139,7 @@ class _SearchableMultiSelectState extends State<SearchableMultiSelect> {
   /// create a duplicate of something they simply cannot see.
   bool get _canCreate {
     if (widget.onCreateNew == null || _query.isEmpty) return false;
-    return !widget.allItems
-        .any((i) => i.label.trim().toLowerCase() == _query);
+    return !widget.allItems.any((i) => i.label.trim().toLowerCase() == _query);
   }
 
   int get _rowCount => _matches().length + (_canCreate ? 1 : 0);
@@ -348,9 +347,7 @@ class _SearchableMultiSelectState extends State<SearchableMultiSelect> {
           ? Padding(
               padding: const EdgeInsets.all(Spacing.md),
               child: Text(
-                widget.allItems.isEmpty
-                    ? widget.emptyStateText
-                    : 'No matches',
+                widget.allItems.isEmpty ? widget.emptyStateText : 'No matches',
                 style: theme.textTheme.bodySmall
                     ?.copyWith(color: colors.textSecondary),
               ),

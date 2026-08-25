@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:workpulse/core/keyboard/menu_keyboard.dart';
 import 'package:workpulse/core/theme/app_colors.dart';
 import 'package:workpulse/core/theme/design_tokens.dart';
 import 'package:workpulse/core/widgets/hoverable.dart';
@@ -87,6 +88,7 @@ class _AppSelectState<T> extends State<AppSelect<T>> {
   static const double _menuMaxHeight = 320;
 
   final FocusNode _focusNode = FocusNode();
+  final MenuKeyboard _menuKeyboard = MenuKeyboard();
   bool _isFocused = false;
 
   @override
@@ -99,7 +101,18 @@ class _AppSelectState<T> extends State<AppSelect<T>> {
   void dispose() {
     _focusNode.removeListener(_handleFocusChange);
     _focusNode.dispose();
+    _menuKeyboard.dispose();
     super.dispose();
+  }
+
+  /// The row the menu should open on: the current selection, or the first row
+  /// when nothing is chosen yet. Opening on row one regardless meant a select
+  /// sitting on its eighth option started arrowing from the top.
+  int get _selectedIndex {
+    for (var i = 0; i < widget.options.length; i++) {
+      if (widget.options[i].value == widget.value) return i;
+    }
+    return 0;
   }
 
   void _handleFocusChange() {
@@ -170,7 +183,15 @@ class _AppSelectState<T> extends State<AppSelect<T>> {
   }
 
   Widget _buildAnchor(BuildContext context, FormFieldState<T> field) {
+    _menuKeyboard.setLabels([for (final o in widget.options) o.label]);
+
     return MenuAnchor(
+      onOpen: () => _menuKeyboard.focusAfterOpen(_selectedIndex),
+      // Escape and choosing both close the menu; either way the trigger is
+      // where focus belongs, not wherever the overlay left it.
+      onClose: () {
+        if (mounted && widget.enabled) _focusNode.requestFocus();
+      },
       // Clears the trigger's border rather than overlapping it.
       alignmentOffset: const Offset(0, Spacing.xs),
       style: const MenuStyle(
@@ -182,9 +203,10 @@ class _AppSelectState<T> extends State<AppSelect<T>> {
         ),
       ),
       menuChildren: [
-        for (final option in widget.options)
+        for (final (index, option) in widget.options.indexed)
           _SelectMenuItem<T>(
             option: option,
+            focusNode: _menuKeyboard.nodeAt(index),
             isSelected: option.value == widget.value,
             height: _rowHeight,
             minWidth: _menuMinWidth,
@@ -359,6 +381,7 @@ class _OptionGlyph extends StatelessWidget {
 
 class _SelectMenuItem<T> extends StatelessWidget {
   final SelectOption<T> option;
+  final FocusNode focusNode;
   final bool isSelected;
   final double height;
   final double minWidth;
@@ -367,6 +390,7 @@ class _SelectMenuItem<T> extends StatelessWidget {
 
   const _SelectMenuItem({
     required this.option,
+    required this.focusNode,
     required this.isSelected,
     required this.height,
     required this.minWidth,
@@ -381,6 +405,7 @@ class _SelectMenuItem<T> extends StatelessWidget {
 
     return MenuItemButton(
       onPressed: onSelected,
+      focusNode: focusNode,
       style: ButtonStyle(
         // Without shrinkWrap the button pads itself out to Material's 48pt
         // minimum tap target, which is the bulk being removed here.
