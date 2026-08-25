@@ -43,6 +43,16 @@ class SqliteSessionRepository implements SessionRepository {
   }
 
   @override
+  Future<int> countByWorkItemId(String workItemId) async {
+    final rows = await _db.rawQuery(
+      'SELECT COUNT(*) AS count FROM ${Tables.sessions} WHERE work_item_id = ?',
+      [workItemId],
+    );
+    if (rows.isEmpty) return 0;
+    return (rows.first['count'] as int?) ?? 0;
+  }
+
+  @override
   Future<List<Session>> getByDateRange(DateTime start, DateTime end) async {
     final results = await _db.query(
       Tables.sessions,

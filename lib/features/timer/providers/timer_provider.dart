@@ -105,11 +105,13 @@ class TimerNotifier extends AsyncNotifier<TimerState> {
     final timerService = ref.read(timerServiceProvider);
     final now = DateTime.now().toUtc();
 
+    // No work-item fallback here: seeding the first session is
+    // TimerService's job, so it happens once rather than at every caller.
     final newSession = await timerService.startSession(
       workItem.id,
-      categoryId: categoryId ?? workItem.categoryId,
-      tagIds: tagIds.isNotEmpty ? tagIds : workItem.tagIds,
-      peopleIds: peopleIds.isNotEmpty ? peopleIds : workItem.peopleIds,
+      categoryId: categoryId,
+      tagIds: tagIds,
+      peopleIds: peopleIds,
       notes: notes,
       startTime: now,
     );
@@ -294,9 +296,9 @@ class TimerNotifier extends AsyncNotifier<TimerState> {
       final timerService = ref.read(timerServiceProvider);
       final newSession = await timerService.startSession(
         targetWorkItem.id,
-        categoryId: targetCategoryId ?? targetWorkItem.categoryId,
-        tagIds: targetTagIds ?? targetWorkItem.tagIds,
-        peopleIds: targetPeopleIds ?? targetWorkItem.peopleIds,
+        categoryId: targetCategoryId,
+        tagIds: targetTagIds ?? const [],
+        peopleIds: targetPeopleIds ?? const [],
         startTime: now,
       );
 

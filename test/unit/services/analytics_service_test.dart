@@ -188,6 +188,11 @@ void main() {
       );
 
       // 5. Seed Sessions
+      //
+      // Each session carries its own category, tags and people, which is what
+      // the app now writes: a work item's classification seeds only its first
+      // session, and nothing is borrowed from it at read time.
+      //
       // Session 1 on Task 1: 60 minutes (with 15 min idle) -> 45 min net active
       final sess1Start = now.subtract(const Duration(hours: 3));
       final sess1End = sess1Start.add(const Duration(minutes: 60));
@@ -195,8 +200,10 @@ void main() {
         Session(
           id: 'sess-1',
           workItemId: task1.id,
+          categoryId: catDev.id,
           startTime: sess1Start,
           endTime: sess1End,
+          tagIds: [tagUrgent.id],
           peopleIds: [personAlice.id],
           createdAt: sess1Start,
         ),
@@ -220,6 +227,7 @@ void main() {
         Session(
           id: 'sess-2',
           workItemId: task2.id,
+          categoryId: catDesign.id,
           startTime: sess2Start,
           endTime: sess2End,
           createdAt: sess2Start,
@@ -454,10 +462,11 @@ void main() {
       );
       await workItemRepo.create(task);
 
-      // Session 1: uses task category (Design)
+      // Session 1: Design, as the first session on the task was seeded
       await sessionRepo.create(Session(
         id: 'sess-cat-1',
         workItemId: task.id,
+        categoryId: designCat.id,
         startTime: now.subtract(const Duration(minutes: 60)),
         endTime: now.subtract(const Duration(minutes: 30)),
         createdAt: now,
@@ -482,6 +491,83 @@ void main() {
 
       expect(designItem.duration, const Duration(minutes: 30));
       expect(devItem.duration, const Duration(minutes: 30));
+    });
+
+    test(
+        'an unclassified session reads as Uncategorized, never as its work '
+        "item's category", () async {
+      final now = DateTime.now().toUtc();
+      final range = DateRange(
+        start: now.subtract(const Duration(hours: 2)),
+        end: now.add(const Duration(hours: 2)),
+      );
+
+      final project = await projectRepo.create(Project(
+        id: 'proj-unclassified',
+        workspaceId: wsId,
+        name: 'Unclassified Project',
+        colorHex: '#0A84FF',
+        createdAt: now,
+        updatedAt: now,
+      ));
+      final category = await categoryRepo.create(Category(
+        id: 'cat-unclassified',
+        workspaceId: wsId,
+        name: 'Engineering',
+        createdAt: now,
+        updatedAt: now,
+      ));
+      final tag = await tagRepo.create(Tag(
+        id: 'tag-unclassified',
+        workspaceId: wsId,
+        name: 'Urgent',
+        colorHex: '#FF453A',
+        createdAt: now,
+      ));
+      final person = await personRepo.create(Person(
+        id: 'person-unclassified',
+        workspaceId: wsId,
+        name: 'Alice',
+        createdAt: now,
+      ));
+
+      // The work item is fully classified...
+      await workItemRepo.create(WorkItem(
+        id: 'task-unclassified',
+        workspaceId: wsId,
+        projectId: project.id,
+        categoryId: category.id,
+        name: 'Fully classified task',
+        tagIds: [tag.id],
+        peopleIds: [person.id],
+        createdAt: now,
+        updatedAt: now,
+      ));
+
+      // ...but this session is not, as every session after the first starts.
+      await sessionRepo.create(Session(
+        id: 'sess-unclassified',
+        workItemId: 'task-unclassified',
+        startTime: now.subtract(const Duration(minutes: 30)),
+        endTime: now,
+        createdAt: now,
+      ));
+
+      final data = await analyticsService.getDashboardData(
+          workspaceId: wsId, range: range);
+
+      // The time is still counted, and still attributed to its project.
+      expect(data.summary.totalActiveDuration, const Duration(minutes: 30));
+      expect(data.projectBreakdown.single.id, project.id);
+
+      // But it is not quietly filed under the work item's classification.
+      expect(data.categoryBreakdown, hasLength(1));
+      expect(data.categoryBreakdown.single.id, uncategorizedId);
+      expect(data.categoryBreakdown.single.name, 'Uncategorized');
+      expect(
+          data.categoryBreakdown.single.duration, const Duration(minutes: 30));
+      expect(data.tagBreakdown, isEmpty);
+      expect(data.personBreakdown, isEmpty);
     });
   });
 }

@@ -45,8 +45,10 @@ class ActiveTimerBar extends ConsumerWidget {
         projects.where((p) => p.id == activeItem.projectId).firstOrNull;
     final projectColor = ColorUtils.parseHex(project?.colorHex);
 
-    final activeCategoryId =
-        timerState.activeSession?.categoryId ?? activeItem.categoryId;
+    // The running session's own category, not the work item's. An
+    // unclassified session shows the placeholder, and the dropdown beside it
+    // is how the user classifies this session — which is the point.
+    final activeCategoryId = timerState.activeSession?.categoryId;
     final activeCategory =
         categories.where((c) => c.id == activeCategoryId).firstOrNull;
 

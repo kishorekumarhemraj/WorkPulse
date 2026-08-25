@@ -127,18 +127,18 @@ class ExportService {
       if (workItem == null) continue;
 
       final project = projectMap[workItem.projectId];
-      final category = categoryMap[s.categoryId ?? workItem.categoryId];
+      // Each session's own classification. An export is a record of what was
+      // tracked, so it must not quietly attribute a session to the work item's
+      // category when the user left that session unclassified.
+      final category = categoryMap[s.categoryId];
 
       // Tags
-      final tagIds = s.tagIds.isNotEmpty ? s.tagIds : workItem.tagIds;
       final itemTags =
-          tagIds.map((tid) => tagMap[tid]).whereType<Tag>().toList();
+          s.tagIds.map((tid) => tagMap[tid]).whereType<Tag>().toList();
 
       // People
-      final peopleIds =
-          s.peopleIds.isNotEmpty ? s.peopleIds : workItem.peopleIds;
       final itemPeople =
-          peopleIds.map((pid) => personMap[pid]).whereType<Person>().toList();
+          s.peopleIds.map((pid) => personMap[pid]).whereType<Person>().toList();
 
       // Idle Periods
       final idles = await _idlePeriodRepository.getIdlePeriodsForSession(s.id);
