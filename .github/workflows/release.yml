@@ -21,7 +21,7 @@ jobs:
 
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
@@ -45,7 +45,7 @@ jobs:
           shasum -a 256 WorkPulse-macOS.zip > WorkPulse-macOS.zip.sha256
 
       - name: Upload macOS Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: workpulse-macos
           path: |
@@ -58,7 +58,7 @@ jobs:
 
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
@@ -84,7 +84,7 @@ jobs:
           (Get-FileHash WorkPulse-Windows.zip -Algorithm SHA256).Hash | Out-File -Encoding ascii WorkPulse-Windows.zip.sha256
 
       - name: Upload Windows Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: workpulse-windows
           path: |
@@ -98,12 +98,12 @@ jobs:
 
     steps:
       - name: Download Artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           path: artifacts
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           name: WorkPulse ${{ github.ref_name || inputs.version_tag }}
           draft: false
