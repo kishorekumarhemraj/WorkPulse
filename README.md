@@ -78,6 +78,14 @@ WorkPulse is built from the ground up as a **personal productivity companion**, 
 
 ---
 
+### 🎯 Per-Session Classification
+- **The Work Item Seeds, It Does Not Stamp**: A work item's category, tags and people are applied to its **first** session only. Every session after that starts unclassified, because the second hour on a task is rarely the same kind of work as the first — the same ticket can be reading, then a call about it, then the change itself.
+- **Classify Where You Are**: Set the running session's category straight from the timer bar's dropdown, or edit any past session from the Time Log.
+- **What You See Is What You Logged**: Dashboards and exports show exactly what each session says. Time you haven't classified appears as **Uncategorized** rather than being quietly filed under the work item's category — so the gap is visible and fixable instead of invisible and wrong.
+- **Interruptions Don't Reclassify You**: When an idle gap splits a session in two, the resumed half carries the interrupted half's classification forward. One coffee break never splits an afternoon into a classified half and an unclassified one.
+
+---
+
 ### 📝 Time Notes & Daily Standup Journaling
 - **Session & Task Notes**: Log detailed markdown notes directly against sessions or parent work items.
 - **1-Click Standup Summaries**: Instantly compile and copy daily/weekly accomplishments into clean, bulleted Markdown ready to paste into Slack, Teams, or daily standup meetings.
@@ -89,6 +97,25 @@ WorkPulse is built from the ground up as a **personal productivity companion**, 
 - **Visual Time Breakdowns**: Group time by **Project**, **Category**, **Tag**, **Person**, or any **Custom Attribute**.
 - **Interactive Daily Activity Charts**: Inspect hours logged across each day with visual time distributions.
 - **Deep Work & Context-Switching Metrics**: Track deep work ratios and context-switch frequency to protect focus time.
+
+---
+
+### 🧭 Patterns & Signals — Where Your Time Actually Goes
+Breakdowns tell you *where* the hours went. The **Patterns & Signals** panel at
+the foot of the Dashboard tells you *what keeps happening*, and sorts every
+finding into the one thing you can do about it. It scans its own rolling window
+— **14, 30 or 90 days** — because a pattern needs history to be a pattern.
+
+| Lane | What it surfaces |
+| :--- | :--- |
+| ♻️ **Reclaim** | Time leaving the day without you choosing to send it — a task picked up nine times before lunch, a switching rate that has become the tax rather than the work, hours captured and then written off as idle. |
+| 🤝 **Delegate** | Work that hands over cleanly: tasks that recur on most days and *never once* needed an unbroken block, whole categories that are always shallow, and short standing sessions with the same person that read as a check-in rather than a decision. |
+| 🗓️ **Plan** | What next week needs room for — commitments that went quiet after real investment, work that only fitted after 7pm or at weekends, one project starving the others, and the two-hour band where your deep blocks actually land. |
+
+- **Every claim shows its working**: each card carries the figures it was derived from (visits, median session, longest stretch, days recurred) behind a **Show numbers** toggle. Nothing asks to be trusted.
+- **A rhythm strip for context**: deep-work share, longest unbroken stretch, sessions per tracked day, and your genuine focus window — an hour of fragmentation means something different if you never get an unbroken hour.
+- **Copy as Markdown**: one click puts the findings on the clipboard, ready to paste into a 1:1 agenda or a handover note. Delegating something means telling somebody about it.
+- **Rule-based and 100% local**: no model, no network, no telemetry. Every sentence is derived from a figure you could add up by hand from your own Time Log.
 
 ---
 
@@ -147,7 +174,7 @@ lib/
 └── features/     # Feature vertical slices (UI, Riverpod state notifiers, dialogs, widgets)
     ├── quick_capture/ # Floating & standalone Quick Capture HUD
     ├── timer/         # Active timer bar, switch dialog, ticker providers
-    ├── dashboard/     # Metric cards, activity charts, breakdown widgets
+    ├── dashboard/     # Metric cards, activity charts, breakdowns, pattern insights
     ├── notes/         # Time notes view, standup generator, search
     ├── tasks/         # Work items, inspector panel, filter toolbar
     ├── projects/      # Project management & color coding
@@ -169,7 +196,7 @@ lib/
 4. **Single Active Session**: Exactly one work session active at any given moment.
 5. **Timestamp-Based Session Truth**: Elapsed durations calculated exclusively via `endTime - startTime`.
 6. **No Silent Data Loss**: Deletions use soft-archiving (`archived_at`) to preserve historical accuracy.
-7. **Session Independence**: Stopping a timer closes the session, but leaves the work item open to resume later.
+7. **Session Independence**: Stopping a timer closes the session, but leaves the work item open to resume later. A work item's category, tags and people seed only its *first* session; every session after that is classified per session, and nothing is borrowed from the work item at read time.
 8. **Offline-First & Zero Telemetry**: 100% local persistence via SQLite (`sqflite_common_ffi`).
 9. **Isolated Platform Bridges**: Native macOS integrations (Hotkeys, Tray, Window management) live behind abstract interfaces.
 10. **Strict Database Versioning**: All schema modifications are version-controlled with `PRAGMA user_version` migrations.

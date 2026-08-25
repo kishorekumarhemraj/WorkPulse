@@ -23,6 +23,17 @@ class TimerService {
 
   /// Starts tracking time on a work item.
   /// Enforces the Single-Active-Session invariant: stops any currently running session.
+  ///
+  /// A work item's own category, tags and people seed its **first** session
+  /// only. Every session after that starts unclassified and belongs to the
+  /// user: the second hour on a task is often not the same kind of work as the
+  /// first — the same work item can be reading, then a call about it, then the
+  /// change itself — and copying the work item's classification forward made
+  /// every one of those look identical in reporting.
+  ///
+  /// Anything the caller passes explicitly always wins, whichever session this
+  /// is; Quick Capture lets the user classify at the moment they start, and
+  /// that choice is never second-guessed here.
   Future<Session> startSession(
     String workItemId, {
     String? categoryId,
@@ -41,14 +52,35 @@ class TimerService {
       await _sessionRepository.update(stopped);
     }
 
+    var effectiveCategoryId = categoryId;
+    var effectiveTagIds = tagIds;
+    var effectivePeopleIds = peopleIds;
+
+    // Counted rather than fetched: this is the Quick Capture hot path.
+    final isFirstSession = await _sessionRepository.countByWorkItemId(
+          workItemId,
+        ) ==
+        0;
+
+    if (isFirstSession) {
+      final workItem = await _workItemRepository.getById(workItemId);
+      if (workItem != null) {
+        effectiveCategoryId ??= workItem.categoryId;
+        if (effectiveTagIds.isEmpty) effectiveTagIds = workItem.tagIds;
+        if (effectivePeopleIds.isEmpty) {
+          effectivePeopleIds = workItem.peopleIds;
+        }
+      }
+    }
+
     // Create new session
     final newSession = Session(
       id: _uuid.v4(),
       workItemId: workItemId,
-      categoryId: categoryId,
+      categoryId: effectiveCategoryId,
       startTime: effectiveStartTime,
-      tagIds: tagIds,
-      peopleIds: peopleIds,
+      tagIds: effectiveTagIds,
+      peopleIds: effectivePeopleIds,
       notes: notes,
       createdAt: now,
     );
