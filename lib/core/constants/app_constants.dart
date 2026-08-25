@@ -1,7 +1,7 @@
 /// Application-wide constants for WorkPulse
 abstract class AppConstants {
   static const String appName = 'WorkPulse';
-  static const String appVersion = '3.0.0';
+  static const String appVersion = '3.4.0';
   static const String dbName = 'workpulse.db';
   static const int dbVersion = 4;
 
