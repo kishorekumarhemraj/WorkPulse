@@ -5,6 +5,7 @@ import 'package:workpulse/core/theme/design_tokens.dart';
 import 'package:workpulse/domain/models/workspace_model.dart';
 import 'package:workpulse/features/attributes/providers/attribute_definitions_provider.dart';
 import 'package:workpulse/features/categories/providers/categories_provider.dart';
+import 'package:workpulse/features/dashboard/providers/dashboard_provider.dart';
 import 'package:workpulse/features/people/providers/people_provider.dart';
 import 'package:workpulse/features/projects/providers/projects_provider.dart';
 import 'package:workpulse/features/reports/providers/reports_provider.dart';
@@ -17,6 +18,8 @@ import 'package:workpulse/features/tasks/providers/work_items_provider.dart';
 
 /// Live item counts shown beside each nav destination.
 final _navCountProviders = <ShellNavTab, Provider<int?>>{
+  ShellNavTab.patterns:
+      Provider((r) => r.watch(workPatternReportProvider).value?.insights.length),
   ShellNavTab.history:
       Provider((r) => r.watch(sessionHistoryProvider).value?.length),
   ShellNavTab.tasks: Provider((r) => r.watch(workItemsProvider).value?.length),
