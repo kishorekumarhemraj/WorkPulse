@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:workpulse/core/theme/app_colors.dart';
 import 'package:workpulse/core/theme/app_theme.dart';
+import 'package:workpulse/core/widgets/app_card.dart';
 import 'package:workpulse/domain/models/attribute_model.dart';
 import 'package:workpulse/domain/models/date_range.dart';
 import 'package:workpulse/domain/models/timesheet_model.dart';
@@ -78,8 +80,14 @@ void main() {
     );
   }
 
-  Future<void> pumpSheet(WidgetTester tester, TimesheetData data) async {
-    tester.view.physicalSize = const Size(1400, 900);
+  Future<void> pumpSheet(
+    WidgetTester tester,
+    TimesheetData data, {
+    ThemeData? theme,
+  }) async {
+    // Tall enough that the summary and both tables are laid out, so the
+    // finders below are not really testing ListView's laziness.
+    tester.view.physicalSize = const Size(1400, 1200);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(() {
       tester.view.resetPhysicalSize();
@@ -92,7 +100,7 @@ void main() {
           timesheetDataProvider.overrideWith((ref) => Future.value(data)),
         ],
         child: MaterialApp(
-          theme: AppTheme.darkTheme,
+          theme: theme ?? AppTheme.darkTheme,
           home: const TimesheetView(),
         ),
       ),
@@ -157,6 +165,34 @@ void main() {
         find.textContaining('Sessions with no category'),
         findsOneWidget,
       );
+    });
+
+    testWidgets('every panel sits on the standard card surface, not a tint',
+        (tester) async {
+      await pumpSheet(tester, sheet(), theme: AppTheme.lightTheme);
+
+      // The summary and both tables. Going through AppCard is what keeps
+      // this screen on the same surface as the rest of the app.
+      expect(find.byType(AppCard), findsNWidgets(3));
+
+      // Pinned in the light theme on purpose: `colors.card` is a near-white
+      // tint in dark mode, so a card painted with the wrong token looked
+      // correct there and turned the whole screen grey here.
+      final surfaces = tester.widgetList<AnimatedContainer>(
+        find.descendant(
+          of: find.byType(AppCard),
+          matching: find.byType(AnimatedContainer),
+        ),
+      );
+      expect(surfaces, isNotEmpty);
+      for (final surface in surfaces) {
+        final decoration = surface.decoration as BoxDecoration?;
+        expect(
+          decoration?.color,
+          WorkPulseColors.light.surface,
+          reason: 'A Time Sheet card is not on the card surface',
+        );
+      }
     });
 
     testWidgets('an empty range explains itself instead of showing zeroes',

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workpulse/core/theme/app_colors.dart';
 import 'package:workpulse/core/theme/design_tokens.dart';
+import 'package:workpulse/core/widgets/app_card.dart';
 import 'package:workpulse/core/widgets/empty_state.dart';
 import 'package:workpulse/core/widgets/error_state.dart';
 import 'package:workpulse/core/widgets/page_header.dart';
@@ -148,13 +149,8 @@ class _NoAttributesHint extends StatelessWidget {
     final colors = context.colors;
     final theme = Theme.of(context);
 
-    return Container(
+    return AppCard(
       padding: const EdgeInsets.all(Spacing.lg),
-      decoration: BoxDecoration(
-        color: colors.card,
-        borderRadius: Radii.xlAll,
-        border: Border.all(color: colors.divider),
-      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:workpulse/core/theme/app_colors.dart';
 import 'package:workpulse/core/theme/app_typography.dart';
 import 'package:workpulse/core/theme/design_tokens.dart';
+import 'package:workpulse/core/widgets/app_card.dart';
 import 'package:workpulse/domain/models/timesheet_model.dart';
 import 'package:workpulse/domain/services/timer_service.dart';
 import 'package:workpulse/features/timesheet/widgets/timesheet_table.dart';
@@ -55,13 +56,11 @@ class TimesheetSummary extends StatelessWidget {
         ),
     ];
 
-    return Container(
+    // AppCard, not a hand-rolled Container: it is the app's standard content
+    // surface, and painting one by hand is how this screen ended up grey —
+    // `colors.card` is the inset badge tint, not the card background.
+    return AppCard(
       padding: const EdgeInsets.all(Spacing.lg),
-      decoration: BoxDecoration(
-        color: colors.card,
-        borderRadius: Radii.xlAll,
-        border: Border.all(color: colors.divider),
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

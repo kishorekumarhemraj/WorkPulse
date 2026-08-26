@@ -5,6 +5,7 @@ import 'package:workpulse/core/theme/app_colors.dart';
 import 'package:workpulse/core/theme/app_typography.dart';
 import 'package:workpulse/core/theme/color_utils.dart';
 import 'package:workpulse/core/theme/design_tokens.dart';
+import 'package:workpulse/core/widgets/app_card.dart';
 import 'package:workpulse/domain/models/timesheet_model.dart';
 
 /// Decimal hours, the unit every timesheet system actually accepts.
@@ -92,12 +93,12 @@ class TimesheetTable extends StatelessWidget {
         _shareColumnWidth +
         Spacing.lg * 2;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: colors.card,
-        borderRadius: Radii.xlAll,
-        border: Border.all(color: colors.divider),
-      ),
+    // AppCard, not a hand-rolled Container: `colors.card` is the inset badge
+    // tint, not the card background, and painting it by hand is what made
+    // this screen read as three shades of grey stacked on each other. Zero
+    // padding so the rows can run edge to edge; each row pads itself.
+    return AppCard(
+      padding: EdgeInsets.zero,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -150,12 +151,16 @@ class TimesheetTable extends StatelessWidget {
                         showUnclassified: showUnclassified,
                         showCode: showCode,
                       ),
-                      for (final row in rows)
+                      for (var i = 0; i < rows.length; i++)
                         _DataRow(
-                          row: row,
+                          row: rows[i],
                           basis: basis,
                           showUnclassified: showUnclassified,
                           showCode: showCode,
+                          // The totals row draws the rule above itself, so
+                          // the last data row drops its own or the two stack
+                          // into a double line.
+                          isLast: i == rows.length - 1,
                         ),
                       _TotalRow(
                         totals: totals,
@@ -200,7 +205,6 @@ class _HeaderRow extends StatelessWidget {
         vertical: Spacing.sm,
       ),
       decoration: BoxDecoration(
-        color: colors.surfaceSunken,
         border: Border(
           top: BorderSide(color: colors.divider),
           bottom: BorderSide(color: colors.divider),
@@ -261,12 +265,14 @@ class _DataRow extends StatelessWidget {
   final TimesheetHoursBasis basis;
   final bool showUnclassified;
   final bool showCode;
+  final bool isLast;
 
   const _DataRow({
     required this.row,
     required this.basis,
     required this.showUnclassified,
     required this.showCode,
+    required this.isLast,
   });
 
   @override
@@ -284,7 +290,9 @@ class _DataRow extends StatelessWidget {
         vertical: Spacing.md - 2,
       ),
       decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: colors.divider)),
+        border: isLast
+            ? null
+            : Border(bottom: BorderSide(color: colors.divider)),
       ),
       child: Row(
         children: [
@@ -358,12 +366,11 @@ class _TotalRow extends StatelessWidget {
         horizontal: Spacing.lg,
         vertical: Spacing.md,
       ),
+      // Weight and a rule carry the emphasis instead of a fill. A tinted
+      // strip across the foot of a white card is most of what "completely
+      // grey" was.
       decoration: BoxDecoration(
-        color: colors.surfaceSunken,
-        borderRadius: const BorderRadius.only(
-          bottomLeft: Radius.circular(Radii.xl),
-          bottomRight: Radius.circular(Radii.xl),
-        ),
+        border: Border(top: BorderSide(color: colors.borderStrong)),
       ),
       child: Row(
         children: [
@@ -458,7 +465,9 @@ class _CodeCell extends StatelessWidget {
             vertical: Spacing.xxs,
           ),
           decoration: BoxDecoration(
-            color: colors.surfaceSunken,
+            // `card` is the badge/chip tint the palette documents — the one
+            // place on this screen a tinted fill genuinely belongs.
+            color: colors.card,
             borderRadius: Radii.smAll,
             border: Border.all(color: colors.divider),
           ),
