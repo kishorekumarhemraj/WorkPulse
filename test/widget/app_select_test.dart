@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:workpulse/core/theme/app_theme.dart';
 import 'package:workpulse/core/widgets/app_select.dart';
@@ -241,4 +242,39 @@ void main() {
       expect(find.text('Please select a project'), findsNothing);
     });
   });
+
+  group('AppSelect keyboard navigation', () {
+    testWidgets('can focus with tab, open with arrowDown, navigate with arrowDown/arrowUp and select with enter', (tester) async {
+      String? chosen;
+      await tester.pumpWidget(
+        host(AppSelect<String>(
+          value: 'a',
+          options: options,
+          placeholder: 'Select project',
+          onChanged: (v) => chosen = v,
+        )),
+      );
+
+      // Press Tab to focus the AppSelect trigger
+      await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+      await tester.pumpAndSettle();
+
+      // Trigger should be focused. Now press arrow down to open the menu.
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Design System'), findsOneWidget);
+
+      // Now press arrow down to move to 'Design System'
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pumpAndSettle();
+
+      // Press Enter to select
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pumpAndSettle();
+
+      expect(chosen, 'b');
+    });
+  });
 }
+
