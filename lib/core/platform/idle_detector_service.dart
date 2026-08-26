@@ -46,7 +46,6 @@ abstract class IdleDetectorService {
 
   void startMonitoring({required bool isTracking});
   void stopMonitoring();
-  void simulateIdle({required Duration duration, DateTime? startTime});
   void dispose();
 }
 
@@ -178,17 +177,6 @@ class DesktopIdleDetectorService implements IdleDetectorService {
   void stopMonitoring() {
     _isTracking = false;
     _stopPolling();
-  }
-
-  @override
-  void simulateIdle({required Duration duration, DateTime? startTime}) {
-    final end = _clock();
-    final start = startTime ?? end.subtract(duration);
-    _controller.add(IdleDetectionEvent(
-      idleDuration: duration,
-      idleStartTime: start,
-      idleEndTime: end,
-    ));
   }
 
   @override

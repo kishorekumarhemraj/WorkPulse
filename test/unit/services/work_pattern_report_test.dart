@@ -214,6 +214,53 @@ void main() {
       expect(countingIdleRepo.perSessionReads, isZero);
     });
 
+    test('compares against the window before, in one extra batched read',
+        () async {
+      // Previous 30 days: short, scattered work.
+      for (final day in [8, 9, 10, 11, 14, 15]) {
+        for (var i = 0; i < 5; i++) {
+          await track(
+            'routine',
+            DateTime(2026, 7, day, 9, i * 30),
+            const Duration(minutes: 15),
+          );
+        }
+      }
+
+      // This window: fewer, longer sittings.
+      for (final day in [17, 18, 19, 20, 21]) {
+        await track(
+          'routine',
+          DateTime(2026, 8, day, 9),
+          const Duration(minutes: 90),
+        );
+      }
+      countingIdleRepo.reset();
+
+      final report = await analyticsService.getWorkPatternReport(
+        workspaceId: wsId,
+        window: PatternWindow.oneMonth,
+        referenceTime: referenceTime,
+      );
+
+      // Only this window's sessions are counted...
+      expect(report.sessionCount, 5);
+      expect(report.totalActive, const Duration(hours: 7, minutes: 30));
+
+      // ...but the one before it is what makes direction sayable.
+      expect(report.hasComparison, isTrue);
+
+      final improved = report
+          .forAction(InsightAction.sustain)
+          .where((i) => i.id == 'switching-improved');
+      expect(improved, hasLength(1));
+      expect(improved.single.title, contains('less'));
+
+      // Both windows' idle periods still come back in a single query.
+      expect(countingIdleRepo.batchedReads, 1);
+      expect(countingIdleRepo.perSessionReads, isZero);
+    });
+
     test('an empty window costs nothing and says nothing', () async {
       final report = await analyticsService.getWorkPatternReport(
         workspaceId: wsId,
