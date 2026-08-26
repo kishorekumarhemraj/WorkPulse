@@ -121,6 +121,26 @@ finding into the one thing you can do about it. It scans its own rolling window
 
 ---
 
+### 🧾 Time Sheet — CAPEX vs OPEX, Ready to Submit
+
+Every **Category** carries a **Type** — **CAPEX** (capitalizable) or **OPEX**
+(operational) — set with a radio button when you create or edit it. Because a
+session records its own category, that one field is enough to answer the
+question a timesheet actually asks: *how much of this period was building
+something, and how much was running it?*
+
+- **A split you can submit**: totals in **decimal hours** (`7.25`, not `7h 15m`), because that is what a timesheet form accepts. The clock reading sits beside it for the hours you recognise as your day.
+- **Per project, per attribute**: one CAPEX/OPEX table for projects, then one for every **reportable custom attribute** — cost centre, workstream, epic, whatever your organisation tracks. The tables are two views of the same hours, so they always sum to the same total.
+- **Every project carries its Timesheet Code**: the code your organisation books that project against — `PRJ-1042`, `CC-7781`, `WBS.4.2` — sits in its own column beside the hours, so a row can be transcribed without looking anything up. Codes are required on new projects and must be unique; a project that predates the field reports **No code** rather than a blank cell.
+- **Net or Gross, one toggle**: **Net** excludes time you marked idle — what you actually worked. **Gross** is wall-clock desk time, which is usually what reconciles against a contractual week. Both are computed up front, so switching is instant.
+- **Nothing is guessed**: a session you left uncategorised is reported in its own **Unclassified** column rather than quietly booked as operational, and the CAPEX ratio is taken over classified time so unfiled hours cannot dilute it.
+- **Same window as the Time Log**: pick Today, This Week, This Month or a date once, and both screens follow.
+
+Categories created before this existed are backfilled to **OPEX** — the
+conservative reading — and are yours to reclassify on the Categories screen.
+
+---
+
 ### 📤 Multi-Format Export & Data Portability
 - **Executive Visual PDF Reports**: Generate colorful, high-fidelity PDF work summaries with KPI metric cards, project distributions, and session tables—instantly previewed in macOS Preview.app.
 - **RFC 4180 CSV Spreadsheets**: Export tabular session data with custom attribute columns, gross/net durations, and timestamps ready for Excel, Google Sheets, or Numbers.
@@ -172,7 +192,7 @@ WorkPulse is built following clean, domain-driven architecture and strict modula
 lib/
 ├── core/         # Theme, design tokens, database setup, utilities, platform bridges
 ├── domain/       # Pure Dart business models, state machines, repository contracts (Zero Flutter/SQLite dependencies)
-├── data/         # SQLite tables, versioned migrations (v1-v4), repository implementations
+├── data/         # SQLite tables, versioned migrations (v1-v6), repository implementations
 └── features/     # Feature vertical slices (UI, Riverpod state notifiers, dialogs, widgets)
     ├── quick_capture/ # Floating & standalone Quick Capture HUD
     ├── timer/         # Active timer bar, switch dialog, ticker providers
@@ -222,7 +242,7 @@ writes the macOS form; substitute <kbd>Ctrl</kbd> for <kbd>⌘ Cmd</kbd> and
 | <kbd>⌘ Cmd</kbd> + <kbd>.</kbd> | In-App | Stop currently running timer |
 | <kbd>⌘ Cmd</kbd> + <kbd>E</kbd> | In-App | Open Export Data dialog (PDF / CSV / JSON) |
 | <kbd>⌘ Cmd</kbd> + <kbd>↩ Enter</kbd> | Dialogs | Submit the open form from anywhere inside it |
-| <kbd>⌘ Cmd</kbd> + <kbd>1</kbd>…<kbd>9</kbd> | In-App | Jump to Dashboard, Time Log, Work Items, Time Notes, Projects, Categories, Tags, People, Attributes |
+| <kbd>⌘ Cmd</kbd> + <kbd>1</kbd>…<kbd>9</kbd> | In-App | Jump to Dashboard, Patterns & Signals, Work Items, Time Log, Time Notes, Time Sheet, Projects, Categories, Tags |
 | <kbd>Enter</kbd> | In-App / HUD | Confirm and start/switch tracking session; confirm a destructive dialog |
 | <kbd>Esc</kbd> | In-App / HUD | Dismiss Quick Capture, close the active modal, or clear a search field |
 | <kbd>Tab</kbd> / <kbd>Shift + Tab</kbd> | In-App / HUD | Cycle through form inputs, list rows and suggestions |
@@ -271,7 +291,7 @@ WorkPulse includes a comprehensive automated test suite spanning unit tests, dat
 # Run the complete test suite
 flutter test
 
-# Run database schema & migration tests (v1 -> v4)
+# Run database schema & migration tests (v1 -> v6)
 flutter test test/data/database_migration_test.dart
 
 # Run SQLite repository CRUD tests

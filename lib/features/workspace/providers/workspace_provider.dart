@@ -58,37 +58,55 @@ class CurrentWorkspaceNotifier extends AsyncNotifier<Workspace> {
         name: 'General',
         description: 'Default project for general work items',
         colorHex: '#0A84FF',
+        // A placeholder the user is expected to replace with their own
+        // organisation's code; the Projects screen shows it, and the form
+        // requires one, so it cannot silently stay wrong.
+        timesheetCode: 'GENERAL',
         createdAt: now,
         updatedAt: now,
       ),
     );
 
-    // Seed standard starter categories
+    // Seed standard starter categories.
+    //
+    // The CAPEX/OPEX type on each is a starting point, not a ruling: what
+    // counts as capitalizable is the user's finance team's call, and every
+    // one of these is editable on the Categories screen. Building something
+    // new is seeded capitalizable; keeping the lights on is not.
     final defaultCategories = [
       (
         'Engineering',
         'Development, coding, bug fixes, and code reviews',
-        'code'
+        'code',
+        CategoryType.capex,
       ),
       (
         'Architecture',
         'System design, technical specs, and RFCs',
-        'architecture'
+        'architecture',
+        CategoryType.capex,
       ),
-      ('Meetings', 'Syncs, 1:1s, sprint ceremonies, and discussions', 'chat'),
+      (
+        'Meetings',
+        'Syncs, 1:1s, sprint ceremonies, and discussions',
+        'chat',
+        CategoryType.opex,
+      ),
       (
         'Deep Work',
         'Focused, uninterrupted problem solving and research',
-        'brain'
+        'brain',
+        CategoryType.capex,
       ),
       (
         'Operations',
         'Deployments, monitoring, admin tasks, and triage',
-        'gear'
+        'gear',
+        CategoryType.opex,
       ),
     ];
 
-    for (final (name, desc, icon) in defaultCategories) {
+    for (final (name, desc, icon, type) in defaultCategories) {
       await categoryRepo.create(
         Category(
           id: _uuid.v4(),
@@ -96,6 +114,7 @@ class CurrentWorkspaceNotifier extends AsyncNotifier<Workspace> {
           name: name,
           description: desc,
           iconName: icon,
+          type: type,
           createdAt: now,
           updatedAt: now,
         ),
