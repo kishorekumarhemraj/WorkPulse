@@ -1,16 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import 'package:workpulse/core/keyboard/shortcut_labels.dart';
 import 'package:workpulse/core/theme/app_colors.dart';
 import 'package:workpulse/core/theme/app_typography.dart';
 import 'package:workpulse/core/theme/design_tokens.dart';
 import 'package:workpulse/core/widgets/confirm_dialog.dart';
-import 'package:workpulse/core/widgets/date_stepper.dart';
 import 'package:workpulse/core/widgets/empty_state.dart';
 import 'package:workpulse/core/widgets/error_state.dart';
 import 'package:workpulse/core/widgets/page_header.dart';
-import 'package:workpulse/core/widgets/segmented_control.dart';
 import 'package:workpulse/core/widgets/skeleton_loader.dart';
 import 'package:workpulse/domain/models/analytics_model.dart';
 import 'package:workpulse/domain/services/export_service.dart';
@@ -18,80 +15,11 @@ import 'package:workpulse/domain/services/timer_service.dart';
 import 'package:workpulse/features/reports/providers/reports_provider.dart';
 import 'package:workpulse/features/reports/views/export_dialog.dart';
 import 'package:workpulse/features/reports/views/session_edit_dialog.dart';
+import 'package:workpulse/features/reports/widgets/reports_range_controls.dart';
 import 'package:workpulse/features/reports/widgets/session_day_group.dart';
 
 class SessionHistoryView extends ConsumerWidget {
   const SessionHistoryView({super.key});
-
-  String _formatSubtitle(
-    DashboardTimeRange range,
-    DateTime selectedDate,
-  ) {
-    final now = DateTime.now();
-    switch (range) {
-      case DashboardTimeRange.today:
-        return 'Today · ${DateFormat.yMMMMEEEEd().format(selectedDate)}';
-      case DashboardTimeRange.thisWeek:
-        final dateRange = DashboardTimeRange.thisWeek.toDateRange();
-        final startStr = DateFormat.yMMMd().format(dateRange.start.toLocal());
-        final endStr = DateFormat.yMMMd().format(dateRange.end.toLocal());
-        return 'This Week · $startStr – $endStr';
-      case DashboardTimeRange.thisMonth:
-        final dateRange = DashboardTimeRange.thisMonth.toDateRange();
-        final monthStr = DateFormat.yMMMM().format(dateRange.start.toLocal());
-        return 'This Month · $monthStr';
-      case DashboardTimeRange.custom:
-        final isToday = selectedDate.year == now.year &&
-            selectedDate.month == now.month &&
-            selectedDate.day == now.day;
-        if (isToday) {
-          return 'Today · ${DateFormat.yMMMMEEEEd().format(selectedDate)}';
-        }
-        return DateFormat.yMMMMEEEEd().format(selectedDate);
-    }
-  }
-
-  String _formatDateButtonLabel(DateTime date) {
-    final now = DateTime.now();
-    final isToday =
-        date.year == now.year && date.month == now.month && date.day == now.day;
-    final yesterday = DateTime(now.year, now.month, now.day - 1);
-    final isYesterday = date.year == yesterday.year &&
-        date.month == yesterday.month &&
-        date.day == yesterday.day;
-    final tomorrow = DateTime(now.year, now.month, now.day + 1);
-    final isTomorrow = date.year == tomorrow.year &&
-        date.month == tomorrow.month &&
-        date.day == tomorrow.day;
-
-    final formatted = DateFormat.yMMMd().format(date);
-    if (isToday) return 'Today, $formatted';
-    if (isYesterday) return 'Yesterday, $formatted';
-    if (isTomorrow) return 'Tomorrow, $formatted';
-    return '${DateFormat.E().format(date)}, $formatted';
-  }
-
-  Future<void> _pickDate(BuildContext context, WidgetRef ref) async {
-    final currentDate = ref.read(reportsDateProvider);
-    final now = DateTime.now();
-
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: currentDate,
-      firstDate: DateTime(now.year - 5),
-      lastDate: DateTime(now.year + 2),
-    );
-
-    if (picked != null) {
-      ref.read(reportsDateProvider.notifier).setDate(picked);
-      final isToday = picked.year == now.year &&
-          picked.month == now.month &&
-          picked.day == now.day;
-      ref.read(reportsTimeRangeProvider.notifier).setRange(
-            isToday ? DashboardTimeRange.today : DashboardTimeRange.custom,
-          );
-    }
-  }
 
   Future<void> _confirmDelete(
     BuildContext context,
@@ -118,63 +46,14 @@ class SessionHistoryView extends ConsumerWidget {
     final selectedDate = ref.watch(reportsDateProvider);
     final sessionsAsync = ref.watch(sessionHistoryProvider);
 
-    final now = DateTime.now();
-
     return Scaffold(
       backgroundColor: colors.background,
       body: PageScaffold(
         title: 'Time Log',
-        subtitle: _formatSubtitle(selectedRange, selectedDate),
+        subtitle: formatReportsRangeSubtitle(selectedRange, selectedDate),
         actions: [
-          // Time Range Segmented Control (Today, This Week, This Month, Date)
-          AppSegmentedControl<DashboardTimeRange>(
-            selected: selectedRange,
-            onChanged: (range) {
-              ref.read(reportsTimeRangeProvider.notifier).setRange(range);
-              if (range == DashboardTimeRange.today) {
-                ref.read(reportsDateProvider.notifier).goToToday();
-              } else if (range == DashboardTimeRange.custom) {
-                _pickDate(context, ref);
-              }
-            },
-            options: const [
-              SegmentOption(value: DashboardTimeRange.today, label: 'Today'),
-              SegmentOption(
-                  value: DashboardTimeRange.thisWeek, label: 'This Week'),
-              SegmentOption(
-                  value: DashboardTimeRange.thisMonth, label: 'This Month'),
-              SegmentOption(value: DashboardTimeRange.custom, label: 'Date'),
-            ],
-          ),
-          // Date Navigation Bar (Previous day, Current Date, Next day)
-          AppDateStepper(
-            label: _formatDateButtonLabel(selectedDate),
-            onPrevious: () {
-              ref.read(reportsDateProvider.notifier).previousDay();
-              final newDate = ref.read(reportsDateProvider);
-              final isNewToday = newDate.year == now.year &&
-                  newDate.month == now.month &&
-                  newDate.day == now.day;
-              ref.read(reportsTimeRangeProvider.notifier).setRange(
-                    isNewToday
-                        ? DashboardTimeRange.today
-                        : DashboardTimeRange.custom,
-                  );
-            },
-            onNext: () {
-              ref.read(reportsDateProvider.notifier).nextDay();
-              final newDate = ref.read(reportsDateProvider);
-              final isNewToday = newDate.year == now.year &&
-                  newDate.month == now.month &&
-                  newDate.day == now.day;
-              ref.read(reportsTimeRangeProvider.notifier).setRange(
-                    isNewToday
-                        ? DashboardTimeRange.today
-                        : DashboardTimeRange.custom,
-                  );
-            },
-            onPickDate: () => _pickDate(context, ref),
-          ),
+          const ReportsRangePicker(),
+          const ReportsDateStepper(),
           Tooltip(
             message: 'Export data   ${ShortcutLabels.primary('E')}',
             child: ElevatedButton.icon(

@@ -4,6 +4,7 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:uuid/uuid.dart';
 import 'package:workpulse/core/database/database_service.dart';
 import 'package:workpulse/data/providers/repository_providers.dart';
+import 'package:workpulse/domain/models/category_model.dart';
 import 'package:workpulse/domain/models/workspace_model.dart';
 import 'package:workpulse/features/categories/providers/categories_provider.dart';
 import 'package:workpulse/features/people/providers/people_provider.dart';
@@ -108,6 +109,38 @@ void main() {
       await notifier.deleteCategory(c2.id);
       categories = await container.read(categoriesProvider.future);
       expect(categories, isEmpty);
+    });
+
+    test('a category round-trips its CAPEX/OPEX type through SQLite',
+        () async {
+      final notifier = container.read(categoriesProvider.notifier);
+
+      final capex = await notifier.createCategory(
+        name: 'Feature Work',
+        type: CategoryType.capex,
+      );
+      expect(capex.type, CategoryType.capex);
+      expect(capex.isCapex, isTrue);
+
+      // Unstated means operational, matching what the v5 migration backfills
+      // onto categories that predate the field.
+      final defaulted = await notifier.createCategory(name: 'Support');
+      expect(defaulted.type, CategoryType.opex);
+
+      final reloaded = await container.read(categoriesProvider.future);
+      expect(
+        reloaded.firstWhere((c) => c.id == capex.id).type,
+        CategoryType.capex,
+      );
+
+      final flipped = await notifier
+          .updateCategory(capex.copyWith(type: CategoryType.opex));
+      expect(flipped.type, CategoryType.opex);
+      final afterUpdate = await container.read(categoriesProvider.future);
+      expect(
+        afterUpdate.firstWhere((c) => c.id == capex.id).type,
+        CategoryType.opex,
+      );
     });
 
     test('TagsNotifier CRUD operations', () async {

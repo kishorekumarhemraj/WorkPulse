@@ -2,12 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// The sections reachable from the sidebar.
+///
+/// Declaration order is sidebar order — [tabsInGroup] and [shortcutDigit]
+/// both read it — so the Track group runs in the order a day does: see where
+/// you stand, read what that says about you, pick the work, log it, write it
+/// up, then report it.
 enum ShellNavTab {
   dashboard,
   patterns,
-  history,
   tasks,
+  history,
   notes,
+  timesheet,
   projects,
   categories,
   tags,
@@ -42,6 +48,7 @@ extension ShellNavTabInfo on ShellNavTab {
         ShellNavTab.patterns => 'Patterns & Signals',
         ShellNavTab.history => 'Time Log',
         ShellNavTab.notes => 'Time Notes',
+        ShellNavTab.timesheet => 'Time Sheet',
         ShellNavTab.tasks => 'Work Items',
         ShellNavTab.projects => 'Projects',
         ShellNavTab.categories => 'Categories',
@@ -55,6 +62,7 @@ extension ShellNavTabInfo on ShellNavTab {
         ShellNavTab.patterns => Icons.insights_outlined,
         ShellNavTab.history => Icons.history,
         ShellNavTab.notes => Icons.edit_note_outlined,
+        ShellNavTab.timesheet => Icons.table_chart_outlined,
         ShellNavTab.tasks => Icons.check_circle_outline,
         ShellNavTab.projects => Icons.folder_outlined,
         ShellNavTab.categories => Icons.category_outlined,
@@ -68,6 +76,7 @@ extension ShellNavTabInfo on ShellNavTab {
         ShellNavTab.patterns ||
         ShellNavTab.history ||
         ShellNavTab.notes ||
+        ShellNavTab.timesheet ||
         ShellNavTab.tasks =>
           ShellNavGroup.track,
         ShellNavTab.projects ||
@@ -93,7 +102,7 @@ extension ShellNavTabInfo on ShellNavTab {
             'focus',
             'rhythm',
           ],
-        ShellNavTab.history => ['sessions', 'log', 'history', 'timesheet'],
+        ShellNavTab.history => ['sessions', 'log', 'history', 'entries'],
         ShellNavTab.notes => [
             'notes',
             'standup',
@@ -101,6 +110,16 @@ extension ShellNavTabInfo on ShellNavTab {
             'summary',
             'journal',
             'log'
+          ],
+        ShellNavTab.timesheet => [
+            'timesheet',
+            'time sheet',
+            'capex',
+            'opex',
+            'capitalizable',
+            'operational',
+            'billing',
+            'hours',
           ],
         ShellNavTab.tasks => ['tasks', 'items', 'issues', 'work'],
         ShellNavTab.projects => ['clients', 'projects'],

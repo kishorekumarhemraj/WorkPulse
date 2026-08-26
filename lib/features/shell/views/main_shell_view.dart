@@ -32,6 +32,7 @@ import 'package:workpulse/features/tags/views/tags_view.dart';
 import 'package:workpulse/features/tasks/views/task_form_dialog.dart';
 import 'package:workpulse/features/tasks/views/tasks_view.dart';
 import 'package:workpulse/features/timer/providers/timer_provider.dart';
+import 'package:workpulse/features/timesheet/views/timesheet_view.dart';
 import 'package:workpulse/features/timer/views/active_timer_bar.dart';
 import 'package:workpulse/features/tray/providers/tray_provider.dart';
 import 'package:workpulse/features/workspace/providers/workspace_provider.dart';
@@ -201,6 +202,7 @@ class _MainShellViewState extends ConsumerState<MainShellView>
       case ShellNavTab.patterns:
       case ShellNavTab.history:
       case ShellNavTab.notes:
+      case ShellNavTab.timesheet:
       case ShellNavTab.tasks:
       case ShellNavTab.categories:
       case ShellNavTab.tags:
@@ -561,6 +563,7 @@ class _ContentViewport extends StatelessWidget {
           ShellNavTab.history => const SessionHistoryView(),
           ShellNavTab.tasks => const TasksView(),
           ShellNavTab.notes => const TimeNotesView(),
+          ShellNavTab.timesheet => const TimesheetView(),
           ShellNavTab.projects => const ProjectsView(),
           ShellNavTab.categories => const CategoriesView(),
           ShellNavTab.tags => const TagsView(),
