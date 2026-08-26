@@ -85,6 +85,25 @@ class MenuKeyboard {
   KeyEventResult _handleKey(FocusNode node, KeyEvent event) {
     if (event is! KeyDownEvent) return KeyEventResult.ignored;
 
+    if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+      final index = _nodes.indexOf(node);
+      if (index != -1 && index + 1 < _labels.length) {
+        return _focus(index + 1)
+            ? KeyEventResult.handled
+            : KeyEventResult.ignored;
+      }
+      return KeyEventResult.handled;
+    }
+    if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+      final index = _nodes.indexOf(node);
+      if (index != -1 && index - 1 >= 0) {
+        return _focus(index - 1)
+            ? KeyEventResult.handled
+            : KeyEventResult.ignored;
+      }
+      return KeyEventResult.handled;
+    }
+
     if (event.logicalKey == LogicalKeyboardKey.home) {
       return _focus(0) ? KeyEventResult.handled : KeyEventResult.ignored;
     }
