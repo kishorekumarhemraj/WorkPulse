@@ -68,6 +68,15 @@ WorkPulse is a privacy-first, offline-first desktop time-tracking and work-aware
 - Refer to [workpulse-domain](file:///Users/kkh/Code/WorkPulse/.agents/skills/workpulse-domain/SKILL.md) for domain models and state machines.
 - Consult [DESIGN.md](file:///Users/kkh/Code/WorkPulse/docs/DESIGN.md) for technical design and [DEVELOPMENT.md](file:///Users/kkh/Code/WorkPulse/docs/DEVELOPMENT.md) for local dev commands.
 
+## CAPEX / OPEX
+
+- `CategoryType` (`CAPEX` / `OPEX`) is a first-class field on `Category`, not a configurable attribute. It is a property of the *kind of work* — the same thing a category already names — and the Time Sheet has to be able to sum on it without the user having to configure anything first. Rule 1 bars external-tool fields; this is neither external nor tool-specific.
+- Every category has a type. `MigrationV5` backfills pre-existing rows to `OPEX` — the conservative reading, claiming no capitalizable time the user has not since claimed themselves.
+- A session's own category decides its bucket (rule 7). Time on a session with no category is reported as **Unclassified**, never folded into OPEX, and the CAPEX ratio is taken over classified time so unfiled hours cannot dilute it.
+- `TimesheetService` is pure — records in, tables out, no repositories and no clock. It builds on the `SessionExportRecord`s the Time Log has already resolved rather than re-querying, and computes both hour bases up front so the Net/Gross toggle is a repaint.
+- The project table and every attribute table are views of the same hours and must always sum to the same total. That is why a multi-select value stays whole ("Backend; Platform" is one row) rather than being counted once per option.
+- `Project.timesheetCode` is the code the organisation books a project against. Required by the project form and validated unique per workspace, but **nullable in the schema**: unlike the CAPEX/OPEX type there is no conservative default, because a cost code is an external identifier the app cannot invent and a made-up one would be booked against real hours. `MigrationV6` therefore adds the column without backfilling, and the Time Sheet reports a missing code as **No code**.
+
 ## Pattern Insights
 - Every finding lands in exactly one of four lanes — `sustain` (Continue), `reclaim`, `delegate`, `plan` — and carries the figures it was derived from. A finding with no evidence is a bug.
 - `sustain` is first in `InsightAction` on purpose: a page that only ever lists faults stops being opened, and an unnoticed habit is the easiest one to lose. (`sustain`, not `continue`, because `continue` is a Dart keyword.)
