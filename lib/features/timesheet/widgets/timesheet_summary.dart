@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:workpulse/core/theme/app_colors.dart';
 import 'package:workpulse/core/theme/app_typography.dart';
 import 'package:workpulse/core/theme/design_tokens.dart';
+import 'package:workpulse/core/widgets/app_card.dart';
 import 'package:workpulse/domain/models/timesheet_model.dart';
 import 'package:workpulse/domain/services/timer_service.dart';
 import 'package:workpulse/features/timesheet/widgets/timesheet_table.dart';
@@ -35,33 +36,31 @@ class TimesheetSummary extends StatelessWidget {
         caption: '$sessionCount session${sessionCount == 1 ? '' : 's'}',
       ),
       _SummaryTile(
-        label: 'CAPEX',
+        label: 'CapEx',
         hours: split.capex,
         color: palette.capex,
         caption: '${split.capexShare.round()}% of classified',
       ),
       _SummaryTile(
-        label: 'OPEX',
+        label: 'OpEx',
         hours: split.opex,
         color: palette.opex,
         caption: '${split.opexShare.round()}% of classified',
       ),
-      if (split.hasUnclassified)
+      if (split.hasNone)
         _SummaryTile(
-          label: 'Unclassified',
-          hours: split.unclassified,
-          color: palette.unclassified,
-          caption: 'Sessions with no category',
+          label: 'None',
+          hours: split.none,
+          color: palette.none,
+          caption: 'Not financially classified',
         ),
     ];
 
-    return Container(
+    // AppCard, not a hand-rolled Container: it is the app's standard content
+    // surface, and painting one by hand is how this screen ended up grey —
+    // `colors.card` is the inset badge tint, not the card background.
+    return AppCard(
       padding: const EdgeInsets.all(Spacing.lg),
-      decoration: BoxDecoration(
-        color: colors.card,
-        borderRadius: Radii.xlAll,
-        border: Border.all(color: colors.divider),
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

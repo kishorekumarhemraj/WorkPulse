@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:workpulse/domain/models/attribute_model.dart';
 import 'package:workpulse/domain/models/category_model.dart';
 import 'package:workpulse/domain/models/date_range.dart';
+import 'package:workpulse/domain/models/financial_classification.dart';
 import 'package:workpulse/domain/models/project_model.dart';
 import 'package:workpulse/domain/models/session_model.dart';
 import 'package:workpulse/domain/models/timesheet_model.dart';
@@ -12,11 +13,10 @@ import 'package:workpulse/domain/services/timesheet_service.dart';
 void main() {
   final now = DateTime.utc(2026, 8, 24, 9);
 
-  Category category(String id, String name, CategoryType type) => Category(
+  Category category(String id, String name) => Category(
         id: id,
         workspaceId: 'ws-1',
         name: name,
-        type: type,
         createdAt: now,
         updatedAt: now,
       );
@@ -27,16 +27,6 @@ void main() {
         name: name,
         colorHex: '#0A84FF',
         timesheetCode: code,
-        createdAt: now,
-        updatedAt: now,
-      );
-
-  WorkItem workItem(String id, String projectId) => WorkItem(
-        id: id,
-        workspaceId: 'ws-1',
-        name: 'Task $id',
-        projectId: projectId,
-        categoryId: 'cat-capex',
         createdAt: now,
         updatedAt: now,
       );
@@ -61,24 +51,42 @@ void main() {
         updatedAt: now,
       );
 
+  /// Builds a record the way ExportService does: the classification is
+  /// resolved once, from the session's override where it has one and from the
+  /// task otherwise, so the service under test never sees which spoke.
   SessionExportRecord record({
     required String id,
-    required Project? proj,
-    required Category? cat,
     required Duration gross,
+    Project? proj,
+    Category? cat,
+    String taskId = 'wi-1',
+    String taskName = 'Build the thing',
+    FinancialClassification task = FinancialClassification.capex,
+    FinancialClassification? override,
     Duration idle = Duration.zero,
     Map<String, String> attributes = const {},
   }) {
-    final item = workItem('wi-$id', proj?.id ?? 'proj-unknown');
+    final item = WorkItem(
+      id: taskId,
+      workspaceId: 'ws-1',
+      name: taskName,
+      projectId: proj?.id ?? 'proj-unknown',
+      categoryId: cat?.id ?? 'cat-none',
+      financialClassification: task,
+      createdAt: now,
+      updatedAt: now,
+    );
+    final session = Session(
+      id: id,
+      workItemId: item.id,
+      categoryId: cat?.id,
+      financialClassification: override,
+      startTime: now,
+      endTime: now.add(gross),
+      createdAt: now,
+    );
     return SessionExportRecord(
-      session: Session(
-        id: id,
-        workItemId: item.id,
-        categoryId: cat?.id,
-        startTime: now,
-        endTime: now.add(gross),
-        createdAt: now,
-      ),
+      session: session,
       workItem: item,
       project: proj,
       category: cat,
@@ -86,11 +94,14 @@ void main() {
       idleDuration: idle,
       netActiveDuration: gross - idle,
       attributeValues: attributes,
+      classification:
+          session.classificationWithin(item.financialClassification),
+      classificationIsOverride: session.hasClassificationOverride,
     );
   }
 
-  final capex = category('cat-capex', 'Feature Work', CategoryType.capex);
-  final opex = category('cat-opex', 'Production Support', CategoryType.opex);
+  final coding = category('cat-coding', 'Coding');
+  final meetings = category('cat-meetings', 'Meetings');
   final apollo = project('proj-apollo', 'Apollo', code: 'PRJ-1042');
   final zephyr = project('proj-zephyr', 'Zephyr');
   final costCentre = definition('def-cc', 'Cost Centre');
@@ -100,21 +111,24 @@ void main() {
   const service = TimesheetService();
 
   group('TimesheetService', () {
-    test('splits hours by the CAPEX/OPEX type of each session category', () {
+    test('splits hours by the classification each session resolved to', () {
       final data = service.build(
         range: range,
         records: [
           record(
             id: 's1',
             proj: apollo,
-            cat: capex,
+            cat: coding,
             gross: const Duration(hours: 3),
+            task: FinancialClassification.capex,
           ),
           record(
             id: 's2',
             proj: apollo,
-            cat: opex,
+            cat: meetings,
             gross: const Duration(hours: 1),
+            taskId: 'wi-2',
+            task: FinancialClassification.opex,
           ),
         ],
         definitions: const [],
@@ -123,10 +137,41 @@ void main() {
       expect(data.sessionCount, 2);
       expect(data.total.net.capex, const Duration(hours: 3));
       expect(data.total.net.opex, const Duration(hours: 1));
-      expect(data.total.net.unclassified, Duration.zero);
+      expect(data.total.net.none, Duration.zero);
       expect(data.total.net.capexShare, 75);
       expect(data.projectRows, hasLength(1));
-      expect(data.projectRows.single.label, 'Apollo');
+    });
+
+    test('a session override outranks the task it belongs to', () {
+      final data = service.build(
+        range: range,
+        records: [
+          record(
+            id: 's1',
+            proj: apollo,
+            cat: coding,
+            gross: const Duration(hours: 2),
+            task: FinancialClassification.capex,
+          ),
+          // Same task, but this one hour was spent on something operational.
+          record(
+            id: 's2',
+            proj: apollo,
+            cat: meetings,
+            gross: const Duration(hours: 1),
+            task: FinancialClassification.capex,
+            override: FinancialClassification.opex,
+          ),
+        ],
+        definitions: const [],
+      );
+
+      expect(data.total.net.capex, const Duration(hours: 2));
+      expect(data.total.net.opex, const Duration(hours: 1));
+      // Both sessions belong to one task, so the task row carries the split.
+      expect(data.taskRows, hasLength(1));
+      expect(data.taskRows.single.net.capex, const Duration(hours: 2));
+      expect(data.taskRows.single.net.opex, const Duration(hours: 1));
     });
 
     test('reports net and gross separately so the toggle needs no re-query',
@@ -137,7 +182,7 @@ void main() {
           record(
             id: 's1',
             proj: apollo,
-            cat: capex,
+            cat: coding,
             gross: const Duration(hours: 2),
             idle: const Duration(minutes: 30),
           ),
@@ -146,38 +191,124 @@ void main() {
       );
 
       final row = data.projectRows.single;
-      expect(row.split(TimesheetHoursBasis.gross).capex,
-          const Duration(hours: 2));
+      expect(
+          row.split(TimesheetHoursBasis.gross).capex, const Duration(hours: 2));
       expect(row.split(TimesheetHoursBasis.net).capex,
           const Duration(minutes: 90));
     });
 
-    test('carries uncategorised time rather than dropping or guessing it', () {
+    test('carries unclassified time rather than dropping or guessing it', () {
       final data = service.build(
         range: range,
         records: [
           record(
             id: 's1',
             proj: apollo,
-            cat: null,
+            cat: coding,
             gross: const Duration(hours: 2),
+            task: FinancialClassification.none,
           ),
           record(
             id: 's2',
             proj: apollo,
-            cat: capex,
+            cat: coding,
             gross: const Duration(hours: 2),
+            taskId: 'wi-2',
+            task: FinancialClassification.capex,
           ),
         ],
         definitions: const [],
       );
 
-      expect(data.total.net.unclassified, const Duration(hours: 2));
+      expect(data.total.net.none, const Duration(hours: 2));
       expect(data.total.net.total, const Duration(hours: 4));
-      // The ratio is of classified time, so unclassified hours cannot quietly
-      // dilute the CAPEX figure the user reports.
+      // The ratio is of classified time, so hours nobody has decided about
+      // cannot quietly dilute the CapEx figure the user reports.
       expect(data.total.net.capexShare, 100);
-      expect(data.total.net.hasUnclassified, isTrue);
+      expect(data.total.net.hasNone, isTrue);
+    });
+
+    test('breaks each classification down by category', () {
+      final data = service.build(
+        range: range,
+        records: [
+          record(
+            id: 's1',
+            proj: apollo,
+            cat: coding,
+            gross: const Duration(hours: 5),
+            task: FinancialClassification.capex,
+          ),
+          record(
+            id: 's2',
+            proj: apollo,
+            cat: meetings,
+            gross: const Duration(hours: 2),
+            task: FinancialClassification.capex,
+          ),
+          record(
+            id: 's3',
+            proj: apollo,
+            cat: meetings,
+            gross: const Duration(hours: 1),
+            taskId: 'wi-2',
+            task: FinancialClassification.opex,
+          ),
+        ],
+        definitions: const [],
+      );
+
+      // Coding versus meetings *within* CapEx — the question the old
+      // category-level model could not answer, because the category was the
+      // classification.
+      final capexSection = data.categorySections
+          .firstWhere((s) => s.classification == FinancialClassification.capex);
+      expect(capexSection.rows.map((r) => r.label), ['Coding', 'Meetings']);
+      expect(capexSection.rows.first.net.capex, const Duration(hours: 5));
+      expect(capexSection.rows.last.net.capex, const Duration(hours: 2));
+
+      final opexSection = data.categorySections
+          .firstWhere((s) => s.classification == FinancialClassification.opex);
+      expect(opexSection.rows.single.label, 'Meetings');
+      expect(opexSection.rows.single.net.opex, const Duration(hours: 1));
+
+      // Nothing is unclassified, so that section is absent rather than empty.
+      expect(
+        data.categorySections
+            .any((s) => s.classification == FinancialClassification.none),
+        isFalse,
+      );
+    });
+
+    test('reports time by task, carrying the project code', () {
+      final data = service.build(
+        range: range,
+        records: [
+          record(
+            id: 's1',
+            proj: apollo,
+            cat: coding,
+            gross: const Duration(hours: 1),
+            taskId: 'wi-1',
+            taskName: 'Build the thing',
+          ),
+          record(
+            id: 's2',
+            proj: apollo,
+            cat: coding,
+            gross: const Duration(hours: 4),
+            taskId: 'wi-2',
+            taskName: 'Fix the other thing',
+          ),
+        ],
+        definitions: const [],
+      );
+
+      expect(
+        data.taskRows.map((r) => r.label),
+        ['Fix the other thing', 'Build the thing'],
+      );
+      expect(data.taskRows.first.code, 'PRJ-1042');
     });
 
     test('builds one table per reportable attribute, longest row first', () {
@@ -187,15 +318,17 @@ void main() {
           record(
             id: 's1',
             proj: apollo,
-            cat: capex,
+            cat: coding,
             gross: const Duration(hours: 1),
             attributes: {costCentre.id: 'CC-100'},
           ),
           record(
             id: 's2',
             proj: zephyr,
-            cat: opex,
+            cat: meetings,
             gross: const Duration(hours: 4),
+            taskId: 'wi-2',
+            task: FinancialClassification.opex,
             attributes: {costCentre.id: 'CC-200'},
           ),
         ],
@@ -208,14 +341,19 @@ void main() {
       expect(rows.first.net.opex, const Duration(hours: 4));
       expect(rows.last.net.capex, const Duration(hours: 1));
 
-      // Projects and attributes are two views of the same hours, so both
-      // tables must sum to the same total.
-      final projectTotal = data.projectRows
-          .fold<Duration>(Duration.zero, (sum, r) => sum + r.net.total);
-      final attributeTotal =
-          rows.fold<Duration>(Duration.zero, (sum, r) => sum + r.net.total);
-      expect(projectTotal, attributeTotal);
-      expect(projectTotal, data.total.net.total);
+      // Projects, tasks, categories and attributes are four views of the same
+      // hours, so every table must sum to the same total.
+      Duration sum(List<TimesheetRow> rows) =>
+          rows.fold<Duration>(Duration.zero, (a, r) => a + r.net.total);
+
+      expect(sum(data.projectRows), data.total.net.total);
+      expect(sum(data.taskRows), data.total.net.total);
+      expect(sum(rows), data.total.net.total);
+      expect(
+        data.categorySections
+            .fold<Duration>(Duration.zero, (a, s) => a + sum(s.rows)),
+        data.total.net.total,
+      );
     });
 
     test('sinks sessions with no value into a trailing Unspecified row', () {
@@ -225,13 +363,13 @@ void main() {
           record(
             id: 's1',
             proj: apollo,
-            cat: capex,
+            cat: coding,
             gross: const Duration(hours: 8),
           ),
           record(
             id: 's2',
             proj: apollo,
-            cat: capex,
+            cat: coding,
             gross: const Duration(hours: 1),
             attributes: {costCentre.id: 'CC-100'},
           ),
@@ -256,7 +394,7 @@ void main() {
           record(
             id: 's1',
             proj: apollo,
-            cat: capex,
+            cat: coding,
             gross: const Duration(hours: 1),
             attributes: {hidden.id: 'X', disabled.id: 'Y'},
           ),
@@ -277,7 +415,7 @@ void main() {
           record(
             id: 's1',
             proj: apollo,
-            cat: capex,
+            cat: coding,
             gross: const Duration(hours: 1),
             attributes: {first.id: 'A', second.id: 'B'},
           ),
@@ -291,40 +429,6 @@ void main() {
       );
     });
 
-    test('project rows carry the timesheet code, attribute rows do not', () {
-      final data = service.build(
-        range: range,
-        records: [
-          record(
-            id: 's1',
-            proj: apollo,
-            cat: capex,
-            gross: const Duration(hours: 2),
-            attributes: {costCentre.id: 'CC-100'},
-          ),
-          record(
-            id: 's2',
-            proj: zephyr,
-            cat: opex,
-            gross: const Duration(hours: 1),
-          ),
-        ],
-        definitions: [costCentre],
-      );
-
-      final byId = {for (final r in data.projectRows) r.id: r};
-      expect(byId['proj-apollo']!.code, 'PRJ-1042');
-      // A project without a code reports it as absent rather than blank, so
-      // the Time Sheet can say so out loud.
-      expect(byId['proj-zephyr']!.code, isNull);
-
-      // An attribute value is not booked against anything itself.
-      expect(
-        data.attributeSections.single.rows.every((r) => r.code == null),
-        isTrue,
-      );
-    });
-
     test('an empty range produces an empty sheet rather than zeroed tables',
         () {
       final data = service.build(
@@ -335,6 +439,8 @@ void main() {
 
       expect(data.isEmpty, isTrue);
       expect(data.projectRows, isEmpty);
+      expect(data.taskRows, isEmpty);
+      expect(data.categorySections, isEmpty);
       expect(data.attributeSections, isEmpty);
       expect(data.total.net.total, Duration.zero);
       expect(data.total.net.capexShare, 0);

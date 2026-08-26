@@ -102,6 +102,13 @@ class DatabaseService {
     if (oldVersion < 4) await MigrationV4.execute(db);
     if (oldVersion < 5) await MigrationV5.execute(db);
     if (oldVersion < 6) await MigrationV6.execute(db);
+    // v7 has no migration of its own. MigrationV5 was rewritten in place
+    // when the financial classification moved from the category to the task,
+    // which leaves development databases stamped at 5 or 6 carrying the old
+    // shape and no way to reach the new one. Replaying v5 brings them
+    // across; every step in it is guarded, so databases created after the
+    // rewrite pass through it unchanged.
+    if (oldVersion < 7) await MigrationV5.execute(db);
   }
 
   Future<String> _getDefaultDatabasePath() async {

@@ -5,12 +5,14 @@ import 'package:workpulse/core/theme/app_colors.dart';
 import 'package:workpulse/core/theme/app_typography.dart';
 import 'package:workpulse/core/theme/design_tokens.dart';
 import 'package:workpulse/core/widgets/app_dialog.dart';
+import 'package:workpulse/core/theme/classification_style.dart';
 import 'package:workpulse/core/theme/color_utils.dart';
 import 'package:workpulse/core/theme/icon_utils.dart';
 import 'package:workpulse/core/widgets/app_select.dart';
 import 'package:workpulse/core/widgets/app_snack_bar.dart';
 import 'package:workpulse/core/widgets/searchable_multi_select.dart';
 import 'package:workpulse/domain/models/attribute_model.dart';
+import 'package:workpulse/domain/models/financial_classification.dart';
 import 'package:workpulse/domain/services/export_service.dart';
 import 'package:workpulse/features/attributes/providers/attribute_definitions_provider.dart';
 import 'package:workpulse/features/attributes/widgets/dynamic_attribute_fields.dart';
@@ -41,6 +43,10 @@ class _SessionEditDialogState extends ConsumerState<SessionEditDialog> {
   late DateTime _startTime;
   late DateTime? _endTime;
   late String? _selectedCategoryId;
+
+  /// Null means "inherit from the task" — the normal case, and the reason
+  /// this is a nullable override rather than a plain field.
+  late FinancialClassification? _classificationOverride;
   late final TextEditingController _notesController;
   late List<String> _selectedTagIds;
   late List<String> _selectedPeopleIds;
@@ -57,6 +63,7 @@ class _SessionEditDialogState extends ConsumerState<SessionEditDialog> {
     // item made an unclassified session look classified, and saving the form
     // silently wrote those borrowed values onto it.
     _selectedCategoryId = s.categoryId;
+    _classificationOverride = s.financialClassification;
     _notesController = TextEditingController(text: s.notes ?? '');
     _selectedTagIds = List.from(s.tagIds);
     _selectedPeopleIds = List.from(s.peopleIds);
@@ -162,6 +169,8 @@ class _SessionEditDialogState extends ConsumerState<SessionEditDialog> {
             startTime: _startTime.toUtc(),
             endTime: _endTime?.toUtc(),
             categoryId: _selectedCategoryId,
+            financialClassification: _classificationOverride,
+            clearFinancialClassification: _classificationOverride == null,
             notes: trimmedNotes.isEmpty ? null : trimmedNotes,
             clearNotes: trimmedNotes.isEmpty,
             tagIds: _selectedTagIds,
@@ -197,6 +206,13 @@ class _SessionEditDialogState extends ConsumerState<SessionEditDialog> {
     final peopleAsync = ref.watch(peopleProvider);
     final colors = context.colors;
     final dateFormat = DateFormat('yyyy-MM-dd HH:mm');
+
+    // What this session would report if it stated nothing of its own. Shown
+    // on the control so the override reads as a departure from something,
+    // rather than as the only classification in play.
+    final taskName = widget.record.workItem.name;
+    final inherited = widget.record.workItem.financialClassification;
+    final inheritedLabel = inherited.label;
 
     return AppDialog(
       title: 'Edit Session',
@@ -282,6 +298,35 @@ class _SessionEditDialogState extends ConsumerState<SessionEditDialog> {
                       setState(() => _selectedCategoryId = catId);
                     },
                   );
+                },
+              ),
+            ),
+            const SizedBox(height: Spacing.lg),
+            DialogField(
+              label: 'Financial Classification',
+              helperText: _classificationOverride == null
+                  ? 'Following "$taskName", which is $inheritedLabel.'
+                  : 'Overriding "$taskName", which is $inheritedLabel. '
+                      'Inherit again to follow the work item.',
+              child: AppSelect<FinancialClassification?>(
+                placeholder: 'Inherit from work item',
+                value: _classificationOverride,
+                maxTriggerWidth: double.infinity,
+                options: [
+                  SelectOption<FinancialClassification?>(
+                    value: null,
+                    label: 'Inherit — $inheritedLabel',
+                    icon: Icons.subdirectory_arrow_right,
+                  ),
+                  for (final option in FinancialClassification.values)
+                    SelectOption<FinancialClassification?>(
+                      value: option,
+                      label: 'Override — ${option.label}',
+                      icon: option.icon,
+                    ),
+                ],
+                onChanged: (value) {
+                  setState(() => _classificationOverride = value);
                 },
               ),
             ),

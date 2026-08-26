@@ -4,6 +4,7 @@ import 'package:workpulse/data/providers/repository_providers.dart';
 import 'package:workpulse/domain/models/analytics_model.dart';
 import 'package:workpulse/domain/models/attribute_model.dart';
 import 'package:workpulse/domain/models/date_range.dart';
+import 'package:workpulse/domain/models/financial_classification.dart';
 import 'package:workpulse/domain/services/export_service.dart';
 import 'package:workpulse/domain/services/pdf_report_service.dart';
 import 'package:workpulse/features/attributes/providers/attribute_definitions_provider.dart';
@@ -133,6 +134,8 @@ class SessionEditorController {
     DateTime? endTime,
     String? categoryId,
     bool clearCategory = false,
+    FinancialClassification? financialClassification,
+    bool clearFinancialClassification = false,
     String? notes,
     bool clearNotes = false,
     List<String>? tagIds,
@@ -147,6 +150,8 @@ class SessionEditorController {
       startTime: startTime ?? session.startTime,
       endTime: endTime ?? session.endTime,
       categoryId: clearCategory ? null : (categoryId ?? session.categoryId),
+      financialClassification: financialClassification,
+      clearFinancialClassification: clearFinancialClassification,
       tagIds: tagIds ?? session.tagIds,
       peopleIds: peopleIds ?? session.peopleIds,
       notes: notes,
