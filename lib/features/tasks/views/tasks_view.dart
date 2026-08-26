@@ -39,6 +39,8 @@ class _TasksViewState extends ConsumerState<TasksView> {
 
   Future<void> _toggleTimer(WorkItem item, bool isActive) async {
     if (isActive) {
+      // Stopping leaves the selection alone: the item you just stopped is
+      // usually the one you still want to read.
       await ref.read(timerProvider.notifier).stopTimer();
       return;
     }
@@ -61,6 +63,30 @@ class _TasksViewState extends ConsumerState<TasksView> {
     } else {
       await ref.read(timerProvider.notifier).startTimer(item);
     }
+
+    _revealIfNowTracking(item);
+  }
+
+  /// Moves the inspector to [item] once it is the thing actually being
+  /// tracked.
+  ///
+  /// Pressing play is a statement about what you are working on now, so the
+  /// detail pane should be showing it — otherwise the inspector goes on
+  /// describing whatever was last clicked, which after a stop-then-start is
+  /// the wrong task entirely.
+  ///
+  /// Tested against the timer rather than assumed from the tap: a switch the
+  /// user cancels in the confirmation dialog never starts, and must not move
+  /// the selection either.
+  void _revealIfNowTracking(WorkItem item) {
+    if (!mounted) return;
+
+    final timer = ref.read(timerProvider).value;
+    final isNowTracking =
+        timer != null && timer.isRunning && timer.activeWorkItem?.id == item.id;
+
+    if (!isNowTracking || _selectedId == item.id) return;
+    setState(() => _selectedId = item.id);
   }
 
   Future<void> _confirmDelete(WorkItem item, bool isActive) async {
