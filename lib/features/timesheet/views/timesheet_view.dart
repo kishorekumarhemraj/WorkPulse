@@ -2,12 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workpulse/core/theme/app_colors.dart';
 import 'package:workpulse/core/theme/design_tokens.dart';
+import 'package:workpulse/core/widgets/app_card.dart';
 import 'package:workpulse/core/widgets/empty_state.dart';
 import 'package:workpulse/core/widgets/error_state.dart';
 import 'package:workpulse/core/widgets/page_header.dart';
 import 'package:workpulse/core/widgets/segmented_control.dart';
 import 'package:workpulse/core/widgets/skeleton_loader.dart';
+import 'package:workpulse/core/theme/classification_style.dart';
 import 'package:workpulse/domain/models/attribute_model.dart';
+import 'package:workpulse/domain/models/financial_classification.dart';
 import 'package:workpulse/domain/models/timesheet_model.dart';
 import 'package:workpulse/features/reports/providers/reports_provider.dart';
 import 'package:workpulse/features/reports/widgets/reports_range_controls.dart';
@@ -18,11 +21,14 @@ import 'package:workpulse/features/timesheet/widgets/timesheet_table.dart';
 /// Capitalizable against operational hours, for the selected range.
 ///
 /// The screen answers one question — "what do I put on my timesheet?" — so
-/// every figure on it is decimal hours, and the CAPEX/OPEX split is repeated
-/// per project and per configurable attribute rather than only in aggregate.
-/// A category carries the CAPEX/OPEX type; a session carries the category; so
-/// the split is derived from what each session actually says, never from the
-/// work item above it.
+/// every figure on it is decimal hours, and the CapEx/OpEx split is repeated
+/// by project, by task, by category within each classification, and by
+/// configurable attribute rather than only in aggregate.
+///
+/// The classification is the task's, unless a session overrides it. That is
+/// what makes the category breakdown worth reading: categories name the kind
+/// of work, so "which of my CapEx hours went to meetings" is now a question
+/// with an answer.
 class TimesheetView extends ConsumerWidget {
   const TimesheetView({super.key});
 
@@ -105,6 +111,28 @@ class TimesheetView extends ConsumerWidget {
                   rows: data.projectRows,
                   basis: basis,
                 ),
+                const SizedBox(height: Spacing.xl),
+                TimesheetTable(
+                  title: 'By work item',
+                  icon: Icons.check_circle_outline,
+                  subtitle: 'The level the classification is set at, so a '
+                      'figure that looks wrong is traceable to the task '
+                      'that caused it.',
+                  nameColumnLabel: 'Work item',
+                  rows: data.taskRows,
+                  basis: basis,
+                ),
+                for (final section in data.categorySections) ...[
+                  const SizedBox(height: Spacing.xl),
+                  TimesheetTable(
+                    title: '${section.classification.label} by category',
+                    icon: section.classification.icon,
+                    subtitle: _categorySubtitle(section.classification),
+                    nameColumnLabel: 'Category',
+                    rows: section.rows,
+                    basis: basis,
+                  ),
+                ],
                 for (final section in data.attributeSections) ...[
                   const SizedBox(height: Spacing.xl),
                   TimesheetTable(
@@ -128,6 +156,19 @@ class TimesheetView extends ConsumerWidget {
     );
   }
 
+  static String _categorySubtitle(FinancialClassification classification) {
+    return switch (classification) {
+      FinancialClassification.capex =>
+        'What the capitalizable hours were actually spent doing — coding '
+            'against meetings, and everything else.',
+      FinancialClassification.opex =>
+        'What the operational hours were actually spent doing.',
+      FinancialClassification.none =>
+        'Hours no task has classified yet. Set a classification on the work '
+            'item, or override it on the session.',
+    };
+  }
+
   static String _attributeSubtitle(AttributeDefinition definition) {
     final scope = definition.scope == AttributeScope.session
         ? 'Recorded per session.'
@@ -148,13 +189,8 @@ class _NoAttributesHint extends StatelessWidget {
     final colors = context.colors;
     final theme = Theme.of(context);
 
-    return Container(
+    return AppCard(
       padding: const EdgeInsets.all(Spacing.lg),
-      decoration: BoxDecoration(
-        color: colors.card,
-        borderRadius: Radii.xlAll,
-        border: Border.all(color: colors.divider),
-      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

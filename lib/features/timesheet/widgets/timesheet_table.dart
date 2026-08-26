@@ -5,6 +5,9 @@ import 'package:workpulse/core/theme/app_colors.dart';
 import 'package:workpulse/core/theme/app_typography.dart';
 import 'package:workpulse/core/theme/color_utils.dart';
 import 'package:workpulse/core/theme/design_tokens.dart';
+import 'package:workpulse/core/widgets/app_card.dart';
+import 'package:workpulse/core/theme/classification_style.dart';
+import 'package:workpulse/domain/models/financial_classification.dart';
 import 'package:workpulse/domain/models/timesheet_model.dart';
 
 /// Decimal hours, the unit every timesheet system actually accepts.
@@ -16,31 +19,33 @@ String formatTimesheetHours(Duration duration) {
   return (duration.inSeconds / 3600).toStringAsFixed(2);
 }
 
-/// The colours the CAPEX/OPEX/unclassified columns carry throughout the
-/// screen. Every use pairs one with its column heading or a legend label —
+/// The colours the CapEx / OpEx / None columns carry throughout the screen.
+///
+/// Delegates to the shared classification styling so a badge on the task
+/// form and a column on this table cannot disagree about what CapEx looks
+/// like. Every use pairs a colour with its column heading or a legend label —
 /// the split is never communicated by colour alone.
 class TimesheetPalette {
   final Color capex;
   final Color opex;
-  final Color unclassified;
+  final Color none;
 
   const TimesheetPalette({
     required this.capex,
     required this.opex,
-    required this.unclassified,
+    required this.none,
   });
 
   factory TimesheetPalette.of(BuildContext context) {
-    final colors = context.colors;
     return TimesheetPalette(
-      capex: colors.accent,
-      opex: colors.warning,
-      unclassified: colors.textTertiary,
+      capex: FinancialClassification.capex.colorOf(context),
+      opex: FinancialClassification.opex.colorOf(context),
+      none: FinancialClassification.none.colorOf(context),
     );
   }
 }
 
-/// One CAPEX/OPEX table: a heading, a header row, then a row per project or
+/// One CapEx/OpEx table: a heading, a header row, then a row per project or
 /// per attribute value, closed by a totals row.
 class TimesheetTable extends StatelessWidget {
   final String title;
@@ -74,30 +79,30 @@ class TimesheetTable extends StatelessWidget {
 
     // The column only earns its width when there is unclassified time to
     // report; most workspaces will never see it.
-    final showUnclassified =
-        rows.any((row) => row.split(basis).hasUnclassified);
+    final showNone =
+        rows.any((row) => row.split(basis).hasNone);
 
     // Projects carry a timesheet code; attribute values do not, so the
     // column appears only on the table where it means something.
     final showCode = rows.any((row) => row.code != null);
 
-    final totals = rows.fold<CapexOpexSplit>(
-      CapexOpexSplit.zero,
+    final totals = rows.fold<ClassificationSplit>(
+      ClassificationSplit.zero,
       (sum, row) => sum + row.split(basis),
     );
 
     final minWidth = _nameColumnWidth +
         (showCode ? _codeColumnWidth : 0.0) +
-        _numberColumnWidth * (showUnclassified ? 4 : 3) +
+        _numberColumnWidth * (showNone ? 4 : 3) +
         _shareColumnWidth +
         Spacing.lg * 2;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: colors.card,
-        borderRadius: Radii.xlAll,
-        border: Border.all(color: colors.divider),
-      ),
+    // AppCard, not a hand-rolled Container: `colors.card` is the inset badge
+    // tint, not the card background, and painting it by hand is what made
+    // this screen read as three shades of grey stacked on each other. Zero
+    // padding so the rows can run edge to edge; each row pads itself.
+    return AppCard(
+      padding: EdgeInsets.zero,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -147,19 +152,23 @@ class TimesheetTable extends StatelessWidget {
                     children: [
                       _HeaderRow(
                         nameColumnLabel: nameColumnLabel,
-                        showUnclassified: showUnclassified,
+                        showNone: showNone,
                         showCode: showCode,
                       ),
-                      for (final row in rows)
+                      for (var i = 0; i < rows.length; i++)
                         _DataRow(
-                          row: row,
+                          row: rows[i],
                           basis: basis,
-                          showUnclassified: showUnclassified,
+                          showNone: showNone,
                           showCode: showCode,
+                          // The totals row draws the rule above itself, so
+                          // the last data row drops its own or the two stack
+                          // into a double line.
+                          isLast: i == rows.length - 1,
                         ),
                       _TotalRow(
                         totals: totals,
-                        showUnclassified: showUnclassified,
+                        showNone: showNone,
                         showCode: showCode,
                       ),
                     ],
@@ -176,12 +185,12 @@ class TimesheetTable extends StatelessWidget {
 
 class _HeaderRow extends StatelessWidget {
   final String nameColumnLabel;
-  final bool showUnclassified;
+  final bool showNone;
   final bool showCode;
 
   const _HeaderRow({
     required this.nameColumnLabel,
-    required this.showUnclassified,
+    required this.showNone,
     required this.showCode,
   });
 
@@ -200,7 +209,6 @@ class _HeaderRow extends StatelessWidget {
         vertical: Spacing.sm,
       ),
       decoration: BoxDecoration(
-        color: colors.surfaceSunken,
         border: Border(
           top: BorderSide(color: colors.divider),
           bottom: BorderSide(color: colors.divider),
@@ -219,11 +227,7 @@ class _HeaderRow extends StatelessWidget {
             ),
           _HeaderCell(label: 'CAPEX', color: palette.capex),
           _HeaderCell(label: 'OPEX', color: palette.opex),
-          if (showUnclassified)
-            _HeaderCell(
-              label: 'UNCLASSIFIED',
-              color: palette.unclassified,
-            ),
+          if (showNone) _HeaderCell(label: 'NONE', color: palette.none),
           _HeaderCell(label: 'TOTAL', color: colors.textSecondary),
           SizedBox(
             width: TimesheetTable._shareColumnWidth,
@@ -259,14 +263,16 @@ class _HeaderCell extends StatelessWidget {
 class _DataRow extends StatelessWidget {
   final TimesheetRow row;
   final TimesheetHoursBasis basis;
-  final bool showUnclassified;
+  final bool showNone;
   final bool showCode;
+  final bool isLast;
 
   const _DataRow({
     required this.row,
     required this.basis,
-    required this.showUnclassified,
+    required this.showNone,
     required this.showCode,
+    required this.isLast,
   });
 
   @override
@@ -284,7 +290,9 @@ class _DataRow extends StatelessWidget {
         vertical: Spacing.md - 2,
       ),
       decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: colors.divider)),
+        border: isLast
+            ? null
+            : Border(bottom: BorderSide(color: colors.divider)),
       ),
       child: Row(
         children: [
@@ -317,10 +325,10 @@ class _DataRow extends StatelessWidget {
           if (showCode) _CodeCell(code: row.code),
           _HoursCell(duration: split.capex, color: palette.capex),
           _HoursCell(duration: split.opex, color: palette.opex),
-          if (showUnclassified)
+          if (showNone)
             _HoursCell(
-              duration: split.unclassified,
-              color: palette.unclassified,
+              duration: split.none,
+              color: palette.none,
             ),
           _HoursCell(
             duration: split.total,
@@ -338,13 +346,13 @@ class _DataRow extends StatelessWidget {
 }
 
 class _TotalRow extends StatelessWidget {
-  final CapexOpexSplit totals;
-  final bool showUnclassified;
+  final ClassificationSplit totals;
+  final bool showNone;
   final bool showCode;
 
   const _TotalRow({
     required this.totals,
-    required this.showUnclassified,
+    required this.showNone,
     required this.showCode,
   });
 
@@ -358,12 +366,11 @@ class _TotalRow extends StatelessWidget {
         horizontal: Spacing.lg,
         vertical: Spacing.md,
       ),
+      // Weight and a rule carry the emphasis instead of a fill. A tinted
+      // strip across the foot of a white card is most of what "completely
+      // grey" was.
       decoration: BoxDecoration(
-        color: colors.surfaceSunken,
-        borderRadius: const BorderRadius.only(
-          bottomLeft: Radius.circular(Radii.xl),
-          bottomRight: Radius.circular(Radii.xl),
-        ),
+        border: Border(top: BorderSide(color: colors.borderStrong)),
       ),
       child: Row(
         children: [
@@ -389,10 +396,10 @@ class _TotalRow extends StatelessWidget {
             color: palette.opex,
             emphasis: true,
           ),
-          if (showUnclassified)
+          if (showNone)
             _HoursCell(
-              duration: totals.unclassified,
-              color: palette.unclassified,
+              duration: totals.none,
+              color: palette.none,
               emphasis: true,
             ),
           _HoursCell(
@@ -458,7 +465,9 @@ class _CodeCell extends StatelessWidget {
             vertical: Spacing.xxs,
           ),
           decoration: BoxDecoration(
-            color: colors.surfaceSunken,
+            // `card` is the badge/chip tint the palette documents — the one
+            // place on this screen a tinted fill genuinely belongs.
+            color: colors.card,
             borderRadius: Radii.smAll,
             border: Border.all(color: colors.divider),
           ),
@@ -511,12 +520,12 @@ class _HoursCell extends StatelessWidget {
   }
 }
 
-/// A stacked bar showing how a row divides between CAPEX and OPEX.
+/// A stacked bar showing how a row divides between CapEx and OpEx.
 ///
-/// Labelled with the CAPEX percentage beside it, so the proportion is
+/// Labelled with the CapEx percentage beside it, so the proportion is
 /// readable without depending on the two hues being distinguishable.
 class SplitBar extends StatelessWidget {
-  final CapexOpexSplit split;
+  final ClassificationSplit split;
 
   const SplitBar({super.key, required this.split});
 
@@ -555,10 +564,10 @@ class SplitBar extends StatelessWidget {
                       flex: split.opex.inSeconds,
                       child: ColoredBox(color: palette.opex),
                     ),
-                  if (split.unclassified.inSeconds > 0)
+                  if (split.none.inSeconds > 0)
                     Expanded(
-                      flex: split.unclassified.inSeconds,
-                      child: ColoredBox(color: palette.unclassified),
+                      flex: split.none.inSeconds,
+                      child: ColoredBox(color: palette.none),
                     ),
                 ],
               ),

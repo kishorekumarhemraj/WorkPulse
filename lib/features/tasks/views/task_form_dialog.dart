@@ -6,13 +6,16 @@ import 'package:uuid/uuid.dart';
 import 'package:workpulse/core/theme/design_tokens.dart';
 import 'package:workpulse/core/theme/app_colors.dart';
 import 'package:workpulse/core/widgets/app_dialog.dart';
+import 'package:workpulse/core/widgets/app_radio_group.dart';
 import 'package:workpulse/core/widgets/app_select.dart';
+import 'package:workpulse/core/theme/classification_style.dart';
 import 'package:workpulse/core/theme/color_utils.dart';
 import 'package:workpulse/core/theme/icon_utils.dart';
 import 'package:workpulse/core/widgets/app_snack_bar.dart';
 import 'package:workpulse/core/widgets/searchable_multi_select.dart';
 import 'package:workpulse/data/providers/repository_providers.dart';
 import 'package:workpulse/domain/models/attribute_model.dart';
+import 'package:workpulse/domain/models/financial_classification.dart';
 import 'package:workpulse/domain/models/session_model.dart';
 import 'package:workpulse/domain/models/work_item_model.dart';
 import 'package:workpulse/domain/services/export_service.dart';
@@ -72,6 +75,7 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
 
   String? _selectedProjectId;
   String? _selectedCategoryId;
+  late FinancialClassification _classification;
   late List<String> _selectedTagIds;
   late List<String> _selectedPeopleIds;
   final Map<String, dynamic> _attributeValues = {};
@@ -85,6 +89,8 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
     _selectedProjectId = widget.workItem?.projectId ?? widget.initialProjectId;
     _selectedCategoryId =
         widget.workItem?.categoryId ?? widget.initialCategoryId;
+    _classification = widget.workItem?.financialClassification ??
+        FinancialClassification.none;
     _selectedTagIds = List.from(widget.workItem?.tagIds ?? []);
     _selectedPeopleIds = List.from(widget.workItem?.peopleIds ?? []);
 
@@ -168,6 +174,7 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
               name: _nameController.text.trim(),
               projectId: _selectedProjectId!,
               categoryId: _selectedCategoryId!,
+              classification: _classification,
               tagIds: _selectedTagIds,
               peopleIds: _selectedPeopleIds,
             );
@@ -177,6 +184,7 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
                 name: _nameController.text.trim(),
                 projectId: _selectedProjectId!,
                 categoryId: _selectedCategoryId!,
+                financialClassification: _classification,
                 tagIds: _selectedTagIds,
                 peopleIds: _selectedPeopleIds,
               ),
@@ -486,6 +494,36 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
                     ),
                   ),
                 ],
+              ),
+              const SizedBox(height: 16),
+
+              // Financial classification. On the task rather than the
+              // category because the same kind of work can be capital on one
+              // task and not on another; its sessions inherit this unless one
+              // of them says otherwise.
+              Text('Financial Classification',
+                  style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: context.colors.textSecondary)),
+              const SizedBox(height: 6),
+              AppRadioGroup<FinancialClassification>(
+                selected: _classification,
+                onChanged: (value) => setState(() => _classification = value),
+                options: [
+                  for (final option in FinancialClassification.values)
+                    RadioOption(
+                      value: option,
+                      label: option.label,
+                      icon: option.icon,
+                    ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              Text(
+                _classification.description,
+                style: TextStyle(
+                    fontSize: 12, color: context.colors.textTertiary),
               ),
               const SizedBox(height: 16),
 

@@ -67,46 +67,37 @@ class CurrentWorkspaceNotifier extends AsyncNotifier<Workspace> {
       ),
     );
 
-    // Seed standard starter categories.
-    //
-    // The CAPEX/OPEX type on each is a starting point, not a ruling: what
-    // counts as capitalizable is the user's finance team's call, and every
-    // one of these is editable on the Categories screen. Building something
-    // new is seeded capitalizable; keeping the lights on is not.
+    // Seed standard starter categories. These name the *kind* of work only;
+    // whether an hour is capitalizable is decided per task.
     final defaultCategories = [
       (
         'Engineering',
         'Development, coding, bug fixes, and code reviews',
         'code',
-        CategoryType.capex,
       ),
       (
         'Architecture',
         'System design, technical specs, and RFCs',
         'architecture',
-        CategoryType.capex,
       ),
       (
         'Meetings',
         'Syncs, 1:1s, sprint ceremonies, and discussions',
         'chat',
-        CategoryType.opex,
       ),
       (
         'Deep Work',
         'Focused, uninterrupted problem solving and research',
         'brain',
-        CategoryType.capex,
       ),
       (
         'Operations',
         'Deployments, monitoring, admin tasks, and triage',
         'gear',
-        CategoryType.opex,
       ),
     ];
 
-    for (final (name, desc, icon, type) in defaultCategories) {
+    for (final (name, desc, icon) in defaultCategories) {
       await categoryRepo.create(
         Category(
           id: _uuid.v4(),
@@ -114,7 +105,6 @@ class CurrentWorkspaceNotifier extends AsyncNotifier<Workspace> {
           name: name,
           description: desc,
           iconName: icon,
-          type: type,
           createdAt: now,
           updatedAt: now,
         ),

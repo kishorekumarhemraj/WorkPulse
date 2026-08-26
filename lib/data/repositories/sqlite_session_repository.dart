@@ -3,6 +3,7 @@ import 'package:workpulse/core/database/database_service.dart';
 import 'package:workpulse/core/errors/app_exceptions.dart';
 import 'package:workpulse/core/extensions/datetime_extensions.dart';
 import 'package:workpulse/data/database/tables.dart';
+import 'package:workpulse/domain/models/financial_classification.dart';
 import 'package:workpulse/domain/models/session_model.dart';
 import 'package:workpulse/domain/repositories/session_repository.dart';
 
@@ -270,6 +271,8 @@ class SqliteSessionRepository implements SessionRepository {
       'id': session.id,
       'work_item_id': session.workItemId,
       'category_id': session.categoryId,
+      // Null is meaningful here: it is "inherit from the task", not "unset".
+      'financial_classification': session.financialClassification?.value,
       'start_time': session.startTime.toStorageString(),
       'end_time': session.endTime?.toStorageString(),
       'notes': session.notes,
@@ -286,6 +289,11 @@ class SqliteSessionRepository implements SessionRepository {
       id: map['id'] as String,
       workItemId: map['work_item_id'] as String,
       categoryId: map['category_id'] as String?,
+      financialClassification: map['financial_classification'] == null
+          ? null
+          : FinancialClassification.fromString(
+              map['financial_classification'] as String?,
+            ),
       startTime: DateTime.parse(map['start_time'] as String),
       endTime: map['end_time'] != null
           ? DateTime.parse(map['end_time'] as String)

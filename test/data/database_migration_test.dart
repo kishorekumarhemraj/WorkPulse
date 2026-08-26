@@ -110,34 +110,72 @@ void main() {
       expect(columnNames, contains('team'));
     });
 
-    test('categories table has a CAPEX/OPEX type column defaulting to OPEX',
+    test('the financial classification lives on tasks, not categories',
         () async {
       final db = dbService.database;
-      final columns =
-          await db.rawQuery('PRAGMA table_info(${Tables.categories});');
-      final typeColumn =
-          columns.firstWhere((c) => c['name'] == 'type', orElse: () => {});
-      expect(typeColumn, isNotEmpty,
-          reason: 'categories.type must exist on a fresh database');
-      expect(typeColumn['notnull'], 1);
 
-      // A category inserted without naming the column still lands on a valid
-      // type, which is what keeps the Time Sheet's split total-preserving.
+      final categoryColumns =
+          await db.rawQuery('PRAGMA table_info(${Tables.categories});');
+      final categoryNames =
+          categoryColumns.map((c) => c['name'] as String).toSet();
+      // A category names the kind of work and makes no financial claim.
+      expect(categoryNames, isNot(contains('type')));
+
+      final workItemColumns =
+          await db.rawQuery('PRAGMA table_info(${Tables.workItems});');
+      final classificationColumn = workItemColumns.firstWhere(
+        (c) => c['name'] == 'financial_classification',
+        orElse: () => {},
+      );
+      expect(classificationColumn, isNotEmpty);
+      expect(classificationColumn['notnull'], 1);
+
+      final sessionColumns =
+          await db.rawQuery('PRAGMA table_info(${Tables.sessions});');
+      final overrideColumn = sessionColumns.firstWhere(
+        (c) => c['name'] == 'financial_classification',
+        orElse: () => {},
+      );
+      expect(overrideColumn, isNotEmpty);
+      // Nullable on purpose: null means "inherit from the task".
+      expect(overrideColumn['notnull'], 0);
+    });
+
+    test('a task defaults to NONE rather than inventing a finance decision',
+        () async {
+      final db = dbService.database;
       final now = DateTime.now().toUtc().toIso8601String();
-      await db.insert(Tables.categories, {
-        'id': 'cat-default-type',
+
+      await db.insert(Tables.projects, {
+        'id': 'proj-default',
         'workspace_id': MigrationV1.defaultWorkspaceId,
-        'name': 'Type Defaulting Category',
+        'name': 'Defaulting Project',
+        'created_at': now,
+        'updated_at': now,
+      });
+      await db.insert(Tables.categories, {
+        'id': 'cat-default',
+        'workspace_id': MigrationV1.defaultWorkspaceId,
+        'name': 'Defaulting Category',
+        'created_at': now,
+        'updated_at': now,
+      });
+      await db.insert(Tables.workItems, {
+        'id': 'wi-default',
+        'workspace_id': MigrationV1.defaultWorkspaceId,
+        'name': 'Defaulting Task',
+        'project_id': 'proj-default',
+        'category_id': 'cat-default',
         'created_at': now,
         'updated_at': now,
       });
 
       final rows = await db.query(
-        Tables.categories,
+        Tables.workItems,
         where: 'id = ?',
-        whereArgs: ['cat-default-type'],
+        whereArgs: ['wi-default'],
       );
-      expect(rows.first['type'], equals('OPEX'));
+      expect(rows.first['financial_classification'], equals('NONE'));
     });
 
     test('projects table has a timesheet_code column on a fresh database',
@@ -221,8 +259,8 @@ void main() {
         await v1Db.close();
 
         // 2. Re-open the same file through DatabaseService, which now
-        // targets AppConstants.dbVersion (6) - this exercises the real
-        // onUpgrade(db, 1, 6) path, not onCreate.
+        // targets AppConstants.dbVersion (7) - this exercises the real
+        // onUpgrade(db, 1, 7) path, not onCreate.
         final upgraded = DatabaseService();
         await upgraded.initialize(customPath: dbPath);
         final db = upgraded.database;
@@ -253,16 +291,31 @@ void main() {
             await db.rawQuery('PRAGMA table_info(${Tables.categories});');
         final categoryColNames =
             categoryCols.map((c) => c['name'] as String).toSet();
-        expect(categoryColNames, contains('type'));
+        expect(categoryColNames, isNot(contains('type')));
 
-        final upgradedCategory = await db.query(
-          Tables.categories,
+        final upgradedTask = await db.query(
+          Tables.workItems,
           where: 'id = ?',
-          whereArgs: ['cat-pre-upgrade'],
+          whereArgs: ['wi-pre-upgrade'],
         );
-        // Backfilled, not left null: OPEX is the conservative reading of a
-        // category created before the distinction existed.
-        expect(upgradedCategory.first['type'], equals('OPEX'));
+        // A v1 database has no category type to carry over, so the task
+        // arrives unclassified rather than guessed at.
+        expect(
+          upgradedTask.first['financial_classification'],
+          equals('NONE'),
+        );
+
+        final upgradedSession = await db.query(
+          Tables.sessions,
+          where: 'id = ?',
+          whereArgs: ['session-pre-upgrade'],
+        );
+        // Null is "inherit from the task", which is what every historical
+        // session should do.
+        expect(
+          upgradedSession.first['financial_classification'],
+          isNull,
+        );
 
         final peopleCols =
             await db.rawQuery('PRAGMA table_info(${Tables.people});');
@@ -304,6 +357,100 @@ void main() {
             backfilledPeople.first['person_id'], equals('person-pre-upgrade'));
 
         await upgraded.close();
+      } finally {
+        await tempDir.delete(recursive: true);
+      }
+    });
+
+    test('carries a category-level CAPEX/OPEX value onto its tasks', () async {
+      // Reproduces a database that ran the *earlier* cut of v5, where the
+      // classification hung off the category. The rewritten v5 has to lift
+      // those values onto the tasks and then drop the column, or a user who
+      // classified their categories loses that work on upgrade.
+      final tempDir =
+          await Directory.systemTemp.createTemp('workpulse_classify_test');
+      final dbPath = p.join(tempDir.path, 'classify_test.db');
+
+      try {
+        final db = await databaseFactoryFfi.openDatabase(
+          dbPath,
+          options: OpenDatabaseOptions(
+            version: 1,
+            onCreate: (db, version) => MigrationV1.execute(db),
+          ),
+        );
+        await MigrationV2.execute(db);
+        await MigrationV3.execute(db);
+        await MigrationV4.execute(db);
+
+        // The old v5's column, recreated by hand.
+        await db.execute(
+          "ALTER TABLE ${Tables.categories} "
+          "ADD COLUMN type TEXT NOT NULL DEFAULT 'OPEX';",
+        );
+
+        final now = DateTime.now().toUtc().toIso8601String();
+        await db.insert(Tables.projects, {
+          'id': 'proj-1',
+          'workspace_id': MigrationV1.defaultWorkspaceId,
+          'name': 'Apollo',
+          'created_at': now,
+          'updated_at': now,
+        });
+        for (final (id, name, type) in [
+          ('cat-build', 'Feature Work', 'CAPEX'),
+          ('cat-run', 'Production Support', 'OPEX'),
+        ]) {
+          await db.insert(Tables.categories, {
+            'id': id,
+            'workspace_id': MigrationV1.defaultWorkspaceId,
+            'name': name,
+            'type': type,
+            'created_at': now,
+            'updated_at': now,
+          });
+        }
+        for (final (id, categoryId) in [
+          ('wi-build', 'cat-build'),
+          ('wi-run', 'cat-run'),
+        ]) {
+          await db.insert(Tables.workItems, {
+            'id': id,
+            'workspace_id': MigrationV1.defaultWorkspaceId,
+            'name': 'Task for $categoryId',
+            'project_id': 'proj-1',
+            'category_id': categoryId,
+            'created_at': now,
+            'updated_at': now,
+          });
+        }
+
+        await MigrationV5.execute(db);
+
+        Future<Object?> classificationOf(String id) async {
+          final rows = await db.query(
+            Tables.workItems,
+            where: 'id = ?',
+            whereArgs: [id],
+          );
+          return rows.first['financial_classification'];
+        }
+
+        expect(await classificationOf('wi-build'), equals('CAPEX'));
+        expect(await classificationOf('wi-run'), equals('OPEX'));
+
+        final categoryCols =
+            await db.rawQuery('PRAGMA table_info(${Tables.categories});');
+        final categoryNames =
+            categoryCols.map((c) => c['name'] as String).toSet();
+        expect(categoryNames, isNot(contains('type')));
+
+        // Re-runnable: the replay on the way to v7 must not throw or undo
+        // the values it just wrote.
+        await expectLater(MigrationV5.execute(db), completes);
+        expect(await classificationOf('wi-build'), equals('CAPEX'));
+
+        await db.close();
       } finally {
         await tempDir.delete(recursive: true);
       }

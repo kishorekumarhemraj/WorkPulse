@@ -4,7 +4,6 @@ import 'package:workpulse/core/theme/app_colors.dart';
 import 'package:workpulse/core/theme/design_tokens.dart';
 import 'package:workpulse/core/theme/icon_utils.dart';
 import 'package:workpulse/core/widgets/app_dialog.dart';
-import 'package:workpulse/core/widgets/app_radio_group.dart';
 import 'package:workpulse/core/widgets/app_snack_bar.dart';
 import 'package:workpulse/domain/models/category_model.dart';
 import 'package:workpulse/features/categories/providers/categories_provider.dart';
@@ -31,7 +30,6 @@ class _CategoryFormDialogState extends ConsumerState<CategoryFormDialog> {
   late final TextEditingController _nameController;
   late final TextEditingController _descController;
   late String _selectedIconName;
-  late CategoryType _selectedType;
   bool _isSubmitting = false;
 
   @override
@@ -41,9 +39,6 @@ class _CategoryFormDialogState extends ConsumerState<CategoryFormDialog> {
     _descController =
         TextEditingController(text: widget.category?.description ?? '');
     _selectedIconName = widget.category?.iconName ?? 'folder';
-    // OPEX rather than "nothing selected": every category has a type, and
-    // most work in most workspaces is operational.
-    _selectedType = widget.category?.type ?? CategoryType.opex;
   }
 
   @override
@@ -64,7 +59,6 @@ class _CategoryFormDialogState extends ConsumerState<CategoryFormDialog> {
                   name: _nameController.text.trim(),
                   description: _descController.text.trim(),
                   iconName: _selectedIconName,
-                  type: _selectedType,
                 );
         if (mounted) Navigator.of(context).pop(created);
       } else {
@@ -74,8 +68,7 @@ class _CategoryFormDialogState extends ConsumerState<CategoryFormDialog> {
                     name: _nameController.text.trim(),
                     description: _descController.text.trim(),
                     iconName: _selectedIconName,
-                    type: _selectedType,
-                  ),
+                    ),
                 );
         if (mounted) Navigator.of(context).pop(updated);
       }
@@ -150,31 +143,6 @@ class _CategoryFormDialogState extends ConsumerState<CategoryFormDialog> {
                 decoration: const InputDecoration(
                   hintText: 'What kind of work belongs in this category?',
                 ),
-              ),
-            ),
-            const SizedBox(height: Spacing.lg),
-            DialogField(
-              label: 'Type',
-              required: true,
-              helperText: 'Drives the CAPEX / OPEX split on the Time Sheet. '
-                  'Every session logged under this category counts towards it.',
-              child: AppRadioGroup<CategoryType>(
-                selected: _selectedType,
-                onChanged: (type) => setState(() => _selectedType = type),
-                options: const [
-                  RadioOption(
-                    value: CategoryType.capex,
-                    label: 'CAPEX',
-                    description: 'Capitalizable',
-                    icon: Icons.trending_up,
-                  ),
-                  RadioOption(
-                    value: CategoryType.opex,
-                    label: 'OPEX',
-                    description: 'Operational',
-                    icon: Icons.autorenew,
-                  ),
-                ],
               ),
             ),
             const SizedBox(height: Spacing.lg),
