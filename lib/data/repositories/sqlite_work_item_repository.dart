@@ -3,6 +3,7 @@ import 'package:workpulse/core/database/database_service.dart';
 import 'package:workpulse/core/errors/app_exceptions.dart';
 import 'package:workpulse/core/extensions/datetime_extensions.dart';
 import 'package:workpulse/data/database/tables.dart';
+import 'package:workpulse/domain/models/financial_classification.dart';
 import 'package:workpulse/domain/models/work_item_model.dart';
 import 'package:workpulse/domain/repositories/work_item_repository.dart';
 
@@ -339,6 +340,7 @@ class SqliteWorkItemRepository implements WorkItemRepository {
       'name': item.name,
       'project_id': item.projectId,
       'category_id': item.categoryId,
+      'financial_classification': item.financialClassification.value,
       'notes': item.notes,
       'created_at': item.createdAt.toStorageString(),
       'updated_at': item.updatedAt.toStorageString(),
@@ -355,6 +357,9 @@ class SqliteWorkItemRepository implements WorkItemRepository {
       name: map['name'] as String,
       projectId: map['project_id'] as String,
       categoryId: map['category_id'] as String,
+      financialClassification: FinancialClassification.fromString(
+        map['financial_classification'] as String?,
+      ),
       notes: map['notes'] as String?,
       tagIds: tagIds,
       peopleIds: peopleIds,

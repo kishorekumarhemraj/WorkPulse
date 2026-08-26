@@ -4,6 +4,7 @@ import 'package:workpulse/domain/models/date_range.dart';
 import 'package:intl/intl.dart';
 import 'package:workpulse/domain/models/attribute_model.dart';
 import 'package:workpulse/domain/models/category_model.dart';
+import 'package:workpulse/domain/models/financial_classification.dart';
 import 'package:workpulse/domain/models/idle_period_model.dart';
 import 'package:workpulse/domain/models/person_model.dart';
 import 'package:workpulse/domain/models/project_model.dart';
@@ -36,6 +37,14 @@ class SessionExportRecord {
   final Duration netActiveDuration;
   final Map<String, String> attributeValues; // definitionId -> formatted string
 
+  /// The session's effective classification: its own override where it has
+  /// one, otherwise the task's. Resolved once, here, so every report and
+  /// export downstream agrees about which hours are capitalizable.
+  final FinancialClassification classification;
+
+  /// Whether that value came from the session rather than the task.
+  final bool classificationIsOverride;
+
   const SessionExportRecord({
     required this.session,
     required this.workItem,
@@ -48,6 +57,8 @@ class SessionExportRecord {
     required this.idleDuration,
     required this.netActiveDuration,
     this.attributeValues = const {},
+    this.classification = FinancialClassification.none,
+    this.classificationIsOverride = false,
   });
 }
 
@@ -211,6 +222,9 @@ class ExportService {
           idleDuration: totalIdle,
           netActiveDuration: net,
           attributeValues: attrMap,
+          classification:
+              s.classificationWithin(workItem.financialClassification),
+          classificationIsOverride: s.hasClassificationOverride,
         ),
       );
     }
@@ -241,8 +255,9 @@ class ExportService {
       'Project',
       'Timesheet Code',
       'Category',
-      'Category Type',
       'WorkItem',
+      'Financial Classification',
+      'Classification Source',
       'Notes',
       'Tags',
       'People',
@@ -269,11 +284,11 @@ class ExportService {
       final projStr = r.project?.name ?? '';
       final projCodeStr = r.project?.timesheetCode ?? '';
       final catStr = r.category?.name ?? '';
-      // Blank rather than 'OPEX' when the session carries no category at all:
-      // an export records what was tracked, and no category means no claim
-      // either way about capitalizable work.
-      final catTypeStr = r.category?.type.value ?? '';
       final taskStr = r.workItem.name;
+      final classStr = r.classification.value;
+      // Which row of the model produced that value, so a reviewer can tell a
+      // deliberate one-off from the task's standing answer.
+      final classSourceStr = r.classificationIsOverride ? 'SESSION' : 'TASK';
       final notesStr = s.notes ?? '';
       final tagsStr = r.tags.map((t) => t.name).join('; ');
       final peopleStr = r.people.map((p) => p.name).join('; ');
@@ -293,8 +308,9 @@ class ExportService {
         projStr,
         projCodeStr,
         catStr,
-        catTypeStr,
         taskStr,
+        classStr,
+        classSourceStr,
         notesStr,
         tagsStr,
         peopleStr,
@@ -375,9 +391,14 @@ class ExportService {
           'grossDurationSeconds': r.grossDuration.inSeconds,
           'idleDurationSeconds': r.idleDuration.inSeconds,
           'netDurationSeconds': r.netActiveDuration.inSeconds,
+          'financialClassification': r.classification.value,
+          'financialClassificationSource':
+              r.classificationIsOverride ? 'SESSION' : 'TASK',
           'workItem': {
             'id': r.workItem.id,
             'name': r.workItem.name,
+            'financialClassification':
+                r.workItem.financialClassification.value,
             'legacyNotes': r.workItem.notes,
           },
           'project': r.project != null
@@ -393,7 +414,6 @@ class ExportService {
                   'id': r.category!.id,
                   'name': r.category!.name,
                   'iconName': r.category!.iconName,
-                  'type': r.category!.type.value,
                 }
               : null,
           'tags': r.tags
