@@ -24,6 +24,7 @@ class CategoriesNotifier extends AsyncNotifier<List<Category>> {
     required String name,
     String? description,
     String? iconName,
+    CategoryType type = CategoryType.opex,
   }) async {
     final workspace = await ref.read(currentWorkspaceProvider.future);
     final categoryRepo = ref.read(categoryRepositoryProvider);
@@ -36,6 +37,7 @@ class CategoriesNotifier extends AsyncNotifier<List<Category>> {
       description:
           description?.trim().isEmpty == true ? null : description?.trim(),
       iconName: iconName ?? 'folder',
+      type: type,
       createdAt: now,
       updatedAt: now,
     );

@@ -34,8 +34,8 @@ class _CategoriesViewState extends ConsumerState<CategoriesView> {
       backgroundColor: colors.background,
       body: PageScaffold(
         title: 'Categories',
-        subtitle:
-            'Classify the kind of work you do, such as coding or meetings',
+        subtitle: 'Classify the kind of work you do, and whether it is '
+            'capitalizable (CAPEX) or operational (OPEX)',
         actions: [
           ElevatedButton.icon(
             onPressed: () => CategoryFormDialog.show(context),
@@ -59,7 +59,8 @@ class _CategoriesViewState extends ConsumerState<CategoriesView> {
           data: (categories) {
             final filtered = categories.where((c) {
               if (_searchQuery.isEmpty) return true;
-              return c.name.toLowerCase().contains(_searchQuery);
+              return c.name.toLowerCase().contains(_searchQuery) ||
+                  c.type.label.toLowerCase().contains(_searchQuery);
             }).toList();
 
             if (filtered.isEmpty) {
@@ -94,6 +95,15 @@ class _CategoriesViewState extends ConsumerState<CategoriesView> {
                             .length ??
                         0,
                     countLabel: 'work items',
+                    details: [
+                      EntityDetail(
+                        icon: category.isCapex
+                            ? Icons.trending_up
+                            : Icons.autorenew,
+                        value: '${category.type.label} · '
+                            '${category.type.description}',
+                      ),
+                    ],
                     onTap: () =>
                         CategoryFormDialog.show(context, category: category),
                     actions: [

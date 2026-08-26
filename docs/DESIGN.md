@@ -50,7 +50,7 @@ WorkPulse strictly adheres to a 4-layer clean architecture:
 ### Layer Details:
 - **`lib/core/`**: Platform adapters (`HotKeyService`, `TrayService`, `IdleDetectorService`, `SystemIdleSource`, `WindowService`), database initialization, error types (`AppException`), the design system (`WorkPulseColors`, `design_tokens.dart`, `core/widgets/`), and the keyboard layer (`core/keyboard/`: platform shortcut labels and the search-focus registry).
 - **`lib/domain/`**: Pure Dart models (`WorkItem`, `Session`, `Project`, `Category`, `Tag`, `Person`, `AttributeDefinition`, `AttributeOption`, `IdlePeriod`), repository contracts, and business logic services (`TimerService`, `TaskSwitchService`, `IdleService`, `AnalyticsService`, `WorkPatternService`).
-- **`lib/data/`**: SQLite table schemas (`Tables`), versioned migrations (`MigrationV1`–`MigrationV4`), DAOs, and repository implementations (`SqliteWorkItemRepository`, `SqliteSessionRepository`, etc.).
+- **`lib/data/`**: SQLite table schemas (`Tables`), versioned migrations (`MigrationV1`–`MigrationV5`), DAOs, and repository implementations (`SqliteWorkItemRepository`, `SqliteSessionRepository`, etc.).
 - **`lib/features/`**: Feature-specific UI, view models, and Riverpod providers (`quick_capture/`, `tasks/`, `timer/`, `idle/`, `attributes/`, `projects/`, `categories/`, `tags/`, `people/`, `dashboard/`, `reports/`, `settings/`, `shell/`).
 
 ---

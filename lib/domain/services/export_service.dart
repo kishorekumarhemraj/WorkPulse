@@ -240,6 +240,7 @@ class ExportService {
       'End Time (UTC)',
       'Project',
       'Category',
+      'Category Type',
       'WorkItem',
       'Notes',
       'Tags',
@@ -266,6 +267,10 @@ class ExportService {
           s.endTime != null ? timeFormat.format(s.endTime!) : 'In Progress';
       final projStr = r.project?.name ?? '';
       final catStr = r.category?.name ?? '';
+      // Blank rather than 'OPEX' when the session carries no category at all:
+      // an export records what was tracked, and no category means no claim
+      // either way about capitalizable work.
+      final catTypeStr = r.category?.type.value ?? '';
       final taskStr = r.workItem.name;
       final notesStr = s.notes ?? '';
       final tagsStr = r.tags.map((t) => t.name).join('; ');
@@ -285,6 +290,7 @@ class ExportService {
         endStr,
         projStr,
         catStr,
+        catTypeStr,
         taskStr,
         notesStr,
         tagsStr,
@@ -383,6 +389,7 @@ class ExportService {
                   'id': r.category!.id,
                   'name': r.category!.name,
                   'iconName': r.category!.iconName,
+                  'type': r.category!.type.value,
                 }
               : null,
           'tags': r.tags
