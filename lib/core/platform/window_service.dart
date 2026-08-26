@@ -18,8 +18,6 @@ abstract class WindowService {
   Future<void> hide();
   Future<void> focus();
   Future<bool> isVisible();
-  Future<void> setPreventClose(bool isPreventClose);
-  Future<void> minimize();
   Future<void> close();
 
   Future<void> openQuickCapture();
@@ -130,26 +128,6 @@ class DesktopWindowService with WindowListener implements WindowService {
     } catch (e) {
       debugPrint('DesktopWindowService isVisible error: $e');
       return true;
-    }
-  }
-
-  @override
-  Future<void> setPreventClose(bool isPreventClose) async {
-    if (!_isInitialized) return;
-    try {
-      await windowManager.setPreventClose(isPreventClose);
-    } catch (e) {
-      debugPrint('DesktopWindowService setPreventClose error: $e');
-    }
-  }
-
-  @override
-  Future<void> minimize() async {
-    if (!_isInitialized) return;
-    try {
-      await windowManager.minimize();
-    } catch (e) {
-      debugPrint('DesktopWindowService minimize error: $e');
     }
   }
 
@@ -358,14 +336,6 @@ class NoOpWindowService implements WindowService {
 
   @override
   Future<bool> isVisible() async => visible;
-
-  @override
-  Future<void> setPreventClose(bool isPreventClose) async {}
-
-  @override
-  Future<void> minimize() async {
-    visible = false;
-  }
 
   @override
   Future<void> close() async {
