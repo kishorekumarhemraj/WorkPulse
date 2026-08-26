@@ -58,6 +58,10 @@ class CurrentWorkspaceNotifier extends AsyncNotifier<Workspace> {
         name: 'General',
         description: 'Default project for general work items',
         colorHex: '#0A84FF',
+        // A placeholder the user is expected to replace with their own
+        // organisation's code; the Projects screen shows it, and the form
+        // requires one, so it cannot silently stay wrong.
+        timesheetCode: 'GENERAL',
         createdAt: now,
         updatedAt: now,
       ),

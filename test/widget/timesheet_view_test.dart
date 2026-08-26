@@ -27,10 +27,10 @@ void main() {
   );
 
   TimesheetData sheet({
-    Duration capex = const Duration(hours: 12),
-    Duration opex = const Duration(hours: 4),
+    Duration capex = const Duration(hours: 6),
+    Duration opex = const Duration(hours: 2),
     Duration unclassified = Duration.zero,
-    Duration idlePerSplit = const Duration(hours: 1),
+    Duration idle = const Duration(minutes: 30),
   }) {
     final net = CapexOpexSplit(
       capex: capex,
@@ -38,28 +38,40 @@ void main() {
       unclassified: unclassified,
     );
     final gross = CapexOpexSplit(
-      capex: capex + idlePerSplit,
+      capex: capex + idle,
       opex: opex,
       unclassified: unclassified,
     );
 
-    TimesheetRow row(String id, String label) => TimesheetRow(
+    TimesheetRow row(String id, String label, {String? code}) => TimesheetRow(
           id: id,
           label: label,
           colorHex: '#0A84FF',
+          code: code,
           net: net,
           gross: gross,
-          sessionCount: 4,
+          sessionCount: 2,
         );
 
+    // Two rows per table, and a grand total that is their sum — the screen's
+    // own invariant is that every table reconciles to the same figure.
     return TimesheetData(
       range: range,
-      total: row('__total__', 'Total'),
-      projectRows: [row('proj-1', 'Apollo')],
+      total: TimesheetRow(
+        id: '__total__',
+        label: 'Total',
+        net: net + net,
+        gross: gross + gross,
+        sessionCount: 4,
+      ),
+      projectRows: [
+        row('proj-1', 'Apollo', code: 'PRJ-1042'),
+        row('proj-2', 'Zephyr'),
+      ],
       attributeSections: [
         TimesheetAttributeSection(
           definition: costCentre,
-          rows: [row('CC-100', 'CC-100')],
+          rows: [row('CC-100', 'CC-100'), row('CC-200', 'CC-200')],
         ),
       ],
       sessionCount: 4,
@@ -100,21 +112,33 @@ void main() {
       expect(find.text('CC-100'), findsOneWidget);
 
       // Decimal hours, because that is what a timesheet form accepts.
-      expect(find.text('12.00'), findsWidgets);
-      expect(find.text('4.00'), findsWidgets);
+      expect(find.text('6.00'), findsWidgets);
+      expect(find.text('2.00'), findsWidgets);
+    });
+
+    testWidgets('the project table shows each project\'s timesheet code',
+        (tester) async {
+      await pumpSheet(tester, sheet());
+
+      // The code column belongs to the project table only — an attribute
+      // value is not booked against anything itself.
+      expect(find.text('CODE'), findsOneWidget);
+      expect(find.text('PRJ-1042'), findsOneWidget);
+      // A project without one says so rather than showing an empty cell.
+      expect(find.text('No code'), findsOneWidget);
     });
 
     testWidgets('the Gross toggle re-reports the same rows with idle included',
         (tester) async {
       await pumpSheet(tester, sheet());
 
-      // Net: 12 CAPEX. Gross adds the hour of idle back.
-      expect(find.text('13.00'), findsNothing);
+      // Net CAPEX is 6.00 a row; Gross adds the half hour of idle back.
+      expect(find.text('6.50'), findsNothing);
 
       await tester.tap(find.text('Gross hours'));
       await tester.pumpAndSettle();
 
-      expect(find.text('13.00'), findsWidgets);
+      expect(find.text('6.50'), findsWidgets);
     });
 
     testWidgets('the Unclassified column appears only when there is any',
@@ -124,7 +148,7 @@ void main() {
 
       await pumpSheet(
         tester,
-        sheet(unclassified: const Duration(hours: 2)),
+        sheet(unclassified: const Duration(hours: 1)),
       );
       // Both the summary tile and the table column appear, and the tile
       // says what the bucket means.

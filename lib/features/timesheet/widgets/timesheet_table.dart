@@ -63,6 +63,7 @@ class TimesheetTable extends StatelessWidget {
   });
 
   static const double _nameColumnWidth = 220;
+  static const double _codeColumnWidth = 120;
   static const double _numberColumnWidth = 92;
   static const double _shareColumnWidth = 132;
 
@@ -76,12 +77,17 @@ class TimesheetTable extends StatelessWidget {
     final showUnclassified =
         rows.any((row) => row.split(basis).hasUnclassified);
 
+    // Projects carry a timesheet code; attribute values do not, so the
+    // column appears only on the table where it means something.
+    final showCode = rows.any((row) => row.code != null);
+
     final totals = rows.fold<CapexOpexSplit>(
       CapexOpexSplit.zero,
       (sum, row) => sum + row.split(basis),
     );
 
     final minWidth = _nameColumnWidth +
+        (showCode ? _codeColumnWidth : 0.0) +
         _numberColumnWidth * (showUnclassified ? 4 : 3) +
         _shareColumnWidth +
         Spacing.lg * 2;
@@ -142,16 +148,19 @@ class TimesheetTable extends StatelessWidget {
                       _HeaderRow(
                         nameColumnLabel: nameColumnLabel,
                         showUnclassified: showUnclassified,
+                        showCode: showCode,
                       ),
                       for (final row in rows)
                         _DataRow(
                           row: row,
                           basis: basis,
                           showUnclassified: showUnclassified,
+                          showCode: showCode,
                         ),
                       _TotalRow(
                         totals: totals,
                         showUnclassified: showUnclassified,
+                        showCode: showCode,
                       ),
                     ],
                   ),
@@ -168,10 +177,12 @@ class TimesheetTable extends StatelessWidget {
 class _HeaderRow extends StatelessWidget {
   final String nameColumnLabel;
   final bool showUnclassified;
+  final bool showCode;
 
   const _HeaderRow({
     required this.nameColumnLabel,
     required this.showUnclassified,
+    required this.showCode,
   });
 
   @override
@@ -201,6 +212,11 @@ class _HeaderRow extends StatelessWidget {
             width: TimesheetTable._nameColumnWidth,
             child: Text(nameColumnLabel.toUpperCase(), style: style),
           ),
+          if (showCode)
+            SizedBox(
+              width: TimesheetTable._codeColumnWidth,
+              child: Text('CODE', style: style),
+            ),
           _HeaderCell(label: 'CAPEX', color: palette.capex),
           _HeaderCell(label: 'OPEX', color: palette.opex),
           if (showUnclassified)
@@ -244,11 +260,13 @@ class _DataRow extends StatelessWidget {
   final TimesheetRow row;
   final TimesheetHoursBasis basis;
   final bool showUnclassified;
+  final bool showCode;
 
   const _DataRow({
     required this.row,
     required this.basis,
     required this.showUnclassified,
+    required this.showCode,
   });
 
   @override
@@ -296,6 +314,7 @@ class _DataRow extends StatelessWidget {
               ],
             ),
           ),
+          if (showCode) _CodeCell(code: row.code),
           _HoursCell(duration: split.capex, color: palette.capex),
           _HoursCell(duration: split.opex, color: palette.opex),
           if (showUnclassified)
@@ -321,8 +340,13 @@ class _DataRow extends StatelessWidget {
 class _TotalRow extends StatelessWidget {
   final CapexOpexSplit totals;
   final bool showUnclassified;
+  final bool showCode;
 
-  const _TotalRow({required this.totals, required this.showUnclassified});
+  const _TotalRow({
+    required this.totals,
+    required this.showUnclassified,
+    required this.showCode,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -353,6 +377,8 @@ class _TotalRow extends StatelessWidget {
                   ?.copyWith(color: colors.textSecondary),
             ),
           ),
+          if (showCode)
+            const SizedBox(width: TimesheetTable._codeColumnWidth),
           _HoursCell(
             duration: totals.capex,
             color: palette.capex,
@@ -379,6 +405,74 @@ class _TotalRow extends StatelessWidget {
             child: SplitBar(split: totals),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// A project's timesheet code, monospaced so it can be read off and typed
+/// character for character.
+class _CodeCell extends StatelessWidget {
+  final String? code;
+
+  const _CodeCell({required this.code});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    final theme = Theme.of(context);
+    final value = code?.trim();
+
+    if (value == null || value.isEmpty) {
+      return SizedBox(
+        width: TimesheetTable._codeColumnWidth,
+        child: Row(
+          children: [
+            Icon(
+              Icons.error_outline,
+              size: IconSizes.xs,
+              color: colors.textTertiary,
+            ),
+            const SizedBox(width: Spacing.xs),
+            Expanded(
+              child: Text(
+                'No code',
+                style: theme.textTheme.bodySmall
+                    ?.copyWith(color: colors.textTertiary),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return SizedBox(
+      width: TimesheetTable._codeColumnWidth,
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: Spacing.sm,
+            vertical: Spacing.xxs,
+          ),
+          decoration: BoxDecoration(
+            color: colors.surfaceSunken,
+            borderRadius: Radii.smAll,
+            border: Border.all(color: colors.divider),
+          ),
+          child: Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: AppTypography.numeric(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: colors.textSecondary,
+            ),
+          ),
+        ),
       ),
     );
   }

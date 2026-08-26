@@ -21,11 +21,12 @@ void main() {
         updatedAt: now,
       );
 
-  Project project(String id, String name) => Project(
+  Project project(String id, String name, {String? code}) => Project(
         id: id,
         workspaceId: 'ws-1',
         name: name,
         colorHex: '#0A84FF',
+        timesheetCode: code,
         createdAt: now,
         updatedAt: now,
       );
@@ -90,7 +91,7 @@ void main() {
 
   final capex = category('cat-capex', 'Feature Work', CategoryType.capex);
   final opex = category('cat-opex', 'Production Support', CategoryType.opex);
-  final apollo = project('proj-apollo', 'Apollo');
+  final apollo = project('proj-apollo', 'Apollo', code: 'PRJ-1042');
   final zephyr = project('proj-zephyr', 'Zephyr');
   final costCentre = definition('def-cc', 'Cost Centre');
 
@@ -287,6 +288,40 @@ void main() {
       expect(
         data.attributeSections.map((s) => s.definition.name),
         ['Alpha', 'Beta'],
+      );
+    });
+
+    test('project rows carry the timesheet code, attribute rows do not', () {
+      final data = service.build(
+        range: range,
+        records: [
+          record(
+            id: 's1',
+            proj: apollo,
+            cat: capex,
+            gross: const Duration(hours: 2),
+            attributes: {costCentre.id: 'CC-100'},
+          ),
+          record(
+            id: 's2',
+            proj: zephyr,
+            cat: opex,
+            gross: const Duration(hours: 1),
+          ),
+        ],
+        definitions: [costCentre],
+      );
+
+      final byId = {for (final r in data.projectRows) r.id: r};
+      expect(byId['proj-apollo']!.code, 'PRJ-1042');
+      // A project without a code reports it as absent rather than blank, so
+      // the Time Sheet can say so out loud.
+      expect(byId['proj-zephyr']!.code, isNull);
+
+      // An attribute value is not booked against anything itself.
+      expect(
+        data.attributeSections.single.rows.every((r) => r.code == null),
+        isTrue,
       );
     });
 
