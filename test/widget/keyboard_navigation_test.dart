@@ -410,5 +410,52 @@ void main() {
       expect(triggerBorder()?.top.color, colors.focusRing);
       expect(triggerBorder()?.top.width, 1.5);
     });
+
+    testWidgets('can open with arrow down, navigate options and select with enter',
+        (tester) async {
+      String? selected;
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.darkTheme,
+          home: Scaffold(
+            body: AppFilterDropdown<String>(
+              placeholder: 'All Projects',
+              value: null,
+              options: const [
+                FilterOption(value: 'p1', label: 'Apollo'),
+                FilterOption(value: 'p2', label: 'Beacon'),
+              ],
+              onChanged: (val) => selected = val,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Tab to focus trigger
+      await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+      await tester.pumpAndSettle();
+
+      // Arrow down to open menu (starts on 'All Projects' since value is null)
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Apollo'), findsOneWidget);
+      expect(find.text('Beacon'), findsOneWidget);
+
+      // Arrow down to 'Apollo'
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pumpAndSettle();
+
+      // Arrow down to 'Beacon'
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pumpAndSettle();
+
+      // Select with Enter
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pumpAndSettle();
+
+      expect(selected, 'p2');
+    });
   });
 }
