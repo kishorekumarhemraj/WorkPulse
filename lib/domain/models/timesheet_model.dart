@@ -106,6 +106,11 @@ class TimesheetRow extends Equatable {
   final String id;
   final String label;
   final String? colorHex;
+
+  /// The project's timesheet code, where the row is a project. Null on
+  /// attribute rows, which are not booked against anything themselves.
+  final String? code;
+
   final CapexOpexSplit net;
   final CapexOpexSplit gross;
   final int sessionCount;
@@ -114,6 +119,7 @@ class TimesheetRow extends Equatable {
     required this.id,
     required this.label,
     this.colorHex,
+    this.code,
     this.net = CapexOpexSplit.zero,
     this.gross = CapexOpexSplit.zero,
     this.sessionCount = 0,
@@ -123,7 +129,8 @@ class TimesheetRow extends Equatable {
       basis == TimesheetHoursBasis.net ? net : gross;
 
   @override
-  List<Object?> get props => [id, label, colorHex, net, gross, sessionCount];
+  List<Object?> get props =>
+      [id, label, colorHex, code, net, gross, sessionCount];
 }
 
 /// One attribute's worth of rows — a table per configurable attribute.

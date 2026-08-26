@@ -75,6 +75,7 @@ WorkPulse is a privacy-first, offline-first desktop time-tracking and work-aware
 - A session's own category decides its bucket (rule 7). Time on a session with no category is reported as **Unclassified**, never folded into OPEX, and the CAPEX ratio is taken over classified time so unfiled hours cannot dilute it.
 - `TimesheetService` is pure — records in, tables out, no repositories and no clock. It builds on the `SessionExportRecord`s the Time Log has already resolved rather than re-querying, and computes both hour bases up front so the Net/Gross toggle is a repaint.
 - The project table and every attribute table are views of the same hours and must always sum to the same total. That is why a multi-select value stays whole ("Backend; Platform" is one row) rather than being counted once per option.
+- `Project.timesheetCode` is the code the organisation books a project against. Required by the project form and validated unique per workspace, but **nullable in the schema**: unlike the CAPEX/OPEX type there is no conservative default, because a cost code is an external identifier the app cannot invent and a made-up one would be booked against real hours. `MigrationV6` therefore adds the column without backfilling, and the Time Sheet reports a missing code as **No code**.
 
 ## Pattern Insights
 - Every finding lands in exactly one of four lanes — `sustain` (Continue), `reclaim`, `delegate`, `plan` — and carries the figures it was derived from. A finding with no evidence is a bug.

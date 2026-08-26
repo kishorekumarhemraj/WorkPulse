@@ -10,6 +10,7 @@ import 'package:workpulse/data/migrations/migration_v2.dart';
 import 'package:workpulse/data/migrations/migration_v3.dart';
 import 'package:workpulse/data/migrations/migration_v4.dart';
 import 'package:workpulse/data/migrations/migration_v5.dart';
+import 'package:workpulse/data/migrations/migration_v6.dart';
 
 void main() {
   setUpAll(() {
@@ -138,6 +139,15 @@ void main() {
       );
       expect(rows.first['type'], equals('OPEX'));
     });
+
+    test('projects table has a timesheet_code column on a fresh database',
+        () async {
+      final db = dbService.database;
+      final columns =
+          await db.rawQuery('PRAGMA table_info(${Tables.projects});');
+      final columnNames = columns.map((c) => c['name'] as String).toSet();
+      expect(columnNames, contains('timesheet_code'));
+    });
   });
 
   group('Migration v1 -> v2 upgrade path', () {
@@ -211,8 +221,8 @@ void main() {
         await v1Db.close();
 
         // 2. Re-open the same file through DatabaseService, which now
-        // targets AppConstants.dbVersion (5) - this exercises the real
-        // onUpgrade(db, 1, 5) path, not onCreate.
+        // targets AppConstants.dbVersion (6) - this exercises the real
+        // onUpgrade(db, 1, 6) path, not onCreate.
         final upgraded = DatabaseService();
         await upgraded.initialize(customPath: dbPath);
         final db = upgraded.database;
@@ -222,6 +232,22 @@ void main() {
         final columnNames = columns.map((c) => c['name'] as String).toSet();
         expect(columnNames, contains('notes'));
         expect(columnNames, contains('category_id'));
+
+        final projectCols =
+            await db.rawQuery('PRAGMA table_info(${Tables.projects});');
+        final projectColNames =
+            projectCols.map((c) => c['name'] as String).toSet();
+        expect(projectColNames, contains('timesheet_code'));
+
+        final upgradedProject = await db.query(
+          Tables.projects,
+          where: 'id = ?',
+          whereArgs: ['proj-pre-upgrade'],
+        );
+        // Deliberately not backfilled: a cost code is an external identifier
+        // the app cannot invent, and a made-up one would be booked against
+        // real hours.
+        expect(upgradedProject.first['timesheet_code'], isNull);
 
         final categoryCols =
             await db.rawQuery('PRAGMA table_info(${Tables.categories});');
@@ -283,7 +309,7 @@ void main() {
       }
     });
 
-    test('MigrationV2 through MigrationV5 are idempotent', () async {
+    test('MigrationV2 through MigrationV6 are idempotent', () async {
       final tempDir =
           await Directory.systemTemp.createTemp('workpulse_idempotency_test');
       final dbPath = p.join(tempDir.path, 'idempotent_test.db');
@@ -302,11 +328,13 @@ void main() {
         await MigrationV3.execute(db);
         await MigrationV4.execute(db);
         await MigrationV5.execute(db);
+        await MigrationV6.execute(db);
         // Run a second time - should not throw duplicate column/table error
         await expectLater(MigrationV2.execute(db), completes);
         await expectLater(MigrationV3.execute(db), completes);
         await expectLater(MigrationV4.execute(db), completes);
         await expectLater(MigrationV5.execute(db), completes);
+        await expectLater(MigrationV6.execute(db), completes);
 
         await db.close();
       } finally {

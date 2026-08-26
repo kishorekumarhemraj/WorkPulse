@@ -34,7 +34,8 @@ class _ProjectsViewState extends ConsumerState<ProjectsView> {
       backgroundColor: colors.background,
       body: PageScaffold(
         title: 'Projects',
-        subtitle: 'Manage and organize your client projects and workspaces',
+        subtitle: 'Manage your client projects, and the timesheet code each '
+            'one books its hours against',
         actions: [
           ElevatedButton.icon(
             onPressed: () => ProjectFormDialog.show(context),
@@ -59,6 +60,8 @@ class _ProjectsViewState extends ConsumerState<ProjectsView> {
             final filtered = projects.where((p) {
               if (_searchQuery.isEmpty) return true;
               return p.name.toLowerCase().contains(_searchQuery) ||
+                  (p.timesheetCode?.toLowerCase().contains(_searchQuery) ??
+                      false) ||
                   (p.description?.toLowerCase().contains(_searchQuery) ??
                       false);
             }).toList();
@@ -70,8 +73,9 @@ class _ProjectsViewState extends ConsumerState<ProjectsView> {
                     ? 'No projects yet'
                     : 'No projects match "$_searchQuery"',
                 message: _searchQuery.isEmpty
-                    ? 'Projects group your work items and give them a colour '
-                        'across the app.'
+                    ? 'Projects group your work items, give them a colour '
+                        'across the app, and carry the timesheet code their '
+                        'hours are booked against.'
                     : null,
                 action: _searchQuery.isEmpty
                     ? ElevatedButton.icon(
@@ -95,6 +99,19 @@ class _ProjectsViewState extends ConsumerState<ProjectsView> {
                             .length ??
                         0,
                     countLabel: 'work items',
+                    details: [
+                      EntityDetail(
+                        icon: project.hasTimesheetCode
+                            ? Icons.numbers
+                            : Icons.error_outline,
+                        // Named rather than shown bare: a code on its own
+                        // reads as a serial number, and a missing one has to
+                        // say what is missing.
+                        value: project.hasTimesheetCode
+                            ? 'Timesheet code ${project.timesheetCode}'
+                            : 'No timesheet code',
+                      ),
+                    ],
                     onTap: () =>
                         ProjectFormDialog.show(context, project: project),
                     actions: [

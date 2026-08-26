@@ -60,6 +60,7 @@ class TimesheetService {
               id: projectId,
               label: record.project?.name ?? 'Unknown Project',
               colorHex: record.project?.colorHex,
+              code: record.project?.timesheetCode,
             ),
           )
           .add(type, net: net, gross: gross);
@@ -125,12 +126,18 @@ class _RowBuilder {
   final String id;
   final String label;
   final String? colorHex;
+  final String? code;
 
   CapexOpexSplit _net = CapexOpexSplit.zero;
   CapexOpexSplit _gross = CapexOpexSplit.zero;
   int _sessionCount = 0;
 
-  _RowBuilder({required this.id, required this.label, this.colorHex});
+  _RowBuilder({
+    required this.id,
+    required this.label,
+    this.colorHex,
+    this.code,
+  });
 
   void add(
     CategoryType? type, {
@@ -146,6 +153,7 @@ class _RowBuilder {
         id: id,
         label: label,
         colorHex: colorHex,
+        code: code,
         net: _net,
         gross: _gross,
         sessionCount: _sessionCount,

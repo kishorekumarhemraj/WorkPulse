@@ -239,6 +239,7 @@ class ExportService {
       'Start Time (UTC)',
       'End Time (UTC)',
       'Project',
+      'Timesheet Code',
       'Category',
       'Category Type',
       'WorkItem',
@@ -266,6 +267,7 @@ class ExportService {
       final endStr =
           s.endTime != null ? timeFormat.format(s.endTime!) : 'In Progress';
       final projStr = r.project?.name ?? '';
+      final projCodeStr = r.project?.timesheetCode ?? '';
       final catStr = r.category?.name ?? '';
       // Blank rather than 'OPEX' when the session carries no category at all:
       // an export records what was tracked, and no category means no claim
@@ -289,6 +291,7 @@ class ExportService {
         startStr,
         endStr,
         projStr,
+        projCodeStr,
         catStr,
         catTypeStr,
         taskStr,
@@ -382,6 +385,7 @@ class ExportService {
                   'id': r.project!.id,
                   'name': r.project!.name,
                   'colorHex': r.project!.colorHex,
+                  'timesheetCode': r.project!.timesheetCode,
                 }
               : null,
           'category': r.category != null

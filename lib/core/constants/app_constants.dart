@@ -3,7 +3,7 @@ abstract class AppConstants {
   static const String appName = 'WorkPulse';
   static const String appVersion = '3.5.0';
   static const String dbName = 'workpulse.db';
-  static const int dbVersion = 5;
+  static const int dbVersion = 6;
 
   // Global Keyboard Shortcuts
   static const String defaultGlobalHotkey = 'Option + Space';

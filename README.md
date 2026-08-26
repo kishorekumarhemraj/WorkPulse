@@ -131,6 +131,7 @@ something, and how much was running it?*
 
 - **A split you can submit**: totals in **decimal hours** (`7.25`, not `7h 15m`), because that is what a timesheet form accepts. The clock reading sits beside it for the hours you recognise as your day.
 - **Per project, per attribute**: one CAPEX/OPEX table for projects, then one for every **reportable custom attribute** — cost centre, workstream, epic, whatever your organisation tracks. The tables are two views of the same hours, so they always sum to the same total.
+- **Every project carries its Timesheet Code**: the code your organisation books that project against — `PRJ-1042`, `CC-7781`, `WBS.4.2` — sits in its own column beside the hours, so a row can be transcribed without looking anything up. Codes are required on new projects and must be unique; a project that predates the field reports **No code** rather than a blank cell.
 - **Net or Gross, one toggle**: **Net** excludes time you marked idle — what you actually worked. **Gross** is wall-clock desk time, which is usually what reconciles against a contractual week. Both are computed up front, so switching is instant.
 - **Nothing is guessed**: a session you left uncategorised is reported in its own **Unclassified** column rather than quietly booked as operational, and the CAPEX ratio is taken over classified time so unfiled hours cannot dilute it.
 - **Same window as the Time Log**: pick Today, This Week, This Month or a date once, and both screens follow.
@@ -191,7 +192,7 @@ WorkPulse is built following clean, domain-driven architecture and strict modula
 lib/
 ├── core/         # Theme, design tokens, database setup, utilities, platform bridges
 ├── domain/       # Pure Dart business models, state machines, repository contracts (Zero Flutter/SQLite dependencies)
-├── data/         # SQLite tables, versioned migrations (v1-v5), repository implementations
+├── data/         # SQLite tables, versioned migrations (v1-v6), repository implementations
 └── features/     # Feature vertical slices (UI, Riverpod state notifiers, dialogs, widgets)
     ├── quick_capture/ # Floating & standalone Quick Capture HUD
     ├── timer/         # Active timer bar, switch dialog, ticker providers
@@ -290,7 +291,7 @@ WorkPulse includes a comprehensive automated test suite spanning unit tests, dat
 # Run the complete test suite
 flutter test
 
-# Run database schema & migration tests (v1 -> v5)
+# Run database schema & migration tests (v1 -> v6)
 flutter test test/data/database_migration_test.dart
 
 # Run SQLite repository CRUD tests
