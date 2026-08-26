@@ -198,7 +198,7 @@ so a missing native path degrades rather than crashes.
 `⏱ 00:14:22  Task Name` ticker is macOS-only by platform convention; on Windows
 the same information is carried by the tooltip and the context menu.
 
-- **`HotKeyService`**: Handles system-wide `⌥ + Space` / `Alt + Space` registration via `hotkey_manager`. The binding is user-configurable and persisted; `NoOpHotKeyService` stands in for tests.
+- **`HotKeyService`**: Handles system-wide `⌥ + Space` / `Alt + Space` registration via `hotkey_manager`. The binding is user-configurable and persisted; `NoOpHotKeyService` is the fallback required of every platform bridge and is available to tests, though they currently stub the hotkey layer themselves.
 - **`TrayService`**: Manages the tray icon, the macOS live status bar ticker (`⏱ 00:14:22  Task Name`), and the context menu via `tray_manager`. `TrayCoordinator` owns every menu action; quitting from it writes a final heartbeat and closes the database before exiting, so the next launch does not attribute the shutdown moment to unaccounted time.
 - **`WindowService` & Window Modes**:
   - **`WindowMode.quickCapture`**:
