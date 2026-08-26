@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:workpulse/core/keyboard/list_cursor.dart';
@@ -183,6 +184,69 @@ void main() {
         typeAhead.match(_down(LogicalKeyboardKey.keyQ, character: 'q'), labels),
         isNull,
       );
+    });
+  });
+
+  group('MenuKeyboard', () {
+    const labels = ['Apollo', 'Deploy', 'Design'];
+
+    testWidgets('creates focus nodes for rows and handles arrow navigation',
+        (tester) async {
+      final menuKeyboard = MenuKeyboard();
+      addTearDown(menuKeyboard.dispose);
+      menuKeyboard.setLabels(labels);
+
+      final node0 = menuKeyboard.nodeAt(0);
+      final node1 = menuKeyboard.nodeAt(1);
+      final node2 = menuKeyboard.nodeAt(2);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Column(
+              children: [
+                Focus(focusNode: node0, child: const Text('Row 0')),
+                Focus(focusNode: node1, child: const Text('Row 1')),
+                Focus(focusNode: node2, child: const Text('Row 2')),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      node0.requestFocus();
+      await tester.pump();
+      expect(node0.hasFocus, isTrue);
+
+      // Arrow down to Row 1
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pump();
+      expect(node1.hasFocus, isTrue);
+
+      // Arrow down to Row 2
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pump();
+      expect(node2.hasFocus, isTrue);
+
+      // Arrow down on last row clamps at last row
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pump();
+      expect(node2.hasFocus, isTrue);
+
+      // Arrow up to Row 1
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+      await tester.pump();
+      expect(node1.hasFocus, isTrue);
+
+      // Home to Row 0
+      await tester.sendKeyEvent(LogicalKeyboardKey.home);
+      await tester.pump();
+      expect(node0.hasFocus, isTrue);
+
+      // End to Row 2
+      await tester.sendKeyEvent(LogicalKeyboardKey.end);
+      await tester.pump();
+      expect(node2.hasFocus, isTrue);
     });
   });
 }
