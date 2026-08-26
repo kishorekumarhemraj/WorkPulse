@@ -11,13 +11,18 @@ void main() {
     late List<IdleDetectionEvent> events;
     late StreamSubscription<IdleDetectionEvent> subscription;
     late List<_FakeTimer> timers;
+    late DateTime clock;
 
     setUp(() {
       source = FakeIdleSource(current: Duration.zero);
       timers = [];
+      // Pinned so a stretch's start and end can be asserted exactly rather
+      // than to the nearest microsecond of real time.
+      clock = DateTime.utc(2026, 8, 27, 12, 0);
       detector = DesktopIdleDetectorService(
         initialThreshold: const Duration(minutes: 10),
         idleSource: source,
+        clock: () => clock,
         timerFactory: (duration, callback) {
           final timer = _FakeTimer(duration);
           timers.add(timer);
@@ -58,34 +63,80 @@ void main() {
       );
     });
 
-    test('does not re-fire for the same uninterrupted idle stretch', () async {
-      detector.startMonitoring(isTracking: true);
-      source.current = const Duration(minutes: 12);
-      detector.poll();
-      source.current = const Duration(minutes: 13);
-      detector.poll();
-      source.current = const Duration(minutes: 40);
-      detector.poll();
-      await _flush();
-
-      expect(events, hasLength(1));
-    });
-
-    test('fires again after input resumes and the user goes idle again',
+    test('reports the whole absence, not the threshold that noticed it',
         () async {
+      // The bug this pins: a 30-minute lunch on a 10-minute threshold was
+      // offered to the user as ten minutes, because the stretch was reported
+      // once at the crossing and never updated.
       detector.startMonitoring(isTracking: true);
-      source.current = const Duration(minutes: 12);
+
+      source.current = const Duration(minutes: 10);
       detector.poll();
 
-      // Input resumed: the OS counter resets.
-      source.current = const Duration(seconds: 2);
-      detector.poll();
-
-      source.current = const Duration(minutes: 11);
+      clock = clock.add(const Duration(minutes: 20));
+      source.current = const Duration(minutes: 30);
       detector.poll();
       await _flush();
 
       expect(events, hasLength(2));
+      expect(events.last.idleDuration, const Duration(minutes: 30));
+      // Same stretch throughout, which is how a listener tells an update
+      // from a new question.
+      expect(events.last.idleStartTime, events.first.idleStartTime);
+    });
+
+    test('pins the end to the moment input resumed, not the moment noticed',
+        () async {
+      detector.startMonitoring(isTracking: true);
+
+      final away = clock;
+      source.current = const Duration(minutes: 10);
+      detector.poll();
+
+      // The user came back at +30m. The poll notices 5 seconds later, by
+      // which time the OS counter has reset to 5 seconds.
+      clock = clock.add(const Duration(minutes: 30, seconds: 5));
+      source.current = const Duration(seconds: 5);
+      detector.poll();
+      await _flush();
+
+      final resumed = events.last;
+      expect(resumed.idleStartTime, away.subtract(const Duration(minutes: 10)));
+      expect(resumed.idleEndTime, clock.subtract(const Duration(seconds: 5)));
+      expect(resumed.idleDuration, const Duration(minutes: 40));
+    });
+
+    test('treats a fresh stretch as a new question, not a continuation',
+        () async {
+      detector.startMonitoring(isTracking: true);
+      source.current = const Duration(minutes: 12);
+      detector.poll();
+      final first = events.last.idleStartTime;
+
+      // Input resumed: the OS counter resets.
+      clock = clock.add(const Duration(minutes: 1));
+      source.current = const Duration(seconds: 2);
+      detector.poll();
+
+      clock = clock.add(const Duration(minutes: 11));
+      source.current = const Duration(minutes: 11);
+      detector.poll();
+      await _flush();
+
+      expect(events.last.idleStartTime, isNot(first));
+      expect(events.last.idleDuration, const Duration(minutes: 11));
+    });
+
+    test('stays quiet while input keeps arriving', () async {
+      detector.startMonitoring(isTracking: true);
+      source.current = const Duration(seconds: 30);
+      detector.poll();
+      clock = clock.add(const Duration(seconds: 10));
+      detector.poll();
+      await _flush();
+
+      // Nothing crossed the threshold, so there is no stretch to close.
+      expect(events, isEmpty);
     });
 
     test('never fires while no session is being tracked', () async {
