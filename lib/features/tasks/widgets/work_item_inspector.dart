@@ -115,10 +115,19 @@ class WorkItemInspector extends ConsumerWidget {
                                 ),
                               ),
                               const SizedBox(width: Spacing.sm),
-                              Text(
-                                'TRACKING NOW • ${TimerService.formatDuration(timerState!.elapsed, includeSeconds: true)}',
-                                style:
-                                    AppTypography.ticker(color: colors.success),
+                              // Flexible so the pill cannot outgrow the pane:
+                              // the inspector is two fifths of the window, and
+                              // the ticker keeps getting wider — 100:00:00 is
+                              // three characters more than 00:00:00.
+                              Flexible(
+                                child: Text(
+                                  'TRACKING NOW • ${TimerService.formatDuration(timerState!.elapsed, includeSeconds: true)}',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: AppTypography.ticker(
+                                    color: colors.success,
+                                  ),
+                                ),
                               ),
                               const SizedBox(width: Spacing.md),
                               InkWell(

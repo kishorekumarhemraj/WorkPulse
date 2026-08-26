@@ -90,15 +90,18 @@ void main() {
     Map<String, Category>? categories,
     Map<String, Person>? people,
     Map<String, Duration> idleBySession = const {},
+    List<Session> previousSessions = const [],
     DateTime? now,
+    DateRange? window,
     WorkPatternService? using,
   }) {
     final reference = now ?? DateTime(2026, 8, 25, 18);
     return (using ?? service).analyse(
-      window: DateRange(
-        start: DateTime(2026, 7, 27).toUtc(),
-        end: DateTime(2026, 8, 25, 23, 59, 59).toUtc(),
-      ),
+      window: window ??
+          DateRange(
+            start: DateTime(2026, 7, 27).toUtc(),
+            end: DateTime(2026, 8, 25, 23, 59, 59).toUtc(),
+          ),
       lookback: PatternWindow.oneMonth,
       sessions: sessions,
       workItems: workItems ?? {'task-a': workItem('task-a')},
@@ -106,6 +109,7 @@ void main() {
       categories: categories ?? {'cat-1': category('cat-1')},
       people: people ?? const {},
       idleBySession: idleBySession,
+      previousSessions: previousSessions,
       now: reference,
     );
   }
@@ -556,7 +560,35 @@ void main() {
       expect(insight.finding, contains('Billing'));
     });
 
-    test('names the two-hour band where the deep blocks actually land', () {
+    test('moves the band to Plan when short work is eating into it', () {
+      final report = analyse([
+        for (final day in [17, 18, 19])
+          session(
+            workItemId: 'task-a',
+            localStart: DateTime(2026, 8, day, 10),
+            duration: const Duration(minutes: 90),
+          ),
+        // Enough short work inside the same band to spoil it.
+        for (final day in [17, 18, 19])
+          for (var i = 0; i < 4; i++)
+            session(
+              workItemId: 'task-a',
+              localStart: DateTime(2026, 8, day, 11, i * 12),
+              duration: const Duration(minutes: 10),
+            ),
+      ]);
+
+      expect(report.rhythm.peakFocusHours, [10, 11]);
+
+      final insight = findInsight(report, 'peak-focus');
+      expect(insight, isNotNull);
+      expect(insight!.action, InsightAction.plan);
+      expect(insight.title, contains('10am–12pm'));
+    });
+  });
+
+  group('sustain — what is going right', () {
+    test('credits a protected focus band rather than warning about it', () {
       final report = analyse([
         for (final day in [17, 18, 19])
           session(
@@ -566,11 +598,247 @@ void main() {
           ),
       ]);
 
-      expect(report.rhythm.peakFocusHours, [10, 11]);
-
       final insight = findInsight(report, 'peak-focus');
       expect(insight, isNotNull);
-      expect(insight!.title, contains('10am–12pm'));
+      expect(insight!.action, InsightAction.sustain);
+      expect(insight.title, contains('keeping 10am–12pm clear'));
+      // The same band never appears in both lanes.
+      expect(report.forAction(InsightAction.plan).map((i) => i.id),
+          isNot(contains('peak-focus')));
+    });
+
+    test('credits deep work that is healthy with no window to compare', () {
+      final report = analyse([
+        session(
+          workItemId: 'task-a',
+          localStart: DateTime(2026, 8, 24, 9),
+          duration: const Duration(minutes: 90),
+        ),
+        session(
+          workItemId: 'task-a',
+          localStart: DateTime(2026, 8, 24, 14),
+          duration: const Duration(minutes: 30),
+        ),
+      ]);
+
+      final insight = findInsight(report, 'deep-work-held');
+      expect(insight, isNotNull);
+      expect(insight!.action, InsightAction.sustain);
+      expect(insight.severity, InsightSeverity.informational);
+      expect(insight.timeInvolved, const Duration(minutes: 90));
+      expect(report.hasComparison, isFalse);
+    });
+
+    test('prefers the improvement story when a baseline exists', () {
+      // Previously: mostly short work. Now: mostly blocks.
+      final report = analyse(
+        [
+          for (final day in [17, 18, 19])
+            session(
+              workItemId: 'task-a',
+              localStart: DateTime(2026, 8, day, 9),
+              duration: const Duration(minutes: 60),
+            ),
+        ],
+        previousSessions: [
+          for (final day in [6, 7, 8])
+            session(
+              workItemId: 'task-a',
+              localStart: DateTime(2026, 7, day, 9),
+              duration: const Duration(minutes: 20),
+            ),
+        ],
+      );
+
+      expect(report.hasComparison, isTrue);
+
+      final insight = findInsight(report, 'deep-work-held');
+      expect(insight, isNotNull);
+      expect(insight!.title, contains('up'));
+      expect(insight.title, contains('points'));
+      expect(
+        insight.evidence.map((e) => e.label),
+        contains('Last window'),
+      );
+    });
+
+    test('credits switching less than the window before', () {
+      final report = analyse(
+        [
+          for (final day in [17, 18, 19])
+            for (var i = 0; i < 2; i++)
+              session(
+                workItemId: 'task-a',
+                localStart: DateTime(2026, 8, day, 9 + (i * 4)),
+                duration: const Duration(minutes: 45),
+              ),
+        ],
+        previousSessions: [
+          for (final day in [6, 7, 8])
+            for (var i = 0; i < 6; i++)
+              session(
+                workItemId: 'task-a',
+                localStart: DateTime(2026, 7, day, 9, i * 20),
+                duration: const Duration(minutes: 15),
+              ),
+        ],
+      );
+
+      final insight = findInsight(report, 'switching-improved');
+      expect(insight, isNotNull);
+      expect(insight!.action, InsightAction.sustain);
+      expect(insight.title, contains('4.0 times a day less'));
+    });
+
+    test('says nothing about direction with no baseline to compare', () {
+      final report = analyse([
+        for (final day in [17, 18, 19])
+          session(
+            workItemId: 'task-a',
+            localStart: DateTime(2026, 8, day, 9),
+            duration: const Duration(minutes: 45),
+          ),
+      ]);
+
+      expect(report.hasComparison, isFalse);
+      expect(findInsight(report, 'switching-improved'), isNull);
+    });
+
+    test('ignores a baseline too thin to mean anything', () {
+      final report = analyse(
+        [
+          for (final day in [17, 18, 19])
+            session(
+              workItemId: 'task-a',
+              localStart: DateTime(2026, 8, day, 9),
+              duration: const Duration(minutes: 45),
+            ),
+        ],
+        // A single day is not a window worth comparing against.
+        previousSessions: [
+          for (var i = 0; i < 6; i++)
+            session(
+              workItemId: 'task-a',
+              localStart: DateTime(2026, 7, 6, 9, i * 20),
+              duration: const Duration(minutes: 15),
+            ),
+        ],
+      );
+
+      expect(report.hasComparison, isFalse);
+      expect(findInsight(report, 'switching-improved'), isNull);
+    });
+
+    test('credits work picked back up after going quiet', () {
+      final report = analyse(
+        [
+          session(
+            workItemId: 'task-b',
+            localStart: DateTime(2026, 8, 5, 9),
+            duration: const Duration(minutes: 60),
+          ),
+          session(
+            workItemId: 'task-b',
+            localStart: DateTime(2026, 8, 20, 9),
+            duration: const Duration(minutes: 45),
+          ),
+          session(
+            workItemId: 'task-b',
+            localStart: DateTime(2026, 8, 24, 9),
+            duration: const Duration(minutes: 30),
+          ),
+        ],
+        workItems: {
+          'task-b': workItem('task-b', name: 'Migration write-up'),
+        },
+      );
+
+      final insight = findInsight(report, 'resumed:task-b');
+      expect(insight, isNotNull);
+      expect(insight!.action, InsightAction.sustain);
+      expect(insight.title, contains('Migration write-up'));
+      expect(insight.title, contains('15 quiet days'));
+      // Time since it resumed, not the whole investment.
+      expect(insight.timeInvolved, const Duration(minutes: 75));
+
+      // It came back, so it is no longer at risk.
+      expect(findInsight(report, 'at-risk:task-b'), isNull);
+    });
+
+    test('does not call still-quiet work a comeback', () {
+      final report = analyse(
+        [
+          session(
+            workItemId: 'task-b',
+            localStart: DateTime(2026, 8, 1, 9),
+            duration: const Duration(minutes: 60),
+          ),
+          session(
+            workItemId: 'task-b',
+            localStart: DateTime(2026, 8, 10, 9),
+            duration: const Duration(minutes: 45),
+          ),
+        ],
+        workItems: {'task-b': workItem('task-b', name: 'Stalled thing')},
+      );
+
+      expect(findInsight(report, 'resumed:task-b'), isNull);
+      expect(findInsight(report, 'at-risk:task-b'), isNotNull);
+    });
+
+    test('credits turning up on most of the working days', () {
+      // Mon 10 Aug to Fri 21 Aug: ten working days, nine of them tracked.
+      final report = analyse(
+        [
+          for (final day in [10, 11, 12, 13, 14, 17, 18, 19, 20])
+            session(
+              workItemId: 'task-a',
+              localStart: DateTime(2026, 8, day, 9),
+              duration: const Duration(minutes: 45),
+            ),
+        ],
+        window: DateRange(
+          start: DateTime(2026, 8, 10).toUtc(),
+          end: DateTime(2026, 8, 21, 23, 59, 59).toUtc(),
+        ),
+      );
+
+      final insight = findInsight(report, 'consistent-tracking');
+      expect(insight, isNotNull);
+      expect(insight!.action, InsightAction.sustain);
+      expect(insight.title, contains('9 of 10 working days'));
+    });
+
+    test('credits a week that stayed inside working hours', () {
+      final report = analyse([
+        for (final day in [17, 18, 19, 20])
+          session(
+            workItemId: 'task-a',
+            localStart: DateTime(2026, 8, day, 10),
+            duration: const Duration(minutes: 90),
+          ),
+      ]);
+
+      final insight = findInsight(report, 'hours-respected');
+      expect(insight, isNotNull);
+      expect(insight!.action, InsightAction.sustain);
+      expect(insight.finding, contains('0%'));
+      // And never alongside the warning about the same thing.
+      expect(findInsight(report, 'out-of-hours'), isNull);
+    });
+
+    test('stays quiet about hours when evenings are actually being used', () {
+      final report = analyse([
+        for (final day in [17, 18, 19, 20])
+          session(
+            workItemId: 'task-a',
+            localStart: DateTime(2026, 8, day, 20),
+            duration: const Duration(minutes: 90),
+          ),
+      ]);
+
+      expect(findInsight(report, 'hours-respected'), isNull);
+      expect(findInsight(report, 'out-of-hours'), isNotNull);
     });
   });
 

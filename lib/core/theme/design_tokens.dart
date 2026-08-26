@@ -191,4 +191,8 @@ abstract class Breakpoints {
 
   /// Below this, drop the Work Items inspector and 4-up metric grids.
   static const double medium = 1000;
+
+  /// Above this there is room for four readable columns side by side — the
+  /// insight lanes. Below it they fall to two, then one.
+  static const double wide = 1320;
 }
