@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:workpulse/core/theme/app_colors.dart';
@@ -11,7 +13,10 @@ import 'package:workpulse/domain/services/timer_service.dart';
 /// and daily for longer ranges.
 ///
 /// Adds a value axis, a "now" marker on the hourly view, and hover feedback,
-/// so a bar's height can actually be read rather than only compared.
+/// so a bar's height can actually be read rather than only compared. Each
+/// bar also carries its active time in HH:MM directly above it, so the
+/// figure is readable without a mouse — the tooltip is for the detail
+/// (idle, session count), not for the headline number.
 class DailyActivityChart extends StatefulWidget {
   final List<DailyActivityItem> activities;
   final List<HourlyActivityItem> hourlyActivities;
@@ -36,6 +41,15 @@ class _DailyActivityChartState extends State<DailyActivityChart> {
   int? _hoveredIndex;
 
   static const double _plotHeight = 150;
+
+  /// The height reserved for a bar's value label.
+  static const double _valueLabelHeight = 13;
+
+  /// Below this column width an `HH:MM` label would collide with its
+  /// neighbours, so the labels give way and the tooltip carries the value
+  /// again. A month of daily bars in a narrow window is the case this
+  /// protects.
+  static const double _minWidthForValueLabel = 34;
 
   String _formatHourLabel(int hour) {
     if (hour == 0) return '12a';
@@ -158,32 +172,45 @@ class _DailyActivityChartState extends State<DailyActivityChart> {
                 _ValueAxis(maxSeconds: maxSeconds, height: _plotHeight),
                 const SizedBox(width: Spacing.sm),
                 Expanded(
-                  child: Stack(
-                    children: [
-                      // Gridlines sit behind the bars so heights can be read
-                      // against them.
-                      Positioned.fill(
-                        bottom: 22,
-                        child: _Gridlines(color: colors.divider),
-                      ),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.end,
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final columnWidth = bars.isEmpty
+                          ? 0.0
+                          : constraints.maxWidth / bars.length;
+                      final showValues =
+                          columnWidth >= _minWidthForValueLabel;
+
+                      return Stack(
                         children: [
-                          for (var i = 0; i < bars.length; i++)
-                            Expanded(
-                              child: _Bar(
-                                data: bars[i],
-                                maxSeconds: maxSeconds,
-                                plotHeight: _plotHeight,
-                                isHovered: _hoveredIndex == i,
-                                onHover: (hovering) => setState(
-                                  () => _hoveredIndex = hovering ? i : null,
+                          // Gridlines sit behind the bars so heights can be
+                          // read against them.
+                          Positioned.fill(
+                            bottom: 22,
+                            child: _Gridlines(color: colors.divider),
+                          ),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              for (var i = 0; i < bars.length; i++)
+                                Expanded(
+                                  child: _Bar(
+                                    data: bars[i],
+                                    maxSeconds: maxSeconds,
+                                    plotHeight: _plotHeight,
+                                    valueLabelHeight: _valueLabelHeight,
+                                    showValue: showValues,
+                                    isHovered: _hoveredIndex == i,
+                                    onHover: (hovering) => setState(
+                                      () =>
+                                          _hoveredIndex = hovering ? i : null,
+                                    ),
+                                  ),
                                 ),
-                              ),
-                            ),
+                            ],
+                          ),
                         ],
-                      ),
-                    ],
+                      );
+                    },
                   ),
                 ),
               ],
@@ -221,6 +248,8 @@ class _Bar extends StatelessWidget {
   final _BarData data;
   final int maxSeconds;
   final double plotHeight;
+  final double valueLabelHeight;
+  final bool showValue;
   final bool isHovered;
   final ValueChanged<bool> onHover;
 
@@ -228,6 +257,8 @@ class _Bar extends StatelessWidget {
     required this.data,
     required this.maxSeconds,
     required this.plotHeight,
+    required this.valueLabelHeight,
+    required this.showValue,
     required this.isHovered,
     required this.onHover,
   });
@@ -274,32 +305,74 @@ class _Bar extends StatelessWidget {
             children: [
               SizedBox(
                 height: plotHeight,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.end,
+                child: Stack(
                   children: [
-                    if (idleHeight > 0)
-                      _Segment(
-                        height: idleHeight,
-                        color: colors.warningFill,
-                        isHovered: isHovered,
-                        isTop: true,
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (idleHeight > 0)
+                            _Segment(
+                              height: idleHeight,
+                              color: colors.warningFill,
+                              isHovered: isHovered,
+                              isTop: true,
+                            ),
+                          if (activeHeight > 0)
+                            _Segment(
+                              height: activeHeight,
+                              color: colors.successFill,
+                              isHovered: isHovered,
+                              isTop: idleHeight <= 0,
+                            ),
+                          if (isEmpty)
+                            // A visible baseline keeps empty slots readable
+                            // as "nothing tracked" rather than as a gap in
+                            // the chart.
+                            Container(
+                              height: 2,
+                              decoration: BoxDecoration(
+                                color: isHovered
+                                    ? colors.borderStrong
+                                    : colors.divider,
+                                borderRadius: Radii.xsAll,
+                              ),
+                            ),
+                        ],
                       ),
-                    if (activeHeight > 0)
-                      _Segment(
-                        height: activeHeight,
-                        color: colors.successFill,
-                        isHovered: isHovered,
-                        isTop: idleHeight <= 0,
-                      ),
-                    if (isEmpty)
-                      // A visible baseline keeps empty slots readable as
-                      // "nothing tracked" rather than as a gap in the chart.
-                      Container(
-                        height: 2,
-                        decoration: BoxDecoration(
-                          color:
-                              isHovered ? colors.borderStrong : colors.divider,
-                          borderRadius: Radii.xsAll,
+                    ),
+                    // The bar's own active time, sitting on top of it. Riding
+                    // the bar rather than pinned to the top of the plot keeps
+                    // the number attached to the thing it measures; the
+                    // clamp is what stops the tallest bar pushing its own
+                    // label out of the chart.
+                    if (showValue && data.active > Duration.zero)
+                      Positioned(
+                        left: 0,
+                        right: 0,
+                        bottom: math.min(
+                          activeHeight + idleHeight + 3,
+                          plotHeight - valueLabelHeight,
+                        ),
+                        child: Text(
+                          TimerService.formatDuration(
+                            data.active,
+                            includeSeconds: false,
+                          ),
+                          textAlign: TextAlign.center,
+                          maxLines: 1,
+                          overflow: TextOverflow.clip,
+                          softWrap: false,
+                          style: AppTypography.numeric(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            color: isHovered
+                                ? colors.textPrimary
+                                : colors.textSecondary,
+                          ),
                         ),
                       ),
                   ],
