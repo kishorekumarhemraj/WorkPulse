@@ -382,6 +382,7 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
                                     fontWeight: FontWeight.w500,
                                     color: context.colors.textSecondary)),
                             InkWell(
+                              canRequestFocus: false,
                               onTap: () async {
                                 final p = await ProjectFormDialog.show(context);
                                 if (p != null) {
@@ -440,6 +441,7 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
                                     fontWeight: FontWeight.w500,
                                     color: context.colors.textSecondary)),
                             InkWell(
+                              canRequestFocus: false,
                               onTap: () async {
                                 final c =
                                     await CategoryFormDialog.show(context);
@@ -497,6 +499,7 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
                           fontWeight: FontWeight.w500,
                           color: context.colors.textSecondary)),
                   InkWell(
+                    canRequestFocus: false,
                     onTap: () async {
                       final t = await TagFormDialog.show(context);
                       if (t != null && !_selectedTagIds.contains(t.id)) {
@@ -548,6 +551,7 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
                         overflow: TextOverflow.ellipsis),
                   ),
                   InkWell(
+                    canRequestFocus: false,
                     onTap: () async {
                       final p = await PersonFormDialog.show(context);
                       if (p != null && !_selectedPeopleIds.contains(p.id)) {

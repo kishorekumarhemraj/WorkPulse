@@ -418,9 +418,13 @@ class _SelectMenuItem<T> extends StatelessWidget {
         padding: const WidgetStatePropertyAll(
           EdgeInsets.symmetric(horizontal: Spacing.md),
         ),
-        backgroundColor: WidgetStatePropertyAll(
-          isSelected ? colors.accentSubtle : Colors.transparent,
-        ),
+        backgroundColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.focused) ||
+              states.contains(WidgetState.hovered)) {
+            return colors.hover;
+          }
+          return isSelected ? colors.accentSubtle : Colors.transparent;
+        }),
         overlayColor: WidgetStatePropertyAll(colors.hover),
         shape: const WidgetStatePropertyAll(
           RoundedRectangleBorder(borderRadius: Radii.smAll),
