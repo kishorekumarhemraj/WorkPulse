@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:workpulse/domain/models/attribute_model.dart';
-import 'package:workpulse/domain/models/category_model.dart';
+import 'package:workpulse/domain/models/financial_classification.dart';
 import 'package:workpulse/domain/models/date_range.dart';
 
 /// Which duration the Time Sheet reports.
@@ -20,38 +20,38 @@ enum TimesheetHoursBasis {
   const TimesheetHoursBasis(this.label, this.description);
 }
 
-/// Time split by the CAPEX/OPEX type of the category each session carries.
+/// Time split by [FinancialClassification].
 ///
-/// [unclassified] is time on sessions with no category at all. Every category
-/// has a type, so nothing else can land here — but unclassified time is
-/// carried rather than dropped, so a row always sums to the hours actually
-/// tracked and a gap reads as work waiting to be classified.
-class CapexOpexSplit extends Equatable {
+/// Every bucket is carried, `none` included, so a row always sums to the
+/// hours actually tracked. A gap between a total and its CapEx + OpEx reads
+/// as work waiting to be classified, which is a thing the user can act on;
+/// silently dropping it would just make the sheet wrong.
+class ClassificationSplit extends Equatable {
   final Duration capex;
   final Duration opex;
-  final Duration unclassified;
+  final Duration none;
 
-  const CapexOpexSplit({
+  const ClassificationSplit({
     this.capex = Duration.zero,
     this.opex = Duration.zero,
-    this.unclassified = Duration.zero,
+    this.none = Duration.zero,
   });
 
-  static const CapexOpexSplit zero = CapexOpexSplit();
+  static const ClassificationSplit zero = ClassificationSplit();
 
-  Duration get total => capex + opex + unclassified;
+  Duration get total => capex + opex + none;
 
-  /// The classified part only — the denominator for a CAPEX ratio that is
-  /// not diluted by time the user has yet to categorise.
+  /// The classified part only — the denominator for a CapEx ratio that is
+  /// not diluted by hours nobody has decided about yet.
   Duration get classifiedTotal => capex + opex;
 
-  bool get hasUnclassified => unclassified > Duration.zero;
+  bool get hasNone => none > Duration.zero;
 
-  /// CAPEX as a percentage of classified time, 0–100. Zero when nothing is
+  /// CapEx as a percentage of classified time, 0–100. Zero when nothing is
   /// classified yet, rather than a division by zero.
   double get capexShare => _share(capex);
 
-  /// OPEX as a percentage of classified time, 0–100.
+  /// OpEx as a percentage of classified time, 0–100.
   double get opexShare => _share(opex);
 
   double _share(Duration part) {
@@ -60,42 +60,45 @@ class CapexOpexSplit extends Equatable {
     return (part.inSeconds / base * 100).clamp(0.0, 100.0);
   }
 
-  /// The portion of this split carried by [type], or [unclassified] when the
-  /// session had no category.
-  Duration forType(CategoryType? type) => switch (type) {
-        CategoryType.capex => capex,
-        CategoryType.opex => opex,
-        null => unclassified,
+  Duration forClassification(FinancialClassification classification) =>
+      switch (classification) {
+        FinancialClassification.capex => capex,
+        FinancialClassification.opex => opex,
+        FinancialClassification.none => none,
       };
 
-  CapexOpexSplit plus(CategoryType? type, Duration duration) {
-    return switch (type) {
-      CategoryType.capex => CapexOpexSplit(
+  ClassificationSplit plus(
+    FinancialClassification classification,
+    Duration duration,
+  ) {
+    return switch (classification) {
+      FinancialClassification.capex => ClassificationSplit(
           capex: capex + duration,
           opex: opex,
-          unclassified: unclassified,
+          none: none,
         ),
-      CategoryType.opex => CapexOpexSplit(
+      FinancialClassification.opex => ClassificationSplit(
           capex: capex,
           opex: opex + duration,
-          unclassified: unclassified,
+          none: none,
         ),
-      null => CapexOpexSplit(
+      FinancialClassification.none => ClassificationSplit(
           capex: capex,
           opex: opex,
-          unclassified: unclassified + duration,
+          none: none + duration,
         ),
     };
   }
 
-  CapexOpexSplit operator +(CapexOpexSplit other) => CapexOpexSplit(
+  ClassificationSplit operator +(ClassificationSplit other) =>
+      ClassificationSplit(
         capex: capex + other.capex,
         opex: opex + other.opex,
-        unclassified: unclassified + other.unclassified,
+        none: none + other.none,
       );
 
   @override
-  List<Object?> get props => [capex, opex, unclassified];
+  List<Object?> get props => [capex, opex, none];
 }
 
 /// One line of a Time Sheet table — a project, or one value of one attribute.
@@ -111,8 +114,8 @@ class TimesheetRow extends Equatable {
   /// attribute rows, which are not booked against anything themselves.
   final String? code;
 
-  final CapexOpexSplit net;
-  final CapexOpexSplit gross;
+  final ClassificationSplit net;
+  final ClassificationSplit gross;
   final int sessionCount;
 
   const TimesheetRow({
@@ -120,12 +123,12 @@ class TimesheetRow extends Equatable {
     required this.label,
     this.colorHex,
     this.code,
-    this.net = CapexOpexSplit.zero,
-    this.gross = CapexOpexSplit.zero,
+    this.net = ClassificationSplit.zero,
+    this.gross = ClassificationSplit.zero,
     this.sessionCount = 0,
   });
 
-  CapexOpexSplit split(TimesheetHoursBasis basis) =>
+  ClassificationSplit split(TimesheetHoursBasis basis) =>
       basis == TimesheetHoursBasis.net ? net : gross;
 
   @override
@@ -147,6 +150,29 @@ class TimesheetAttributeSection extends Equatable {
   List<Object?> get props => [definition, rows];
 }
 
+/// One classification's worth of category rows — "coding versus meetings"
+/// inside CapEx, and again inside OpEx.
+///
+/// This is the breakdown that the old category-level model could not express:
+/// when the category *was* the classification, asking which categories made
+/// up CapEx had only one possible answer.
+class ClassificationCategorySection extends Equatable {
+  final FinancialClassification classification;
+
+  /// Category rows, longest first. Each row's split holds only this
+  /// classification's bucket, so a row total is that category's time within
+  /// this classification.
+  final List<TimesheetRow> rows;
+
+  const ClassificationCategorySection({
+    required this.classification,
+    required this.rows,
+  });
+
+  @override
+  List<Object?> get props => [classification, rows];
+}
+
 /// Everything the Time Sheet screen renders for one date range.
 class TimesheetData extends Equatable {
   final DateRange range;
@@ -155,6 +181,14 @@ class TimesheetData extends Equatable {
   final TimesheetRow total;
 
   final List<TimesheetRow> projectRows;
+
+  /// Time by task — the level the classification is now set at, so this is
+  /// where a wrong CapEx figure gets traced back to.
+  final List<TimesheetRow> taskRows;
+
+  /// Categories within each classification, in enum order.
+  final List<ClassificationCategorySection> categorySections;
+
   final List<TimesheetAttributeSection> attributeSections;
   final int sessionCount;
 
@@ -162,6 +196,8 @@ class TimesheetData extends Equatable {
     required this.range,
     required this.total,
     this.projectRows = const [],
+    this.taskRows = const [],
+    this.categorySections = const [],
     this.attributeSections = const [],
     this.sessionCount = 0,
   });
@@ -173,6 +209,8 @@ class TimesheetData extends Equatable {
         range,
         total,
         projectRows,
+        taskRows,
+        categorySections,
         attributeSections,
         sessionCount,
       ];

@@ -36,23 +36,23 @@ class TimesheetSummary extends StatelessWidget {
         caption: '$sessionCount session${sessionCount == 1 ? '' : 's'}',
       ),
       _SummaryTile(
-        label: 'CAPEX',
+        label: 'CapEx',
         hours: split.capex,
         color: palette.capex,
         caption: '${split.capexShare.round()}% of classified',
       ),
       _SummaryTile(
-        label: 'OPEX',
+        label: 'OpEx',
         hours: split.opex,
         color: palette.opex,
         caption: '${split.opexShare.round()}% of classified',
       ),
-      if (split.hasUnclassified)
+      if (split.hasNone)
         _SummaryTile(
-          label: 'Unclassified',
-          hours: split.unclassified,
-          color: palette.unclassified,
-          caption: 'Sessions with no category',
+          label: 'None',
+          hours: split.none,
+          color: palette.none,
+          caption: 'Not financially classified',
         ),
     ];
 

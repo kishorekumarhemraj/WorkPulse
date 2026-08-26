@@ -121,23 +121,27 @@ finding into the one thing you can do about it. It scans its own rolling window
 
 ---
 
-### 🧾 Time Sheet — CAPEX vs OPEX, Ready to Submit
+### 🧾 Time Sheet — CapEx vs OpEx, Ready to Submit
 
-Every **Category** carries a **Type** — **CAPEX** (capitalizable) or **OPEX**
-(operational) — set with a radio button when you create or edit it. Because a
-session records its own category, that one field is enough to answer the
-question a timesheet actually asks: *how much of this period was building
-something, and how much was running it?*
+Every **work item** carries a **Financial Classification** — **CapEx**,
+**OpEx**, or **None** — chosen with a radio group when you create or edit it.
+It sits on the task rather than the category because that is where the answer
+actually lives: a design meeting about a new feature is capitalizable, the
+same meeting about last week's outage is not, so "Meetings" can never be one
+or the other.
 
+- **Sessions inherit, and can override**: a session follows its work item unless you say otherwise, so correcting a misclassified task corrects every hour it already booked. Where one session genuinely differs, the session editor takes an explicit override and the export records which of the two spoke.
 - **A split you can submit**: totals in **decimal hours** (`7.25`, not `7h 15m`), because that is what a timesheet form accepts. The clock reading sits beside it for the hours you recognise as your day.
-- **Per project, per attribute**: one CAPEX/OPEX table for projects, then one for every **reportable custom attribute** — cost centre, workstream, epic, whatever your organisation tracks. The tables are two views of the same hours, so they always sum to the same total.
-- **Every project carries its Timesheet Code**: the code your organisation books that project against — `PRJ-1042`, `CC-7781`, `WBS.4.2` — sits in its own column beside the hours, so a row can be transcribed without looking anything up. Codes are required on new projects and must be unique; a project that predates the field reports **No code** rather than a blank cell.
+- **Four ways in**: CapEx/OpEx **by project**, **by work item** (the level the classification is set at, so a figure that looks wrong is traceable), **by category within each classification** — coding against meetings inside your capitalizable hours, and again inside your operational ones — and **by reportable custom attribute**. They are views of the same hours and always sum to the same total.
 - **Net or Gross, one toggle**: **Net** excludes time you marked idle — what you actually worked. **Gross** is wall-clock desk time, which is usually what reconciles against a contractual week. Both are computed up front, so switching is instant.
-- **Nothing is guessed**: a session you left uncategorised is reported in its own **Unclassified** column rather than quietly booked as operational, and the CAPEX ratio is taken over classified time so unfiled hours cannot dilute it.
+- **Nothing is guessed**: an unclassified task reports in its own **None** column rather than quietly booking as operational, and the CapEx ratio is taken over classified time so unfiled hours cannot dilute it.
+- **Every project carries its Timesheet Code**: the code your organisation books that project against — `PRJ-1042`, `CC-7781`, `WBS.4.2` — sits in its own column beside the hours. Codes are required on new projects and must be unique; a project that predates the field reports **No code** rather than a blank cell.
 - **Same window as the Time Log**: pick Today, This Week, This Month or a date once, and both screens follow.
 
-Categories created before this existed are backfilled to **OPEX** — the
-conservative reading — and are yours to reclassify on the Categories screen.
+Categories no longer carry any financial meaning — they name the *kind* of
+work, which is exactly what makes the per-classification breakdown worth
+reading. Upgrading from a build that classified categories lifts those values
+onto the tasks that used them.
 
 ---
 
@@ -291,7 +295,7 @@ WorkPulse includes a comprehensive automated test suite spanning unit tests, dat
 # Run the complete test suite
 flutter test
 
-# Run database schema & migration tests (v1 -> v6)
+# Run database schema & migration tests (v1 -> v7)
 flutter test test/data/database_migration_test.dart
 
 # Run SQLite repository CRUD tests

@@ -5,6 +5,7 @@ import 'package:uuid/uuid.dart';
 import 'package:workpulse/core/database/database_service.dart';
 import 'package:workpulse/data/providers/repository_providers.dart';
 import 'package:workpulse/domain/models/category_model.dart';
+import 'package:workpulse/domain/models/financial_classification.dart';
 import 'package:workpulse/domain/models/person_model.dart';
 import 'package:workpulse/domain/models/project_model.dart';
 import 'package:workpulse/domain/models/tag_model.dart';
@@ -218,6 +219,45 @@ void main() {
       items = await container.read(workItemsProvider.future);
       expect(items.length, 1);
       expect(items.first.id, item1.id);
+    });
+
+    test('a task round-trips its financial classification through SQLite',
+        () async {
+      final notifier = container.read(workItemsProvider.notifier);
+
+      final capex = await notifier.createWorkItem(
+        name: 'Build the thing',
+        projectId: testProjectA.id,
+        categoryId: testCategoryA.id,
+        classification: FinancialClassification.capex,
+      );
+      expect(capex.financialClassification, FinancialClassification.capex);
+
+      // Unstated means unclassified. Defaulting to OpEx would invent a
+      // finance decision nobody made.
+      final defaulted = await notifier.createWorkItem(
+        name: 'Unclassified work',
+        projectId: testProjectA.id,
+        categoryId: testCategoryA.id,
+      );
+      expect(defaulted.financialClassification, FinancialClassification.none);
+
+      container.read(workItemFilterProvider.notifier).reset();
+      final reloaded = await container.read(workItemsProvider.future);
+      expect(
+        reloaded.firstWhere((w) => w.id == capex.id).financialClassification,
+        FinancialClassification.capex,
+      );
+
+      final reclassified = await notifier.updateWorkItem(
+        capex.copyWith(
+          financialClassification: FinancialClassification.opex,
+        ),
+      );
+      expect(
+        reclassified.financialClassification,
+        FinancialClassification.opex,
+      );
     });
   });
 }
