@@ -62,8 +62,11 @@ class _WeekGridCard extends StatelessWidget {
   static const double _classWidth = 84;
   static const double _dayWidth = 64;
   static const double _totalWidth = 76;
-  static const double _minTableWidth =
-      _codeWidth + _classWidth + (_dayWidth * 7) + _totalWidth + (Spacing.lg * 2);
+  static const double _minTableWidth = _codeWidth +
+      _classWidth +
+      (_dayWidth * 7) +
+      _totalWidth +
+      (Spacing.lg * 2);
 
   @override
   Widget build(BuildContext context) {
@@ -72,10 +75,11 @@ class _WeekGridCard extends StatelessWidget {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
 
-    final exactHoursStr = (week.exactTotal.inSeconds / 3600.0).toStringAsFixed(2);
+    final exactHoursStr =
+        (week.exactTotal.inSeconds / 3600.0).toStringAsFixed(2);
     final roundedHoursStr = week.total.toStringAsFixed(2);
-    final hasRoundingDrift = week.exactTotal > Duration.zero &&
-        exactHoursStr != roundedHoursStr;
+    final hasRoundingDrift =
+        week.exactTotal > Duration.zero && exactHoursStr != roundedHoursStr;
 
     return AppCard(
       padding: EdgeInsets.zero,
@@ -174,7 +178,9 @@ class _WeekGridCard extends StatelessWidget {
                           days: week.days,
                           today: today,
                         ),
-                        Divider(height: 1, color: colors.divider.withValues(alpha: 0.5)),
+                        Divider(
+                            height: 1,
+                            color: colors.divider.withValues(alpha: 0.5)),
                       ],
 
                       // Totals Row
@@ -191,8 +197,10 @@ class _WeekGridCard extends StatelessWidget {
   }
 
   static String _formatWeekSpan(DateTime start, DateTime end) {
-    final startStr = '${_shortDay(start.weekday)} ${start.day} ${_shortMonth(start.month)}';
-    final endStr = '${_shortDay(end.weekday)} ${end.day} ${_shortMonth(end.month)}';
+    final startStr =
+        '${_shortDay(start.weekday)} ${start.day} ${_shortMonth(start.month)}';
+    final endStr =
+        '${_shortDay(end.weekday)} ${end.day} ${_shortMonth(end.month)}';
     return 'Week of $startStr – $endStr';
   }
 
@@ -223,14 +231,16 @@ class _WeekGridCard extends StatelessWidget {
         _ => '',
       };
 
-  static Future<void> _copyAsTsv(BuildContext context, TimesheetWeek week) async {
+  static Future<void> _copyAsTsv(
+      BuildContext context, TimesheetWeek week) async {
     final buffer = StringBuffer();
 
     // Header line
     final dayHeaders = week.days
         .map((d) => '${_shortDay(d.weekday)} ${d.day} ${_shortMonth(d.month)}')
         .toList();
-    buffer.writeln(['Code', 'Classification', ...dayHeaders, 'Total'].join('\t'));
+    buffer
+        .writeln(['Code', 'Classification', ...dayHeaders, 'Total'].join('\t'));
 
     // Row lines
     for (final row in week.rows) {
@@ -255,7 +265,8 @@ class _WeekGridCard extends StatelessWidget {
     await Clipboard.setData(ClipboardData(text: buffer.toString()));
     if (context.mounted) {
       ScaffoldMessenger.of(context).showAppSnackBar(
-        const AppSnackBar.success(message: 'Week timesheet copied to clipboard (TSV)'),
+        const AppSnackBar.success(
+            message: 'Week timesheet copied to clipboard (TSV)'),
       );
     }
   }
@@ -274,7 +285,8 @@ class _HeaderRow extends StatelessWidget {
 
     return Container(
       color: colors.card.withValues(alpha: 0.35),
-      padding: const EdgeInsets.symmetric(horizontal: Spacing.lg, vertical: Spacing.sm),
+      padding: const EdgeInsets.symmetric(
+          horizontal: Spacing.lg, vertical: Spacing.sm),
       child: Row(
         children: [
           SizedBox(
@@ -340,7 +352,9 @@ class _DayHeaderCell extends StatelessWidget {
       width: _WeekGridCard._dayWidth,
       padding: const EdgeInsets.symmetric(horizontal: Spacing.xs, vertical: 2),
       decoration: BoxDecoration(
-        color: isToday ? colors.accent.withValues(alpha: 0.08) : Colors.transparent,
+        color: isToday
+            ? colors.accent.withValues(alpha: 0.08)
+            : Colors.transparent,
         borderRadius: Radii.xsAll,
       ),
       child: Column(
@@ -385,7 +399,8 @@ class _DataRow extends StatelessWidget {
     final classColor = row.classification.colorOf(context);
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: Spacing.lg, vertical: Spacing.sm),
+      padding: const EdgeInsets.symmetric(
+          horizontal: Spacing.lg, vertical: Spacing.sm),
       child: Row(
         children: [
           // Code Column
@@ -411,7 +426,9 @@ class _DataRow extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: theme.textTheme.bodyMedium?.copyWith(
                       fontWeight: FontWeight.w600,
-                      color: row.code.isEmpty ? colors.textTertiary : colors.textPrimary,
+                      color: row.code.isEmpty
+                          ? colors.textTertiary
+                          : colors.textPrimary,
                     ),
                   ),
                 ),
@@ -487,7 +504,9 @@ class _DayDataCell extends StatelessWidget {
       width: _WeekGridCard._dayWidth,
       padding: const EdgeInsets.symmetric(horizontal: Spacing.xs),
       decoration: BoxDecoration(
-        color: isToday ? colors.accent.withValues(alpha: 0.04) : Colors.transparent,
+        color: isToday
+            ? colors.accent.withValues(alpha: 0.04)
+            : Colors.transparent,
       ),
       child: Text(
         text,
@@ -515,7 +534,8 @@ class _TotalsRow extends StatelessWidget {
 
     return Container(
       color: colors.card.withValues(alpha: 0.2),
-      padding: const EdgeInsets.symmetric(horizontal: Spacing.lg, vertical: Spacing.sm),
+      padding: const EdgeInsets.symmetric(
+          horizontal: Spacing.lg, vertical: Spacing.sm),
       child: Row(
         children: [
           SizedBox(
@@ -543,7 +563,9 @@ class _TotalsRow extends StatelessWidget {
                 style: AppTypography.numeric(
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
-                  color: week.dailyTotals[i] > 0 ? colors.textPrimary : colors.textTertiary,
+                  color: week.dailyTotals[i] > 0
+                      ? colors.textPrimary
+                      : colors.textTertiary,
                 ),
               ),
             ),
