@@ -11,6 +11,8 @@ import 'package:workpulse/domain/models/timesheet_model.dart';
 import 'package:workpulse/features/timesheet/providers/timesheet_provider.dart';
 import 'package:workpulse/features/timesheet/views/timesheet_view.dart';
 
+import 'package:workpulse/domain/services/timesheet_code_resolver.dart';
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -34,6 +36,7 @@ void main() {
     Duration opex = const Duration(hours: 2),
     Duration none = Duration.zero,
     Duration idle = const Duration(minutes: 30),
+    bool includeAttention = false,
   }) {
     final net = ClassificationSplit(
       capex: capex,
@@ -67,6 +70,45 @@ void main() {
         gross: gross + gross,
         sessionCount: 4,
       ),
+      codeRows: [
+        TimesheetCodeRow(
+          code: 'PRJ-1042',
+          label: 'PRJ-1042',
+          net: net,
+          gross: gross,
+          sessionCount: 2,
+          contributions: [
+            TimesheetCodeContribution(
+              projectId: 'proj-1',
+              projectName: 'Apollo',
+              optionLabel: 'R24.1',
+              source: includeAttention
+                  ? TimesheetCodeSource.unmappedOption
+                  : TimesheetCodeSource.optionMapping,
+              net: net,
+              gross: gross,
+            ),
+          ],
+        ),
+        TimesheetCodeRow(
+          code: '',
+          label: 'No timesheet code',
+          net: net,
+          gross: gross,
+          sessionCount: 2,
+          contributions: [
+            TimesheetCodeContribution(
+              projectId: 'proj-2',
+              projectName: 'Zephyr',
+              source: includeAttention
+                  ? TimesheetCodeSource.missingCode
+                  : TimesheetCodeSource.projectDefault,
+              net: net,
+              gross: gross,
+            ),
+          ],
+        ),
+      ],
       projectRows: [
         row('proj-1', 'Apollo', code: 'PRJ-1042'),
         row('proj-2', 'Zephyr'),
@@ -129,10 +171,11 @@ void main() {
       await pumpSheet(tester, sheet());
 
       expect(find.text('Time Sheet'), findsOneWidget);
+      expect(find.text('By timesheet code'), findsOneWidget);
       expect(find.text('By project'), findsOneWidget);
       expect(find.text('By work item'), findsOneWidget);
       expect(find.text('By Cost Centre'), findsOneWidget);
-      expect(find.text('Apollo'), findsOneWidget);
+      expect(find.text('Apollo'), findsWidgets);
       expect(find.text('Build the thing'), findsOneWidget);
       expect(find.text('CC-100'), findsOneWidget);
 
@@ -147,17 +190,23 @@ void main() {
       expect(find.text('2.00'), findsWidgets);
     });
 
-    testWidgets('the project table shows each project\'s timesheet code',
+    testWidgets('the tables show timesheet codes and headline code table',
         (tester) async {
       await pumpSheet(tester, sheet());
 
-      // The code column belongs to the project table only — an attribute
-      // value is not booked against anything itself.
-      // The project table and the task table both carry codes.
-      expect(find.text('CODE'), findsNWidgets(2));
-      expect(find.text('PRJ-1042'), findsNWidgets(2));
-      // A row without one says so rather than showing an empty cell.
-      expect(find.text('No code'), findsNWidgets(2));
+      expect(find.text('By timesheet code'), findsOneWidget);
+      expect(find.text('CODE'), findsNWidgets(3));
+      expect(find.text('PRJ-1042'), findsNWidgets(3));
+      expect(find.text('No code'), findsNWidgets(3));
+    });
+
+    testWidgets('renders attention card when attention items exist',
+        (tester) async {
+      await pumpSheet(tester, sheet(includeAttention: true));
+
+      expect(find.text('Timesheet Attention Items'), findsOneWidget);
+      expect(find.textContaining('Apollo'), findsWidgets);
+      expect(find.textContaining('Zephyr'), findsWidgets);
     });
 
     testWidgets('the Gross toggle re-reports the same rows with idle included',
@@ -197,11 +246,11 @@ void main() {
         (tester) async {
       await pumpSheet(tester, sheet(), theme: AppTheme.lightTheme);
 
-      // The summary and both tables. Going through AppCard is what keeps
+      // The summary and all tables. Going through AppCard is what keeps
       // this screen on the same surface as the rest of the app.
-      // Summary, projects, work items, two category tables, one attribute
+      // Summary, timesheet code, projects, work items, two category tables, one attribute
       // table.
-      expect(find.byType(AppCard), findsNWidgets(6));
+      expect(find.byType(AppCard), findsNWidgets(7));
 
       // Pinned in the light theme on purpose: `colors.card` is a near-white
       // tint in dark mode, so a card painted with the wrong token looked

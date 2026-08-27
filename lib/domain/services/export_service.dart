@@ -23,6 +23,7 @@ import 'package:workpulse/domain/repositories/workspace_repository.dart';
 import 'package:workpulse/core/platform/user_info_service.dart';
 import 'package:workpulse/domain/services/pdf_report_service.dart';
 import 'package:workpulse/domain/services/timer_service.dart';
+import 'package:workpulse/domain/services/timesheet_code_resolver.dart';
 
 class SessionExportRecord {
   final Session session;
@@ -36,6 +37,13 @@ class SessionExportRecord {
   final Duration idleDuration;
   final Duration netActiveDuration;
   final Map<String, String> attributeValues; // definitionId -> formatted string
+
+  /// Option ids behind [attributeValues], for select-typed definitions.
+  ///
+  /// Ids, not labels: a code mapping keyed on a label books hours to the wrong
+  /// code the moment the user renames an option, and says nothing when it does.
+  /// A single-select yields one id; a multi-select yields the ids it holds.
+  final Map<String, List<String>> attributeOptionIds;
 
   /// The session's effective classification: its own override where it has
   /// one, otherwise the task's. Resolved once, here, so every report and
@@ -57,6 +65,7 @@ class SessionExportRecord {
     required this.idleDuration,
     required this.netActiveDuration,
     this.attributeValues = const {},
+    this.attributeOptionIds = const {},
     this.classification = FinancialClassification.none,
     this.classificationIsOverride = false,
   });
@@ -126,7 +135,8 @@ class ExportService {
     for (final def in allDefinitions) {
       if (def.type == AttributeType.singleSelect ||
           def.type == AttributeType.multiSelect) {
-        final opts = await _attributeRepository.getOptions(def.id);
+        final opts = await _attributeRepository.getOptions(def.id,
+            includeArchived: true);
         optionCache[def.id] = {for (final o in opts) o.id: o};
       }
     }
@@ -169,16 +179,22 @@ class ExportService {
       final sessionValues = await _attributeRepository.getSessionValues(s.id);
 
       final attrMap = <String, String>{};
+      final attrOptionIds = <String, List<String>>{};
 
       for (final def in allDefinitions) {
         if (def.isArchived || !def.enabled) continue;
 
         String? formatted;
+        String? optionId;
+        String? textValue;
+
         if (def.scope == AttributeScope.session) {
           final sVal = sessionValues
               .where((v) => v.attributeDefinitionId == def.id)
               .firstOrNull;
           if (sVal != null) {
+            optionId = sVal.optionId;
+            textValue = sVal.textValue;
             formatted = _formatAttributeValue(
                 def,
                 sVal.textValue,
@@ -193,6 +209,8 @@ class ExportService {
               .where((v) => v.attributeDefinitionId == def.id)
               .firstOrNull;
           if (tVal != null) {
+            optionId = tVal.optionId;
+            textValue = tVal.textValue;
             formatted = _formatAttributeValue(
                 def,
                 tVal.textValue,
@@ -206,6 +224,20 @@ class ExportService {
 
         if (formatted != null && formatted.isNotEmpty) {
           attrMap[def.id] = formatted;
+        }
+
+        if (def.type == AttributeType.singleSelect &&
+            optionId != null &&
+            optionId.isNotEmpty) {
+          attrOptionIds[def.id] = [optionId];
+        } else if (def.type == AttributeType.multiSelect &&
+            textValue != null &&
+            textValue.isNotEmpty) {
+          final ids =
+              textValue.split(',').where((id) => id.trim().isNotEmpty).toList();
+          if (ids.isNotEmpty) {
+            attrOptionIds[def.id] = ids;
+          }
         }
       }
 
@@ -222,6 +254,7 @@ class ExportService {
           idleDuration: totalIdle,
           netActiveDuration: net,
           attributeValues: attrMap,
+          attributeOptionIds: attrOptionIds,
           classification:
               s.classificationWithin(workItem.financialClassification),
           classificationIsOverride: s.hasClassificationOverride,
@@ -245,6 +278,33 @@ class ExportService {
             .where((d) => d.enabled && !d.isArchived)
             .toList();
 
+    final allCodes =
+        await _projectRepository.getAllTimesheetCodes(workspaceId: workspaceId);
+    final codesByProject = <String, Map<String, String>>{};
+    for (final c in allCodes) {
+      codesByProject.putIfAbsent(c.projectId, () => {})[c.attributeOptionId] =
+          c.code;
+    }
+
+    final allProjects = await _projectRepository.getAll(
+        workspaceId: workspaceId, includeArchived: true);
+    final optionsById = <String, AttributeOption>{};
+    for (final p in allProjects) {
+      final defId = p.codeAttributeDefinitionId;
+      if (defId != null && defId.isNotEmpty) {
+        final opts =
+            await _attributeRepository.getOptions(defId, includeArchived: true);
+        for (final o in opts) {
+          optionsById[o.id] = o;
+        }
+      }
+    }
+
+    final codeResolver = TimesheetCodeResolver(
+      codesByProject: codesByProject,
+      optionsById: optionsById,
+    );
+
     final buffer = StringBuffer();
 
     // 1. Build Header
@@ -254,6 +314,7 @@ class ExportService {
       'End Time (UTC)',
       'Project',
       'Timesheet Code',
+      'Timesheet Code Source',
       'Category',
       'WorkItem',
       'Financial Classification',
@@ -282,7 +343,20 @@ class ExportService {
       final endStr =
           s.endTime != null ? timeFormat.format(s.endTime!) : 'In Progress';
       final projStr = r.project?.name ?? '';
-      final projCodeStr = r.project?.timesheetCode ?? '';
+
+      final resolution = codeResolver.resolveFor(
+        project: r.project,
+        attributeOptionIds: r.attributeOptionIds,
+      );
+      final projCodeStr = resolution.code ?? '';
+      final codeSourceStr = switch (resolution.source) {
+        TimesheetCodeSource.optionMapping => 'option_mapping',
+        TimesheetCodeSource.projectDefault => 'project_default',
+        TimesheetCodeSource.unmappedOption => 'unmapped_option',
+        TimesheetCodeSource.missingCode => 'missing_code',
+        TimesheetCodeSource.unknownProject => 'unknown_project',
+      };
+
       final catStr = r.category?.name ?? '';
       final taskStr = r.workItem.name;
       final classStr = r.classification.value;
@@ -307,6 +381,7 @@ class ExportService {
         endStr,
         projStr,
         projCodeStr,
+        codeSourceStr,
         catStr,
         taskStr,
         classStr,
