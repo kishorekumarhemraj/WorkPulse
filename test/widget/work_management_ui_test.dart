@@ -9,6 +9,7 @@ import 'package:workpulse/domain/models/category_model.dart';
 import 'package:workpulse/domain/models/person_model.dart';
 import 'package:workpulse/domain/models/project_model.dart';
 import 'package:workpulse/domain/models/tag_model.dart';
+import 'package:workpulse/domain/models/financial_classification.dart';
 import 'package:workpulse/domain/models/work_item_model.dart';
 import 'package:workpulse/domain/models/workspace_model.dart';
 import 'package:workpulse/features/categories/providers/categories_provider.dart';
@@ -116,7 +117,9 @@ void main() {
     testWidgets(
         'MainShellView groups nav items and honours Cmd+digit shortcuts',
         (tester) async {
-      tester.view.physicalSize = const Size(1280, 900);
+      // Tall enough that all 11 nav items (including CONFIGURE) are visible
+      // without scrolling.
+      tester.view.physicalSize = const Size(1280, 1100);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
@@ -124,7 +127,7 @@ void main() {
       await tester.pumpWidget(createTestApp());
       await tester.pumpAndSettle();
 
-      // The eight destinations are grouped rather than presented flat.
+      // The eleven destinations are grouped rather than presented flat.
       expect(find.text('TRACK'), findsOneWidget);
       expect(find.text('LIBRARY'), findsOneWidget);
       expect(find.text('CONFIGURE'), findsOneWidget);
@@ -153,9 +156,9 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byType(TimeNotesView), findsOneWidget);
 
-      // Cmd+6 jumps to Projects.
+      // Cmd+7 jumps to Projects (Cmd+6 is now Time Sheet).
       await tester.sendKeyDownEvent(LogicalKeyboardKey.meta);
-      await tester.sendKeyEvent(LogicalKeyboardKey.digit6);
+      await tester.sendKeyEvent(LogicalKeyboardKey.digit7);
       await tester.sendKeyUpEvent(LogicalKeyboardKey.meta);
       await tester.pumpAndSettle();
       expect(find.byType(ProjectsView), findsOneWidget);
@@ -346,8 +349,9 @@ void main() {
       await tester.pump();
       expect(find.text('Project name is required'), findsOneWidget);
 
-      // Fill name and save
+      // Fill name and timesheet code (both required), then save.
       await tester.enterText(find.byType(TextFormField).first, 'Beta Project');
+      await tester.enterText(find.byType(TextFormField).at(2), 'BETA-001');
       await tester.tap(find.text('Create Project'));
       await tester.pump();
 
@@ -402,8 +406,12 @@ class _FakeProjectsNotifier extends ProjectsNotifier {
   @override
   Future<List<Project>> build() async => _list;
   @override
-  Future<Project> createProject(
-      {required String name, String? description, String? colorHex}) async {
+  Future<Project> createProject({
+    required String name,
+    String? description,
+    String? colorHex,
+    String? timesheetCode,
+  }) async {
     final p = Project(
       id: 'new-p',
       workspaceId: 'ws-1',
@@ -450,6 +458,7 @@ class _FakeWorkItemsNotifier extends WorkItemsNotifier {
     required String name,
     required String projectId,
     required String categoryId,
+    FinancialClassification classification = FinancialClassification.none,
     String? notes,
     List<String> tagIds = const [],
     List<String> peopleIds = const [],
