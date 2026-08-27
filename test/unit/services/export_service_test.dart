@@ -18,6 +18,7 @@ import 'package:workpulse/domain/models/date_range.dart';
 import 'package:workpulse/domain/models/idle_period_model.dart';
 import 'package:workpulse/domain/models/person_model.dart';
 import 'package:workpulse/domain/models/project_model.dart';
+import 'package:workpulse/domain/models/project_timesheet_code.dart';
 import 'package:workpulse/domain/models/session_model.dart';
 import 'package:workpulse/domain/models/tag_model.dart';
 import 'package:workpulse/domain/models/work_item_model.dart';
@@ -257,6 +258,110 @@ void main() {
       expect(firstSession['people'][0]['name'], 'John Doe');
       expect(firstSession['idlePeriods'].length, 1);
       expect(firstSession['idlePeriods'][0]['durationSeconds'], 600);
+    });
+
+    test('generateCsv resolves option-mapped timesheet code and outputs Timesheet Code Source', () async {
+      final now = DateTime.utc(2026, 8, 23, 11, 0, 0);
+
+      // Create release attribute & option
+      final releaseDef = await attributeRepo.createDefinition(
+        AttributeDefinition(
+          id: 'def-release',
+          workspaceId: wsId,
+          key: 'release',
+          name: 'Release',
+          type: AttributeType.singleSelect,
+          scope: AttributeScope.task,
+          enabled: true,
+          reportable: true,
+          displayOrder: 1,
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+      final optR1 = await attributeRepo.createOption(
+        AttributeOption(
+          id: 'opt-rel-1',
+          attributeDefinitionId: releaseDef.id,
+          label: 'R1.0',
+          value: 'r1.0',
+          displayOrder: 0,
+          createdAt: now,
+        ),
+      );
+
+      // Create project with discriminator
+      final proj = await projectRepo.create(
+        Project(
+          id: 'proj-mapped',
+          workspaceId: wsId,
+          name: 'Mapped App',
+          timesheetCode: 'DEFAULT-CODE',
+          codeAttributeDefinitionId: releaseDef.id,
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+
+      // Set timesheet code mapping
+      await projectRepo.setTimesheetCodes(proj.id, [
+        ProjectTimesheetCode(
+          id: 'code-1',
+          projectId: proj.id,
+          attributeOptionId: optR1.id,
+          code: 'MAPPED-R1',
+          createdAt: now,
+          updatedAt: now,
+        ),
+      ]);
+
+      // Create work item with release attribute value
+      final wi = await workItemRepo.create(
+        WorkItem(
+          id: 'wi-mapped',
+          workspaceId: wsId,
+          projectId: proj.id,
+          categoryId: 'cat-1',
+          name: 'Feature for R1',
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+      await attributeRepo.setWorkItemValue(
+        WorkItemAttributeValue(
+          id: 'val-1',
+          workItemId: wi.id,
+          attributeDefinitionId: releaseDef.id,
+          optionId: optR1.id,
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+
+      // Create session
+      await sessionRepo.create(
+        Session(
+          id: 'sess-mapped',
+          workItemId: wi.id,
+          startTime: now,
+          endTime: now.add(const Duration(hours: 2)),
+          createdAt: now,
+        ),
+      );
+
+      final range = DateRange(
+        start: DateTime.utc(2026, 8, 23, 0, 0, 0),
+        end: DateTime.utc(2026, 8, 23, 23, 59, 59),
+      );
+
+      final csv = await exportService.generateCsv(workspaceId: wsId, range: range);
+      final lines = csv.trim().split('\n');
+
+      final header = lines[0];
+      expect(header, contains('Timesheet Code,Timesheet Code Source'));
+
+      final mappedLine = lines.firstWhere((l) => l.contains('Feature for R1'));
+      expect(mappedLine, contains('MAPPED-R1,option_mapping'));
     });
   });
 }
