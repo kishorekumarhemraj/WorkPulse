@@ -177,8 +177,7 @@ class _DailyActivityChartState extends State<DailyActivityChart> {
                       final columnWidth = bars.isEmpty
                           ? 0.0
                           : constraints.maxWidth / bars.length;
-                      final showValues =
-                          columnWidth >= _minWidthForValueLabel;
+                      final showValues = columnWidth >= _minWidthForValueLabel;
 
                       return Stack(
                         children: [
@@ -201,8 +200,7 @@ class _DailyActivityChartState extends State<DailyActivityChart> {
                                     showValue: showValues,
                                     isHovered: _hoveredIndex == i,
                                     onHover: (hovering) => setState(
-                                      () =>
-                                          _hoveredIndex = hovering ? i : null,
+                                      () => _hoveredIndex = hovering ? i : null,
                                     ),
                                   ),
                                 ),

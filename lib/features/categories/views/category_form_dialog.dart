@@ -68,7 +68,7 @@ class _CategoryFormDialogState extends ConsumerState<CategoryFormDialog> {
                     name: _nameController.text.trim(),
                     description: _descController.text.trim(),
                     iconName: _selectedIconName,
-                    ),
+                  ),
                 );
         if (mounted) Navigator.of(context).pop(updated);
       }

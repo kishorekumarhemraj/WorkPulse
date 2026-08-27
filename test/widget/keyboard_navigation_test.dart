@@ -411,7 +411,8 @@ void main() {
       expect(triggerBorder()?.top.width, 1.5);
     });
 
-    testWidgets('can open with arrow down, navigate options and select with enter',
+    testWidgets(
+        'can open with arrow down, navigate options and select with enter',
         (tester) async {
       String? selected;
       await tester.pumpWidget(
