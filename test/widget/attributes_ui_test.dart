@@ -363,6 +363,20 @@ void main() {
       expect(find.text('Jira Key *'), findsOneWidget);
       expect(find.text('Is Billable'), findsOneWidget);
       expect(find.byType(Switch), findsOneWidget);
+
+      // Both captions sit above their control, at the same height. The text
+      // field used to carry its name as Material's floating `labelText`
+      // instead — drawn inside the border, at a different height from the
+      // caption its neighbour drew above itself, which is what left the row
+      // looking misaligned.
+      final textCaption = tester.getTopLeft(find.text('Jira Key *'));
+      final boolCaption = tester.getTopLeft(find.text('Is Billable'));
+      expect(textCaption.dy, boolCaption.dy);
+      expect(textCaption.dx, lessThan(boolCaption.dx));
+      expect(
+        tester.getTopLeft(find.byType(TextFormField)).dy,
+        greaterThan(textCaption.dy),
+      );
     });
   });
 }

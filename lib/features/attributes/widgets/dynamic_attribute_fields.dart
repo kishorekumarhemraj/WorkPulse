@@ -5,6 +5,7 @@ import 'package:workpulse/core/theme/design_tokens.dart';
 import 'package:workpulse/core/theme/app_colors.dart';
 import 'package:workpulse/core/theme/color_utils.dart';
 import 'package:workpulse/core/widgets/app_select.dart';
+import 'package:workpulse/core/widgets/field_label.dart';
 import 'package:workpulse/domain/models/attribute_model.dart';
 import 'package:workpulse/features/attributes/providers/attribute_definitions_provider.dart';
 
@@ -41,12 +42,12 @@ class DynamicAttributeFields extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: _buildFieldForDefinition(context, ref, def1),
+                child: _buildLabelledField(context, ref, def1),
               ),
               if (def2 != null) ...[
                 const SizedBox(width: 12),
                 Expanded(
-                  child: _buildFieldForDefinition(context, ref, def2),
+                  child: _buildLabelledField(context, ref, def2),
                 ),
               ] else ...[
                 const SizedBox(width: 12),
@@ -74,6 +75,23 @@ class DynamicAttributeFields extends ConsumerWidget {
     );
   }
 
+  /// One field, captioned.
+  ///
+  /// The caption lives here rather than inside each case so that a text box
+  /// and a select sitting next to each other in a row start at the same
+  /// height. Text and number fields used to carry Material's floating
+  /// `labelText` instead, which draws the name inside the border — invisible
+  /// until the field is focused, and a different height from the caption its
+  /// neighbour drew above itself.
+  Widget _buildLabelledField(
+      BuildContext context, WidgetRef ref, AttributeDefinition def) {
+    return LabelledField(
+      label: def.name,
+      isRequired: def.required,
+      child: _buildFieldForDefinition(context, ref, def),
+    );
+  }
+
   Widget _buildFieldForDefinition(
       BuildContext context, WidgetRef ref, AttributeDefinition def) {
     final currentValue = values[def.id];
@@ -84,7 +102,6 @@ class DynamicAttributeFields extends ConsumerWidget {
           initialValue: currentValue as String?,
           style: TextStyle(fontSize: 13, color: context.colors.textPrimary),
           decoration: InputDecoration(
-            labelText: '${def.name}${def.required ? ' *' : ''}',
             hintText: def.description ?? 'Enter ${def.name}',
           ),
           validator: def.required
@@ -101,7 +118,6 @@ class DynamicAttributeFields extends ConsumerWidget {
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
           style: TextStyle(fontSize: 13, color: context.colors.textPrimary),
           decoration: InputDecoration(
-            labelText: '${def.name}${def.required ? ' *' : ''}',
             hintText: def.description ?? 'Enter number',
           ),
           validator: (v) {
@@ -133,22 +149,10 @@ class DynamicAttributeFields extends ConsumerWidget {
           child: Row(
             children: [
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '${def.name}${def.required ? ' *' : ''}',
-                      style: TextStyle(
-                          fontSize: 13, color: context.colors.textPrimary),
-                    ),
-                    if (def.description != null) ...[
-                      const SizedBox(height: 2),
-                      Text(def.description!,
-                          style: TextStyle(
-                              fontSize: 12,
-                              color: context.colors.textSecondary)),
-                    ],
-                  ],
+                child: Text(
+                  def.description ?? (boolVal ? 'Yes' : 'No'),
+                  style: TextStyle(
+                      fontSize: 13, color: context.colors.textPrimary),
                 ),
               ),
               Transform.scale(
@@ -170,8 +174,6 @@ class DynamicAttributeFields extends ConsumerWidget {
           error: (_, __) => const SizedBox.shrink(),
           data: (options) {
             return AppSelect<String>(
-              label: def.name,
-              isRequired: def.required,
               placeholder: 'Select ${def.name}',
               maxTriggerWidth: double.infinity,
               value: options.any((o) => o.id == currentValue)
@@ -202,49 +204,36 @@ class DynamicAttributeFields extends ConsumerWidget {
           loading: () => const LinearProgressIndicator(),
           error: (_, __) => const SizedBox.shrink(),
           data: (options) {
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '${def.name}${def.required ? ' *' : ''}',
-                  style: TextStyle(
-                      fontSize: 12, color: context.colors.textSecondary),
-                ),
-                const SizedBox(height: 6),
-                Wrap(
-                  spacing: 6,
-                  runSpacing: 6,
-                  children: options.map((opt) {
-                    final isSel = selectedIds.contains(opt.id);
-                    final col = ColorUtils.parseHex(opt.colorHex);
+            return Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: options.map((opt) {
+                final isSel = selectedIds.contains(opt.id);
+                final col = ColorUtils.parseHex(opt.colorHex);
 
-                    return FilterChip(
-                      label: Text(opt.label),
-                      selected: isSel,
-                      selectedColor: col.withValues(alpha: 0.3),
-                      checkmarkColor: col,
-                      labelStyle: TextStyle(
-                        fontSize: 12,
-                        color:
-                            isSel ? Colors.white : context.colors.textSecondary,
-                        fontWeight: isSel ? FontWeight.bold : FontWeight.normal,
-                      ),
-                      backgroundColor: context.colors.card,
-                      side: BorderSide(
-                          color: isSel ? col : context.colors.divider),
-                      onSelected: (selected) {
-                        final updated = List<String>.from(selectedIds);
-                        if (selected) {
-                          updated.add(opt.id);
-                        } else {
-                          updated.remove(opt.id);
-                        }
-                        onValueChanged(def.id, updated);
-                      },
-                    );
-                  }).toList(),
-                ),
-              ],
+                return FilterChip(
+                  label: Text(opt.label),
+                  selected: isSel,
+                  selectedColor: col.withValues(alpha: 0.3),
+                  checkmarkColor: col,
+                  labelStyle: TextStyle(
+                    fontSize: 12,
+                    color: isSel ? Colors.white : context.colors.textSecondary,
+                    fontWeight: isSel ? FontWeight.bold : FontWeight.normal,
+                  ),
+                  backgroundColor: context.colors.card,
+                  side: BorderSide(color: isSel ? col : context.colors.divider),
+                  onSelected: (selected) {
+                    final updated = List<String>.from(selectedIds);
+                    if (selected) {
+                      updated.add(opt.id);
+                    } else {
+                      updated.remove(opt.id);
+                    }
+                    onValueChanged(def.id, updated);
+                  },
+                );
+              }).toList(),
             );
           },
         );
@@ -287,29 +276,17 @@ class DynamicAttributeFields extends ConsumerWidget {
                         size: 16, color: context.colors.accent),
                     const SizedBox(width: 10),
                     Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '${def.name}${def.required ? ' *' : ''}',
-                            style: TextStyle(
-                                fontSize: 12,
-                                color: context.colors.textSecondary),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            formattedDate,
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: dateVal != null
-                                  ? context.colors.textPrimary
-                                  : context.colors.textSecondary,
-                              fontWeight: dateVal != null
-                                  ? FontWeight.w500
-                                  : FontWeight.normal,
-                            ),
-                          ),
-                        ],
+                      child: Text(
+                        formattedDate,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: dateVal != null
+                              ? context.colors.textPrimary
+                              : context.colors.textSecondary,
+                          fontWeight: dateVal != null
+                              ? FontWeight.w500
+                              : FontWeight.normal,
+                        ),
                       ),
                     ),
                     if (dateVal != null)

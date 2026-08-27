@@ -10,7 +10,10 @@ import 'package:workpulse/core/platform/window_service.dart';
 import 'package:workpulse/data/providers/repository_providers.dart';
 import 'package:workpulse/domain/services/activity_heartbeat_service.dart';
 import 'package:workpulse/domain/services/timer_service.dart';
+import 'package:workpulse/domain/models/attribute_model.dart';
+import 'package:workpulse/features/attributes/providers/attribute_definitions_provider.dart';
 import 'package:workpulse/features/idle/providers/idle_provider.dart';
+import 'package:workpulse/features/quick_capture/views/quick_capture_body.dart';
 import 'package:workpulse/features/settings/providers/app_settings_provider.dart';
 import 'package:workpulse/features/timer/models/timer_state.dart';
 import 'package:workpulse/features/timer/providers/timer_provider.dart';
@@ -186,7 +189,12 @@ class TrayCoordinator {
         // saw the mode already switched and so recorded "the dashboard was
         // not visible", which meant closing Quick Capture hid the app
         // instead of returning to the dashboard.
-        _windowService.openQuickCapture();
+        _windowService.openQuickCapture(
+          height: QuickCaptureBody.hudHeightFrom(
+            _ref.read(attributeDefinitionsProvider).value ??
+                const <AttributeDefinition>[],
+          ),
+        );
         break;
       case 'stop_timer':
         _ref.read(timerProvider.notifier).stopTimer();

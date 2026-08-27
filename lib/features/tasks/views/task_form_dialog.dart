@@ -501,7 +501,7 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
               // category because the same kind of work can be capital on one
               // task and not on another; its sessions inherit this unless one
               // of them says otherwise.
-              Text('Financial Classification',
+              Text(timeSheetClassificationLabel,
                   style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
@@ -527,103 +527,81 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
               ),
               const SizedBox(height: 16),
 
-              // Tags Multi-select
+              // People and tags side by side, the way project and category
+              // already sat. Each is one control wide; stacked full width they
+              // pushed the custom attributes off the bottom of the dialog.
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Tags',
-                      style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                          color: context.colors.textSecondary)),
-                  InkWell(
-                    canRequestFocus: false,
-                    onTap: () async {
-                      final t = await TagFormDialog.show(context);
-                      if (t != null && !_selectedTagIds.contains(t.id)) {
-                        setState(() => _selectedTagIds.add(t.id));
-                      }
-                    },
-                    child: Text('+ New Tag',
-                        style: TextStyle(
-                            fontSize: 12,
-                            color: context.colors.accent,
-                            fontWeight: FontWeight.w500)),
+                  Expanded(
+                    child: _MultiSelectField(
+                      label: 'Assigned People',
+                      actionLabel: '+ Add Person',
+                      onAction: () async {
+                        final p = await PersonFormDialog.show(context);
+                        if (p != null && !_selectedPeopleIds.contains(p.id)) {
+                          setState(() => _selectedPeopleIds.add(p.id));
+                        }
+                      },
+                      child: peopleAsync.when(
+                        loading: () => const SizedBox.shrink(),
+                        error: (_, __) => const SizedBox.shrink(),
+                        data: (people) {
+                          return SearchableMultiSelect(
+                            allItems: people
+                                .map((person) => SearchableMultiSelectItem(
+                                      id: person.id,
+                                      label: person.name,
+                                      icon: Icons.person,
+                                    ))
+                                .toList(),
+                            selectedIds: _selectedPeopleIds,
+                            onChanged: (ids) =>
+                                setState(() => _selectedPeopleIds = ids),
+                            hintText: 'Search people...',
+                            emptyStateText: 'No people added yet',
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: _MultiSelectField(
+                      label: 'Tags',
+                      actionLabel: '+ New Tag',
+                      onAction: () async {
+                        final t = await TagFormDialog.show(context);
+                        if (t != null && !_selectedTagIds.contains(t.id)) {
+                          setState(() => _selectedTagIds.add(t.id));
+                        }
+                      },
+                      child: tagsAsync.when(
+                        loading: () => const SizedBox.shrink(),
+                        error: (_, __) => const SizedBox.shrink(),
+                        data: (tags) {
+                          return SearchableMultiSelect(
+                            allItems: tags
+                                .map((tag) => SearchableMultiSelectItem(
+                                      id: tag.id,
+                                      label: tag.name,
+                                      color: ColorUtils.parseHex(tag.colorHex),
+                                    ))
+                                .toList(),
+                            selectedIds: _selectedTagIds,
+                            onChanged: (ids) =>
+                                setState(() => _selectedTagIds = ids),
+                            hintText: 'Search tags...',
+                            emptyStateText: 'No tags created yet',
+                            onCreateNew: _createAndSelectTag,
+                            createLabelBuilder: (query) =>
+                                'Create tag "$query"',
+                          );
+                        },
+                      ),
+                    ),
                   ),
                 ],
-              ),
-              const SizedBox(height: 6),
-              tagsAsync.when(
-                loading: () => const SizedBox.shrink(),
-                error: (_, __) => const SizedBox.shrink(),
-                data: (tags) {
-                  return SearchableMultiSelect(
-                    allItems: tags
-                        .map((tag) => SearchableMultiSelectItem(
-                              id: tag.id,
-                              label: tag.name,
-                              color: ColorUtils.parseHex(tag.colorHex),
-                            ))
-                        .toList(),
-                    selectedIds: _selectedTagIds,
-                    onChanged: (ids) => setState(() => _selectedTagIds = ids),
-                    hintText: 'Search tags...',
-                    emptyStateText: 'No tags created yet',
-                    onCreateNew: _createAndSelectTag,
-                    createLabelBuilder: (query) => 'Create tag "$query"',
-                  );
-                },
-              ),
-              const SizedBox(height: 16),
-
-              // People Multi-select
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Flexible(
-                    child: Text('Assigned People',
-                        style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                            color: context.colors.textSecondary),
-                        overflow: TextOverflow.ellipsis),
-                  ),
-                  InkWell(
-                    canRequestFocus: false,
-                    onTap: () async {
-                      final p = await PersonFormDialog.show(context);
-                      if (p != null && !_selectedPeopleIds.contains(p.id)) {
-                        setState(() => _selectedPeopleIds.add(p.id));
-                      }
-                    },
-                    child: Text('+ Add Person',
-                        style: TextStyle(
-                            fontSize: 12,
-                            color: context.colors.accent,
-                            fontWeight: FontWeight.w500)),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 6),
-              peopleAsync.when(
-                loading: () => const SizedBox.shrink(),
-                error: (_, __) => const SizedBox.shrink(),
-                data: (people) {
-                  return SearchableMultiSelect(
-                    allItems: people
-                        .map((person) => SearchableMultiSelectItem(
-                              id: person.id,
-                              label: person.name,
-                              icon: Icons.person,
-                            ))
-                        .toList(),
-                    selectedIds: _selectedPeopleIds,
-                    onChanged: (ids) =>
-                        setState(() => _selectedPeopleIds = ids),
-                    hintText: 'Search people...',
-                    emptyStateText: 'No people added yet',
-                  );
-                },
               ),
 
               if (widget.workItem != null) ...[
@@ -956,6 +934,63 @@ class _TaskNotesRollup extends ConsumerWidget {
           }).toList(),
         );
       },
+    );
+  }
+}
+
+/// A multi-select in a form column: caption on the left, the "add one" link on
+/// the right, the control beneath.
+///
+/// Both people and tags carry that link, and both now share a row, so the two
+/// headers had to line up rather than each be laid out by hand.
+class _MultiSelectField extends StatelessWidget {
+  final String label;
+  final String actionLabel;
+  final VoidCallback onAction;
+  final Widget child;
+
+  const _MultiSelectField({
+    required this.label,
+    required this.actionLabel,
+    required this.onAction,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Flexible(
+              child: Text(
+                label,
+                style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: context.colors.textSecondary),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            InkWell(
+              canRequestFocus: false,
+              onTap: onAction,
+              child: Text(
+                actionLabel,
+                style: TextStyle(
+                    fontSize: 12,
+                    color: context.colors.accent,
+                    fontWeight: FontWeight.w500),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        child,
+      ],
     );
   }
 }

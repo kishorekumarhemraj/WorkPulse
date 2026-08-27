@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -5,6 +7,7 @@ import 'package:workpulse/core/theme/app_colors.dart';
 import 'package:workpulse/core/theme/color_utils.dart';
 import 'package:workpulse/core/theme/icon_utils.dart';
 import 'package:workpulse/core/widgets/app_select.dart';
+import 'package:workpulse/core/widgets/field_label.dart';
 import 'package:workpulse/core/widgets/keycap.dart';
 import 'package:workpulse/core/widgets/searchable_multi_select.dart';
 import 'package:workpulse/domain/models/attribute_model.dart';
@@ -60,6 +63,75 @@ class QuickCaptureBody extends ConsumerStatefulWidget {
     this.expandResults = false,
   });
 
+  /// The task attributes Quick Capture offers, in the order it shows them.
+  ///
+  /// Shared with the window service's sizing so the HUD is opened at a height
+  /// that fits the fields it is about to draw. Two readings of "which
+  /// attributes" would drift apart the first time the filter changed.
+  static List<AttributeDefinition> captureFields(
+    List<AttributeDefinition> definitions,
+  ) {
+    return definitions
+        .where(
+          (d) =>
+              d.scope == AttributeScope.task &&
+              d.enabled &&
+              !d.isArchived &&
+              d.showInQuickCapture,
+        )
+        .toList()
+      ..sort((a, b) => a.displayOrder.compareTo(b.displayOrder));
+  }
+
+  /// How tall the configuration bar wants to be for [attributeCount] fields.
+  ///
+  /// The bar used to be pinned at 220pt whatever it held, so a workspace with
+  /// more than a couple of quick-capture attributes hid the rest inside a
+  /// scroll view with no affordance saying so — fields the user had asked to
+  /// see, invisible. It grows a row at a time instead, two attributes to a
+  /// row.
+  static double configurationBarHeight(int attributeCount) {
+    final rows = (attributeCount / 2).ceil();
+    if (rows == 0) return _barBaseHeight;
+    return _barBaseHeight + _barSectionHeaderHeight + rows * _barFieldRowHeight;
+  }
+
+  /// The window height the HUD should open at for the attributes currently
+  /// defined — what the two places that open Quick Capture call.
+  static double hudHeightFrom(List<AttributeDefinition> definitions) =>
+      hudHeightFor(captureFields(definitions).length);
+
+  /// The window height the HUD should open at, given a field count.
+  ///
+  /// The bar can only grow into space the window actually has; inside a fixed
+  /// 580pt window a taller bar just eats the result list. So the window grows
+  /// with it, up to [_hudMaxHeight] — past that the bar starts scrolling
+  /// again rather than the HUD taking over the screen.
+  static double hudHeightFor(int attributeCount) {
+    final wanted = _hudChromeHeight +
+        configurationBarHeight(attributeCount) +
+        _hudResultsHeight;
+    return math.min(_hudMaxHeight, math.max(_hudMinHeight, wanted));
+  }
+
+  /// Project/category row, people/tags row, and the bar's own padding.
+  static const double _barBaseHeight = 172;
+
+  /// The "Custom Attributes" caption above the attribute rows.
+  static const double _barSectionHeaderHeight = 26;
+
+  /// One row of two captioned controls, plus the gap beneath it.
+  static const double _barFieldRowHeight = 73;
+
+  /// The search field and its divider.
+  static const double _hudChromeHeight = 58;
+
+  /// Room for roughly four results — enough that the list still reads as one.
+  static const double _hudResultsHeight = 220;
+
+  static const double _hudMinHeight = 580;
+  static const double _hudMaxHeight = 860;
+
   @override
   ConsumerState<QuickCaptureBody> createState() => _QuickCaptureBodyState();
 }
@@ -68,6 +140,11 @@ class _QuickCaptureBodyState extends ConsumerState<QuickCaptureBody> {
   /// The result list is capped rather than scrolled: Quick Capture is for
   /// getting a timer running in one gesture, not for browsing.
   static const int _maxResults = 5;
+
+  /// What the top of the HUD keeps for itself however many attributes the
+  /// configuration bar has to show: the search header's own height plus
+  /// enough list left under it to still read as a list.
+  static const double _reservedForResults = 260;
 
   late final TextEditingController _searchController;
   late final FocusNode _inputFocusNode;
@@ -181,16 +258,8 @@ class _QuickCaptureBodyState extends ConsumerState<QuickCaptureBody> {
         ref.watch(attributeDefinitionsProvider).value ??
             const <AttributeDefinition>[];
 
-    final quickCaptureAttributes = attributeDefinitions
-        .where(
-          (d) =>
-              d.scope == AttributeScope.task &&
-              d.enabled &&
-              !d.isArchived &&
-              d.showInQuickCapture,
-        )
-        .toList()
-      ..sort((a, b) => a.displayOrder.compareTo(b.displayOrder));
+    final quickCaptureAttributes =
+        QuickCaptureBody.captureFields(attributeDefinitions);
 
     final projectMap = {for (final p in projects) p.id: p};
     final categoryMap = {for (final c in categories) c.id: c};
@@ -268,25 +337,47 @@ class _QuickCaptureBodyState extends ConsumerState<QuickCaptureBody> {
         }
         return KeyEventResult.ignored;
       },
-      child: Column(
-        mainAxisSize:
-            widget.expandResults ? MainAxisSize.max : MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _buildSearchHeader(results),
-          if (widget.expandResults)
-            Expanded(child: resultList)
-          else
-            Flexible(child: resultList),
-          _buildConfigurationBar(
-            projects: projects,
-            categories: categories,
-            tags: tags,
-            people: people,
-            attributes: quickCaptureAttributes,
-            qcState: qcState,
-          ),
-        ],
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // The bar asks for the height its fields need; what it gets is
+          // capped so the result list never collapses to a sliver. Both
+          // hosts bound this (the dialog at 640, the HUD at the window
+          // height), so the cap is real in each.
+          final wanted = QuickCaptureBody.configurationBarHeight(
+            quickCaptureAttributes.length,
+          );
+          final barMaxHeight = constraints.maxHeight.isFinite
+              ? math.min(
+                  wanted,
+                  math.max(
+                    QuickCaptureBody._barBaseHeight,
+                    constraints.maxHeight - _reservedForResults,
+                  ),
+                )
+              : wanted;
+
+          return Column(
+            mainAxisSize:
+                widget.expandResults ? MainAxisSize.max : MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildSearchHeader(results),
+              if (widget.expandResults)
+                Expanded(child: resultList)
+              else
+                Flexible(child: resultList),
+              _buildConfigurationBar(
+                projects: projects,
+                categories: categories,
+                tags: tags,
+                people: people,
+                attributes: quickCaptureAttributes,
+                qcState: qcState,
+                maxHeight: barMaxHeight,
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -353,6 +444,7 @@ class _QuickCaptureBodyState extends ConsumerState<QuickCaptureBody> {
     required List<Person> people,
     required List<AttributeDefinition> attributes,
     required QuickCaptureState qcState,
+    required double maxHeight,
   }) {
     final colors = context.colors;
 
@@ -363,7 +455,7 @@ class _QuickCaptureBodyState extends ConsumerState<QuickCaptureBody> {
         border: Border(top: BorderSide(color: colors.divider, width: 1)),
       ),
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxHeight: 220),
+        constraints: BoxConstraints(maxHeight: maxHeight),
         child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
           child: Column(
@@ -429,38 +521,61 @@ class _QuickCaptureBodyState extends ConsumerState<QuickCaptureBody> {
                       ),
                   ],
                 ),
-              if (tags.isNotEmpty) ...[
-                const SizedBox(height: 10),
-                SearchableMultiSelect(
-                  allItems: tags
-                      .map((t) => SearchableMultiSelectItem(
-                            id: t.id,
-                            label: t.name,
-                            color: ColorUtils.parseHex(t.colorHex),
-                          ))
-                      .toList(),
-                  selectedIds: qcState.selectedTagIds,
-                  onChanged: (ids) =>
-                      ref.read(quickCaptureProvider.notifier).setTagIds(ids),
-                  hintText: 'Search tags...',
-                  emptyStateText: 'No tags created yet',
-                ),
-              ],
-              if (people.isNotEmpty) ...[
-                const SizedBox(height: 10),
-                SearchableMultiSelect(
-                  allItems: people
-                      .map((person) => SearchableMultiSelectItem(
-                            id: person.id,
-                            label: person.name,
-                            icon: Icons.person_outline,
-                          ))
-                      .toList(),
-                  selectedIds: qcState.selectedPeopleIds,
-                  onChanged: (ids) =>
-                      ref.read(quickCaptureProvider.notifier).setPeopleIds(ids),
-                  hintText: 'Search people...',
-                  emptyStateText: 'No people added yet',
+              // People and tags share a row for the same reason project and
+              // category do: each is one control wide, and stacking them full
+              // width pushed the custom attributes below the fold. Captioned,
+              // because a bare chip field beside a labelled one reads as a
+              // control that lost its label.
+              if (people.isNotEmpty || tags.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (people.isNotEmpty)
+                      Expanded(
+                        child: LabelledField(
+                          label: 'People',
+                          child: SearchableMultiSelect(
+                            allItems: people
+                                .map((person) => SearchableMultiSelectItem(
+                                      id: person.id,
+                                      label: person.name,
+                                      icon: Icons.person_outline,
+                                    ))
+                                .toList(),
+                            selectedIds: qcState.selectedPeopleIds,
+                            onChanged: (ids) => ref
+                                .read(quickCaptureProvider.notifier)
+                                .setPeopleIds(ids),
+                            hintText: 'Search people...',
+                            emptyStateText: 'No people added yet',
+                          ),
+                        ),
+                      ),
+                    if (people.isNotEmpty && tags.isNotEmpty)
+                      const SizedBox(width: 12),
+                    if (tags.isNotEmpty)
+                      Expanded(
+                        child: LabelledField(
+                          label: 'Tags',
+                          child: SearchableMultiSelect(
+                            allItems: tags
+                                .map((t) => SearchableMultiSelectItem(
+                                      id: t.id,
+                                      label: t.name,
+                                      color: ColorUtils.parseHex(t.colorHex),
+                                    ))
+                                .toList(),
+                            selectedIds: qcState.selectedTagIds,
+                            onChanged: (ids) => ref
+                                .read(quickCaptureProvider.notifier)
+                                .setTagIds(ids),
+                            hintText: 'Search tags...',
+                            emptyStateText: 'No tags created yet',
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
               ],
               if (attributes.isNotEmpty) ...[

@@ -42,13 +42,17 @@ class _FakeCategoriesNotifier extends CategoriesNotifier {
 }
 
 class _FakeTagsNotifier extends TagsNotifier {
+  final List<Tag> _list;
+  _FakeTagsNotifier([this._list = const []]);
   @override
-  Future<List<Tag>> build() async => [];
+  Future<List<Tag>> build() async => _list;
 }
 
 class _FakePeopleNotifier extends PeopleNotifier {
+  final List<Person> _list;
+  _FakePeopleNotifier([this._list = const []]);
   @override
-  Future<List<Person>> build() async => [];
+  Future<List<Person>> build() async => _list;
 }
 
 class _FakeWorkItemsNotifier extends WorkItemsNotifier {
@@ -163,7 +167,26 @@ void main() {
     updatedAt: now,
   );
 
-  Widget createTestApp(FakeTimerProviderContainer container) {
+  final testTag = Tag(
+    id: 'tag-1',
+    workspaceId: testWorkspace.id,
+    name: 'urgent',
+    colorHex: '#FF375F',
+    createdAt: now,
+  );
+
+  final testPerson = Person(
+    id: 'person-1',
+    workspaceId: testWorkspace.id,
+    name: 'Priya',
+    createdAt: now,
+  );
+
+  Widget createTestApp(
+    FakeTimerProviderContainer container, {
+    List<Tag> tags = const [],
+    List<Person> people = const [],
+  }) {
     return ProviderScope(
       overrides: [
         currentWorkspaceProvider
@@ -172,8 +195,8 @@ void main() {
             .overrideWith(() => _FakeProjectsNotifier([testProject])),
         categoriesProvider
             .overrideWith(() => _FakeCategoriesNotifier([testCategory])),
-        tagsProvider.overrideWith(() => _FakeTagsNotifier()),
-        peopleProvider.overrideWith(() => _FakePeopleNotifier()),
+        tagsProvider.overrideWith(() => _FakeTagsNotifier(tags)),
+        peopleProvider.overrideWith(() => _FakePeopleNotifier(people)),
         workItemsProvider
             .overrideWith(() => _FakeWorkItemsNotifier([testTask1, testTask2])),
         timerProvider.overrideWith(() => container.fakeTimer),
@@ -313,6 +336,30 @@ void main() {
 
       expect(container.fakeTimer.startedTask, isNotNull);
       expect(container.fakeTimer.startedTask!.id, testTask2.id);
+    });
+
+    testWidgets('people and tags share a row, each under its own label',
+        (tester) async {
+      tester.view.physicalSize = const Size(1280, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final container = FakeTimerProviderContainer();
+      await tester.pumpWidget(
+        createTestApp(container, tags: [testTag], people: [testPerson]),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('People'), findsOneWidget);
+      expect(find.text('Tags'), findsOneWidget);
+
+      // Two columns of one row, not two stacked full-width controls: the
+      // captions sit at the same height, People to the left of Tags.
+      final peopleCaption = tester.getTopLeft(find.text('People'));
+      final tagsCaption = tester.getTopLeft(find.text('Tags'));
+      expect(peopleCaption.dy, tagsCaption.dy);
+      expect(peopleCaption.dx, lessThan(tagsCaption.dx));
     });
 
     testWidgets('pressing Escape key closes quick capture', (tester) async {
