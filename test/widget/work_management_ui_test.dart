@@ -8,6 +8,7 @@ import 'package:workpulse/core/theme/app_theme.dart';
 import 'package:workpulse/domain/models/category_model.dart';
 import 'package:workpulse/domain/models/person_model.dart';
 import 'package:workpulse/domain/models/project_model.dart';
+import 'package:workpulse/domain/models/project_timesheet_code.dart';
 import 'package:workpulse/domain/models/tag_model.dart';
 import 'package:workpulse/domain/models/financial_classification.dart';
 import 'package:workpulse/domain/models/work_item_model.dart';
@@ -411,6 +412,8 @@ class _FakeProjectsNotifier extends ProjectsNotifier {
     String? description,
     String? colorHex,
     String? timesheetCode,
+    String? codeAttributeDefinitionId,
+    List<ProjectTimesheetCode> timesheetCodes = const [],
   }) async {
     final p = Project(
       id: 'new-p',
@@ -418,6 +421,8 @@ class _FakeProjectsNotifier extends ProjectsNotifier {
       name: name,
       description: description,
       colorHex: colorHex,
+      timesheetCode: timesheetCode,
+      codeAttributeDefinitionId: codeAttributeDefinitionId,
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
     );

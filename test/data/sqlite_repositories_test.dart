@@ -17,6 +17,7 @@ import 'package:workpulse/domain/models/category_model.dart';
 import 'package:workpulse/domain/models/idle_period_model.dart';
 import 'package:workpulse/domain/models/person_model.dart';
 import 'package:workpulse/domain/models/project_model.dart';
+import 'package:workpulse/domain/models/project_timesheet_code.dart';
 import 'package:workpulse/domain/models/session_model.dart';
 import 'package:workpulse/domain/models/tag_model.dart';
 import 'package:workpulse/domain/models/work_item_model.dart';
@@ -123,6 +124,75 @@ void main() {
           await projectRepo.getAll(workspaceId: wsId, includeArchived: true);
       expect(allProjects.length, equals(1));
       expect(allProjects.first.isArchived, isTrue);
+
+      // Unarchive for timesheet codes test
+      await projectRepo.unarchive('proj-1');
+
+      // Create attribute definition and options for FK constraint
+      final releaseDef = AttributeDefinition(
+        id: 'attr-release',
+        workspaceId: wsId,
+        name: 'Release',
+        key: 'release',
+        type: AttributeType.singleSelect,
+        scope: AttributeScope.task,
+        createdAt: now,
+        updatedAt: now,
+      );
+      await attributeRepo.createDefinition(releaseDef);
+      final opt1 = AttributeOption(
+        id: 'opt-r1',
+        attributeDefinitionId: 'attr-release',
+        label: 'R24.1',
+        value: 'r24.1',
+        displayOrder: 0,
+        createdAt: now,
+      );
+      final opt2 = AttributeOption(
+        id: 'opt-r2',
+        attributeDefinitionId: 'attr-release',
+        label: 'R24.2',
+        value: 'r24.2',
+        displayOrder: 1,
+        createdAt: now,
+      );
+      await attributeRepo.createOption(opt1);
+      await attributeRepo.createOption(opt2);
+
+      await projectRepo.update(project.copyWith(
+        timesheetCode: 'PRJ-DEFAULT',
+        codeAttributeDefinitionId: 'attr-release',
+      ));
+      final updated = await projectRepo.getById('proj-1');
+      expect(updated!.timesheetCode, equals('PRJ-DEFAULT'));
+      expect(updated.codeAttributeDefinitionId, equals('attr-release'));
+
+      // Project timesheet codes
+      final code1 = ProjectTimesheetCode(
+        id: 'tc-1',
+        projectId: 'proj-1',
+        attributeOptionId: 'opt-r1',
+        code: 'PRJ-R1',
+        createdAt: now,
+        updatedAt: now,
+      );
+      final code2 = ProjectTimesheetCode(
+        id: 'tc-2',
+        projectId: 'proj-1',
+        attributeOptionId: 'opt-r2',
+        code: 'PRJ-R2',
+        createdAt: now,
+        updatedAt: now,
+      );
+      await projectRepo.setTimesheetCodes('proj-1', [code1, code2]);
+
+      final codes = await projectRepo.getTimesheetCodes('proj-1');
+      expect(codes.length, equals(2));
+      expect(codes.map((c) => c.code), containsAll(['PRJ-R1', 'PRJ-R2']));
+
+      final allCodes =
+          await projectRepo.getAllTimesheetCodes(workspaceId: wsId);
+      expect(allCodes.length, equals(2));
     });
 
     test('Tags & People relations and CRUD', () async {

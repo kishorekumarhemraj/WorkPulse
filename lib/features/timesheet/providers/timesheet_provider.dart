@@ -1,8 +1,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:workpulse/data/providers/repository_providers.dart';
+import 'package:workpulse/domain/models/attribute_model.dart';
 import 'package:workpulse/domain/models/timesheet_model.dart';
+import 'package:workpulse/domain/services/timesheet_code_resolver.dart';
 import 'package:workpulse/domain/services/timesheet_service.dart';
 import 'package:workpulse/features/attributes/providers/attribute_definitions_provider.dart';
+import 'package:workpulse/features/projects/providers/projects_provider.dart';
 import 'package:workpulse/features/reports/providers/reports_provider.dart';
+import 'package:workpulse/features/workspace/providers/workspace_provider.dart';
 
 final timesheetServiceProvider = Provider<TimesheetService>((ref) {
   return const TimesheetService();
@@ -34,12 +39,41 @@ class TimesheetHoursBasisNotifier extends Notifier<TimesheetHoursBasis> {
 final timesheetDataProvider = FutureProvider<TimesheetData>((ref) async {
   final records = await ref.watch(sessionHistoryProvider.future);
   final definitions = await ref.watch(attributeDefinitionsProvider.future);
+  final projects = await ref.watch(projectsProvider.future);
+  final workspace = await ref.watch(currentWorkspaceProvider.future);
+  final projectRepo = ref.watch(projectRepositoryProvider);
+  final attributeRepo = ref.watch(attributeRepositoryProvider);
   final range = ref.watch(reportsDateRangeProvider);
   final service = ref.watch(timesheetServiceProvider);
+
+  final allCodes =
+      await projectRepo.getAllTimesheetCodes(workspaceId: workspace.id);
+  final codesByProject = <String, Map<String, String>>{};
+  for (final c in allCodes) {
+    codesByProject.putIfAbsent(c.projectId, () => {})[c.attributeOptionId] =
+        c.code;
+  }
+
+  final optionsById = <String, AttributeOption>{};
+  for (final p in projects) {
+    final defId = p.codeAttributeDefinitionId;
+    if (defId != null && defId.isNotEmpty) {
+      final opts = await attributeRepo.getOptions(defId, includeArchived: true);
+      for (final o in opts) {
+        optionsById[o.id] = o;
+      }
+    }
+  }
+
+  final resolver = TimesheetCodeResolver(
+    codesByProject: codesByProject,
+    optionsById: optionsById,
+  );
 
   return service.build(
     range: range,
     records: records,
     definitions: definitions,
+    codes: resolver,
   );
 });
