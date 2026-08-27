@@ -17,6 +17,13 @@ class Project extends Equatable {
   /// worse than admitting it is missing.
   final String? timesheetCode;
 
+  /// The attribute whose value selects which of this project's codes applies.
+  ///
+  /// Null means the project books everything to [timesheetCode]. Held as an id
+  /// rather than a name because the concept it represents — a release train, a
+  /// workstream — is the user's, not the app's (AGENTS.md rules 1 and 2).
+  final String? codeAttributeDefinitionId;
+
   final DateTime createdAt;
   final DateTime updatedAt;
   final DateTime? archivedAt;
@@ -28,6 +35,7 @@ class Project extends Equatable {
     this.description,
     this.colorHex,
     this.timesheetCode,
+    this.codeAttributeDefinitionId,
     required this.createdAt,
     required this.updatedAt,
     this.archivedAt,
@@ -45,6 +53,7 @@ class Project extends Equatable {
     String? description,
     String? colorHex,
     String? timesheetCode,
+    String? codeAttributeDefinitionId,
     DateTime? createdAt,
     DateTime? updatedAt,
     DateTime? archivedAt,
@@ -56,6 +65,8 @@ class Project extends Equatable {
       description: description ?? this.description,
       colorHex: colorHex ?? this.colorHex,
       timesheetCode: timesheetCode ?? this.timesheetCode,
+      codeAttributeDefinitionId:
+          codeAttributeDefinitionId ?? this.codeAttributeDefinitionId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       archivedAt: archivedAt ?? this.archivedAt,
@@ -70,6 +81,7 @@ class Project extends Equatable {
         description,
         colorHex,
         timesheetCode,
+        codeAttributeDefinitionId,
         createdAt,
         updatedAt,
         archivedAt

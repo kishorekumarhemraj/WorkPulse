@@ -11,6 +11,7 @@ import 'package:workpulse/data/migrations/migration_v3.dart';
 import 'package:workpulse/data/migrations/migration_v4.dart';
 import 'package:workpulse/data/migrations/migration_v5.dart';
 import 'package:workpulse/data/migrations/migration_v6.dart';
+import 'package:workpulse/data/migrations/migration_v8.dart';
 
 void main() {
   setUpAll(() {
@@ -30,7 +31,7 @@ void main() {
       await dbService.close();
     });
 
-    test('All 17 SQLite tables are created with proper schema', () async {
+    test('All 18 SQLite tables are created with proper schema', () async {
       final db = dbService.database;
 
       final tables = [
@@ -50,6 +51,7 @@ void main() {
         Tables.attributeOptions,
         Tables.workItemAttributeValues,
         Tables.sessionAttributeValues,
+        Tables.projectTimesheetCodes,
         Tables.settings,
       ];
 
@@ -178,13 +180,14 @@ void main() {
       expect(rows.first['financial_classification'], equals('NONE'));
     });
 
-    test('projects table has a timesheet_code column on a fresh database',
+    test('projects table has timesheet_code and code_attribute_definition_id columns on a fresh database',
         () async {
       final db = dbService.database;
       final columns =
           await db.rawQuery('PRAGMA table_info(${Tables.projects});');
       final columnNames = columns.map((c) => c['name'] as String).toSet();
       expect(columnNames, contains('timesheet_code'));
+      expect(columnNames, contains('code_attribute_definition_id'));
     });
   });
 
@@ -276,6 +279,13 @@ void main() {
         final projectColNames =
             projectCols.map((c) => c['name'] as String).toSet();
         expect(projectColNames, contains('timesheet_code'));
+        expect(projectColNames, contains('code_attribute_definition_id'));
+
+        final projectCodesTable = await db.rawQuery(
+          "SELECT name FROM sqlite_master WHERE type='table' AND name=?;",
+          [Tables.projectTimesheetCodes],
+        );
+        expect(projectCodesTable, isNotEmpty);
 
         final upgradedProject = await db.query(
           Tables.projects,
@@ -286,6 +296,7 @@ void main() {
         // the app cannot invent, and a made-up one would be booked against
         // real hours.
         expect(upgradedProject.first['timesheet_code'], isNull);
+        expect(upgradedProject.first['code_attribute_definition_id'], isNull);
 
         final categoryCols =
             await db.rawQuery('PRAGMA table_info(${Tables.categories});');
@@ -456,7 +467,7 @@ void main() {
       }
     });
 
-    test('MigrationV2 through MigrationV6 are idempotent', () async {
+    test('MigrationV2 through MigrationV8 are idempotent', () async {
       final tempDir =
           await Directory.systemTemp.createTemp('workpulse_idempotency_test');
       final dbPath = p.join(tempDir.path, 'idempotent_test.db');
@@ -476,14 +487,84 @@ void main() {
         await MigrationV4.execute(db);
         await MigrationV5.execute(db);
         await MigrationV6.execute(db);
+        await MigrationV8.execute(db);
         // Run a second time - should not throw duplicate column/table error
         await expectLater(MigrationV2.execute(db), completes);
         await expectLater(MigrationV3.execute(db), completes);
         await expectLater(MigrationV4.execute(db), completes);
         await expectLater(MigrationV5.execute(db), completes);
         await expectLater(MigrationV6.execute(db), completes);
+        await expectLater(MigrationV8.execute(db), completes);
 
         await db.close();
+      } finally {
+        await tempDir.delete(recursive: true);
+      }
+    });
+
+    test('v7 -> v8 upgrade adds column and table, preserving existing project codes', () async {
+      final tempDir =
+          await Directory.systemTemp.createTemp('workpulse_v8_upgrade_test');
+      final dbPath = p.join(tempDir.path, 'v8_test.db');
+
+      try {
+        // 1. Create a v7 database (v1 through v6)
+        final db = await databaseFactoryFfi.openDatabase(
+          dbPath,
+          options: OpenDatabaseOptions(
+            version: 7,
+            onConfigure: (db) => db.execute('PRAGMA foreign_keys = ON;'),
+            onCreate: (db, version) async {
+              await MigrationV1.execute(db);
+              await MigrationV2.execute(db);
+              await MigrationV3.execute(db);
+              await MigrationV4.execute(db);
+              await MigrationV5.execute(db);
+              await MigrationV6.execute(db);
+            },
+          ),
+        );
+
+        final now = DateTime.now().toUtc().toIso8601String();
+        await db.insert(Tables.projects, {
+          'id': 'proj-v7',
+          'workspace_id': MigrationV1.defaultWorkspaceId,
+          'name': 'Existing Project',
+          'timesheet_code': 'PRJ-V7-CODE',
+          'created_at': now,
+          'updated_at': now,
+        });
+        await db.close();
+
+        // 2. Upgrade to v8 via DatabaseService
+        final dbService = DatabaseService();
+        await dbService.initialize(customPath: dbPath);
+        final upgradedDb = dbService.database;
+
+        final projectCols =
+            await upgradedDb.rawQuery('PRAGMA table_info(${Tables.projects});');
+        final projectColNames =
+            projectCols.map((c) => c['name'] as String).toSet();
+        expect(projectColNames, contains('code_attribute_definition_id'));
+
+        final projectCodesTable = await upgradedDb.rawQuery(
+          "SELECT name FROM sqlite_master WHERE type='table' AND name=?;",
+          [Tables.projectTimesheetCodes],
+        );
+        expect(projectCodesTable, isNotEmpty);
+
+        final project = await upgradedDb.query(
+          Tables.projects,
+          where: 'id = ?',
+          whereArgs: ['proj-v7'],
+        );
+        expect(project.first['timesheet_code'], equals('PRJ-V7-CODE'));
+        expect(project.first['code_attribute_definition_id'], isNull);
+
+        // 3. Test running MigrationV8 a second time is a no-op
+        await expectLater(MigrationV8.execute(upgradedDb), completes);
+
+        await dbService.close();
       } finally {
         await tempDir.delete(recursive: true);
       }
