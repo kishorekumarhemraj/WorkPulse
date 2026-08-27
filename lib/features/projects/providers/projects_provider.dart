@@ -43,9 +43,10 @@ class ProjectsNotifier extends AsyncNotifier<List<Project>> {
       colorHex: colorHex ?? '#0A84FF',
       timesheetCode:
           timesheetCode?.trim().isEmpty == true ? null : timesheetCode?.trim(),
-      codeAttributeDefinitionId: codeAttributeDefinitionId?.trim().isEmpty == true
-          ? null
-          : codeAttributeDefinitionId?.trim(),
+      codeAttributeDefinitionId:
+          codeAttributeDefinitionId?.trim().isEmpty == true
+              ? null
+              : codeAttributeDefinitionId?.trim(),
       createdAt: now,
       updatedAt: now,
     );

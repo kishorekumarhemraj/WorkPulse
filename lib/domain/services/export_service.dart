@@ -278,8 +278,8 @@ class ExportService {
             .where((d) => d.enabled && !d.isArchived)
             .toList();
 
-    final allCodes = await _projectRepository.getAllTimesheetCodes(
-        workspaceId: workspaceId);
+    final allCodes =
+        await _projectRepository.getAllTimesheetCodes(workspaceId: workspaceId);
     final codesByProject = <String, Map<String, String>>{};
     for (final c in allCodes) {
       codesByProject.putIfAbsent(c.projectId, () => {})[c.attributeOptionId] =

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import 'package:workpulse/core/theme/app_colors.dart';
-import 'package:workpulse/core/theme/app_typography.dart';
 import 'package:workpulse/core/theme/color_utils.dart';
 import 'package:workpulse/core/theme/design_tokens.dart';
 import 'package:workpulse/core/widgets/app_dialog.dart';
@@ -192,14 +191,15 @@ class _ProjectFormDialogState extends ConsumerState<ProjectFormDialog> {
     final allDefsAsync = ref.watch(attributeDefinitionsProvider);
     final allDefs = allDefsAsync.value ?? [];
     // Single-select task-scoped attributes only (F10)
-    final candidateDefs = allDefs.where((d) =>
-        d.scope == AttributeScope.task &&
-        d.type == AttributeType.singleSelect &&
-        !d.isArchived &&
-        d.enabled).toList();
+    final candidateDefs = allDefs
+        .where((d) =>
+            d.scope == AttributeScope.task &&
+            d.type == AttributeType.singleSelect &&
+            !d.isArchived &&
+            d.enabled)
+        .toList();
 
-    final activeOptions =
-        _loadedOptions.where((o) => !o.isArchived).toList();
+    final activeOptions = _loadedOptions.where((o) => !o.isArchived).toList();
     final retiredOptionsWithMapping = _loadedOptions
         .where((o) =>
             o.isArchived &&
@@ -289,10 +289,10 @@ class _ProjectFormDialogState extends ConsumerState<ProjectFormDialog> {
                   'Select a single-select task attribute if this project has '
                   'different codes for different streams or releases.',
               child: DropdownButtonFormField<String?>(
-                value: candidateDefs
-                        .any((d) => d.id == _selectedDiscriminatorId)
-                    ? _selectedDiscriminatorId
-                    : null,
+                initialValue:
+                    candidateDefs.any((d) => d.id == _selectedDiscriminatorId)
+                        ? _selectedDiscriminatorId
+                        : null,
                 decoration: const InputDecoration(
                   contentPadding: EdgeInsets.symmetric(
                     horizontal: Spacing.md,
@@ -443,4 +443,3 @@ class _ProjectFormDialogState extends ConsumerState<ProjectFormDialog> {
     );
   }
 }
-

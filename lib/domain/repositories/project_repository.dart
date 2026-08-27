@@ -13,7 +13,8 @@ abstract class ProjectRepository {
 
   // Project Timesheet Codes
   Future<List<ProjectTimesheetCode>> getTimesheetCodes(String projectId);
-  Future<List<ProjectTimesheetCode>> getAllTimesheetCodes({String? workspaceId});
+  Future<List<ProjectTimesheetCode>> getAllTimesheetCodes(
+      {String? workspaceId});
   Future<void> setTimesheetCodes(
       String projectId, List<ProjectTimesheetCode> codes);
 }
