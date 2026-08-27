@@ -83,6 +83,39 @@ void main() {
       expect(projects.length, 1);
     });
 
+    test('a project round-trips its timesheet code through SQLite', () async {
+      final notifier = container.read(projectsProvider.notifier);
+
+      final coded = await notifier.createProject(
+        name: 'Apollo',
+        timesheetCode: 'PRJ-1042',
+      );
+      expect(coded.timesheetCode, 'PRJ-1042');
+      expect(coded.hasTimesheetCode, isTrue);
+
+      // Whitespace-only is stored as absent, not as a blank code that would
+      // print as an empty cell on the Time Sheet.
+      final blank =
+          await notifier.createProject(name: 'Zephyr', timesheetCode: '   ');
+      expect(blank.timesheetCode, isNull);
+      expect(blank.hasTimesheetCode, isFalse);
+
+      final reloaded = await container.read(projectsProvider.future);
+      expect(
+        reloaded.firstWhere((p) => p.id == coded.id).timesheetCode,
+        'PRJ-1042',
+      );
+
+      final recoded =
+          await notifier.updateProject(coded.copyWith(timesheetCode: 'CC-99'));
+      expect(recoded.timesheetCode, 'CC-99');
+      final afterUpdate = await container.read(projectsProvider.future);
+      expect(
+        afterUpdate.firstWhere((p) => p.id == coded.id).timesheetCode,
+        'CC-99',
+      );
+    });
+
     test('CategoriesNotifier CRUD operations', () async {
       final notifier = container.read(categoriesProvider.notifier);
 

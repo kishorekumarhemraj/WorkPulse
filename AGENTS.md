@@ -34,6 +34,7 @@ WorkPulse is a privacy-first, offline-first desktop time-tracking and work-aware
    - A WorkItem's `categoryId`, `tagIds` and `peopleIds` seed its **first** session only. Every session after that starts unclassified and is the user's to set — the second hour on a task is often not the same kind of work as the first.
    - Nothing borrows the WorkItem's classification at **read time**. Analytics, exports and the session editor show exactly what each session says; unclassified time is bucketed as `Uncategorized` rather than dropped or silently attributed upward.
    - The one exception is an idle split: the resumed half is a continuation, so it carries the interrupted half's own classification forward.
+   - **Financial classification is the single deliberate exception to the read-time rule.** `Session.financialClassification` is nullable and null means "inherit from the WorkItem", resolved on read. What an hour was *for* belongs to the task and stays true across its life; what *kind* of work it took does not, which is why category, tags and people still never borrow upward. See the Financial Classification section below.
    - Anything a caller passes to `TimerService.startSession` explicitly always wins, on any session.
 
 8. **Offline-First & Zero Network (V1)**:
@@ -67,6 +68,16 @@ WorkPulse is a privacy-first, offline-first desktop time-tracking and work-aware
 - Build in vertical slices following the 10 Sprints defined in [workpulse-sprint-guide](file:///Users/kkh/Code/WorkPulse/.agents/skills/workpulse-sprint-guide/SKILL.md).
 - Refer to [workpulse-domain](file:///Users/kkh/Code/WorkPulse/.agents/skills/workpulse-domain/SKILL.md) for domain models and state machines.
 - Consult [DESIGN.md](file:///Users/kkh/Code/WorkPulse/docs/DESIGN.md) for technical design and [DEVELOPMENT.md](file:///Users/kkh/Code/WorkPulse/docs/DEVELOPMENT.md) for local dev commands.
+
+## Financial Classification (CapEx / OpEx)
+
+- `FinancialClassification` (`CAPEX` / `OPEX` / `NONE`) is a first-class field on **`WorkItem`**, not on `Category` and not a configurable attribute. It answers "what was this hour *for*", which is a property of the task; a category answers "what shape did the work take", and the same shape can be either — a design meeting about a new feature is capital, the same meeting about last week's outage is not. An earlier cut put it on the category and could not express that.
+- **Sessions inherit it at read time.** `Session.financialClassification` is nullable and null means *inherit*; the resolution happens in `Session.classificationWithin` and nowhere else. This is a deliberate, single exception to rule 7: correcting a misclassified task must correct the hours it already booked, because those hours were always that task's purpose — whereas the *kind* of work genuinely varies session to session, so category, tags and people still follow rule 7 exactly.
+- `SessionExportRecord.classification` is where inheritance is resolved for every consumer. Reports, exports and the Time Sheet read it; none of them re-derive the fallback, or they would drift.
+- `NONE` is an honest state, never a default dressed as a decision. New tasks start there and unreadable values fall back there. Defaulting to `OPEX` would invent a finance decision nobody made, so the CapEx ratio is taken over *classified* time and unclassified hours are reported in their own bucket.
+- `MigrationV5` was **rewritten in place** rather than superseded, so the schema carries no vestige of the category-level shape. It is fully guarded and re-runnable, and `DatabaseService` replays it on the way to v7 so development databases stamped at 5 or 6 still reach the new shape. Any future change to this area needs a new migration, not another rewrite.
+- The project table, the task table, the per-classification category tables and every attribute table are views of the same hours and must always sum to the same total. That is why a multi-select value stays whole ("Backend; Platform" is one row) rather than being counted once per option.
+- `Project.timesheetCode` is the code the organisation books a project against. Required by the project form and validated unique per workspace, but **nullable in the schema**: unlike the classification there is no conservative default, because a cost code is an external identifier the app cannot invent and a made-up one would be booked against real hours. `MigrationV6` adds the column without backfilling, and the Time Sheet reports a missing code as **No code**.
 
 ## Pattern Insights
 - Every finding lands in exactly one of four lanes — `sustain` (Continue), `reclaim`, `delegate`, `plan` — and carries the figures it was derived from. A finding with no evidence is a bug.

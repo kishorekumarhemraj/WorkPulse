@@ -20,7 +20,7 @@ abstract class WindowService {
   Future<bool> isVisible();
   Future<void> close();
 
-  Future<void> openQuickCapture();
+  Future<void> openQuickCapture({double? height});
   Future<void> closeQuickCapture();
   Future<void> openDashboard();
 }
@@ -32,6 +32,10 @@ class DesktopWindowService with WindowListener implements WindowService {
   DesktopWindowService._internal();
 
   static DesktopWindowService get instance => _instance;
+
+  /// The HUD height when the caller does not measure one — the size Quick
+  /// Capture had before its configuration bar could grow.
+  static const double _defaultQuickCaptureHeight = 580;
 
   bool _isInitialized = false;
   WindowMode _currentMode = WindowMode.dashboard;
@@ -143,7 +147,7 @@ class DesktopWindowService with WindowListener implements WindowService {
   }
 
   @override
-  Future<void> openQuickCapture() async {
+  Future<void> openQuickCapture({double? height}) async {
     if (kIsWeb ||
         (!Platform.isMacOS && !Platform.isWindows && !Platform.isLinux)) {
       _currentMode = WindowMode.quickCapture;
@@ -178,8 +182,12 @@ class DesktopWindowService with WindowListener implements WindowService {
       await windowManager.setAlwaysOnTop(true);
 
       const targetWidth = 640.0;
-      const targetHeight = 580.0;
-      await windowManager.setSize(const Size(targetWidth, targetHeight));
+      // Sized to the fields it is about to draw. A workspace with several
+      // quick-capture attributes needs a taller HUD; one with none should not
+      // get the empty space. The caller measures, because the count lives in
+      // a provider this service has no business reaching into.
+      final targetHeight = height ?? _defaultQuickCaptureHeight;
+      await windowManager.setSize(Size(targetWidth, targetHeight));
 
       try {
         Display? targetDisplay;
@@ -304,6 +312,10 @@ class NoOpWindowService implements WindowService {
   /// whether the dashboard should be restored afterwards.
   int openQuickCaptureCount = 0;
 
+  /// The height the last open asked for, so tests can assert the HUD grows
+  /// with the number of attributes rather than opening at a fixed size.
+  double? lastQuickCaptureHeight;
+
   WindowMode _currentMode = WindowMode.dashboard;
   final ValueNotifier<WindowMode> _modeNotifier =
       ValueNotifier<WindowMode>(WindowMode.dashboard);
@@ -343,8 +355,9 @@ class NoOpWindowService implements WindowService {
   }
 
   @override
-  Future<void> openQuickCapture() async {
+  Future<void> openQuickCapture({double? height}) async {
     openQuickCaptureCount++;
+    lastQuickCaptureHeight = height;
     _currentMode = WindowMode.quickCapture;
     _modeNotifier.value = WindowMode.quickCapture;
     visible = true;

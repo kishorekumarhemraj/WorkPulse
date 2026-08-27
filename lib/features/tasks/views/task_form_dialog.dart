@@ -6,13 +6,16 @@ import 'package:uuid/uuid.dart';
 import 'package:workpulse/core/theme/design_tokens.dart';
 import 'package:workpulse/core/theme/app_colors.dart';
 import 'package:workpulse/core/widgets/app_dialog.dart';
+import 'package:workpulse/core/widgets/app_radio_group.dart';
 import 'package:workpulse/core/widgets/app_select.dart';
+import 'package:workpulse/core/theme/classification_style.dart';
 import 'package:workpulse/core/theme/color_utils.dart';
 import 'package:workpulse/core/theme/icon_utils.dart';
 import 'package:workpulse/core/widgets/app_snack_bar.dart';
 import 'package:workpulse/core/widgets/searchable_multi_select.dart';
 import 'package:workpulse/data/providers/repository_providers.dart';
 import 'package:workpulse/domain/models/attribute_model.dart';
+import 'package:workpulse/domain/models/financial_classification.dart';
 import 'package:workpulse/domain/models/session_model.dart';
 import 'package:workpulse/domain/models/work_item_model.dart';
 import 'package:workpulse/domain/services/export_service.dart';
@@ -72,6 +75,7 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
 
   String? _selectedProjectId;
   String? _selectedCategoryId;
+  late FinancialClassification _classification;
   late List<String> _selectedTagIds;
   late List<String> _selectedPeopleIds;
   final Map<String, dynamic> _attributeValues = {};
@@ -85,6 +89,8 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
     _selectedProjectId = widget.workItem?.projectId ?? widget.initialProjectId;
     _selectedCategoryId =
         widget.workItem?.categoryId ?? widget.initialCategoryId;
+    _classification = widget.workItem?.financialClassification ??
+        FinancialClassification.none;
     _selectedTagIds = List.from(widget.workItem?.tagIds ?? []);
     _selectedPeopleIds = List.from(widget.workItem?.peopleIds ?? []);
 
@@ -168,6 +174,7 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
               name: _nameController.text.trim(),
               projectId: _selectedProjectId!,
               categoryId: _selectedCategoryId!,
+              classification: _classification,
               tagIds: _selectedTagIds,
               peopleIds: _selectedPeopleIds,
             );
@@ -177,6 +184,7 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
                 name: _nameController.text.trim(),
                 projectId: _selectedProjectId!,
                 categoryId: _selectedCategoryId!,
+                financialClassification: _classification,
                 tagIds: _selectedTagIds,
                 peopleIds: _selectedPeopleIds,
               ),
@@ -489,103 +497,111 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
               ),
               const SizedBox(height: 16),
 
-              // Tags Multi-select
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('Tags',
-                      style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                          color: context.colors.textSecondary)),
-                  InkWell(
-                    canRequestFocus: false,
-                    onTap: () async {
-                      final t = await TagFormDialog.show(context);
-                      if (t != null && !_selectedTagIds.contains(t.id)) {
-                        setState(() => _selectedTagIds.add(t.id));
-                      }
-                    },
-                    child: Text('+ New Tag',
-                        style: TextStyle(
-                            fontSize: 12,
-                            color: context.colors.accent,
-                            fontWeight: FontWeight.w500)),
-                  ),
+              // Financial classification. On the task rather than the
+              // category because the same kind of work can be capital on one
+              // task and not on another; its sessions inherit this unless one
+              // of them says otherwise.
+              Text(timeSheetClassificationLabel,
+                  style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: context.colors.textSecondary)),
+              const SizedBox(height: 6),
+              AppRadioGroup<FinancialClassification>(
+                selected: _classification,
+                onChanged: (value) => setState(() => _classification = value),
+                options: [
+                  for (final option in FinancialClassification.values)
+                    RadioOption(
+                      value: option,
+                      label: option.label,
+                      icon: option.icon,
+                    ),
                 ],
               ),
               const SizedBox(height: 6),
-              tagsAsync.when(
-                loading: () => const SizedBox.shrink(),
-                error: (_, __) => const SizedBox.shrink(),
-                data: (tags) {
-                  return SearchableMultiSelect(
-                    allItems: tags
-                        .map((tag) => SearchableMultiSelectItem(
-                              id: tag.id,
-                              label: tag.name,
-                              color: ColorUtils.parseHex(tag.colorHex),
-                            ))
-                        .toList(),
-                    selectedIds: _selectedTagIds,
-                    onChanged: (ids) => setState(() => _selectedTagIds = ids),
-                    hintText: 'Search tags...',
-                    emptyStateText: 'No tags created yet',
-                    onCreateNew: _createAndSelectTag,
-                    createLabelBuilder: (query) => 'Create tag "$query"',
-                  );
-                },
+              Text(
+                _classification.description,
+                style: TextStyle(
+                    fontSize: 12, color: context.colors.textTertiary),
               ),
               const SizedBox(height: 16),
 
-              // People Multi-select
+              // People and tags side by side, the way project and category
+              // already sat. Each is one control wide; stacked full width they
+              // pushed the custom attributes off the bottom of the dialog.
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Flexible(
-                    child: Text('Assigned People',
-                        style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                            color: context.colors.textSecondary),
-                        overflow: TextOverflow.ellipsis),
+                  Expanded(
+                    child: _MultiSelectField(
+                      label: 'Assigned People',
+                      actionLabel: '+ Add Person',
+                      onAction: () async {
+                        final p = await PersonFormDialog.show(context);
+                        if (p != null && !_selectedPeopleIds.contains(p.id)) {
+                          setState(() => _selectedPeopleIds.add(p.id));
+                        }
+                      },
+                      child: peopleAsync.when(
+                        loading: () => const SizedBox.shrink(),
+                        error: (_, __) => const SizedBox.shrink(),
+                        data: (people) {
+                          return SearchableMultiSelect(
+                            allItems: people
+                                .map((person) => SearchableMultiSelectItem(
+                                      id: person.id,
+                                      label: person.name,
+                                      icon: Icons.person,
+                                    ))
+                                .toList(),
+                            selectedIds: _selectedPeopleIds,
+                            onChanged: (ids) =>
+                                setState(() => _selectedPeopleIds = ids),
+                            hintText: 'Search people...',
+                            emptyStateText: 'No people added yet',
+                          );
+                        },
+                      ),
+                    ),
                   ),
-                  InkWell(
-                    canRequestFocus: false,
-                    onTap: () async {
-                      final p = await PersonFormDialog.show(context);
-                      if (p != null && !_selectedPeopleIds.contains(p.id)) {
-                        setState(() => _selectedPeopleIds.add(p.id));
-                      }
-                    },
-                    child: Text('+ Add Person',
-                        style: TextStyle(
-                            fontSize: 12,
-                            color: context.colors.accent,
-                            fontWeight: FontWeight.w500)),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: _MultiSelectField(
+                      label: 'Tags',
+                      actionLabel: '+ New Tag',
+                      onAction: () async {
+                        final t = await TagFormDialog.show(context);
+                        if (t != null && !_selectedTagIds.contains(t.id)) {
+                          setState(() => _selectedTagIds.add(t.id));
+                        }
+                      },
+                      child: tagsAsync.when(
+                        loading: () => const SizedBox.shrink(),
+                        error: (_, __) => const SizedBox.shrink(),
+                        data: (tags) {
+                          return SearchableMultiSelect(
+                            allItems: tags
+                                .map((tag) => SearchableMultiSelectItem(
+                                      id: tag.id,
+                                      label: tag.name,
+                                      color: ColorUtils.parseHex(tag.colorHex),
+                                    ))
+                                .toList(),
+                            selectedIds: _selectedTagIds,
+                            onChanged: (ids) =>
+                                setState(() => _selectedTagIds = ids),
+                            hintText: 'Search tags...',
+                            emptyStateText: 'No tags created yet',
+                            onCreateNew: _createAndSelectTag,
+                            createLabelBuilder: (query) =>
+                                'Create tag "$query"',
+                          );
+                        },
+                      ),
+                    ),
                   ),
                 ],
-              ),
-              const SizedBox(height: 6),
-              peopleAsync.when(
-                loading: () => const SizedBox.shrink(),
-                error: (_, __) => const SizedBox.shrink(),
-                data: (people) {
-                  return SearchableMultiSelect(
-                    allItems: people
-                        .map((person) => SearchableMultiSelectItem(
-                              id: person.id,
-                              label: person.name,
-                              icon: Icons.person,
-                            ))
-                        .toList(),
-                    selectedIds: _selectedPeopleIds,
-                    onChanged: (ids) =>
-                        setState(() => _selectedPeopleIds = ids),
-                    hintText: 'Search people...',
-                    emptyStateText: 'No people added yet',
-                  );
-                },
               ),
 
               if (widget.workItem != null) ...[
@@ -918,6 +934,63 @@ class _TaskNotesRollup extends ConsumerWidget {
           }).toList(),
         );
       },
+    );
+  }
+}
+
+/// A multi-select in a form column: caption on the left, the "add one" link on
+/// the right, the control beneath.
+///
+/// Both people and tags carry that link, and both now share a row, so the two
+/// headers had to line up rather than each be laid out by hand.
+class _MultiSelectField extends StatelessWidget {
+  final String label;
+  final String actionLabel;
+  final VoidCallback onAction;
+  final Widget child;
+
+  const _MultiSelectField({
+    required this.label,
+    required this.actionLabel,
+    required this.onAction,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Flexible(
+              child: Text(
+                label,
+                style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: context.colors.textSecondary),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            InkWell(
+              canRequestFocus: false,
+              onTap: onAction,
+              child: Text(
+                actionLabel,
+                style: TextStyle(
+                    fontSize: 12,
+                    color: context.colors.accent,
+                    fontWeight: FontWeight.w500),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        child,
+      ],
     );
   }
 }

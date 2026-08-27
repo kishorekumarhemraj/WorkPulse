@@ -5,12 +5,14 @@ import 'package:workpulse/core/theme/app_colors.dart';
 import 'package:workpulse/core/theme/app_typography.dart';
 import 'package:workpulse/core/theme/design_tokens.dart';
 import 'package:workpulse/core/widgets/app_dialog.dart';
+import 'package:workpulse/core/theme/classification_style.dart';
 import 'package:workpulse/core/theme/color_utils.dart';
 import 'package:workpulse/core/theme/icon_utils.dart';
 import 'package:workpulse/core/widgets/app_select.dart';
 import 'package:workpulse/core/widgets/app_snack_bar.dart';
 import 'package:workpulse/core/widgets/searchable_multi_select.dart';
 import 'package:workpulse/domain/models/attribute_model.dart';
+import 'package:workpulse/domain/models/financial_classification.dart';
 import 'package:workpulse/domain/services/export_service.dart';
 import 'package:workpulse/features/attributes/providers/attribute_definitions_provider.dart';
 import 'package:workpulse/features/attributes/widgets/dynamic_attribute_fields.dart';
@@ -37,10 +39,19 @@ class SessionEditDialog extends ConsumerStatefulWidget {
 }
 
 class _SessionEditDialogState extends ConsumerState<SessionEditDialog> {
+  /// Roughly a paragraph: tall enough to write in, capped so a long note
+  /// scrolls inside the field instead of pushing Save off the dialog.
+  static const int _notesMinLines = 5;
+  static const int _notesMaxLines = 8;
+
   final _formKey = GlobalKey<FormState>();
   late DateTime _startTime;
   late DateTime? _endTime;
   late String? _selectedCategoryId;
+
+  /// Null means "inherit from the task" — the normal case, and the reason
+  /// this is a nullable override rather than a plain field.
+  late FinancialClassification? _classificationOverride;
   late final TextEditingController _notesController;
   late List<String> _selectedTagIds;
   late List<String> _selectedPeopleIds;
@@ -57,6 +68,7 @@ class _SessionEditDialogState extends ConsumerState<SessionEditDialog> {
     // item made an unclassified session look classified, and saving the form
     // silently wrote those borrowed values onto it.
     _selectedCategoryId = s.categoryId;
+    _classificationOverride = s.financialClassification;
     _notesController = TextEditingController(text: s.notes ?? '');
     _selectedTagIds = List.from(s.tagIds);
     _selectedPeopleIds = List.from(s.peopleIds);
@@ -162,6 +174,8 @@ class _SessionEditDialogState extends ConsumerState<SessionEditDialog> {
             startTime: _startTime.toUtc(),
             endTime: _endTime?.toUtc(),
             categoryId: _selectedCategoryId,
+            financialClassification: _classificationOverride,
+            clearFinancialClassification: _classificationOverride == null,
             notes: trimmedNotes.isEmpty ? null : trimmedNotes,
             clearNotes: trimmedNotes.isEmpty,
             tagIds: _selectedTagIds,
@@ -198,6 +212,13 @@ class _SessionEditDialogState extends ConsumerState<SessionEditDialog> {
     final colors = context.colors;
     final dateFormat = DateFormat('yyyy-MM-dd HH:mm');
 
+    // What this session would report if it stated nothing of its own. Shown
+    // on the control so the override reads as a departure from something,
+    // rather than as the only classification in play.
+    final taskName = widget.record.workItem.name;
+    final inherited = widget.record.workItem.financialClassification;
+    final inheritedLabel = inherited.label;
+
     return AppDialog(
       title: 'Edit Session',
       subtitle: widget.record.workItem.name,
@@ -229,27 +250,41 @@ class _SessionEditDialogState extends ConsumerState<SessionEditDialog> {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            DialogField(
-              label: 'Start Time',
-              child: _TimeField(
-                icon: Icons.access_time,
-                iconColor: colors.accent,
-                value: dateFormat.format(_startTime),
-                onTap: _pickStartTime,
-              ),
-            ),
-            const SizedBox(height: Spacing.lg),
-            DialogField(
-              label: 'End Time',
-              child: _TimeField(
-                icon: Icons.check_circle_outline,
-                iconColor: colors.success,
-                value: _endTime != null
-                    ? dateFormat.format(_endTime!)
-                    : 'In Progress',
-                valueColor: _endTime == null ? colors.success : null,
-                onTap: _pickEndTime,
-              ),
+            // The order a session is actually reviewed in: when it ran,
+            // what kind of work it was, how it books to the timesheet, who
+            // was there, and only then the free text. Notes sat in the middle
+            // before, which put the one field with no fixed shape between two
+            // that have one.
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: DialogField(
+                    label: 'Start Time',
+                    child: _TimeField(
+                      icon: Icons.access_time,
+                      iconColor: colors.accent,
+                      value: dateFormat.format(_startTime),
+                      onTap: _pickStartTime,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: Spacing.lg),
+                Expanded(
+                  child: DialogField(
+                    label: 'End Time',
+                    child: _TimeField(
+                      icon: Icons.check_circle_outline,
+                      iconColor: colors.success,
+                      value: _endTime != null
+                          ? dateFormat.format(_endTime!)
+                          : 'In Progress',
+                      valueColor: _endTime == null ? colors.success : null,
+                      onTap: _pickEndTime,
+                    ),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: Spacing.lg),
             DialogField(
@@ -287,6 +322,59 @@ class _SessionEditDialogState extends ConsumerState<SessionEditDialog> {
             ),
             const SizedBox(height: Spacing.lg),
             DialogField(
+              label: timeSheetClassificationLabel,
+              helperText: _classificationOverride == null
+                  ? 'Following "$taskName", which is $inheritedLabel.'
+                  : 'Overriding "$taskName", which is $inheritedLabel. '
+                      'Inherit again to follow the work item.',
+              child: AppSelect<FinancialClassification?>(
+                placeholder: 'Inherit from work item',
+                value: _classificationOverride,
+                maxTriggerWidth: double.infinity,
+                options: [
+                  SelectOption<FinancialClassification?>(
+                    value: null,
+                    label: 'Inherit — $inheritedLabel',
+                    icon: Icons.subdirectory_arrow_right,
+                  ),
+                  for (final option in FinancialClassification.values)
+                    SelectOption<FinancialClassification?>(
+                      value: option,
+                      label: 'Override — ${option.label}',
+                      icon: option.icon,
+                    ),
+                ],
+                onChanged: (value) {
+                  setState(() => _classificationOverride = value);
+                },
+              ),
+            ),
+            const SizedBox(height: Spacing.lg),
+            DialogField(
+              label: 'People',
+              child: peopleAsync.when(
+                loading: () => const SizedBox.shrink(),
+                error: (_, __) => const SizedBox.shrink(),
+                data: (people) {
+                  return SearchableMultiSelect(
+                    allItems: people
+                        .map((person) => SearchableMultiSelectItem(
+                              id: person.id,
+                              label: person.name,
+                              icon: Icons.person,
+                            ))
+                        .toList(),
+                    selectedIds: _selectedPeopleIds,
+                    onChanged: (ids) =>
+                        setState(() => _selectedPeopleIds = ids),
+                    hintText: 'Search people…',
+                    emptyStateText: 'No people added yet',
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: Spacing.lg),
+            DialogField(
               label: 'Tags',
               child: tagsAsync.when(
                 loading: () => const SizedBox.shrink(),
@@ -314,34 +402,16 @@ class _SessionEditDialogState extends ConsumerState<SessionEditDialog> {
               label: 'Session Notes',
               child: TextFormField(
                 controller: _notesController,
-                maxLines: 2,
+                // Two lines was a slot, not a place to write. What actually
+                // gets typed here is a couple of sentences about what the
+                // block was for, and it should be readable without scrolling
+                // a field the size of a search box.
+                minLines: _notesMinLines,
+                maxLines: _notesMaxLines,
+                textAlignVertical: TextAlignVertical.top,
                 decoration: const InputDecoration(
                   hintText: 'What did you work on during this block?',
                 ),
-              ),
-            ),
-            const SizedBox(height: Spacing.lg),
-            DialogField(
-              label: 'People',
-              child: peopleAsync.when(
-                loading: () => const SizedBox.shrink(),
-                error: (_, __) => const SizedBox.shrink(),
-                data: (people) {
-                  return SearchableMultiSelect(
-                    allItems: people
-                        .map((person) => SearchableMultiSelectItem(
-                              id: person.id,
-                              label: person.name,
-                              icon: Icons.person,
-                            ))
-                        .toList(),
-                    selectedIds: _selectedPeopleIds,
-                    onChanged: (ids) =>
-                        setState(() => _selectedPeopleIds = ids),
-                    hintText: 'Search people…',
-                    emptyStateText: 'No people added yet',
-                  );
-                },
               ),
             ),
             if (sessionDefs.isNotEmpty) ...[
@@ -385,7 +455,7 @@ class _TimeField extends StatelessWidget {
     final colors = context.colors;
 
     return Material(
-      color: colors.card,
+      color: colors.field,
       borderRadius: Radii.mdAll,
       child: InkWell(
         onTap: onTap,

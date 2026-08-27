@@ -63,6 +63,17 @@ abstract class IdleDetectorService {
 /// timer, which emits once a second while a session runs. Restarting the poll
 /// timer on each of those calls meant the 10-second timer was destroyed before
 /// it ever fired, so live idle detection never triggered at all.
+///
+/// **A stretch of inactivity is reported until it ends, not once when it
+/// starts.** The threshold says when to start caring, not how long the user
+/// was away: reporting once at the crossing meant a 30-minute lunch was
+/// offered to the user as three minutes, and "Mark as Idle & Resume" then
+/// restarted the timer 27 minutes in the past and booked the absence as work.
+/// Each poll re-reports the same stretch with its span so far, and the poll
+/// that sees input resume pins the end to the moment it actually resumed.
+/// Every report of one stretch carries the same [IdleDetectionEvent.
+/// idleStartTime], which is what lets a listener tell an update from a new
+/// stretch.
 class DesktopIdleDetectorService implements IdleDetectorService {
   /// The spec's default (`docs/WORKPULSE_SPEC.md` §31).
   static const Duration defaultIdleThreshold = Duration(minutes: 10);
@@ -79,10 +90,14 @@ class DesktopIdleDetectorService implements IdleDetectorService {
   Timer? _pollingTimer;
   bool _isTracking = false;
 
-  /// Set when an event has been raised for the current stretch of inactivity,
-  /// and cleared once input resumes. Without it the poll would re-raise every
-  /// [pollInterval] for as long as the user stayed away.
-  bool _hasReportedCurrentIdle = false;
+  /// When the current reported stretch of inactivity began, or null if the
+  /// user is not currently past the threshold.
+  ///
+  /// Computed once, at the crossing, and reused for every later report of the
+  /// same stretch. Recomputing it per poll would let clock and OS-counter
+  /// jitter move it by a second or two each time, and listeners identify a
+  /// stretch by this value.
+  DateTime? _currentIdleStart;
 
   DesktopIdleDetectorService({
     Duration? initialThreshold,
@@ -124,7 +139,7 @@ class DesktopIdleDetectorService implements IdleDetectorService {
       return;
     }
 
-    _hasReportedCurrentIdle = false;
+    _currentIdleStart = null;
 
     if (!_idleSource.isAvailable) {
       // Degrade loudly rather than pretending to watch. Startup gap recovery
@@ -148,21 +163,38 @@ class DesktopIdleDetectorService implements IdleDetectorService {
     final idleFor = _idleSource.idleTime();
     if (idleFor == null) return;
 
+    final now = _clock();
+
     if (idleFor < _idleThreshold) {
-      // Input has resumed, so the next stretch of inactivity is a new event.
-      _hasReportedCurrentIdle = false;
+      final start = _currentIdleStart;
+      if (start != null) {
+        // Input resumed. The OS counter reset when the user touched the
+        // machine, so `now - idleFor` is the moment they came back — which is
+        // the real end of the stretch, and the only figure that makes
+        // "resume from now" resume from now.
+        _currentIdleStart = null;
+        _emit(start, now.subtract(idleFor));
+      }
       return;
     }
 
-    if (_hasReportedCurrentIdle) return;
-    _hasReportedCurrentIdle = true;
+    // Still away. Re-report the same stretch, grown, so a listener that is
+    // already showing it is never more than one poll out of date.
+    final start = _currentIdleStart ??= now.subtract(idleFor);
+    _emit(start, now);
+  }
 
-    final now = _clock();
+  void _emit(DateTime start, DateTime end) {
+    // A pinned end can land marginally before the start when the OS counter
+    // and the clock disagree at the edges; report nothing rather than a
+    // negative stretch.
+    if (!end.isAfter(start)) return;
+
     _controller.add(
       IdleDetectionEvent(
-        idleDuration: idleFor,
-        idleStartTime: now.subtract(idleFor),
-        idleEndTime: now,
+        idleDuration: end.difference(start),
+        idleStartTime: start,
+        idleEndTime: end,
       ),
     );
   }
@@ -170,7 +202,7 @@ class DesktopIdleDetectorService implements IdleDetectorService {
   void _stopPolling() {
     _pollingTimer?.cancel();
     _pollingTimer = null;
-    _hasReportedCurrentIdle = false;
+    _currentIdleStart = null;
   }
 
   @override

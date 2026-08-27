@@ -4,6 +4,7 @@ import 'package:workpulse/data/providers/repository_providers.dart';
 import 'package:workpulse/domain/models/analytics_model.dart';
 import 'package:workpulse/domain/models/attribute_model.dart';
 import 'package:workpulse/domain/models/date_range.dart';
+import 'package:workpulse/domain/models/financial_classification.dart';
 import 'package:workpulse/domain/services/export_service.dart';
 import 'package:workpulse/domain/services/pdf_report_service.dart';
 import 'package:workpulse/features/attributes/providers/attribute_definitions_provider.dart';
@@ -74,42 +75,42 @@ class ReportsDateNotifier extends Notifier<DateTime> {
   }
 }
 
-final sessionHistoryProvider =
-    FutureProvider<List<SessionExportRecord>>((ref) async {
-  final workspace = await ref.watch(currentWorkspaceProvider.future);
+/// The window the reporting screens are looking at.
+///
+/// Lifted out of [sessionHistoryProvider] so the Time Sheet can report the
+/// very same range the Time Log is showing, rather than recomputing it from
+/// the same two knobs and risking a drift between the two screens.
+final reportsDateRangeProvider = Provider<DateRange>((ref) {
   final timeRange = ref.watch(reportsTimeRangeProvider);
   final selectedDate = ref.watch(reportsDateProvider);
-  final exportService = ref.watch(exportServiceProvider);
 
-  // Invalidate when timer state changes to reflect freshly stopped sessions
-  ref.watch(timerProvider.select((s) => s.value?.activeSession?.id));
-
-  DateRange calculatedRange;
   switch (timeRange) {
     case DashboardTimeRange.today:
       final now = DateTime.now();
       final localStart = DateTime(now.year, now.month, now.day, 0, 0, 0);
       final localEnd = DateTime(now.year, now.month, now.day, 23, 59, 59, 999);
-      calculatedRange =
-          DateRange(start: localStart.toUtc(), end: localEnd.toUtc());
-      break;
+      return DateRange(start: localStart.toUtc(), end: localEnd.toUtc());
     case DashboardTimeRange.thisWeek:
-      calculatedRange = DashboardTimeRange.thisWeek.toDateRange();
-      break;
+      return DashboardTimeRange.thisWeek.toDateRange();
     case DashboardTimeRange.thisMonth:
-      calculatedRange = DashboardTimeRange.thisMonth.toDateRange();
-      break;
+      return DashboardTimeRange.thisMonth.toDateRange();
     case DashboardTimeRange.custom:
       final localStart = DateTime(
           selectedDate.year, selectedDate.month, selectedDate.day, 0, 0, 0);
       final localEnd = DateTime(selectedDate.year, selectedDate.month,
           selectedDate.day, 23, 59, 59, 999);
-      calculatedRange = DateRange(
-        start: localStart.toUtc(),
-        end: localEnd.toUtc(),
-      );
-      break;
+      return DateRange(start: localStart.toUtc(), end: localEnd.toUtc());
   }
+});
+
+final sessionHistoryProvider =
+    FutureProvider<List<SessionExportRecord>>((ref) async {
+  final workspace = await ref.watch(currentWorkspaceProvider.future);
+  final exportService = ref.watch(exportServiceProvider);
+  final calculatedRange = ref.watch(reportsDateRangeProvider);
+
+  // Invalidate when timer state changes to reflect freshly stopped sessions
+  ref.watch(timerProvider.select((s) => s.value?.activeSession?.id));
 
   return exportService.getExportRecords(
     workspaceId: workspace.id,
@@ -133,6 +134,8 @@ class SessionEditorController {
     DateTime? endTime,
     String? categoryId,
     bool clearCategory = false,
+    FinancialClassification? financialClassification,
+    bool clearFinancialClassification = false,
     String? notes,
     bool clearNotes = false,
     List<String>? tagIds,
@@ -147,6 +150,8 @@ class SessionEditorController {
       startTime: startTime ?? session.startTime,
       endTime: endTime ?? session.endTime,
       categoryId: clearCategory ? null : (categoryId ?? session.categoryId),
+      financialClassification: financialClassification,
+      clearFinancialClassification: clearFinancialClassification,
       tagIds: tagIds ?? session.tagIds,
       peopleIds: peopleIds ?? session.peopleIds,
       notes: notes,

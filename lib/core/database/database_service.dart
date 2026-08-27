@@ -8,6 +8,8 @@ import 'package:workpulse/data/migrations/migration_v1.dart';
 import 'package:workpulse/data/migrations/migration_v2.dart';
 import 'package:workpulse/data/migrations/migration_v3.dart';
 import 'package:workpulse/data/migrations/migration_v4.dart';
+import 'package:workpulse/data/migrations/migration_v5.dart';
+import 'package:workpulse/data/migrations/migration_v6.dart';
 
 class DatabaseService {
   static DatabaseService? _instance;
@@ -90,12 +92,23 @@ class DatabaseService {
     if (version >= 2) await MigrationV2.execute(db);
     if (version >= 3) await MigrationV3.execute(db);
     if (version >= 4) await MigrationV4.execute(db);
+    if (version >= 5) await MigrationV5.execute(db);
+    if (version >= 6) await MigrationV6.execute(db);
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     if (oldVersion < 2) await MigrationV2.execute(db);
     if (oldVersion < 3) await MigrationV3.execute(db);
     if (oldVersion < 4) await MigrationV4.execute(db);
+    if (oldVersion < 5) await MigrationV5.execute(db);
+    if (oldVersion < 6) await MigrationV6.execute(db);
+    // v7 has no migration of its own. MigrationV5 was rewritten in place
+    // when the financial classification moved from the category to the task,
+    // which leaves development databases stamped at 5 or 6 carrying the old
+    // shape and no way to reach the new one. Replaying v5 brings them
+    // across; every step in it is guarded, so databases created after the
+    // rewrite pass through it unchanged.
+    if (oldVersion < 7) await MigrationV5.execute(db);
   }
 
   Future<String> _getDefaultDatabasePath() async {

@@ -58,33 +58,42 @@ class CurrentWorkspaceNotifier extends AsyncNotifier<Workspace> {
         name: 'General',
         description: 'Default project for general work items',
         colorHex: '#0A84FF',
+        // A placeholder the user is expected to replace with their own
+        // organisation's code; the Projects screen shows it, and the form
+        // requires one, so it cannot silently stay wrong.
+        timesheetCode: 'GENERAL',
         createdAt: now,
         updatedAt: now,
       ),
     );
 
-    // Seed standard starter categories
+    // Seed standard starter categories. These name the *kind* of work only;
+    // whether an hour is capitalizable is decided per task.
     final defaultCategories = [
       (
         'Engineering',
         'Development, coding, bug fixes, and code reviews',
-        'code'
+        'code',
       ),
       (
         'Architecture',
         'System design, technical specs, and RFCs',
-        'architecture'
+        'architecture',
       ),
-      ('Meetings', 'Syncs, 1:1s, sprint ceremonies, and discussions', 'chat'),
+      (
+        'Meetings',
+        'Syncs, 1:1s, sprint ceremonies, and discussions',
+        'chat',
+      ),
       (
         'Deep Work',
         'Focused, uninterrupted problem solving and research',
-        'brain'
+        'brain',
       ),
       (
         'Operations',
         'Deployments, monitoring, admin tasks, and triage',
-        'gear'
+        'gear',
       ),
     ];
 

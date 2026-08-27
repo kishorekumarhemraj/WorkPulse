@@ -160,6 +160,35 @@ void main() {
       expect(find.text('Implement OAuth 2.0 PKCE'), findsOneWidget);
     });
 
+    testWidgets('a bar states its active time without needing a hover',
+        (tester) async {
+      tester.view.physicalSize = const Size(1280, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            dashboardDataProvider
+                .overrideWith((ref) => Future.value(mockDashboardData)),
+          ],
+          child: MaterialApp(
+            theme: AppTheme.darkTheme,
+            home: const DashboardView(),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      // The 10am bar holds 45 minutes of active time. Reading it used to
+      // mean putting a mouse on the bar and waiting for the tooltip.
+      expect(find.text('00:45'), findsOneWidget);
+    });
+
     testWidgets('tapping previous and next day updates dashboardDateProvider',
         (tester) async {
       tester.view.physicalSize = const Size(1280, 900);

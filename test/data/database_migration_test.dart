@@ -9,6 +9,8 @@ import 'package:workpulse/data/migrations/migration_v1.dart';
 import 'package:workpulse/data/migrations/migration_v2.dart';
 import 'package:workpulse/data/migrations/migration_v3.dart';
 import 'package:workpulse/data/migrations/migration_v4.dart';
+import 'package:workpulse/data/migrations/migration_v5.dart';
+import 'package:workpulse/data/migrations/migration_v6.dart';
 
 void main() {
   setUpAll(() {
@@ -107,6 +109,83 @@ void main() {
       final columnNames = columns.map((c) => c['name'] as String).toSet();
       expect(columnNames, contains('team'));
     });
+
+    test('the financial classification lives on tasks, not categories',
+        () async {
+      final db = dbService.database;
+
+      final categoryColumns =
+          await db.rawQuery('PRAGMA table_info(${Tables.categories});');
+      final categoryNames =
+          categoryColumns.map((c) => c['name'] as String).toSet();
+      // A category names the kind of work and makes no financial claim.
+      expect(categoryNames, isNot(contains('type')));
+
+      final workItemColumns =
+          await db.rawQuery('PRAGMA table_info(${Tables.workItems});');
+      final classificationColumn = workItemColumns.firstWhere(
+        (c) => c['name'] == 'financial_classification',
+        orElse: () => {},
+      );
+      expect(classificationColumn, isNotEmpty);
+      expect(classificationColumn['notnull'], 1);
+
+      final sessionColumns =
+          await db.rawQuery('PRAGMA table_info(${Tables.sessions});');
+      final overrideColumn = sessionColumns.firstWhere(
+        (c) => c['name'] == 'financial_classification',
+        orElse: () => {},
+      );
+      expect(overrideColumn, isNotEmpty);
+      // Nullable on purpose: null means "inherit from the task".
+      expect(overrideColumn['notnull'], 0);
+    });
+
+    test('a task defaults to NONE rather than inventing a finance decision',
+        () async {
+      final db = dbService.database;
+      final now = DateTime.now().toUtc().toIso8601String();
+
+      await db.insert(Tables.projects, {
+        'id': 'proj-default',
+        'workspace_id': MigrationV1.defaultWorkspaceId,
+        'name': 'Defaulting Project',
+        'created_at': now,
+        'updated_at': now,
+      });
+      await db.insert(Tables.categories, {
+        'id': 'cat-default',
+        'workspace_id': MigrationV1.defaultWorkspaceId,
+        'name': 'Defaulting Category',
+        'created_at': now,
+        'updated_at': now,
+      });
+      await db.insert(Tables.workItems, {
+        'id': 'wi-default',
+        'workspace_id': MigrationV1.defaultWorkspaceId,
+        'name': 'Defaulting Task',
+        'project_id': 'proj-default',
+        'category_id': 'cat-default',
+        'created_at': now,
+        'updated_at': now,
+      });
+
+      final rows = await db.query(
+        Tables.workItems,
+        where: 'id = ?',
+        whereArgs: ['wi-default'],
+      );
+      expect(rows.first['financial_classification'], equals('NONE'));
+    });
+
+    test('projects table has a timesheet_code column on a fresh database',
+        () async {
+      final db = dbService.database;
+      final columns =
+          await db.rawQuery('PRAGMA table_info(${Tables.projects});');
+      final columnNames = columns.map((c) => c['name'] as String).toSet();
+      expect(columnNames, contains('timesheet_code'));
+    });
   });
 
   group('Migration v1 -> v2 upgrade path', () {
@@ -180,8 +259,8 @@ void main() {
         await v1Db.close();
 
         // 2. Re-open the same file through DatabaseService, which now
-        // targets AppConstants.dbVersion (4) - this exercises the real
-        // onUpgrade(db, 1, 4) path, not onCreate.
+        // targets AppConstants.dbVersion (7) - this exercises the real
+        // onUpgrade(db, 1, 7) path, not onCreate.
         final upgraded = DatabaseService();
         await upgraded.initialize(customPath: dbPath);
         final db = upgraded.database;
@@ -191,6 +270,52 @@ void main() {
         final columnNames = columns.map((c) => c['name'] as String).toSet();
         expect(columnNames, contains('notes'));
         expect(columnNames, contains('category_id'));
+
+        final projectCols =
+            await db.rawQuery('PRAGMA table_info(${Tables.projects});');
+        final projectColNames =
+            projectCols.map((c) => c['name'] as String).toSet();
+        expect(projectColNames, contains('timesheet_code'));
+
+        final upgradedProject = await db.query(
+          Tables.projects,
+          where: 'id = ?',
+          whereArgs: ['proj-pre-upgrade'],
+        );
+        // Deliberately not backfilled: a cost code is an external identifier
+        // the app cannot invent, and a made-up one would be booked against
+        // real hours.
+        expect(upgradedProject.first['timesheet_code'], isNull);
+
+        final categoryCols =
+            await db.rawQuery('PRAGMA table_info(${Tables.categories});');
+        final categoryColNames =
+            categoryCols.map((c) => c['name'] as String).toSet();
+        expect(categoryColNames, isNot(contains('type')));
+
+        final upgradedTask = await db.query(
+          Tables.workItems,
+          where: 'id = ?',
+          whereArgs: ['wi-pre-upgrade'],
+        );
+        // A v1 database has no category type to carry over, so the task
+        // arrives unclassified rather than guessed at.
+        expect(
+          upgradedTask.first['financial_classification'],
+          equals('NONE'),
+        );
+
+        final upgradedSession = await db.query(
+          Tables.sessions,
+          where: 'id = ?',
+          whereArgs: ['session-pre-upgrade'],
+        );
+        // Null is "inherit from the task", which is what every historical
+        // session should do.
+        expect(
+          upgradedSession.first['financial_classification'],
+          isNull,
+        );
 
         final peopleCols =
             await db.rawQuery('PRAGMA table_info(${Tables.people});');
@@ -237,7 +362,101 @@ void main() {
       }
     });
 
-    test('MigrationV2, MigrationV3 and MigrationV4 are idempotent', () async {
+    test('carries a category-level CAPEX/OPEX value onto its tasks', () async {
+      // Reproduces a database that ran the *earlier* cut of v5, where the
+      // classification hung off the category. The rewritten v5 has to lift
+      // those values onto the tasks and then drop the column, or a user who
+      // classified their categories loses that work on upgrade.
+      final tempDir =
+          await Directory.systemTemp.createTemp('workpulse_classify_test');
+      final dbPath = p.join(tempDir.path, 'classify_test.db');
+
+      try {
+        final db = await databaseFactoryFfi.openDatabase(
+          dbPath,
+          options: OpenDatabaseOptions(
+            version: 1,
+            onCreate: (db, version) => MigrationV1.execute(db),
+          ),
+        );
+        await MigrationV2.execute(db);
+        await MigrationV3.execute(db);
+        await MigrationV4.execute(db);
+
+        // The old v5's column, recreated by hand.
+        await db.execute(
+          "ALTER TABLE ${Tables.categories} "
+          "ADD COLUMN type TEXT NOT NULL DEFAULT 'OPEX';",
+        );
+
+        final now = DateTime.now().toUtc().toIso8601String();
+        await db.insert(Tables.projects, {
+          'id': 'proj-1',
+          'workspace_id': MigrationV1.defaultWorkspaceId,
+          'name': 'Apollo',
+          'created_at': now,
+          'updated_at': now,
+        });
+        for (final (id, name, type) in [
+          ('cat-build', 'Feature Work', 'CAPEX'),
+          ('cat-run', 'Production Support', 'OPEX'),
+        ]) {
+          await db.insert(Tables.categories, {
+            'id': id,
+            'workspace_id': MigrationV1.defaultWorkspaceId,
+            'name': name,
+            'type': type,
+            'created_at': now,
+            'updated_at': now,
+          });
+        }
+        for (final (id, categoryId) in [
+          ('wi-build', 'cat-build'),
+          ('wi-run', 'cat-run'),
+        ]) {
+          await db.insert(Tables.workItems, {
+            'id': id,
+            'workspace_id': MigrationV1.defaultWorkspaceId,
+            'name': 'Task for $categoryId',
+            'project_id': 'proj-1',
+            'category_id': categoryId,
+            'created_at': now,
+            'updated_at': now,
+          });
+        }
+
+        await MigrationV5.execute(db);
+
+        Future<Object?> classificationOf(String id) async {
+          final rows = await db.query(
+            Tables.workItems,
+            where: 'id = ?',
+            whereArgs: [id],
+          );
+          return rows.first['financial_classification'];
+        }
+
+        expect(await classificationOf('wi-build'), equals('CAPEX'));
+        expect(await classificationOf('wi-run'), equals('OPEX'));
+
+        final categoryCols =
+            await db.rawQuery('PRAGMA table_info(${Tables.categories});');
+        final categoryNames =
+            categoryCols.map((c) => c['name'] as String).toSet();
+        expect(categoryNames, isNot(contains('type')));
+
+        // Re-runnable: the replay on the way to v7 must not throw or undo
+        // the values it just wrote.
+        await expectLater(MigrationV5.execute(db), completes);
+        expect(await classificationOf('wi-build'), equals('CAPEX'));
+
+        await db.close();
+      } finally {
+        await tempDir.delete(recursive: true);
+      }
+    });
+
+    test('MigrationV2 through MigrationV6 are idempotent', () async {
       final tempDir =
           await Directory.systemTemp.createTemp('workpulse_idempotency_test');
       final dbPath = p.join(tempDir.path, 'idempotent_test.db');
@@ -251,14 +470,18 @@ void main() {
           ),
         );
 
-        // Run MigrationV2, MigrationV3, and MigrationV4 once
+        // Run each migration once
         await MigrationV2.execute(db);
         await MigrationV3.execute(db);
         await MigrationV4.execute(db);
+        await MigrationV5.execute(db);
+        await MigrationV6.execute(db);
         // Run a second time - should not throw duplicate column/table error
         await expectLater(MigrationV2.execute(db), completes);
         await expectLater(MigrationV3.execute(db), completes);
         await expectLater(MigrationV4.execute(db), completes);
+        await expectLater(MigrationV5.execute(db), completes);
+        await expectLater(MigrationV6.execute(db), completes);
 
         await db.close();
       } finally {

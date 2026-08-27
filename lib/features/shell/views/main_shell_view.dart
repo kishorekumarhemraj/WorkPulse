@@ -12,6 +12,8 @@ import 'package:workpulse/core/theme/design_tokens.dart';
 import 'package:workpulse/core/widgets/app_dialog.dart';
 import 'package:workpulse/core/widgets/error_state.dart';
 import 'package:workpulse/domain/services/activity_heartbeat_service.dart';
+import 'package:workpulse/domain/models/attribute_model.dart';
+import 'package:workpulse/features/attributes/providers/attribute_definitions_provider.dart';
 import 'package:workpulse/features/attributes/views/attribute_definitions_view.dart';
 import 'package:workpulse/features/categories/views/categories_view.dart';
 import 'package:workpulse/features/dashboard/views/dashboard_view.dart';
@@ -22,6 +24,7 @@ import 'package:workpulse/features/patterns/views/patterns_view.dart';
 import 'package:workpulse/features/people/views/people_view.dart';
 import 'package:workpulse/features/projects/views/project_form_dialog.dart';
 import 'package:workpulse/features/projects/views/projects_view.dart';
+import 'package:workpulse/features/quick_capture/views/quick_capture_body.dart';
 import 'package:workpulse/features/reports/views/export_dialog.dart';
 import 'package:workpulse/features/reports/views/session_history_view.dart';
 import 'package:workpulse/features/settings/providers/app_settings_provider.dart';
@@ -32,6 +35,7 @@ import 'package:workpulse/features/tags/views/tags_view.dart';
 import 'package:workpulse/features/tasks/views/task_form_dialog.dart';
 import 'package:workpulse/features/tasks/views/tasks_view.dart';
 import 'package:workpulse/features/timer/providers/timer_provider.dart';
+import 'package:workpulse/features/timesheet/views/timesheet_view.dart';
 import 'package:workpulse/features/timer/views/active_timer_bar.dart';
 import 'package:workpulse/features/tray/providers/tray_provider.dart';
 import 'package:workpulse/features/workspace/providers/workspace_provider.dart';
@@ -185,7 +189,15 @@ class _MainShellViewState extends ConsumerState<MainShellView>
   }
 
   Future<void> _showQuickCapture() async {
-    await _windowService.openQuickCapture();
+    // Opened at the height its configuration bar will need, so the fields the
+    // user asked to see in Quick Capture are on screen rather than folded into
+    // a scroll view at the bottom of a fixed-size window.
+    await _windowService.openQuickCapture(
+      height: QuickCaptureBody.hudHeightFrom(
+        ref.read(attributeDefinitionsProvider).value ??
+            const <AttributeDefinition>[],
+      ),
+    );
   }
 
   void _setTab(ShellNavTab tab) =>
@@ -201,6 +213,7 @@ class _MainShellViewState extends ConsumerState<MainShellView>
       case ShellNavTab.patterns:
       case ShellNavTab.history:
       case ShellNavTab.notes:
+      case ShellNavTab.timesheet:
       case ShellNavTab.tasks:
       case ShellNavTab.categories:
       case ShellNavTab.tags:
@@ -561,6 +574,7 @@ class _ContentViewport extends StatelessWidget {
           ShellNavTab.history => const SessionHistoryView(),
           ShellNavTab.tasks => const TasksView(),
           ShellNavTab.notes => const TimeNotesView(),
+          ShellNavTab.timesheet => const TimesheetView(),
           ShellNavTab.projects => const ProjectsView(),
           ShellNavTab.categories => const CategoriesView(),
           ShellNavTab.tags => const TagsView(),
