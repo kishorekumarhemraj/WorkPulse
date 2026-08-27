@@ -79,8 +79,7 @@ class TimesheetTable extends StatelessWidget {
 
     // The column only earns its width when there is unclassified time to
     // report; most workspaces will never see it.
-    final showNone =
-        rows.any((row) => row.split(basis).hasNone);
+    final showNone = rows.any((row) => row.split(basis).hasNone);
 
     // Projects carry a timesheet code; attribute values do not, so the
     // column appears only on the table where it means something.
@@ -290,9 +289,8 @@ class _DataRow extends StatelessWidget {
         vertical: Spacing.md - 2,
       ),
       decoration: BoxDecoration(
-        border: isLast
-            ? null
-            : Border(bottom: BorderSide(color: colors.divider)),
+        border:
+            isLast ? null : Border(bottom: BorderSide(color: colors.divider)),
       ),
       child: Row(
         children: [
@@ -384,8 +382,7 @@ class _TotalRow extends StatelessWidget {
                   ?.copyWith(color: colors.textSecondary),
             ),
           ),
-          if (showCode)
-            const SizedBox(width: TimesheetTable._codeColumnWidth),
+          if (showCode) const SizedBox(width: TimesheetTable._codeColumnWidth),
           _HoursCell(
             duration: totals.capex,
             color: palette.capex,

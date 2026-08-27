@@ -522,8 +522,8 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
               const SizedBox(height: 6),
               Text(
                 _classification.description,
-                style: TextStyle(
-                    fontSize: 12, color: context.colors.textTertiary),
+                style:
+                    TextStyle(fontSize: 12, color: context.colors.textTertiary),
               ),
               const SizedBox(height: 16),
 

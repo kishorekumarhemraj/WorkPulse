@@ -244,7 +244,9 @@ void main() {
   });
 
   group('AppSelect keyboard navigation', () {
-    testWidgets('can focus with tab, open with arrowDown, navigate with arrowDown/arrowUp and select with enter', (tester) async {
+    testWidgets(
+        'can focus with tab, open with arrowDown, navigate with arrowDown/arrowUp and select with enter',
+        (tester) async {
       String? chosen;
       await tester.pumpWidget(
         host(AppSelect<String>(
@@ -277,4 +279,3 @@ void main() {
     });
   });
 }
-

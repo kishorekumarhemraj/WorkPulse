@@ -397,8 +397,7 @@ class ExportService {
           'workItem': {
             'id': r.workItem.id,
             'name': r.workItem.name,
-            'financialClassification':
-                r.workItem.financialClassification.value,
+            'financialClassification': r.workItem.financialClassification.value,
             'legacyNotes': r.workItem.notes,
           },
           'project': r.project != null
