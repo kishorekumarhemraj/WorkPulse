@@ -261,26 +261,20 @@ void main() {
         definitions: const [],
       );
 
-      // Coding versus meetings *within* CapEx — the question the old
-      // category-level model could not answer, because the category was the
-      // classification.
-      final capexSection = data.categorySections
-          .firstWhere((s) => s.classification == FinancialClassification.capex);
-      expect(capexSection.rows.map((r) => r.label), ['Coding', 'Meetings']);
-      expect(capexSection.rows.first.net.capex, const Duration(hours: 5));
-      expect(capexSection.rows.last.net.capex, const Duration(hours: 2));
+      // Coding versus meetings across classifications in one unified table
+      expect(data.categoryRows.map((r) => r.label), ['Coding', 'Meetings']);
 
-      final opexSection = data.categorySections
-          .firstWhere((s) => s.classification == FinancialClassification.opex);
-      expect(opexSection.rows.single.label, 'Meetings');
-      expect(opexSection.rows.single.net.opex, const Duration(hours: 1));
+      final codingRow =
+          data.categoryRows.firstWhere((r) => r.label == 'Coding');
+      expect(codingRow.net.capex, const Duration(hours: 5));
+      expect(codingRow.net.opex, Duration.zero);
+      expect(codingRow.net.total, const Duration(hours: 5));
 
-      // Nothing is unclassified, so that section is absent rather than empty.
-      expect(
-        data.categorySections
-            .any((s) => s.classification == FinancialClassification.none),
-        isFalse,
-      );
+      final meetingsRow =
+          data.categoryRows.firstWhere((r) => r.label == 'Meetings');
+      expect(meetingsRow.net.capex, const Duration(hours: 2));
+      expect(meetingsRow.net.opex, const Duration(hours: 1));
+      expect(meetingsRow.net.total, const Duration(hours: 3));
     });
 
     test('reports time by task, carrying the project code', () {
@@ -352,11 +346,7 @@ void main() {
       expect(sum(data.projectRows), data.total.net.total);
       expect(sum(data.taskRows), data.total.net.total);
       expect(sum(rows), data.total.net.total);
-      expect(
-        data.categorySections
-            .fold<Duration>(Duration.zero, (a, s) => a + sum(s.rows)),
-        data.total.net.total,
-      );
+      expect(sum(data.categoryRows), data.total.net.total);
     });
 
     test('sinks sessions with no value into a trailing Unspecified row', () {
@@ -444,7 +434,7 @@ void main() {
       expect(data.codeRows, isEmpty);
       expect(data.projectRows, isEmpty);
       expect(data.taskRows, isEmpty);
-      expect(data.categorySections, isEmpty);
+      expect(data.categoryRows, isEmpty);
       expect(data.attributeSections, isEmpty);
       expect(data.total.net.total, Duration.zero);
       expect(data.total.net.capexShare, 0);

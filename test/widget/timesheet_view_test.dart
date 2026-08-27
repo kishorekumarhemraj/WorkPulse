@@ -153,15 +153,9 @@ void main() {
         row('wi-1', 'Build the thing', code: 'PRJ-1042'),
         row('wi-2', 'Fix the other thing'),
       ],
-      categorySections: [
-        ClassificationCategorySection(
-          classification: FinancialClassification.capex,
-          rows: [row('cat-coding', 'Coding')],
-        ),
-        ClassificationCategorySection(
-          classification: FinancialClassification.opex,
-          rows: [row('cat-meetings', 'Meetings')],
-        ),
+      categoryRows: [
+        row('cat-coding', 'Coding'),
+        row('cat-meetings', 'Meetings'),
       ],
       attributeSections: [
         TimesheetAttributeSection(
@@ -278,6 +272,7 @@ void main() {
       expect(find.text('By timesheet code'), findsOneWidget);
       expect(find.text('By project'), findsOneWidget);
       expect(find.text('By work item'), findsOneWidget);
+      expect(find.text('By category'), findsOneWidget);
     });
 
     testWidgets('at or above Breakpoints.medium renders two-column layout',
@@ -287,6 +282,7 @@ void main() {
       expect(find.text('By timesheet code'), findsOneWidget);
       expect(find.text('By project'), findsOneWidget);
       expect(find.text('By work item'), findsOneWidget);
+      expect(find.text('By category'), findsOneWidget);
       expect(find.byType(Row), findsWidgets);
     });
 
@@ -310,14 +306,11 @@ void main() {
       expect(find.text('By timesheet code'), findsOneWidget);
       expect(find.text('By project'), findsOneWidget);
       expect(find.text('By work item'), findsOneWidget);
+      expect(find.text('By category'), findsOneWidget);
       expect(find.text('By Cost Centre'), findsOneWidget);
       expect(find.text('Apollo'), findsWidgets);
       expect(find.text('Build the thing'), findsOneWidget);
       expect(find.text('CC-100'), findsOneWidget);
-
-      // Coding versus meetings, once inside each classification.
-      expect(find.text('CapEx by category'), findsOneWidget);
-      expect(find.text('OpEx by category'), findsOneWidget);
       expect(find.text('Coding'), findsOneWidget);
       expect(find.text('Meetings'), findsOneWidget);
 
@@ -382,8 +375,8 @@ void main() {
         (tester) async {
       await pumpSheet(tester, sheet(), theme: AppTheme.lightTheme);
 
-      // The entry grid, summary, code table, project, work item, 2 category tables, 1 attribute table = 8 cards
-      expect(find.byType(AppCard), findsNWidgets(8));
+      // The entry grid, summary, code table, project, work item, 1 category table, 1 attribute table = 7 cards
+      expect(find.byType(AppCard), findsNWidgets(7));
 
       // Pinned in the light theme on purpose: `colors.card` is a near-white
       // tint in dark mode, so a card painted with the wrong token looked
