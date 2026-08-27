@@ -14,9 +14,12 @@ import 'package:workpulse/domain/models/financial_classification.dart';
 import 'package:workpulse/domain/models/timesheet_model.dart';
 import 'package:workpulse/features/reports/providers/reports_provider.dart';
 import 'package:workpulse/features/reports/widgets/reports_range_controls.dart';
+import 'package:workpulse/features/settings/views/timesheet_settings_dialog.dart';
 import 'package:workpulse/features/timesheet/providers/timesheet_provider.dart';
 import 'package:workpulse/features/timesheet/widgets/timesheet_attention_card.dart';
 import 'package:workpulse/features/timesheet/widgets/timesheet_code_table.dart';
+import 'package:workpulse/features/timesheet/widgets/timesheet_entry_grid.dart';
+import 'package:workpulse/features/timesheet/widgets/timesheet_section_columns.dart';
 import 'package:workpulse/features/timesheet/widgets/timesheet_summary.dart';
 import 'package:workpulse/features/timesheet/widgets/timesheet_table.dart';
 
@@ -64,6 +67,19 @@ class TimesheetView extends ConsumerWidget {
             ],
           ),
           IconButton(
+            onPressed: () => TimesheetSettingsDialog.show(context),
+            icon: const Icon(Icons.tune, size: IconSizes.md),
+            tooltip: 'Time sheet settings',
+            style: IconButton.styleFrom(
+              minimumSize:
+                  const Size(ControlSizes.standard, ControlSizes.standard),
+              maximumSize:
+                  const Size(ControlSizes.standard, ControlSizes.standard),
+              padding: EdgeInsets.zero,
+              shape: const RoundedRectangleBorder(borderRadius: Radii.mdAll),
+            ),
+          ),
+          IconButton(
             onPressed: () => ref.invalidate(sessionHistoryProvider),
             icon: const Icon(Icons.refresh, size: IconSizes.md),
             tooltip: 'Recalculate from the session log',
@@ -97,28 +113,17 @@ class TimesheetView extends ConsumerWidget {
 
             final hasAttention = data.codeRows.any((r) => r.needsAttention);
 
-            return ListView(
-              padding: const EdgeInsets.only(bottom: Spacing.xxl),
-              children: [
-                TimesheetSummary(
-                  total: data.total,
-                  basis: basis,
-                  sessionCount: data.sessionCount,
-                ),
-                if (hasAttention) ...[
-                  const SizedBox(height: Spacing.xl),
-                  TimesheetAttentionCard(
-                    rows: data.codeRows,
-                    basis: basis,
-                  ),
-                ],
-                const SizedBox(height: Spacing.xl),
-                TimesheetCodeTable(
+            final breakdownSections = <TimesheetSectionItem>[
+              TimesheetSectionItem(
+                rowCount: data.codeRows.length,
+                widget: TimesheetCodeTable(
                   rows: data.codeRows,
                   basis: basis,
                 ),
-                const SizedBox(height: Spacing.xl),
-                TimesheetTable(
+              ),
+              TimesheetSectionItem(
+                rowCount: data.projectRows.length,
+                widget: TimesheetTable(
                   title: 'By project',
                   icon: Icons.folder_outlined,
                   subtitle: 'Where the hours went, and how much of each '
@@ -127,8 +132,10 @@ class TimesheetView extends ConsumerWidget {
                   rows: data.projectRows,
                   basis: basis,
                 ),
-                const SizedBox(height: Spacing.xl),
-                TimesheetTable(
+              ),
+              TimesheetSectionItem(
+                rowCount: data.taskRows.length,
+                widget: TimesheetTable(
                   title: 'By work item',
                   icon: Icons.check_circle_outline,
                   subtitle: 'The level the classification is set at, so a '
@@ -138,9 +145,11 @@ class TimesheetView extends ConsumerWidget {
                   rows: data.taskRows,
                   basis: basis,
                 ),
-                for (final section in data.categorySections) ...[
-                  const SizedBox(height: Spacing.xl),
-                  TimesheetTable(
+              ),
+              for (final section in data.categorySections)
+                TimesheetSectionItem(
+                  rowCount: section.rows.length,
+                  widget: TimesheetTable(
                     title: '${section.classification.label} by category',
                     icon: section.classification.icon,
                     subtitle: _categorySubtitle(section.classification),
@@ -148,10 +157,11 @@ class TimesheetView extends ConsumerWidget {
                     rows: section.rows,
                     basis: basis,
                   ),
-                ],
-                for (final section in data.attributeSections) ...[
-                  const SizedBox(height: Spacing.xl),
-                  TimesheetTable(
+                ),
+              for (final section in data.attributeSections)
+                TimesheetSectionItem(
+                  rowCount: section.rows.length,
+                  widget: TimesheetTable(
                     title: 'By ${section.definition.name}',
                     icon: Icons.tune,
                     subtitle: _attributeSubtitle(section.definition),
@@ -159,11 +169,39 @@ class TimesheetView extends ConsumerWidget {
                     rows: section.rows,
                     basis: basis,
                   ),
-                ],
-                if (data.attributeSections.isEmpty) ...[
+                ),
+              if (data.attributeSections.isEmpty)
+                TimesheetSectionItem(
+                  rowCount: 1,
+                  widget: const _NoAttributesHint(),
+                ),
+            ];
+
+            return ListView(
+              padding: const EdgeInsets.only(bottom: Spacing.xxl),
+              children: [
+                TimesheetSummary(
+                  total: data.total,
+                  basis: basis,
+                  sessionCount: data.sessionCount,
+                ),
+                if (data.weeks.isNotEmpty) ...[
                   const SizedBox(height: Spacing.xl),
-                  const _NoAttributesHint(),
+                  TimesheetEntryGrid(
+                    weeks: data.weeks,
+                    weeksTruncated: data.weeksTruncated,
+                    basis: basis,
+                  ),
                 ],
+                if (hasAttention) ...[
+                  const SizedBox(height: Spacing.xl),
+                  TimesheetAttentionCard(
+                    rows: data.codeRows,
+                    basis: basis,
+                  ),
+                ],
+                const SizedBox(height: Spacing.xl),
+                TimesheetSectionColumns(sections: breakdownSections),
               ],
             );
           },

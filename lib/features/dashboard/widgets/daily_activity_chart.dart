@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:workpulse/core/theme/app_colors.dart';
@@ -42,8 +40,9 @@ class _DailyActivityChartState extends State<DailyActivityChart> {
 
   static const double _plotHeight = 150;
 
-  /// The height reserved for a bar's value label.
-  static const double _valueLabelHeight = 13;
+  /// Headroom reserved above the plot area so value labels always sit cleanly
+  /// above even 100% full bars without clipping or rendering inside the bar.
+  static const double _labelHeadroom = 18;
 
   /// Below this column width an `HH:MM` label would collide with its
   /// neighbours, so the labels give way and the tooltip carries the value
@@ -165,11 +164,15 @@ class _DailyActivityChartState extends State<DailyActivityChart> {
           ),
           const SizedBox(height: Spacing.xl),
           SizedBox(
-            height: _plotHeight + 22,
+            height: _labelHeadroom + _plotHeight + 22,
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _ValueAxis(maxSeconds: maxSeconds, height: _plotHeight),
+                Padding(
+                  padding: const EdgeInsets.only(top: _labelHeadroom),
+                  child:
+                      _ValueAxis(maxSeconds: maxSeconds, height: _plotHeight),
+                ),
                 const SizedBox(width: Spacing.sm),
                 Expanded(
                   child: LayoutBuilder(
@@ -183,28 +186,34 @@ class _DailyActivityChartState extends State<DailyActivityChart> {
                         children: [
                           // Gridlines sit behind the bars so heights can be
                           // read against them.
-                          Positioned.fill(
+                          Positioned(
+                            top: _labelHeadroom,
+                            left: 0,
+                            right: 0,
                             bottom: 22,
                             child: _Gridlines(color: colors.divider),
                           ),
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              for (var i = 0; i < bars.length; i++)
-                                Expanded(
-                                  child: _Bar(
-                                    data: bars[i],
-                                    maxSeconds: maxSeconds,
-                                    plotHeight: _plotHeight,
-                                    valueLabelHeight: _valueLabelHeight,
-                                    showValue: showValues,
-                                    isHovered: _hoveredIndex == i,
-                                    onHover: (hovering) => setState(
-                                      () => _hoveredIndex = hovering ? i : null,
+                          Positioned.fill(
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                for (var i = 0; i < bars.length; i++)
+                                  Expanded(
+                                    child: _Bar(
+                                      data: bars[i],
+                                      maxSeconds: maxSeconds,
+                                      plotHeight: _plotHeight,
+                                      labelHeadroom: _labelHeadroom,
+                                      showValue: showValues,
+                                      isHovered: _hoveredIndex == i,
+                                      onHover: (hovering) => setState(
+                                        () =>
+                                            _hoveredIndex = hovering ? i : null,
+                                      ),
                                     ),
                                   ),
-                                ),
-                            ],
+                              ],
+                            ),
                           ),
                         ],
                       );
@@ -246,7 +255,7 @@ class _Bar extends StatelessWidget {
   final _BarData data;
   final int maxSeconds;
   final double plotHeight;
-  final double valueLabelHeight;
+  final double labelHeadroom;
   final bool showValue;
   final bool isHovered;
   final ValueChanged<bool> onHover;
@@ -255,7 +264,7 @@ class _Bar extends StatelessWidget {
     required this.data,
     required this.maxSeconds,
     required this.plotHeight,
-    required this.valueLabelHeight,
+    required this.labelHeadroom,
     required this.showValue,
     required this.isHovered,
     required this.onHover,
@@ -302,7 +311,7 @@ class _Bar extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
               SizedBox(
-                height: plotHeight,
+                height: plotHeight + labelHeadroom,
                 child: Stack(
                   children: [
                     Positioned(
@@ -342,19 +351,12 @@ class _Bar extends StatelessWidget {
                         ],
                       ),
                     ),
-                    // The bar's own active time, sitting on top of it. Riding
-                    // the bar rather than pinned to the top of the plot keeps
-                    // the number attached to the thing it measures; the
-                    // clamp is what stops the tallest bar pushing its own
-                    // label out of the chart.
+                    // The bar's active time label always sits cleanly above the top of the bar.
                     if (showValue && data.active > Duration.zero)
                       Positioned(
                         left: 0,
                         right: 0,
-                        bottom: math.min(
-                          activeHeight + idleHeight + 3,
-                          plotHeight - valueLabelHeight,
-                        ),
+                        bottom: activeHeight + idleHeight + 3,
                         child: Text(
                           TimerService.formatDuration(
                             data.active,
