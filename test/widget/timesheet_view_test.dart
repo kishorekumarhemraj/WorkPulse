@@ -202,7 +202,8 @@ void main() {
   }
 
   group('TimesheetView', () {
-    testWidgets('renders entry grid with 7 day columns, totals, and copy button',
+    testWidgets(
+        'renders entry grid with 7 day columns, totals, and copy button',
         (tester) async {
       await pumpSheet(tester, sheet());
 

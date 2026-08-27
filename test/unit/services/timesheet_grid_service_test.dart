@@ -74,7 +74,8 @@ SessionExportRecord _createRecord({
 void main() {
   group('TimesheetGridMath Unit Tests', () {
     group('overlapOnDay', () {
-      test('session from 23:30 to 00:30 puts 30 minutes on each of two days', () {
+      test('session from 23:30 to 00:30 puts 30 minutes on each of two days',
+          () {
         final day1 = DateTime(2026, 8, 22); // Saturday local midnight
         final day2 = DateTime(2026, 8, 23); // Sunday local midnight
 
@@ -130,7 +131,8 @@ void main() {
         expect(start.weekday, DateTime.saturday);
       });
 
-      test('Saturday week start: Saturday date yields same day at midnight', () {
+      test('Saturday week start: Saturday date yields same day at midnight',
+          () {
         final sat = DateTime(2026, 8, 22, 23, 59);
         final start = weekStartFor(sat, DateTime.saturday);
 
@@ -155,7 +157,8 @@ void main() {
     });
 
     group('roundCell & sumCells', () {
-      test('5 cells of 1h20m at 0.01 increment give row total 6.65, not 6.67', () {
+      test('5 cells of 1h20m at 0.01 increment give row total 6.65, not 6.67',
+          () {
         final cellDuration = const Duration(hours: 1, minutes: 20);
         final cell = roundCell(cellDuration, 0.01);
         expect(cell, 1.33);
@@ -175,7 +178,9 @@ void main() {
         expect(roundCell(const Duration(minutes: 8), 0.25), 0.25);
       });
 
-      test('increment 0.05 rounds to 3-minute steps cleanly without float noise', () {
+      test(
+          'increment 0.05 rounds to 3-minute steps cleanly without float noise',
+          () {
         expect(roundCell(const Duration(hours: 8, minutes: 30), 0.05), 8.50);
         expect(roundCell(const Duration(minutes: 2), 0.05), 0.05);
       });
@@ -185,7 +190,9 @@ void main() {
         expect(roundCell(const Duration(seconds: -10), 0.25), 0.0);
       });
 
-      test('formatCell renders empty string for 0, formatted 2 decimals otherwise', () {
+      test(
+          'formatCell renders empty string for 0, formatted 2 decimals otherwise',
+          () {
         expect(formatCell(0.0), '');
         expect(formatCell(1.0), '1.00');
         expect(formatCell(1.5), '1.50');
@@ -290,7 +297,8 @@ void main() {
             sessionId: 's1',
             startTime: DateTime(2026, 8, 22, 11, 0),
             endTime: DateTime(2026, 8, 22, 12, 0),
-            resolution: IdleResolution.keepTracking, // keepTracking (not subtracted)
+            resolution:
+                IdleResolution.keepTracking, // keepTracking (not subtracted)
             createdAt: DateTime(2026, 8, 22, 11, 0),
           ),
         ],
@@ -353,7 +361,8 @@ void main() {
       expect(row2.cells[0], 2.00);
     });
 
-    test('rows sort by code then classification, uncodeable row sorts last', () {
+    test('rows sort by code then classification, uncodeable row sorts last',
+        () {
       final sat = DateTime(2026, 8, 22, 9, 0);
 
       final recNoCode = _createRecord(
@@ -428,13 +437,16 @@ void main() {
       expect(rows[3].codeLabel, timesheetNoCodeLabel);
     });
 
-    test('1-month range yields multiple ascending week blocks and truncates at 6', () {
+    test(
+        '1-month range yields multiple ascending week blocks and truncates at 6',
+        () {
       final records = <SessionExportRecord>[];
       final monthStart = DateTime(2026, 8, 1, 10, 0);
 
       // Add a session in each of 8 consecutive weeks
       for (var w = 0; w < 8; w++) {
-        final start = DateTime(monthStart.year, monthStart.month, monthStart.day + (w * 7), 10, 0);
+        final start = DateTime(
+            monthStart.year, monthStart.month, monthStart.day + (w * 7), 10, 0);
         records.add(_createRecord(
           id: 's_$w',
           taskId: 't_$w',
