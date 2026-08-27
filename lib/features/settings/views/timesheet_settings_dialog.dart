@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workpulse/core/theme/app_colors.dart';
 import 'package:workpulse/core/theme/design_tokens.dart';
-import 'package:workpulse/core/widgets/app_button.dart';
 import 'package:workpulse/core/widgets/app_dialog.dart';
 import 'package:workpulse/core/widgets/app_select.dart';
 import 'package:workpulse/features/settings/providers/app_settings_provider.dart';
@@ -52,13 +51,13 @@ class _TimesheetSettingsDialogState
       width: DialogWidth.medium,
       onSubmit: () => _save(weekStartDay, roundingIncrement),
       actions: [
-        AppButton.secondary(
-          label: 'Cancel',
+        TextButton(
           onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
         ),
-        AppButton.primary(
-          label: 'Save',
+        ElevatedButton(
           onPressed: () => _save(weekStartDay, roundingIncrement),
+          child: const Text('Save'),
         ),
       ],
       child: Column(
