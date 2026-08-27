@@ -12,6 +12,8 @@ import 'package:workpulse/domain/repositories/settings_repository.dart';
 const _themeModeKey = 'theme_mode';
 const _quickCaptureHotKeyKey = 'quick_capture_hotkey';
 const _idleThresholdMinutesKey = 'idle_threshold_minutes';
+const _timesheetWeekStartDayKey = 'timesheet_week_start_day';
+const _timesheetRoundingIncrementKey = 'timesheet_rounding_increment';
 
 class AppSettings {
   final ThemeMode themeMode;
@@ -21,10 +23,23 @@ class AppSettings {
   /// happened. Required to be configurable by `docs/WORKPULSE_SPEC.md` §31.
   final Duration idleThreshold;
 
+  /// The first day of the week on the timesheet grid (1 = Monday, 7 = Sunday).
+  /// Defaults to Saturday (6) to match standard timesheet cycles.
+  final int timesheetWeekStartDay;
+
+  /// Rounding granularity for timesheet grid cells (0.01, 0.05, 0.25, 0.50).
+  /// Defaults to 0.25 (quarter-hour).
+  final double timesheetRoundingIncrement;
+
+  static const defaultTimesheetWeekStartDay = DateTime.saturday;
+  static const defaultTimesheetRoundingIncrement = 0.25;
+
   const AppSettings({
     required this.themeMode,
     required this.quickCaptureHotKey,
     required this.idleThreshold,
+    this.timesheetWeekStartDay = defaultTimesheetWeekStartDay,
+    this.timesheetRoundingIncrement = defaultTimesheetRoundingIncrement,
   });
 
   factory AppSettings.defaults() {
@@ -32,6 +47,8 @@ class AppSettings {
       themeMode: ThemeMode.dark,
       quickCaptureHotKey: defaultQuickCaptureHotKey(),
       idleThreshold: DesktopIdleDetectorService.defaultIdleThreshold,
+      timesheetWeekStartDay: defaultTimesheetWeekStartDay,
+      timesheetRoundingIncrement: defaultTimesheetRoundingIncrement,
     );
   }
 
@@ -39,11 +56,17 @@ class AppSettings {
     ThemeMode? themeMode,
     HotKey? quickCaptureHotKey,
     Duration? idleThreshold,
+    int? timesheetWeekStartDay,
+    double? timesheetRoundingIncrement,
   }) {
     return AppSettings(
       themeMode: themeMode ?? this.themeMode,
       quickCaptureHotKey: quickCaptureHotKey ?? this.quickCaptureHotKey,
       idleThreshold: idleThreshold ?? this.idleThreshold,
+      timesheetWeekStartDay:
+          timesheetWeekStartDay ?? this.timesheetWeekStartDay,
+      timesheetRoundingIncrement:
+          timesheetRoundingIncrement ?? this.timesheetRoundingIncrement,
     );
   }
 }
@@ -58,6 +81,42 @@ const idleThresholdOptions = <Duration>[
   Duration(minutes: 30),
 ];
 
+const timesheetWeekStartDayOptions = <int>[
+  DateTime.monday,
+  DateTime.tuesday,
+  DateTime.wednesday,
+  DateTime.thursday,
+  DateTime.friday,
+  DateTime.saturday,
+  DateTime.sunday,
+];
+
+const timesheetRoundingIncrementOptions = <double>[
+  0.01,
+  0.05,
+  0.25,
+  0.50,
+];
+
+String weekdayName(int weekday) => switch (weekday) {
+      DateTime.monday => 'Monday',
+      DateTime.tuesday => 'Tuesday',
+      DateTime.wednesday => 'Wednesday',
+      DateTime.thursday => 'Thursday',
+      DateTime.friday => 'Friday',
+      DateTime.saturday => 'Saturday',
+      DateTime.sunday => 'Sunday',
+      _ => 'Unknown',
+    };
+
+String roundingIncrementLabel(double increment) => switch (increment) {
+      0.01 => '0.01 h (exact to hundredth)',
+      0.05 => '0.05 h (3 min)',
+      0.25 => '0.25 h (15 min / quarter-hour)',
+      0.50 => '0.50 h (30 min / half-hour)',
+      _ => '${increment.toStringAsFixed(2)} h',
+    };
+
 final appSettingsProvider =
     AsyncNotifierProvider<AppSettingsNotifier, AppSettings>(
   AppSettingsNotifier.new,
@@ -71,11 +130,17 @@ class AppSettingsNotifier extends AsyncNotifier<AppSettings> {
     final themeModeName = await _repo.getSetting(_themeModeKey);
     final hotKeyJson = await _repo.getSetting(_quickCaptureHotKeyKey);
     final idleMinutes = await _repo.getSetting(_idleThresholdMinutesKey);
+    final weekStartDayStr = await _repo.getSetting(_timesheetWeekStartDayKey);
+    final roundingIncrementStr =
+        await _repo.getSetting(_timesheetRoundingIncrementKey);
 
     return AppSettings(
       themeMode: _themeModeFromName(themeModeName),
       quickCaptureHotKey: _hotKeyFromJson(hotKeyJson),
       idleThreshold: _idleThresholdFromMinutes(idleMinutes),
+      timesheetWeekStartDay: _weekStartDayFromValue(weekStartDayStr),
+      timesheetRoundingIncrement:
+          _roundingIncrementFromValue(roundingIncrementStr),
     );
   }
 
@@ -86,6 +151,26 @@ class AppSettingsNotifier extends AsyncNotifier<AppSettings> {
     );
     state = AsyncData((state.value ?? AppSettings.defaults()).copyWith(
       idleThreshold: threshold,
+    ));
+  }
+
+  Future<void> setTimesheetWeekStartDay(int day) async {
+    await _repo.setSetting(
+      _timesheetWeekStartDayKey,
+      '$day',
+    );
+    state = AsyncData((state.value ?? AppSettings.defaults()).copyWith(
+      timesheetWeekStartDay: day,
+    ));
+  }
+
+  Future<void> setTimesheetRoundingIncrement(double increment) async {
+    await _repo.setSetting(
+      _timesheetRoundingIncrementKey,
+      '$increment',
+    );
+    state = AsyncData((state.value ?? AppSettings.defaults()).copyWith(
+      timesheetRoundingIncrement: increment,
     ));
   }
 
@@ -117,6 +202,23 @@ class AppSettingsNotifier extends AsyncNotifier<AppSettings> {
       'system' => ThemeMode.system,
       _ => ThemeMode.dark,
     };
+  }
+
+  int _weekStartDayFromValue(String? value) {
+    final day = int.tryParse(value ?? '');
+    if (day == null || day < DateTime.monday || day > DateTime.sunday) {
+      return AppSettings.defaultTimesheetWeekStartDay;
+    }
+    return day;
+  }
+
+  double _roundingIncrementFromValue(String? value) {
+    final increment = double.tryParse(value ?? '');
+    if (increment == null ||
+        !timesheetRoundingIncrementOptions.contains(increment)) {
+      return AppSettings.defaultTimesheetRoundingIncrement;
+    }
+    return increment;
   }
 
   /// Falls back to the default for anything unparseable or non-positive, so a
