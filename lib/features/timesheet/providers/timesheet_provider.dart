@@ -7,6 +7,7 @@ import 'package:workpulse/domain/services/timesheet_service.dart';
 import 'package:workpulse/features/attributes/providers/attribute_definitions_provider.dart';
 import 'package:workpulse/features/projects/providers/projects_provider.dart';
 import 'package:workpulse/features/reports/providers/reports_provider.dart';
+import 'package:workpulse/features/settings/providers/app_settings_provider.dart';
 import 'package:workpulse/features/workspace/providers/workspace_provider.dart';
 
 final timesheetServiceProvider = Provider<TimesheetService>((ref) {
@@ -44,6 +45,8 @@ final timesheetDataProvider = FutureProvider<TimesheetData>((ref) async {
   final projectRepo = ref.watch(projectRepositoryProvider);
   final attributeRepo = ref.watch(attributeRepositoryProvider);
   final range = ref.watch(reportsDateRangeProvider);
+  final basis = ref.watch(timesheetHoursBasisProvider);
+  final settings = ref.watch(appSettingsProvider).value;
   final service = ref.watch(timesheetServiceProvider);
 
   final allCodes =
@@ -75,5 +78,10 @@ final timesheetDataProvider = FutureProvider<TimesheetData>((ref) async {
     records: records,
     definitions: definitions,
     codes: resolver,
+    basis: basis,
+    weekStartDay: settings?.timesheetWeekStartDay ??
+        AppSettings.defaultTimesheetWeekStartDay,
+    roundingIncrement: settings?.timesheetRoundingIncrement ??
+        AppSettings.defaultTimesheetRoundingIncrement,
   );
 });

@@ -248,6 +248,98 @@ class ClassificationCategorySection extends Equatable {
   List<Object?> get props => [classification, rows];
 }
 
+/// One line of the entry grid form.
+class TimesheetGridRow extends Equatable {
+  /// The resolved timesheet code. Empty string where none could be resolved.
+  final String code;
+
+  /// [code], or 'No timesheet code' when it is empty.
+  final String codeLabel;
+
+  final FinancialClassification classification;
+
+  /// Exactly seven values, aligned to [TimesheetWeek.days], already rounded
+  /// to the configured increment. Zero means "leave the cell blank".
+  final List<double> cells;
+
+  /// Sum of [cells]. Not the rounded true total.
+  final double total;
+
+  final Duration exactTotal;
+
+  /// Shown as a subtitle so a row can be traced without leaving the screen.
+  final String? projectName;
+  final String? optionLabel; // the release, where the code came from one
+
+  /// True when the code fell back or is missing — carried through from
+  /// TimesheetCodeResolution.needsAttention.
+  final bool needsAttention;
+
+  const TimesheetGridRow({
+    required this.code,
+    required this.codeLabel,
+    required this.classification,
+    required this.cells,
+    required this.total,
+    required this.exactTotal,
+    this.projectName,
+    this.optionLabel,
+    this.needsAttention = false,
+  });
+
+  @override
+  List<Object?> get props => [
+        code,
+        codeLabel,
+        classification,
+        cells,
+        total,
+        exactTotal,
+        projectName,
+        optionLabel,
+        needsAttention,
+      ];
+}
+
+/// One week of the entry grid — the shape the user's timesheet form has.
+class TimesheetWeek extends Equatable {
+  /// Local midnight of the week's first day, on the configured start day.
+  final DateTime start;
+
+  /// Exactly seven local midnights, ascending from [start].
+  final List<DateTime> days;
+
+  final List<TimesheetGridRow> rows;
+
+  /// Seven entries. Each is the sum of that column's already-rounded cells,
+  /// which is what the portal will compute from the typed figures.
+  final List<double> dailyTotals;
+
+  /// Sum of every rounded cell. Compare with [exactTotal] to see the drift
+  /// rounding introduced.
+  final double total;
+
+  /// What was actually tracked, before rounding.
+  final Duration exactTotal;
+
+  const TimesheetWeek({
+    required this.start,
+    required this.days,
+    required this.rows,
+    required this.dailyTotals,
+    required this.total,
+    required this.exactTotal,
+  });
+
+  bool get isEmpty => rows.isEmpty;
+
+  @override
+  List<Object?> get props =>
+      [start, days, rows, dailyTotals, total, exactTotal];
+}
+
+const int maxTimesheetWeeks = 6;
+
 /// Everything the Time Sheet screen renders for one date range.
 class TimesheetData extends Equatable {
   final DateRange range;
@@ -257,6 +349,14 @@ class TimesheetData extends Equatable {
 
   /// Headline table: time grouped by resolved timesheet code.
   final List<TimesheetCodeRow> codeRows;
+
+  /// One entry grid per week in range, ascending. Empty when the range holds
+  /// no sessions.
+  final List<TimesheetWeek> weeks;
+
+  /// True when the range spans more weeks than [maxTimesheetWeeks] and [weeks]
+  /// was truncated, so the screen can say so rather than quietly showing less.
+  final bool weeksTruncated;
 
   final List<TimesheetRow> projectRows;
 
@@ -274,6 +374,8 @@ class TimesheetData extends Equatable {
     required this.range,
     required this.total,
     this.codeRows = const [],
+    this.weeks = const [],
+    this.weeksTruncated = false,
     this.projectRows = const [],
     this.taskRows = const [],
     this.categorySections = const [],
@@ -288,6 +390,8 @@ class TimesheetData extends Equatable {
         range,
         total,
         codeRows,
+        weeks,
+        weeksTruncated,
         projectRows,
         taskRows,
         categorySections,

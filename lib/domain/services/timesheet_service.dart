@@ -1,9 +1,11 @@
 import 'package:workpulse/domain/models/attribute_model.dart';
 import 'package:workpulse/domain/models/financial_classification.dart';
 import 'package:workpulse/domain/models/date_range.dart';
+import 'package:workpulse/domain/models/idle_period_model.dart';
 import 'package:workpulse/domain/models/timesheet_model.dart';
 import 'package:workpulse/domain/services/export_service.dart';
 import 'package:workpulse/domain/services/timesheet_code_resolver.dart';
+import 'package:workpulse/domain/services/timesheet_grid_math.dart';
 
 /// The label a row carries when a session has no value for the attribute
 /// the table is breaking down.
@@ -30,6 +32,9 @@ class TimesheetService {
     required List<SessionExportRecord> records,
     required List<AttributeDefinition> definitions,
     TimesheetCodeResolver codes = const TimesheetCodeResolver(),
+    TimesheetHoursBasis basis = TimesheetHoursBasis.net,
+    int weekStartDay = DateTime.saturday,
+    double roundingIncrement = 0.25,
   }) {
     final total = _RowBuilder(id: '__total__', label: 'Total');
     final codeRows = <String, _CodeRowBuilder>{};
@@ -154,10 +159,133 @@ class TimesheetService {
       }
     }
 
+    final weekBlocks = <TimesheetWeek>[];
+    var weeksTruncated = false;
+
+    if (records.isNotEmpty) {
+      final rangeStartLocal = range.start.toLocal();
+      final rangeEndLocal = range.end.toLocal();
+      var currentWeekStart = weekStartFor(rangeStartLocal, weekStartDay);
+
+      while (currentWeekStart.isBefore(rangeEndLocal) ||
+          currentWeekStart.isAtSameMomentAs(rangeEndLocal)) {
+        final days = <DateTime>[
+          for (var i = 0; i < 7; i++)
+            DateTime(currentWeekStart.year, currentWeekStart.month,
+                currentWeekStart.day + i),
+        ];
+        final nextWeekStart = DateTime(
+          currentWeekStart.year,
+          currentWeekStart.month,
+          currentWeekStart.day + 7,
+        );
+
+        final gridRowBuilders = <String, _GridRowBuilder>{};
+
+        for (final record in records) {
+          final sessionStartLocal = record.session.startTime.toLocal();
+          final sessionEndLocal = (record.session.endTime ??
+                  record.session.startTime.add(record.grossDuration))
+              .toLocal();
+
+          if (sessionEndLocal.isBefore(currentWeekStart) ||
+              sessionStartLocal.isAfter(nextWeekStart) ||
+              sessionStartLocal.isAtSameMomentAs(nextWeekStart)) {
+            continue;
+          }
+
+          final resolution = codes.resolveFor(
+            project: record.project,
+            attributeOptionIds: record.attributeOptionIds,
+          );
+
+          final codeKey = resolution.code?.trim().isNotEmpty == true
+              ? resolution.code!.trim()
+              : '';
+          final codeLabel = codeKey.isNotEmpty ? codeKey : timesheetNoCodeLabel;
+          final classification = record.classification;
+          final rowKey = '$codeKey:${classification.name}';
+
+          for (var dayIdx = 0; dayIdx < 7; dayIdx++) {
+            final day = days[dayIdx];
+            final grossOnDay =
+                overlapOnDay(sessionStartLocal, sessionEndLocal, day);
+            if (grossOnDay <= Duration.zero) continue;
+
+            var idleOnDay = Duration.zero;
+            for (final idle in record.idlePeriods) {
+              if (idle.resolution != IdleResolution.markIdle) continue;
+              final idleStartLocal = idle.startTime.toLocal();
+              final idleEndLocal = (idle.endTime ??
+                      idle.startTime.add(idle.duration))
+                  .toLocal();
+              idleOnDay += overlapOnDay(idleStartLocal, idleEndLocal, day);
+            }
+
+            final netOnDay =
+                grossOnDay > idleOnDay ? grossOnDay - idleOnDay : Duration.zero;
+            final dayDuration =
+                basis == TimesheetHoursBasis.net ? netOnDay : grossOnDay;
+
+            if (dayDuration > Duration.zero) {
+              gridRowBuilders
+                  .putIfAbsent(
+                    rowKey,
+                    () => _GridRowBuilder(
+                      code: codeKey,
+                      codeLabel: codeLabel,
+                      classification: classification,
+                      projectName: record.project?.name,
+                      optionLabel: resolution.optionLabel,
+                      needsAttention: resolution.needsAttention,
+                    ),
+                  )
+                  .add(
+                    dayIdx,
+                    dayDuration,
+                    projectName: record.project?.name,
+                    optionLabel: resolution.optionLabel,
+                    needsAttention: resolution.needsAttention,
+                  );
+            }
+          }
+        }
+
+        final sortedRows =
+            _sortedGridRows(gridRowBuilders.values, roundingIncrement);
+        if (sortedRows.isNotEmpty) {
+          if (weekBlocks.length >= maxTimesheetWeeks) {
+            weeksTruncated = true;
+            break;
+          }
+
+          final dailyTotals = List<double>.generate(7, (col) {
+            return sumCells(sortedRows.map((r) => r.cells[col]));
+          });
+          final weekTotal = sumCells(dailyTotals);
+          final exactWeekTotal =
+              sortedRows.fold(Duration.zero, (a, b) => a + b.exactTotal);
+
+          weekBlocks.add(TimesheetWeek(
+            start: days.first,
+            days: days,
+            rows: sortedRows,
+            dailyTotals: dailyTotals,
+            total: weekTotal,
+            exactTotal: exactWeekTotal,
+          ));
+        }
+
+        currentWeekStart = nextWeekStart;
+      }
+    }
+
     return TimesheetData(
       range: range,
       total: total.build(),
       codeRows: _sortedCodeRows(codeRows.values),
+      weeks: weekBlocks,
+      weeksTruncated: weeksTruncated,
       projectRows: _sorted(projects.values),
       taskRows: _sorted(tasks.values),
       categorySections: [
@@ -220,6 +348,85 @@ class TimesheetService {
           .where((r) => r.code.isNotEmpty && r.label != timesheetNoCodeLabel),
       ...uncodeable,
     ];
+  }
+
+  static List<TimesheetGridRow> _sortedGridRows(
+      Iterable<_GridRowBuilder> builders, double increment) {
+    final rows = builders.map((b) => b.build(increment)).toList()
+      ..sort((a, b) {
+        final codeA = a.code.trim();
+        final codeB = b.code.trim();
+        final aIsUncodeable =
+            codeA.isEmpty || a.codeLabel == timesheetNoCodeLabel;
+        final bIsUncodeable =
+            codeB.isEmpty || b.codeLabel == timesheetNoCodeLabel;
+
+        if (aIsUncodeable != bIsUncodeable) {
+          return aIsUncodeable ? 1 : -1;
+        }
+
+        final codeCompare = codeA.compareTo(codeB);
+        if (codeCompare != 0) return codeCompare;
+
+        return a.classification.index.compareTo(b.classification.index);
+      });
+    return rows;
+  }
+}
+
+class _GridRowBuilder {
+  final String code;
+  final String codeLabel;
+  final FinancialClassification classification;
+  String? projectName;
+  String? optionLabel;
+  bool needsAttention;
+  final List<Duration> exactCells;
+
+  _GridRowBuilder({
+    required this.code,
+    required this.codeLabel,
+    required this.classification,
+    this.projectName,
+    this.optionLabel,
+    this.needsAttention = false,
+  }) : exactCells = List<Duration>.filled(7, Duration.zero);
+
+  void add(
+    int dayIndex,
+    Duration duration, {
+    String? projectName,
+    String? optionLabel,
+    bool needsAttention = false,
+  }) {
+    exactCells[dayIndex] += duration;
+    if (projectName != null && this.projectName == null) {
+      this.projectName = projectName;
+    }
+    if (optionLabel != null && this.optionLabel == null) {
+      this.optionLabel = optionLabel;
+    }
+    if (needsAttention) {
+      this.needsAttention = true;
+    }
+  }
+
+  Duration get exactTotal => exactCells.fold(Duration.zero, (a, b) => a + b);
+
+  TimesheetGridRow build(double roundingIncrement) {
+    final cells =
+        exactCells.map((d) => roundCell(d, roundingIncrement)).toList();
+    return TimesheetGridRow(
+      code: code,
+      codeLabel: codeLabel,
+      classification: classification,
+      cells: cells,
+      total: sumCells(cells),
+      exactTotal: exactTotal,
+      projectName: projectName,
+      optionLabel: optionLabel,
+      needsAttention: needsAttention,
+    );
   }
 }
 
