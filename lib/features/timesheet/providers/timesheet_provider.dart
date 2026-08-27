@@ -58,8 +58,7 @@ final timesheetDataProvider = FutureProvider<TimesheetData>((ref) async {
   for (final p in projects) {
     final defId = p.codeAttributeDefinitionId;
     if (defId != null && defId.isNotEmpty) {
-      final opts =
-          await attributeRepo.getOptions(defId, includeArchived: true);
+      final opts = await attributeRepo.getOptions(defId, includeArchived: true);
       for (final o in opts) {
         optionsById[o.id] = o;
       }
@@ -78,4 +77,3 @@ final timesheetDataProvider = FutureProvider<TimesheetData>((ref) async {
     codes: resolver,
   );
 });
-

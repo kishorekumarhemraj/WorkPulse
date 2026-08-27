@@ -180,7 +180,8 @@ void main() {
       expect(rows.first['financial_classification'], equals('NONE'));
     });
 
-    test('projects table has timesheet_code and code_attribute_definition_id columns on a fresh database',
+    test(
+        'projects table has timesheet_code and code_attribute_definition_id columns on a fresh database',
         () async {
       final db = dbService.database;
       final columns =
@@ -396,7 +397,7 @@ void main() {
 
         // The old v5's column, recreated by hand.
         await db.execute(
-          "ALTER TABLE ${Tables.categories} "
+          'ALTER TABLE ${Tables.categories} '
           "ADD COLUMN type TEXT NOT NULL DEFAULT 'OPEX';",
         );
 
@@ -502,7 +503,9 @@ void main() {
       }
     });
 
-    test('v7 -> v8 upgrade adds column and table, preserving existing project codes', () async {
+    test(
+        'v7 -> v8 upgrade adds column and table, preserving existing project codes',
+        () async {
       final tempDir =
           await Directory.systemTemp.createTemp('workpulse_v8_upgrade_test');
       final dbPath = p.join(tempDir.path, 'v8_test.db');

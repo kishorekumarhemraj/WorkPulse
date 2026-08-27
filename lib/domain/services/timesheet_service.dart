@@ -75,8 +75,7 @@ class TimesheetService {
       final codeKey = resolution.code?.trim().isNotEmpty == true
           ? resolution.code!.trim()
           : '';
-      final codeLabel =
-          codeKey.isNotEmpty ? codeKey : timesheetNoCodeLabel;
+      final codeLabel = codeKey.isNotEmpty ? codeKey : timesheetNoCodeLabel;
 
       final projectId = record.project?.id ?? record.workItem.projectId;
       final projectName = record.project?.name ?? 'Unknown Project';
@@ -217,7 +216,8 @@ class TimesheetService {
         .toList();
     if (uncodeable.isEmpty) return rows;
     return [
-      ...rows.where((r) => r.code.isNotEmpty && r.label != timesheetNoCodeLabel),
+      ...rows
+          .where((r) => r.code.isNotEmpty && r.label != timesheetNoCodeLabel),
       ...uncodeable,
     ];
   }
@@ -341,14 +341,13 @@ class _CodeRowBuilder {
   }
 
   TimesheetCodeRow build() {
-    final sortedContributions = _contributions.values
-        .map((c) => c.build())
-        .toList()
-      ..sort((a, b) {
-        final byGross = b.gross.total.compareTo(a.gross.total);
-        if (byGross != 0) return byGross;
-        return a.projectName.compareTo(b.projectName);
-      });
+    final sortedContributions =
+        _contributions.values.map((c) => c.build()).toList()
+          ..sort((a, b) {
+            final byGross = b.gross.total.compareTo(a.gross.total);
+            if (byGross != 0) return byGross;
+            return a.projectName.compareTo(b.projectName);
+          });
 
     return TimesheetCodeRow(
       code: code,
@@ -360,4 +359,3 @@ class _CodeRowBuilder {
     );
   }
 }
-

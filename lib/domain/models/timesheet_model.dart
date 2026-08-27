@@ -201,8 +201,7 @@ class TimesheetCodeRow extends Equatable {
     this.contributions = const [],
   });
 
-  bool get needsAttention =>
-      contributions.any((c) => c.source.needsAttention);
+  bool get needsAttention => contributions.any((c) => c.source.needsAttention);
 
   ClassificationSplit split(TimesheetHoursBasis basis) =>
       basis == TimesheetHoursBasis.net ? net : gross;

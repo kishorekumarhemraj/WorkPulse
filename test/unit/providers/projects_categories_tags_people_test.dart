@@ -117,7 +117,8 @@ void main() {
       );
     });
 
-    test('ProjectsNotifier manages discriminator and option timesheet codes', () async {
+    test('ProjectsNotifier manages discriminator and option timesheet codes',
+        () async {
       final notifier = container.read(projectsProvider.notifier);
 
       // Create definition and options in DB for foreign key constraints
@@ -159,7 +160,8 @@ void main() {
         updatedAt: now,
       );
 
-      await notifier.updateProject(proj, timesheetCodes: [projectTimesheetCode]);
+      await notifier
+          .updateProject(proj, timesheetCodes: [projectTimesheetCode]);
 
       final loadedCodes = await notifier.getTimesheetCodes(proj.id);
       expect(loadedCodes, hasLength(1));

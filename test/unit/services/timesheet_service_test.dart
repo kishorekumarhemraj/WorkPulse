@@ -524,7 +524,9 @@ void main() {
       expect(data.projectRows.single.net.total, const Duration(hours: 5));
     });
 
-    test('two projects sharing one code roll into a single row with two contributions', () {
+    test(
+        'two projects sharing one code roll into a single row with two contributions',
+        () {
       final projA = Project(
         id: 'proj-a',
         workspaceId: 'ws-1',
@@ -542,7 +544,7 @@ void main() {
         updatedAt: now,
       );
 
-      final resolver = TimesheetCodeResolver();
+      const resolver = TimesheetCodeResolver();
 
       final data = service.build(
         range: range,
@@ -570,9 +572,11 @@ void main() {
       expect(sharedRow.net.total, equals(const Duration(hours: 6)));
       expect(sharedRow.contributions, hasLength(2));
       expect(sharedRow.contributions[0].projectName, equals('Alpha Project'));
-      expect(sharedRow.contributions[0].net.total, equals(const Duration(hours: 4)));
+      expect(sharedRow.contributions[0].net.total,
+          equals(const Duration(hours: 4)));
       expect(sharedRow.contributions[1].projectName, equals('Beta Project'));
-      expect(sharedRow.contributions[1].net.total, equals(const Duration(hours: 2)));
+      expect(sharedRow.contributions[1].net.total,
+          equals(const Duration(hours: 2)));
     });
 
     test('codeRows sum to total on both net and gross (invariant)', () {
@@ -585,7 +589,7 @@ void main() {
         updatedAt: now,
       );
 
-      final resolver = TimesheetCodeResolver();
+      const resolver = TimesheetCodeResolver();
 
       final data = service.build(
         range: range,
@@ -641,7 +645,7 @@ void main() {
         updatedAt: now,
       );
 
-      final resolver = TimesheetCodeResolver();
+      const resolver = TimesheetCodeResolver();
 
       final data = service.build(
         range: range,
@@ -671,7 +675,8 @@ void main() {
       expect(data.codeRows.last.gross.total, equals(const Duration(hours: 10)));
     });
 
-    test('task rows borrow code from resolution instead of project default', () {
+    test('task rows borrow code from resolution instead of project default',
+        () {
       final lwaste = Project(
         id: 'proj-lwaste',
         workspaceId: 'ws-1',
@@ -682,7 +687,7 @@ void main() {
         updatedAt: now,
       );
 
-      final resolver = TimesheetCodeResolver(
+      const resolver = TimesheetCodeResolver(
         codesByProject: {
           'proj-lwaste': {
             'opt-r241': 'LWASTE-241',

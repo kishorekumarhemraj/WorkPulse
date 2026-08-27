@@ -260,7 +260,9 @@ void main() {
       expect(firstSession['idlePeriods'][0]['durationSeconds'], 600);
     });
 
-    test('generateCsv resolves option-mapped timesheet code and outputs Timesheet Code Source', () async {
+    test(
+        'generateCsv resolves option-mapped timesheet code and outputs Timesheet Code Source',
+        () async {
       final now = DateTime.utc(2026, 8, 23, 11, 0, 0);
 
       // Create release attribute & option
@@ -354,7 +356,8 @@ void main() {
         end: DateTime.utc(2026, 8, 23, 23, 59, 59),
       );
 
-      final csv = await exportService.generateCsv(workspaceId: wsId, range: range);
+      final csv =
+          await exportService.generateCsv(workspaceId: wsId, range: range);
       final lines = csv.trim().split('\n');
 
       final header = lines[0];

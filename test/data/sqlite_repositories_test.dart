@@ -190,7 +190,8 @@ void main() {
       expect(codes.length, equals(2));
       expect(codes.map((c) => c.code), containsAll(['PRJ-R1', 'PRJ-R2']));
 
-      final allCodes = await projectRepo.getAllTimesheetCodes(workspaceId: wsId);
+      final allCodes =
+          await projectRepo.getAllTimesheetCodes(workspaceId: wsId);
       expect(allCodes.length, equals(2));
     });
 

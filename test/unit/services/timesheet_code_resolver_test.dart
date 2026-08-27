@@ -77,7 +77,8 @@ void main() {
       },
     );
 
-    test('resolves optionMapping when matching project and option code exists', () {
+    test('resolves optionMapping when matching project and option code exists',
+        () {
       final res = resolver.resolveFor(
         project: projectWithDiscriminator,
         attributeOptionIds: {
@@ -93,7 +94,8 @@ void main() {
       expect(res.needsAttention, isFalse);
     });
 
-    test('resolves projectDefault when discriminator attribute has no value', () {
+    test('resolves projectDefault when discriminator attribute has no value',
+        () {
       final res = resolver.resolveFor(
         project: projectWithDiscriminator,
         attributeOptionIds: {},
@@ -105,7 +107,8 @@ void main() {
       expect(res.needsAttention, isFalse);
     });
 
-    test('resolves projectDefault when project has no discriminator configured', () {
+    test('resolves projectDefault when project has no discriminator configured',
+        () {
       final res = resolver.resolveFor(
         project: projectWithoutDiscriminator,
         attributeOptionIds: {
@@ -119,7 +122,8 @@ void main() {
       expect(res.needsAttention, isFalse);
     });
 
-    test('resolves unmappedOption when option has no mapped code in project', () {
+    test('resolves unmappedOption when option has no mapped code in project',
+        () {
       final res = resolver.resolveFor(
         project: projectWithDiscriminator,
         attributeOptionIds: {
@@ -134,7 +138,8 @@ void main() {
       expect(res.needsAttention, isTrue);
     });
 
-    test('resolves missingCode when project has no mapping and no default code', () {
+    test('resolves missingCode when project has no mapping and no default code',
+        () {
       final res = resolver.resolveFor(
         project: projectWithNoCodes,
         attributeOptionIds: {},
@@ -208,7 +213,9 @@ void main() {
       expect(res.optionLabel, equals('Release 2024.1 Renamed'));
     });
 
-    test('a discriminator holding two option ids yields unmappedOption without guessing', () {
+    test(
+        'a discriminator holding two option ids yields unmappedOption without guessing',
+        () {
       final res = resolver.resolveFor(
         project: projectWithDiscriminator,
         attributeOptionIds: {
@@ -221,7 +228,8 @@ void main() {
       expect(res.needsAttention, isTrue);
     });
 
-    test('a project with no discriminator and no default yields missingCode', () {
+    test('a project with no discriminator and no default yields missingCode',
+        () {
       final res = resolver.resolveFor(
         project: projectWithNoCodes,
         attributeOptionIds: {

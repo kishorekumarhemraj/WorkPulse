@@ -95,8 +95,7 @@ class TimesheetView extends ConsumerWidget {
               );
             }
 
-            final hasAttention =
-                data.codeRows.any((r) => r.needsAttention);
+            final hasAttention = data.codeRows.any((r) => r.needsAttention);
 
             return ListView(
               padding: const EdgeInsets.only(bottom: Spacing.xxl),
