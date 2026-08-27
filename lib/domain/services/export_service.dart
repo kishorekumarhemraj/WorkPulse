@@ -23,6 +23,7 @@ import 'package:workpulse/domain/repositories/workspace_repository.dart';
 import 'package:workpulse/core/platform/user_info_service.dart';
 import 'package:workpulse/domain/services/pdf_report_service.dart';
 import 'package:workpulse/domain/services/timer_service.dart';
+import 'package:workpulse/domain/services/timesheet_code_resolver.dart';
 
 class SessionExportRecord {
   final Session session;
@@ -277,6 +278,33 @@ class ExportService {
             .where((d) => d.enabled && !d.isArchived)
             .toList();
 
+    final allCodes = await _projectRepository.getAllTimesheetCodes(
+        workspaceId: workspaceId);
+    final codesByProject = <String, Map<String, String>>{};
+    for (final c in allCodes) {
+      codesByProject.putIfAbsent(c.projectId, () => {})[c.attributeOptionId] =
+          c.code;
+    }
+
+    final allProjects = await _projectRepository.getAll(
+        workspaceId: workspaceId, includeArchived: true);
+    final optionsById = <String, AttributeOption>{};
+    for (final p in allProjects) {
+      final defId = p.codeAttributeDefinitionId;
+      if (defId != null && defId.isNotEmpty) {
+        final opts =
+            await _attributeRepository.getOptions(defId, includeArchived: true);
+        for (final o in opts) {
+          optionsById[o.id] = o;
+        }
+      }
+    }
+
+    final codeResolver = TimesheetCodeResolver(
+      codesByProject: codesByProject,
+      optionsById: optionsById,
+    );
+
     final buffer = StringBuffer();
 
     // 1. Build Header
@@ -286,6 +314,7 @@ class ExportService {
       'End Time (UTC)',
       'Project',
       'Timesheet Code',
+      'Timesheet Code Source',
       'Category',
       'WorkItem',
       'Financial Classification',
@@ -314,7 +343,20 @@ class ExportService {
       final endStr =
           s.endTime != null ? timeFormat.format(s.endTime!) : 'In Progress';
       final projStr = r.project?.name ?? '';
-      final projCodeStr = r.project?.timesheetCode ?? '';
+
+      final resolution = codeResolver.resolveFor(
+        project: r.project,
+        attributeOptionIds: r.attributeOptionIds,
+      );
+      final projCodeStr = resolution.code ?? '';
+      final codeSourceStr = switch (resolution.source) {
+        TimesheetCodeSource.optionMapping => 'option_mapping',
+        TimesheetCodeSource.projectDefault => 'project_default',
+        TimesheetCodeSource.unmappedOption => 'unmapped_option',
+        TimesheetCodeSource.missingCode => 'missing_code',
+        TimesheetCodeSource.unknownProject => 'unknown_project',
+      };
+
       final catStr = r.category?.name ?? '';
       final taskStr = r.workItem.name;
       final classStr = r.classification.value;
@@ -339,6 +381,7 @@ class ExportService {
         endStr,
         projStr,
         projCodeStr,
+        codeSourceStr,
         catStr,
         taskStr,
         classStr,
