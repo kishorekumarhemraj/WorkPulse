@@ -93,11 +93,17 @@ class PageHeader extends StatelessWidget {
                 ),
                 if (actions.isNotEmpty) ...[
                   const SizedBox(width: Spacing.lg),
-                  Wrap(
-                    spacing: Spacing.sm,
-                    runSpacing: Spacing.sm,
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    children: actions,
+                  Flexible(
+                    child: Align(
+                      alignment: Alignment.topRight,
+                      child: Wrap(
+                        alignment: WrapAlignment.end,
+                        spacing: Spacing.sm,
+                        runSpacing: Spacing.sm,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: actions,
+                      ),
+                    ),
                   ),
                 ],
               ],

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:workpulse/core/theme/app_colors.dart';
@@ -59,6 +60,40 @@ void main() {
           sessionCount: 2,
         );
 
+    final weekStart = DateTime.utc(2026, 8, 22);
+    final days = [
+      for (var i = 0; i < 7; i++) DateTime.utc(2026, 8, 22 + i),
+    ];
+    final weekRows = [
+      TimesheetGridRow(
+        code: 'PRJ-1042',
+        codeLabel: 'PRJ-1042',
+        classification: FinancialClassification.capex,
+        cells: const [0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 2.0],
+        total: 6.00,
+        exactTotal: const Duration(hours: 6),
+        projectName: 'Apollo',
+        needsAttention: includeAttention,
+      ),
+      const TimesheetGridRow(
+        code: '',
+        codeLabel: 'No timesheet code',
+        classification: FinancialClassification.opex,
+        cells: [0.0, 0.0, 0.5, 0.5, 0.5, 0.5, 0.0],
+        total: 2.00,
+        exactTotal: Duration(hours: 2),
+        projectName: 'Zephyr',
+      ),
+    ];
+    final week = TimesheetWeek(
+      start: weekStart,
+      days: days,
+      rows: weekRows,
+      dailyTotals: const [0.0, 0.0, 1.5, 1.5, 1.5, 1.5, 2.0],
+      total: 8.00,
+      exactTotal: const Duration(hours: 8),
+    );
+
     // Two rows per table, and a grand total that is their sum — the screen's
     // own invariant is that every table reconciles to the same figure.
     return TimesheetData(
@@ -70,6 +105,7 @@ void main() {
         gross: gross + gross,
         sessionCount: 4,
       ),
+      weeks: [week],
       codeRows: [
         TimesheetCodeRow(
           code: 'PRJ-1042',
@@ -141,10 +177,11 @@ void main() {
     WidgetTester tester,
     TimesheetData data, {
     ThemeData? theme,
+    Size size = const Size(1400, 2600),
   }) async {
     // Tall enough that every section is laid out, so the finders below are
     // not really testing ListView's laziness.
-    tester.view.physicalSize = const Size(1400, 2600);
+    tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1.0;
     addTearDown(() {
       tester.view.resetPhysicalSize();
@@ -166,6 +203,105 @@ void main() {
   }
 
   group('TimesheetView', () {
+    testWidgets(
+        'renders entry grid with 7 day columns, totals, and copy button',
+        (tester) async {
+      await pumpSheet(tester, sheet());
+
+      expect(find.textContaining('Week of Sat 22 Aug'), findsOneWidget);
+      expect(find.text('Sat'), findsOneWidget);
+      expect(find.text('Sun'), findsOneWidget);
+      expect(find.text('Mon'), findsOneWidget);
+      expect(find.text('Tue'), findsOneWidget);
+      expect(find.text('Wed'), findsOneWidget);
+      expect(find.text('Thu'), findsOneWidget);
+      expect(find.text('Fri'), findsOneWidget);
+      expect(find.text('Copy'), findsOneWidget);
+      expect(find.text('8.00 h'), findsOneWidget);
+    });
+
+    testWidgets('renders summary card above entry grid', (tester) async {
+      await pumpSheet(tester, sheet());
+
+      final summaryFinder = find.text('NET TOTAL');
+      final gridFinder = find.textContaining('Week of Sat 22 Aug');
+
+      expect(summaryFinder, findsOneWidget);
+      expect(gridFinder, findsOneWidget);
+
+      final summaryTop = tester.getTopLeft(summaryFinder).dy;
+      final gridTop = tester.getTopLeft(gridFinder).dy;
+
+      expect(summaryTop, lessThan(gridTop));
+    });
+
+    testWidgets('tapping copy code button copies code to clipboard',
+        (tester) async {
+      final log = <MethodCall>[];
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        (methodCall) async {
+          log.add(methodCall);
+          return null;
+        },
+      );
+
+      await pumpSheet(tester, sheet());
+
+      final copyCodeButtons = find.byTooltip('Copy code');
+      expect(copyCodeButtons, findsWidgets);
+
+      await tester.ensureVisible(copyCodeButtons.first);
+      await tester.tap(copyCodeButtons.first);
+      await tester.pump();
+
+      expect(
+        log.any((call) =>
+            call.method == 'Clipboard.setData' &&
+            call.arguments['text'] == 'PRJ-1042'),
+        isTrue,
+      );
+    });
+
+    testWidgets('entry grid renders zero cell as blank', (tester) async {
+      await pumpSheet(tester, sheet());
+
+      // In the grid row for PRJ-1042, Sat and Sun are 0.0, rendering as '' (not '0.00')
+      expect(find.text('1.00'), findsWidgets);
+      expect(find.text('2.00'), findsWidgets);
+    });
+
+    testWidgets('below Breakpoints.medium renders single-column layout',
+        (tester) async {
+      await pumpSheet(tester, sheet(), size: const Size(800, 3000));
+
+      expect(find.text('By timesheet code'), findsOneWidget);
+      expect(find.text('By project'), findsOneWidget);
+      expect(find.text('By work item'), findsOneWidget);
+    });
+
+    testWidgets('at or above Breakpoints.medium renders two-column layout',
+        (tester) async {
+      await pumpSheet(tester, sheet(), size: const Size(1200, 2600));
+
+      expect(find.text('By timesheet code'), findsOneWidget);
+      expect(find.text('By project'), findsOneWidget);
+      expect(find.text('By work item'), findsOneWidget);
+      expect(find.byType(Row), findsWidgets);
+    });
+
+    testWidgets('settings button opens TimesheetSettingsDialog',
+        (tester) async {
+      await pumpSheet(tester, sheet());
+
+      await tester.tap(find.byTooltip('Time sheet settings'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Time Sheet Settings'), findsOneWidget);
+      expect(find.text('Week start day'), findsOneWidget);
+      expect(find.text('Rounding increment'), findsOneWidget);
+    });
+
     testWidgets('reports CAPEX and OPEX per project and per attribute',
         (tester) async {
       await pumpSheet(tester, sheet());
@@ -196,7 +332,7 @@ void main() {
 
       expect(find.text('By timesheet code'), findsOneWidget);
       expect(find.text('CODE'), findsNWidgets(3));
-      expect(find.text('PRJ-1042'), findsNWidgets(3));
+      expect(find.text('PRJ-1042'), findsNWidgets(4));
       expect(find.text('No code'), findsNWidgets(3));
     });
 
@@ -246,11 +382,8 @@ void main() {
         (tester) async {
       await pumpSheet(tester, sheet(), theme: AppTheme.lightTheme);
 
-      // The summary and all tables. Going through AppCard is what keeps
-      // this screen on the same surface as the rest of the app.
-      // Summary, timesheet code, projects, work items, two category tables, one attribute
-      // table.
-      expect(find.byType(AppCard), findsNWidgets(7));
+      // The entry grid, summary, code table, project, work item, 2 category tables, 1 attribute table = 8 cards
+      expect(find.byType(AppCard), findsNWidgets(8));
 
       // Pinned in the light theme on purpose: `colors.card` is a near-white
       // tint in dark mode, so a card painted with the wrong token looked
