@@ -216,8 +216,7 @@ class TimesheetService {
             for (final idle in record.idlePeriods) {
               if (idle.resolution != IdleResolution.markIdle) continue;
               final idleStartLocal = idle.startTime.toLocal();
-              final idleEndLocal =
-                  (idle.endTime ?? idle.startTime.add(idle.duration)).toLocal();
+              final idleEndLocal = idle.endTime.toLocal();
               idleOnDay += overlapOnDay(idleStartLocal, idleEndLocal, day);
             }
 

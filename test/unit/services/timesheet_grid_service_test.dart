@@ -7,7 +7,6 @@ import 'package:workpulse/domain/models/project_model.dart';
 import 'package:workpulse/domain/models/timesheet_model.dart';
 import 'package:workpulse/domain/models/date_range.dart';
 import 'package:workpulse/domain/services/export_service.dart';
-import 'package:workpulse/domain/services/timesheet_code_resolver.dart';
 import 'package:workpulse/domain/services/timesheet_service.dart';
 import 'package:workpulse/domain/services/timesheet_grid_math.dart';
 
@@ -159,7 +158,7 @@ void main() {
     group('roundCell & sumCells', () {
       test('5 cells of 1h20m at 0.01 increment give row total 6.65, not 6.67',
           () {
-        final cellDuration = const Duration(hours: 1, minutes: 20);
+        const cellDuration = Duration(hours: 1, minutes: 20);
         final cell = roundCell(cellDuration, 0.01);
         expect(cell, 1.33);
 
