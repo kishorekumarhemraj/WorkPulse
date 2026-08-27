@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:workpulse/core/keyboard/menu_keyboard.dart';
 import 'package:workpulse/core/theme/app_colors.dart';
 import 'package:workpulse/core/theme/design_tokens.dart';
+import 'package:workpulse/core/widgets/field_label.dart';
 import 'package:workpulse/core/widgets/hoverable.dart';
 
 /// One choice in an [AppSelect].
@@ -157,7 +158,7 @@ class _AppSelectState<T> extends State<AppSelect<T>> {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (widget.label != null) ...[
-              _Caption(text: widget.label!, isRequired: widget.isRequired),
+              FieldLabel(widget.label!, isRequired: widget.isRequired),
               const SizedBox(height: Spacing.xs + 2),
             ],
             widget.maxTriggerWidth.isFinite
@@ -450,26 +451,6 @@ class _SelectMenuItem<T> extends StatelessWidget {
           ],
         ],
       ),
-    );
-  }
-}
-
-/// The small field caption above a select.
-class _Caption extends StatelessWidget {
-  final String text;
-  final bool isRequired;
-
-  const _Caption({required this.text, required this.isRequired});
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.colors;
-    return Text(
-      isRequired ? '$text *' : text,
-      style: Theme.of(context)
-          .textTheme
-          .bodySmall
-          ?.copyWith(color: colors.textSecondary),
     );
   }
 }
