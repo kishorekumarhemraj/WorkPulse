@@ -4,6 +4,7 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:uuid/uuid.dart';
 import 'package:workpulse/core/database/database_service.dart';
 import 'package:workpulse/data/providers/repository_providers.dart';
+import 'package:workpulse/domain/models/project_timesheet_code.dart';
 import 'package:workpulse/domain/models/workspace_model.dart';
 import 'package:workpulse/features/categories/providers/categories_provider.dart';
 import 'package:workpulse/features/people/providers/people_provider.dart';
@@ -114,6 +115,56 @@ void main() {
         afterUpdate.firstWhere((p) => p.id == coded.id).timesheetCode,
         'CC-99',
       );
+    });
+
+    test('ProjectsNotifier manages discriminator and option timesheet codes', () async {
+      final notifier = container.read(projectsProvider.notifier);
+
+      // Create definition and options in DB for foreign key constraints
+      await dbService.database.insert('attribute_definitions', {
+        'id': 'def-rel',
+        'workspace_id': testWorkspace.id,
+        'key': 'release',
+        'name': 'Release',
+        'type': 'single_select',
+        'scope': 'TASK',
+        'enabled': 1,
+        'reportable': 1,
+        'display_order': 0,
+        'created_at': now.toIso8601String(),
+        'updated_at': now.toIso8601String(),
+      });
+      await dbService.database.insert('attribute_options', {
+        'id': 'opt-r1',
+        'attribute_definition_id': 'def-rel',
+        'label': 'R1.0',
+        'value': 'r1.0',
+        'display_order': 0,
+        'created_at': now.toIso8601String(),
+      });
+
+      final proj = await notifier.createProject(
+        name: 'Varying Project',
+        timesheetCode: 'DEFAULT-CODE',
+        codeAttributeDefinitionId: 'def-rel',
+      );
+      expect(proj.codeAttributeDefinitionId, 'def-rel');
+
+      final projectTimesheetCode = ProjectTimesheetCode(
+        id: uuid.v4(),
+        projectId: proj.id,
+        attributeOptionId: 'opt-r1',
+        code: 'VARY-R1',
+        createdAt: now,
+        updatedAt: now,
+      );
+
+      await notifier.updateProject(proj, timesheetCodes: [projectTimesheetCode]);
+
+      final loadedCodes = await notifier.getTimesheetCodes(proj.id);
+      expect(loadedCodes, hasLength(1));
+      expect(loadedCodes.first.code, 'VARY-R1');
+      expect(loadedCodes.first.attributeOptionId, 'opt-r1');
     });
 
     test('CategoriesNotifier CRUD operations', () async {
