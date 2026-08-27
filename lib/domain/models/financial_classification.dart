@@ -45,3 +45,11 @@ enum FinancialClassification {
     );
   }
 }
+
+/// What this field is called on screen.
+///
+/// "Financial classification" says what it is; "Time Sheet Classification"
+/// says what the user is filling it in for, which is the only reason they are
+/// looking at it. One constant, so the work item form and the session dialog
+/// cannot end up calling the same field two different things.
+const String timeSheetClassificationLabel = 'Time Sheet Classification';

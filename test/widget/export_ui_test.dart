@@ -5,6 +5,7 @@ import 'package:workpulse/core/theme/app_theme.dart';
 import 'package:workpulse/domain/models/category_model.dart';
 import 'package:workpulse/domain/models/project_model.dart';
 import 'package:workpulse/domain/models/session_model.dart';
+import 'package:workpulse/domain/models/financial_classification.dart';
 import 'package:workpulse/domain/models/work_item_model.dart';
 import 'package:workpulse/domain/services/export_service.dart';
 import 'package:workpulse/features/reports/providers/reports_provider.dart';
@@ -191,6 +192,49 @@ void main() {
       expect(find.text('End Time'), findsOneWidget);
       expect(find.text('Session Notes'), findsOneWidget);
       expect(find.text('Save Changes'), findsOneWidget);
+    });
+
+    testWidgets('session fields read in the order a session is reviewed in',
+        (tester) async {
+      tester.view.physicalSize = const Size(1280, 1400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      await tester.pumpWidget(
+        ProviderScope(
+          child: MaterialApp(
+            theme: AppTheme.darkTheme,
+            home: Scaffold(
+              body: SessionEditDialog(record: mockRecord),
+            ),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      double top(String label) => tester.getTopLeft(find.text(label)).dy;
+
+      // When it ran, what kind of work it was, how it books to the timesheet,
+      // who was there, and only then the free text. Notes used to sit between
+      // tags and people, which put the one field with no fixed shape in the
+      // middle of two that have one.
+      expect(top('Start Time'), top('End Time'));
+      expect(
+        tester.getTopLeft(find.text('Start Time')).dx,
+        lessThan(tester.getTopLeft(find.text('End Time')).dx),
+      );
+      expect(top('Category'), greaterThan(top('Start Time')));
+      expect(top(timeSheetClassificationLabel), greaterThan(top('Category')));
+      expect(
+        top('People'),
+        greaterThan(top(timeSheetClassificationLabel)),
+      );
+      expect(top('Tags'), greaterThan(top('People')));
+      expect(top('Session Notes'), greaterThan(top('Tags')));
     });
   });
 }
