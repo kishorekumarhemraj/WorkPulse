@@ -5,6 +5,7 @@ import 'package:workpulse/core/theme/app_colors.dart';
 import 'package:workpulse/core/theme/color_utils.dart';
 import 'package:workpulse/core/theme/design_tokens.dart';
 import 'package:workpulse/core/widgets/app_dialog.dart';
+import 'package:workpulse/core/widgets/app_select.dart';
 import 'package:workpulse/core/widgets/app_snack_bar.dart';
 import 'package:workpulse/core/widgets/color_swatch_picker.dart';
 import 'package:workpulse/data/providers/repository_providers.dart';
@@ -288,26 +289,24 @@ class _ProjectFormDialogState extends ConsumerState<ProjectFormDialog> {
               helperText:
                   'Select a single-select task attribute if this project has '
                   'different codes for different streams or releases.',
-              child: DropdownButtonFormField<String?>(
-                initialValue:
+              child: AppSelect<String?>(
+                placeholder: "Doesn't vary (single code)",
+                value:
                     candidateDefs.any((d) => d.id == _selectedDiscriminatorId)
                         ? _selectedDiscriminatorId
                         : null,
-                decoration: const InputDecoration(
-                  contentPadding: EdgeInsets.symmetric(
-                    horizontal: Spacing.md,
-                    vertical: Spacing.sm,
-                  ),
-                ),
-                items: [
-                  const DropdownMenuItem<String?>(
+                maxTriggerWidth: double.infinity,
+                options: [
+                  const SelectOption<String?>(
                     value: null,
-                    child: Text("Doesn't vary (single code)"),
+                    label: "Doesn't vary (single code)",
+                    icon: Icons.remove_circle_outline,
                   ),
                   for (final def in candidateDefs)
-                    DropdownMenuItem<String?>(
+                    SelectOption<String?>(
                       value: def.id,
-                      child: Text(def.name),
+                      label: def.name,
+                      icon: Icons.tune,
                     ),
                 ],
                 onChanged: (val) {

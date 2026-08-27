@@ -180,19 +180,19 @@ class TimesheetView extends ConsumerWidget {
             return ListView(
               padding: const EdgeInsets.only(bottom: Spacing.xxl),
               children: [
-                if (data.weeks.isNotEmpty) ...[
-                  TimesheetEntryGrid(
-                    weeks: data.weeks,
-                    weeksTruncated: data.weeksTruncated,
-                    basis: basis,
-                  ),
-                  const SizedBox(height: Spacing.xl),
-                ],
                 TimesheetSummary(
                   total: data.total,
                   basis: basis,
                   sessionCount: data.sessionCount,
                 ),
+                if (data.weeks.isNotEmpty) ...[
+                  const SizedBox(height: Spacing.xl),
+                  TimesheetEntryGrid(
+                    weeks: data.weeks,
+                    weeksTruncated: data.weeksTruncated,
+                    basis: basis,
+                  ),
+                ],
                 if (hasAttention) ...[
                   const SizedBox(height: Spacing.xl),
                   TimesheetAttentionCard(
