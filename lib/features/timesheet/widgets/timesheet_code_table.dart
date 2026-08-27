@@ -1,10 +1,12 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:workpulse/core/theme/app_colors.dart';
 import 'package:workpulse/core/theme/app_typography.dart';
 import 'package:workpulse/core/theme/design_tokens.dart';
 import 'package:workpulse/core/widgets/app_card.dart';
+import 'package:workpulse/core/widgets/app_snack_bar.dart';
 import 'package:workpulse/domain/models/timesheet_model.dart';
 import 'package:workpulse/features/timesheet/widgets/timesheet_table.dart';
 
@@ -296,29 +298,57 @@ class _CodeDisplay extends StatelessWidget {
       );
     }
 
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: Spacing.sm,
-          vertical: Spacing.xxs,
-        ),
-        decoration: BoxDecoration(
-          color: colors.card,
-          borderRadius: Radii.smAll,
-          border: Border.all(color: colors.divider),
-        ),
-        child: Text(
-          value,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: AppTypography.numeric(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: colors.textSecondary,
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Flexible(
+          child: Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: Spacing.sm,
+              vertical: Spacing.xxs,
+            ),
+            decoration: BoxDecoration(
+              color: colors.card,
+              borderRadius: Radii.smAll,
+              border: Border.all(color: colors.divider),
+            ),
+            child: Text(
+              value,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppTypography.numeric(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: colors.textSecondary,
+              ),
+            ),
           ),
         ),
-      ),
+        const SizedBox(width: Spacing.xs),
+        Tooltip(
+          message: 'Copy code',
+          child: InkWell(
+            onTap: () async {
+              await Clipboard.setData(ClipboardData(text: value));
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showAppSnackBar(
+                  AppSnackBar.success(
+                      message: 'Code "$value" copied to clipboard'),
+                );
+              }
+            },
+            borderRadius: Radii.xsAll,
+            child: Padding(
+              padding: const EdgeInsets.all(Spacing.xxs),
+              child: Icon(
+                Icons.copy,
+                size: IconSizes.xs,
+                color: colors.textTertiary,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

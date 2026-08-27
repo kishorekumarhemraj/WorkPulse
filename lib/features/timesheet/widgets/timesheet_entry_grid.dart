@@ -405,34 +405,105 @@ class _DataRow extends StatelessWidget {
           // Code Column
           SizedBox(
             width: _WeekGridCard._codeWidth,
-            child: Row(
-              children: [
-                if (row.needsAttention) ...[
-                  Tooltip(
-                    message: '${row.projectName ?? "Project"} · '
-                        '${row.optionLabel ?? "Default timesheet code"}',
-                    child: Icon(
-                      Icons.warning_amber_rounded,
-                      size: IconSizes.sm,
-                      color: colors.warning,
-                    ),
+            child: row.code.isNotEmpty
+                ? Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (row.needsAttention) ...[
+                        Tooltip(
+                          message: '${row.projectName ?? "Project"} · '
+                              '${row.optionLabel ?? "Default timesheet code"}',
+                          child: Icon(
+                            Icons.warning_amber_rounded,
+                            size: IconSizes.sm,
+                            color: colors.warning,
+                          ),
+                        ),
+                        const SizedBox(width: Spacing.xs),
+                      ],
+                      Flexible(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: Spacing.sm,
+                            vertical: Spacing.xxs,
+                          ),
+                          decoration: BoxDecoration(
+                            color: colors.card,
+                            borderRadius: Radii.smAll,
+                            border: Border.all(color: colors.divider),
+                          ),
+                          child: Text(
+                            row.code,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTypography.numeric(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: colors.textSecondary,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: Spacing.xs),
+                      Tooltip(
+                        message: 'Copy code',
+                        child: InkWell(
+                          onTap: () async {
+                            await Clipboard.setData(
+                                ClipboardData(text: row.code));
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showAppSnackBar(
+                                AppSnackBar.success(
+                                    message:
+                                        'Code "${row.code}" copied to clipboard'),
+                              );
+                            }
+                          },
+                          borderRadius: Radii.xsAll,
+                          child: Padding(
+                            padding: const EdgeInsets.all(Spacing.xxs),
+                            child: Icon(
+                              Icons.copy,
+                              size: IconSizes.xs,
+                              color: colors.textTertiary,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  )
+                : Row(
+                    children: [
+                      if (row.needsAttention) ...[
+                        Tooltip(
+                          message: '${row.projectName ?? "Project"} · '
+                              '${row.optionLabel ?? "Default timesheet code"}',
+                          child: Icon(
+                            Icons.warning_amber_rounded,
+                            size: IconSizes.sm,
+                            color: colors.warning,
+                          ),
+                        ),
+                        const SizedBox(width: Spacing.xs),
+                      ],
+                      Icon(
+                        Icons.help_outline,
+                        size: IconSizes.xs,
+                        color: colors.textTertiary,
+                      ),
+                      const SizedBox(width: Spacing.xs),
+                      Expanded(
+                        child: Text(
+                          row.codeLabel,
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: colors.textTertiary,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: Spacing.xs),
-                ],
-                Expanded(
-                  child: Text(
-                    row.code.isNotEmpty ? row.code : row.codeLabel,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: row.code.isEmpty
-                          ? colors.textTertiary
-                          : colors.textPrimary,
-                    ),
-                  ),
-                ),
-              ],
-            ),
           ),
 
           // Classification Column

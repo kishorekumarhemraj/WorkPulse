@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:workpulse/core/theme/app_colors.dart';
@@ -217,6 +218,49 @@ void main() {
       expect(find.text('Fri'), findsOneWidget);
       expect(find.text('Copy'), findsOneWidget);
       expect(find.text('8.00 h'), findsOneWidget);
+    });
+
+    testWidgets('renders summary card above entry grid', (tester) async {
+      await pumpSheet(tester, sheet());
+
+      final summaryFinder = find.text('NET TOTAL');
+      final gridFinder = find.textContaining('Week of Sat 22 Aug');
+
+      expect(summaryFinder, findsOneWidget);
+      expect(gridFinder, findsOneWidget);
+
+      final summaryTop = tester.getTopLeft(summaryFinder).dy;
+      final gridTop = tester.getTopLeft(gridFinder).dy;
+
+      expect(summaryTop, lessThan(gridTop));
+    });
+
+    testWidgets('tapping copy code button copies code to clipboard',
+        (tester) async {
+      final log = <MethodCall>[];
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        (methodCall) async {
+          log.add(methodCall);
+          return null;
+        },
+      );
+
+      await pumpSheet(tester, sheet());
+
+      final copyCodeButtons = find.byTooltip('Copy code');
+      expect(copyCodeButtons, findsWidgets);
+
+      await tester.ensureVisible(copyCodeButtons.first);
+      await tester.tap(copyCodeButtons.first);
+      await tester.pump();
+
+      expect(
+        log.any((call) =>
+            call.method == 'Clipboard.setData' &&
+            call.arguments['text'] == 'PRJ-1042'),
+        isTrue,
+      );
     });
 
     testWidgets('entry grid renders zero cell as blank', (tester) async {
