@@ -3,6 +3,7 @@
 /// These functions contain no Flutter or database dependencies and handle
 /// daylight saving, calendar midnight rollover, cell rounding, and greedy
 /// two-column section packing.
+library;
 
 /// How much of [spanStart, spanEnd) falls inside the local calendar day
 /// beginning at [dayStart].

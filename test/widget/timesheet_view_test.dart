@@ -74,13 +74,13 @@ void main() {
         projectName: 'Apollo',
         needsAttention: includeAttention,
       ),
-      TimesheetGridRow(
+      const TimesheetGridRow(
         code: '',
         codeLabel: 'No timesheet code',
         classification: FinancialClassification.opex,
-        cells: const [0.0, 0.0, 0.5, 0.5, 0.5, 0.5, 0.0],
+        cells: [0.0, 0.0, 0.5, 0.5, 0.5, 0.5, 0.0],
         total: 2.00,
-        exactTotal: const Duration(hours: 2),
+        exactTotal: Duration(hours: 2),
         projectName: 'Zephyr',
       ),
     ];

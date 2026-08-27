@@ -8,7 +8,6 @@ import 'package:workpulse/core/theme/classification_style.dart';
 import 'package:workpulse/core/theme/design_tokens.dart';
 import 'package:workpulse/core/widgets/app_card.dart';
 import 'package:workpulse/core/widgets/app_snack_bar.dart';
-import 'package:workpulse/domain/models/financial_classification.dart';
 import 'package:workpulse/domain/models/timesheet_model.dart';
 import 'package:workpulse/domain/services/timesheet_grid_math.dart';
 
