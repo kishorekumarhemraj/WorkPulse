@@ -9,6 +9,7 @@ import 'package:workpulse/domain/models/person_model.dart';
 import 'package:workpulse/domain/models/project_model.dart';
 import 'package:workpulse/domain/models/session_model.dart';
 import 'package:workpulse/domain/models/tag_model.dart';
+import 'package:workpulse/domain/models/financial_classification.dart';
 import 'package:workpulse/domain/models/work_item_model.dart';
 import 'package:workpulse/domain/models/workspace_model.dart';
 import 'package:workpulse/features/categories/providers/categories_provider.dart';
@@ -64,6 +65,7 @@ class _FakeWorkItemsNotifier extends WorkItemsNotifier {
     required String projectId,
     required String categoryId,
     required String name,
+    FinancialClassification classification = FinancialClassification.none,
     String? notes,
     List<String> tagIds = const [],
     List<String> peopleIds = const [],

@@ -173,15 +173,17 @@ void main() {
       expect(find.text('6.50'), findsWidgets);
     });
 
-    testWidgets('the Unclassified column appears only when there is any',
+    testWidgets(
+        'the Unclassified column is absent when there is no unclassified time',
         (tester) async {
       await pumpSheet(tester, sheet());
       expect(find.text('NONE'), findsNothing);
+    });
 
-      await pumpSheet(
-        tester,
-        sheet(none: const Duration(hours: 1)),
-      );
+    testWidgets(
+        'the Unclassified column appears when there is unclassified time',
+        (tester) async {
+      await pumpSheet(tester, sheet(none: const Duration(hours: 1)));
       // Both the summary tile and the table column appear, and the tile
       // says what the bucket means.
       expect(find.text('NONE'), findsWidgets);

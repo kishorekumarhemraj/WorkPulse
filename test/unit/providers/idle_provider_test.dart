@@ -565,8 +565,7 @@ void main() {
         IdleDetectionEvent(
           idleDuration: const Duration(minutes: 4),
           idleStartTime: stretchStart.add(const Duration(hours: 1)),
-          idleEndTime:
-              stretchStart.add(const Duration(hours: 1, minutes: 4)),
+          idleEndTime: stretchStart.add(const Duration(hours: 1, minutes: 4)),
         ),
       );
       await Future<void>.delayed(Duration.zero);

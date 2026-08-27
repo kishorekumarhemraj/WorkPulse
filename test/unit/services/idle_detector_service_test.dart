@@ -111,6 +111,7 @@ void main() {
       detector.startMonitoring(isTracking: true);
       source.current = const Duration(minutes: 12);
       detector.poll();
+      await _flush();
       final first = events.last.idleStartTime;
 
       // Input resumed: the OS counter resets.

@@ -88,8 +88,8 @@ class TimesheetSummary extends StatelessWidget {
           const SizedBox(height: Spacing.sm),
           Text(
             basis.description,
-            style: theme.textTheme.bodySmall
-                ?.copyWith(color: colors.textTertiary),
+            style:
+                theme.textTheme.bodySmall?.copyWith(color: colors.textTertiary),
           ),
         ],
       ),
