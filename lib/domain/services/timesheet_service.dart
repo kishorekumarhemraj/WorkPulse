@@ -3,10 +3,12 @@ import 'package:workpulse/domain/models/financial_classification.dart';
 import 'package:workpulse/domain/models/date_range.dart';
 import 'package:workpulse/domain/models/timesheet_model.dart';
 import 'package:workpulse/domain/services/export_service.dart';
+import 'package:workpulse/domain/services/timesheet_code_resolver.dart';
 
 /// The label a row carries when a session has no value for the attribute
 /// the table is breaking down.
 const String timesheetUnspecifiedLabel = 'Unspecified';
+const String timesheetNoCodeLabel = 'No timesheet code';
 
 /// Turns the session records already loaded for a range into the CAPEX/OPEX
 /// tables the Time Sheet renders.
@@ -27,8 +29,10 @@ class TimesheetService {
     required DateRange range,
     required List<SessionExportRecord> records,
     required List<AttributeDefinition> definitions,
+    TimesheetCodeResolver codes = const TimesheetCodeResolver(),
   }) {
     final total = _RowBuilder(id: '__total__', label: 'Total');
+    final codeRows = <String, _CodeRowBuilder>{};
     final projects = <String, _RowBuilder>{};
     final tasks = <String, _RowBuilder>{};
 
@@ -63,19 +67,47 @@ class TimesheetService {
 
       total.add(classification, net: net, gross: gross);
 
+      final resolution = codes.resolveFor(
+        project: record.project,
+        attributeOptionIds: record.attributeOptionIds,
+      );
+
+      final codeKey = resolution.code?.trim().isNotEmpty == true
+          ? resolution.code!.trim()
+          : '';
+      final codeLabel = codeKey.isNotEmpty ? codeKey : timesheetNoCodeLabel;
+
       final projectId = record.project?.id ?? record.workItem.projectId;
+      final projectName = record.project?.name ?? 'Unknown Project';
+
+      codeRows
+          .putIfAbsent(
+            codeKey,
+            () => _CodeRowBuilder(code: codeKey, label: codeLabel),
+          )
+          .add(
+            classification: classification,
+            net: net,
+            gross: gross,
+            projectId: projectId,
+            projectName: projectName,
+            optionLabel: resolution.optionLabel,
+            source: resolution.source,
+          );
+
       projects
           .putIfAbsent(
             projectId,
             () => _RowBuilder(
               id: projectId,
-              label: record.project?.name ?? 'Unknown Project',
+              label: projectName,
               colorHex: record.project?.colorHex,
               code: record.project?.timesheetCode,
             ),
           )
           .add(classification, net: net, gross: gross);
 
+      // Task rows borrow their code from resolution, not from the project record (F2)
       tasks
           .putIfAbsent(
             record.workItem.id,
@@ -83,7 +115,7 @@ class TimesheetService {
               id: record.workItem.id,
               label: record.workItem.name,
               colorHex: record.project?.colorHex,
-              code: record.project?.timesheetCode,
+              code: resolution.code,
             ),
           )
           .add(classification, net: net, gross: gross);
@@ -109,8 +141,15 @@ class TimesheetService {
         final label =
             raw == null || raw.isEmpty ? timesheetUnspecifiedLabel : raw;
 
+        final optionIds = record.attributeOptionIds[def.id];
+        final rowKey = (def.type == AttributeType.singleSelect &&
+                optionIds != null &&
+                optionIds.isNotEmpty)
+            ? optionIds.first
+            : label;
+
         attributeRows[def.id]!
-            .putIfAbsent(label, () => _RowBuilder(id: label, label: label))
+            .putIfAbsent(rowKey, () => _RowBuilder(id: rowKey, label: label))
             .add(classification, net: net, gross: gross);
       }
     }
@@ -118,6 +157,7 @@ class TimesheetService {
     return TimesheetData(
       range: range,
       total: total.build(),
+      codeRows: _sortedCodeRows(codeRows.values),
       projectRows: _sorted(projects.values),
       taskRows: _sorted(tasks.values),
       categorySections: [
@@ -163,6 +203,24 @@ class TimesheetService {
       ...unspecified,
     ];
   }
+
+  static List<TimesheetCodeRow> _sortedCodeRows(
+      Iterable<_CodeRowBuilder> builders) {
+    final rows = builders.map((b) => b.build()).toList()
+      ..sort((a, b) {
+        final byDuration = b.gross.total.compareTo(a.gross.total);
+        return byDuration != 0 ? byDuration : a.label.compareTo(b.label);
+      });
+    final uncodeable = rows
+        .where((r) => r.code.isEmpty || r.label == timesheetNoCodeLabel)
+        .toList();
+    if (uncodeable.isEmpty) return rows;
+    return [
+      ...rows
+          .where((r) => r.code.isNotEmpty && r.label != timesheetNoCodeLabel),
+      ...uncodeable,
+    ];
+  }
 }
 
 /// Mutable accumulator behind one [TimesheetRow].
@@ -206,4 +264,98 @@ class _RowBuilder {
         gross: _gross,
         sessionCount: _sessionCount,
       );
+}
+
+class _ContributionBuilder {
+  final String projectId;
+  final String projectName;
+  final String? optionLabel;
+  final TimesheetCodeSource source;
+  ClassificationSplit _net = ClassificationSplit.zero;
+  ClassificationSplit _gross = ClassificationSplit.zero;
+
+  _ContributionBuilder({
+    required this.projectId,
+    required this.projectName,
+    this.optionLabel,
+    required this.source,
+  });
+
+  void add(
+    FinancialClassification classification, {
+    required Duration net,
+    required Duration gross,
+  }) {
+    _net = _net.plus(classification, net);
+    _gross = _gross.plus(classification, gross);
+  }
+
+  TimesheetCodeContribution build() => TimesheetCodeContribution(
+        projectId: projectId,
+        projectName: projectName,
+        optionLabel: optionLabel,
+        source: source,
+        net: _net,
+        gross: _gross,
+      );
+}
+
+class _CodeRowBuilder {
+  final String code;
+  final String label;
+  ClassificationSplit _net = ClassificationSplit.zero;
+  ClassificationSplit _gross = ClassificationSplit.zero;
+  int _sessionCount = 0;
+  final Map<String, _ContributionBuilder> _contributions = {};
+
+  _CodeRowBuilder({
+    required this.code,
+    required this.label,
+  });
+
+  void add({
+    required FinancialClassification classification,
+    required Duration net,
+    required Duration gross,
+    required String projectId,
+    required String projectName,
+    required String? optionLabel,
+    required TimesheetCodeSource source,
+  }) {
+    _net = _net.plus(classification, net);
+    _gross = _gross.plus(classification, gross);
+    _sessionCount++;
+
+    final contribKey = '$projectId:${optionLabel ?? ''}:${source.name}';
+    _contributions
+        .putIfAbsent(
+          contribKey,
+          () => _ContributionBuilder(
+            projectId: projectId,
+            projectName: projectName,
+            optionLabel: optionLabel,
+            source: source,
+          ),
+        )
+        .add(classification, net: net, gross: gross);
+  }
+
+  TimesheetCodeRow build() {
+    final sortedContributions =
+        _contributions.values.map((c) => c.build()).toList()
+          ..sort((a, b) {
+            final byGross = b.gross.total.compareTo(a.gross.total);
+            if (byGross != 0) return byGross;
+            return a.projectName.compareTo(b.projectName);
+          });
+
+    return TimesheetCodeRow(
+      code: code,
+      label: label,
+      net: _net,
+      gross: _gross,
+      sessionCount: _sessionCount,
+      contributions: sortedContributions,
+    );
+  }
 }

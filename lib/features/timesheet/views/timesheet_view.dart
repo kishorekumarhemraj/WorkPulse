@@ -15,6 +15,8 @@ import 'package:workpulse/domain/models/timesheet_model.dart';
 import 'package:workpulse/features/reports/providers/reports_provider.dart';
 import 'package:workpulse/features/reports/widgets/reports_range_controls.dart';
 import 'package:workpulse/features/timesheet/providers/timesheet_provider.dart';
+import 'package:workpulse/features/timesheet/widgets/timesheet_attention_card.dart';
+import 'package:workpulse/features/timesheet/widgets/timesheet_code_table.dart';
 import 'package:workpulse/features/timesheet/widgets/timesheet_summary.dart';
 import 'package:workpulse/features/timesheet/widgets/timesheet_table.dart';
 
@@ -93,6 +95,8 @@ class TimesheetView extends ConsumerWidget {
               );
             }
 
+            final hasAttention = data.codeRows.any((r) => r.needsAttention);
+
             return ListView(
               padding: const EdgeInsets.only(bottom: Spacing.xxl),
               children: [
@@ -100,6 +104,18 @@ class TimesheetView extends ConsumerWidget {
                   total: data.total,
                   basis: basis,
                   sessionCount: data.sessionCount,
+                ),
+                if (hasAttention) ...[
+                  const SizedBox(height: Spacing.xl),
+                  TimesheetAttentionCard(
+                    rows: data.codeRows,
+                    basis: basis,
+                  ),
+                ],
+                const SizedBox(height: Spacing.xl),
+                TimesheetCodeTable(
+                  rows: data.codeRows,
+                  basis: basis,
                 ),
                 const SizedBox(height: Spacing.xl),
                 TimesheetTable(
