@@ -8,6 +8,7 @@ import 'package:workpulse/domain/models/session_model.dart';
 import 'package:workpulse/domain/models/timesheet_model.dart';
 import 'package:workpulse/domain/models/work_item_model.dart';
 import 'package:workpulse/domain/services/export_service.dart';
+import 'package:workpulse/domain/services/timesheet_code_resolver.dart';
 import 'package:workpulse/domain/services/timesheet_service.dart';
 
 void main() {
@@ -65,6 +66,7 @@ void main() {
     FinancialClassification? override,
     Duration idle = Duration.zero,
     Map<String, String> attributes = const {},
+    Map<String, List<String>> optionIds = const {},
   }) {
     final item = WorkItem(
       id: taskId,
@@ -94,6 +96,7 @@ void main() {
       idleDuration: idle,
       netActiveDuration: gross - idle,
       attributeValues: attributes,
+      attributeOptionIds: optionIds,
       classification:
           session.classificationWithin(item.financialClassification),
       classificationIsOverride: session.hasClassificationOverride,
@@ -438,12 +441,279 @@ void main() {
       );
 
       expect(data.isEmpty, isTrue);
+      expect(data.codeRows, isEmpty);
       expect(data.projectRows, isEmpty);
       expect(data.taskRows, isEmpty);
       expect(data.categorySections, isEmpty);
       expect(data.attributeSections, isEmpty);
       expect(data.total.net.total, Duration.zero);
       expect(data.total.net.capexShare, 0);
+    });
+
+    test('two releases of one project produce two distinct code rows', () {
+      final lwaste = Project(
+        id: 'proj-lwaste',
+        workspaceId: 'ws-1',
+        name: 'L-Waste',
+        timesheetCode: 'DEFAULT-CODE',
+        codeAttributeDefinitionId: 'attr-release',
+        createdAt: now,
+        updatedAt: now,
+      );
+
+      final resolver = TimesheetCodeResolver(
+        codesByProject: {
+          'proj-lwaste': {
+            'opt-r241': 'LWASTE-241',
+            'opt-r242': 'LWASTE-242',
+          },
+        },
+        optionsById: {
+          'opt-r241': AttributeOption(
+            id: 'opt-r241',
+            attributeDefinitionId: 'attr-release',
+            label: 'R24.1',
+            value: 'r24.1',
+            displayOrder: 0,
+            createdAt: now,
+          ),
+          'opt-r242': AttributeOption(
+            id: 'opt-r242',
+            attributeDefinitionId: 'attr-release',
+            label: 'R24.2',
+            value: 'r24.2',
+            displayOrder: 1,
+            createdAt: now,
+          ),
+        },
+      );
+
+      final data = service.build(
+        range: range,
+        records: [
+          record(
+            id: 's1',
+            proj: lwaste,
+            cat: coding,
+            gross: const Duration(hours: 3),
+            optionIds: {
+              'attr-release': ['opt-r241'],
+            },
+          ),
+          record(
+            id: 's2',
+            proj: lwaste,
+            cat: coding,
+            gross: const Duration(hours: 2),
+            optionIds: {
+              'attr-release': ['opt-r242'],
+            },
+          ),
+        ],
+        definitions: const [],
+        codes: resolver,
+      );
+
+      expect(data.codeRows, hasLength(2));
+      expect(data.codeRows.map((r) => r.code), ['LWASTE-241', 'LWASTE-242']);
+      expect(data.codeRows[0].net.total, const Duration(hours: 3));
+      expect(data.codeRows[1].net.total, const Duration(hours: 2));
+
+      // Project table still groups both under L-Waste
+      expect(data.projectRows, hasLength(1));
+      expect(data.projectRows.single.net.total, const Duration(hours: 5));
+    });
+
+    test(
+        'two projects sharing one code roll into a single row with two contributions',
+        () {
+      final projA = Project(
+        id: 'proj-a',
+        workspaceId: 'ws-1',
+        name: 'Alpha Project',
+        timesheetCode: 'SHARED-100',
+        createdAt: now,
+        updatedAt: now,
+      );
+      final projB = Project(
+        id: 'proj-b',
+        workspaceId: 'ws-1',
+        name: 'Beta Project',
+        timesheetCode: 'SHARED-100',
+        createdAt: now,
+        updatedAt: now,
+      );
+
+      const resolver = TimesheetCodeResolver();
+
+      final data = service.build(
+        range: range,
+        records: [
+          record(
+            id: 's1',
+            proj: projA,
+            cat: coding,
+            gross: const Duration(hours: 4),
+          ),
+          record(
+            id: 's2',
+            proj: projB,
+            cat: coding,
+            gross: const Duration(hours: 2),
+          ),
+        ],
+        definitions: const [],
+        codes: resolver,
+      );
+
+      expect(data.codeRows, hasLength(1));
+      final sharedRow = data.codeRows.single;
+      expect(sharedRow.code, equals('SHARED-100'));
+      expect(sharedRow.net.total, equals(const Duration(hours: 6)));
+      expect(sharedRow.contributions, hasLength(2));
+      expect(sharedRow.contributions[0].projectName, equals('Alpha Project'));
+      expect(sharedRow.contributions[0].net.total,
+          equals(const Duration(hours: 4)));
+      expect(sharedRow.contributions[1].projectName, equals('Beta Project'));
+      expect(sharedRow.contributions[1].net.total,
+          equals(const Duration(hours: 2)));
+    });
+
+    test('codeRows sum to total on both net and gross (invariant)', () {
+      final proj = Project(
+        id: 'proj-1',
+        workspaceId: 'ws-1',
+        name: 'Main App',
+        timesheetCode: 'MAIN-1',
+        createdAt: now,
+        updatedAt: now,
+      );
+
+      const resolver = TimesheetCodeResolver();
+
+      final data = service.build(
+        range: range,
+        records: [
+          record(
+            id: 's1',
+            proj: proj,
+            cat: coding,
+            gross: const Duration(hours: 5),
+            idle: const Duration(hours: 1),
+            task: FinancialClassification.capex,
+          ),
+          record(
+            id: 's2',
+            proj: proj,
+            cat: meetings,
+            gross: const Duration(hours: 3),
+            idle: const Duration(minutes: 30),
+            task: FinancialClassification.opex,
+          ),
+          record(
+            id: 's3',
+            proj: null,
+            cat: null,
+            gross: const Duration(hours: 2),
+            task: FinancialClassification.none,
+          ),
+        ],
+        definitions: const [],
+        codes: resolver,
+      );
+
+      final codeRowsNetSum = data.codeRows.fold<ClassificationSplit>(
+        ClassificationSplit.zero,
+        (sum, r) => sum + r.net,
+      );
+      final codeRowsGrossSum = data.codeRows.fold<ClassificationSplit>(
+        ClassificationSplit.zero,
+        (sum, r) => sum + r.gross,
+      );
+
+      expect(codeRowsNetSum, equals(data.total.net));
+      expect(codeRowsGrossSum, equals(data.total.gross));
+    });
+
+    test('the uncodeable row sorts last regardless of size', () {
+      final codedProj = Project(
+        id: 'proj-coded',
+        workspaceId: 'ws-1',
+        name: 'Coded',
+        timesheetCode: 'CODE-1',
+        createdAt: now,
+        updatedAt: now,
+      );
+
+      const resolver = TimesheetCodeResolver();
+
+      final data = service.build(
+        range: range,
+        records: [
+          // Small coded session
+          record(
+            id: 's1',
+            proj: codedProj,
+            cat: coding,
+            gross: const Duration(hours: 1),
+          ),
+          // Large uncoded session
+          record(
+            id: 's2',
+            proj: null,
+            cat: null,
+            gross: const Duration(hours: 10),
+          ),
+        ],
+        definitions: const [],
+        codes: resolver,
+      );
+
+      expect(data.codeRows, hasLength(2));
+      expect(data.codeRows.first.code, equals('CODE-1'));
+      expect(data.codeRows.last.label, equals(timesheetNoCodeLabel));
+      expect(data.codeRows.last.gross.total, equals(const Duration(hours: 10)));
+    });
+
+    test('task rows borrow code from resolution instead of project default',
+        () {
+      final lwaste = Project(
+        id: 'proj-lwaste',
+        workspaceId: 'ws-1',
+        name: 'L-Waste',
+        timesheetCode: 'DEFAULT-CODE',
+        codeAttributeDefinitionId: 'attr-release',
+        createdAt: now,
+        updatedAt: now,
+      );
+
+      const resolver = TimesheetCodeResolver(
+        codesByProject: {
+          'proj-lwaste': {
+            'opt-r241': 'LWASTE-241',
+          },
+        },
+      );
+
+      final data = service.build(
+        range: range,
+        records: [
+          record(
+            id: 's1',
+            proj: lwaste,
+            taskId: 'task-1',
+            taskName: 'Task with release',
+            gross: const Duration(hours: 2),
+            optionIds: {
+              'attr-release': ['opt-r241'],
+            },
+          ),
+        ],
+        definitions: const [],
+        codes: resolver,
+      );
+
+      expect(data.taskRows.single.code, equals('LWASTE-241'));
     });
   });
 }
