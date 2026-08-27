@@ -8,9 +8,7 @@ import 'package:workpulse/core/widgets/error_state.dart';
 import 'package:workpulse/core/widgets/page_header.dart';
 import 'package:workpulse/core/widgets/segmented_control.dart';
 import 'package:workpulse/core/widgets/skeleton_loader.dart';
-import 'package:workpulse/core/theme/classification_style.dart';
 import 'package:workpulse/domain/models/attribute_model.dart';
-import 'package:workpulse/domain/models/financial_classification.dart';
 import 'package:workpulse/domain/models/timesheet_model.dart';
 import 'package:workpulse/features/reports/providers/reports_provider.dart';
 import 'package:workpulse/features/reports/widgets/reports_range_controls.dart';
@@ -146,18 +144,18 @@ class TimesheetView extends ConsumerWidget {
                   basis: basis,
                 ),
               ),
-              for (final section in data.categorySections)
-                TimesheetSectionItem(
-                  rowCount: section.rows.length,
-                  widget: TimesheetTable(
-                    title: '${section.classification.label} by category',
-                    icon: section.classification.icon,
-                    subtitle: _categorySubtitle(section.classification),
-                    nameColumnLabel: 'Category',
-                    rows: section.rows,
-                    basis: basis,
-                  ),
+              TimesheetSectionItem(
+                rowCount: data.categoryRows.length,
+                widget: TimesheetTable(
+                  title: 'By category',
+                  icon: Icons.category_outlined,
+                  subtitle: 'How tracked time breaks down across categories '
+                      'between capitalizable, operational, and unclassified work.',
+                  nameColumnLabel: 'Category',
+                  rows: data.categoryRows,
+                  basis: basis,
                 ),
+              ),
               for (final section in data.attributeSections)
                 TimesheetSectionItem(
                   rowCount: section.rows.length,
@@ -208,19 +206,6 @@ class TimesheetView extends ConsumerWidget {
         ),
       ),
     );
-  }
-
-  static String _categorySubtitle(FinancialClassification classification) {
-    return switch (classification) {
-      FinancialClassification.capex =>
-        'What the capitalizable hours were actually spent doing — coding '
-            'against meetings, and everything else.',
-      FinancialClassification.opex =>
-        'What the operational hours were actually spent doing.',
-      FinancialClassification.none =>
-        'Hours no task has classified yet. Set a classification on the work '
-            'item, or override it on the session.',
-    };
   }
 
   static String _attributeSubtitle(AttributeDefinition definition) {
