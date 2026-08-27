@@ -98,6 +98,16 @@ class IdleNotifier extends Notifier<IdleState> {
   /// just wrote.
   bool _hasCheckedForUnaccountedGap = false;
 
+  /// The stretch of inactivity the user has already answered for, identified
+  /// by when it began.
+  ///
+  /// The detector re-reports a stretch every poll so the figure on screen
+  /// stays current while the user is away. Without this, dismissing the
+  /// prompt and walking off again would reopen it ten seconds later, and
+  /// resolving one would raise it a second time for time already accounted
+  /// for.
+  DateTime? _closedIdleStart;
+
   IdleService get _idleService => ref.read(idleServiceProvider);
   IdleDetectorService get _detectorService =>
       ref.read(idleDetectorServiceProvider);
@@ -118,6 +128,10 @@ class IdleNotifier extends Notifier<IdleState> {
   }
 
   void _handleIdleDetected(IdleDetectionEvent event) {
+    // Already answered for. A later report of the same stretch is the
+    // detector keeping its figure current, not a new question.
+    if (_closedIdleStart == event.idleStartTime) return;
+
     final timerState = ref.read(timerProvider).value;
     if (timerState == null ||
         !timerState.isRunning ||
@@ -277,6 +291,7 @@ class IdleNotifier extends Notifier<IdleState> {
   }
 
   void dismiss() {
+    _closedIdleStart = state.currentEvent?.idleStartTime;
     state = const IdleState(isPromptVisible: false);
   }
 }

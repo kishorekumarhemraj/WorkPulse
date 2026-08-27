@@ -2,6 +2,7 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import 'package:workpulse/data/providers/repository_providers.dart';
+import 'package:workpulse/domain/models/financial_classification.dart';
 import 'package:workpulse/domain/models/work_item_model.dart';
 import 'package:workpulse/features/workspace/providers/workspace_provider.dart';
 
@@ -171,6 +172,7 @@ class WorkItemsNotifier extends AsyncNotifier<List<WorkItem>> {
     required String name,
     required String projectId,
     required String categoryId,
+    FinancialClassification classification = FinancialClassification.none,
     String? notes,
     List<String> tagIds = const [],
     List<String> peopleIds = const [],
@@ -185,6 +187,7 @@ class WorkItemsNotifier extends AsyncNotifier<List<WorkItem>> {
       name: name.trim(),
       projectId: projectId,
       categoryId: categoryId,
+      financialClassification: classification,
       notes: notes?.trim().isEmpty == true ? null : notes?.trim(),
       tagIds: tagIds,
       peopleIds: peopleIds,

@@ -133,6 +133,7 @@ class SqliteProjectRepository implements ProjectRepository {
       'name': project.name,
       'description': project.description,
       'color_hex': project.colorHex,
+      'timesheet_code': project.timesheetCode,
       'created_at': project.createdAt.toStorageString(),
       'updated_at': project.updatedAt.toStorageString(),
       'archived_at': project.archivedAt?.toStorageString(),
@@ -146,6 +147,7 @@ class SqliteProjectRepository implements ProjectRepository {
       name: map['name'] as String,
       description: map['description'] as String?,
       colorHex: map['color_hex'] as String?,
+      timesheetCode: map['timesheet_code'] as String?,
       createdAt: DateTime.parse(map['created_at'] as String),
       updatedAt: DateTime.parse(map['updated_at'] as String),
       archivedAt: map['archived_at'] != null

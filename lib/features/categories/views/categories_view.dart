@@ -34,8 +34,8 @@ class _CategoriesViewState extends ConsumerState<CategoriesView> {
       backgroundColor: colors.background,
       body: PageScaffold(
         title: 'Categories',
-        subtitle:
-            'Classify the kind of work you do, such as coding or meetings',
+        subtitle: 'Name the kind of work you do, such as coding or meetings '
+            '— CapEx and OpEx now live on the work item',
         actions: [
           ElevatedButton.icon(
             onPressed: () => CategoryFormDialog.show(context),

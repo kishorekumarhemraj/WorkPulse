@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
@@ -432,4 +434,173 @@ void main() {
       expect(container.read(idleNotifierProvider).isPromptVisible, isFalse);
     });
   });
+
+  group('A stretch of inactivity that keeps being re-reported', () {
+    late DatabaseService dbService;
+    late _FakeIdleDetector detector;
+    late SqliteSessionRepository sessionRepo;
+    late SqliteWorkItemRepository workItemRepo;
+    late TimerService timerService;
+    late WorkItem testTask;
+
+    const wsId = MigrationV1.defaultWorkspaceId;
+    final stretchStart = DateTime.utc(2026, 8, 27, 12, 27);
+
+    setUp(() async {
+      dbService = DatabaseService();
+      await dbService.initialize(inMemory: true);
+
+      sessionRepo = SqliteSessionRepository(dbService);
+      workItemRepo = SqliteWorkItemRepository(dbService);
+      timerService = TimerService(
+        sessionRepository: sessionRepo,
+        workItemRepository: workItemRepo,
+      );
+      detector = _FakeIdleDetector();
+
+      final now = DateTime.now().toUtc();
+      final proj = await SqliteProjectRepository(dbService).create(
+        Project(
+            id: 'proj-1',
+            workspaceId: wsId,
+            name: 'Core',
+            createdAt: now,
+            updatedAt: now),
+      );
+      final cat = await SqliteCategoryRepository(dbService).create(
+        Category(
+            id: 'cat-1',
+            workspaceId: wsId,
+            name: 'Dev',
+            createdAt: now,
+            updatedAt: now),
+      );
+      testTask = await workItemRepo.create(
+        WorkItem(
+          id: 'task-1',
+          workspaceId: wsId,
+          projectId: proj.id,
+          categoryId: cat.id,
+          name: 'Task 1',
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+    });
+
+    tearDown(() async {
+      detector.dispose();
+      await dbService.close();
+    });
+
+    Future<ProviderContainer> startedContainer() async {
+      final container = ProviderContainer(
+        overrides: [
+          sessionRepositoryProvider.overrideWithValue(sessionRepo),
+          idlePeriodRepositoryProvider
+              .overrideWithValue(SqliteIdlePeriodRepository(dbService)),
+          workItemRepositoryProvider.overrideWithValue(workItemRepo),
+          timerServiceProvider.overrideWithValue(timerService),
+          settingsRepositoryProvider
+              .overrideWithValue(SqliteSettingsRepository(dbService)),
+          idleDetectorServiceProvider.overrideWithValue(detector),
+        ],
+      );
+      addTearDown(container.dispose);
+      await container.read(currentWorkspaceProvider.future);
+      await container.read(timerProvider.future);
+      await container.read(timerProvider.notifier).startTimer(testTask);
+      // Reading the notifier is what subscribes it to the detector.
+      container.read(idleNotifierProvider.notifier);
+      return container;
+    }
+
+    Future<void> report(Duration span) async {
+      detector.emit(
+        IdleDetectionEvent(
+          idleDuration: span,
+          idleStartTime: stretchStart,
+          idleEndTime: stretchStart.add(span),
+        ),
+      );
+      await Future<void>.delayed(Duration.zero);
+    }
+
+    test('grows the figure on screen instead of freezing at the threshold',
+        () async {
+      final container = await startedContainer();
+
+      await report(const Duration(minutes: 3));
+      expect(
+        container.read(idleNotifierProvider).currentEvent?.idleDuration,
+        const Duration(minutes: 3),
+      );
+
+      await report(const Duration(minutes: 30));
+      final state = container.read(idleNotifierProvider);
+      expect(state.isPromptVisible, isTrue);
+      expect(state.currentEvent?.idleDuration, const Duration(minutes: 30));
+    });
+
+    test('does not reopen itself after the user dismisses it', () async {
+      final container = await startedContainer();
+      await report(const Duration(minutes: 3));
+
+      container.read(idleNotifierProvider.notifier).dismiss();
+      expect(container.read(idleNotifierProvider).isPromptVisible, isFalse);
+
+      // The user walked off again without touching anything, so the detector
+      // keeps re-reporting the very same stretch.
+      await report(const Duration(minutes: 12));
+      expect(container.read(idleNotifierProvider).isPromptVisible, isFalse);
+    });
+
+    test('still raises a genuinely new stretch after one was dismissed',
+        () async {
+      final container = await startedContainer();
+      await report(const Duration(minutes: 3));
+      container.read(idleNotifierProvider.notifier).dismiss();
+
+      detector.emit(
+        IdleDetectionEvent(
+          idleDuration: const Duration(minutes: 4),
+          idleStartTime: stretchStart.add(const Duration(hours: 1)),
+          idleEndTime:
+              stretchStart.add(const Duration(hours: 1, minutes: 4)),
+        ),
+      );
+      await Future<void>.delayed(Duration.zero);
+
+      expect(container.read(idleNotifierProvider).isPromptVisible, isTrue);
+    });
+  });
+}
+
+/// A detector whose events the test writes by hand.
+class _FakeIdleDetector implements IdleDetectorService {
+  final _controller = StreamController<IdleDetectionEvent>.broadcast();
+  Duration _threshold = const Duration(minutes: 3);
+
+  void emit(IdleDetectionEvent event) => _controller.add(event);
+
+  @override
+  Duration get idleThreshold => _threshold;
+
+  @override
+  void setIdleThreshold(Duration duration) => _threshold = duration;
+
+  @override
+  Stream<IdleDetectionEvent> get onIdleDetected => _controller.stream;
+
+  @override
+  bool get isSupported => true;
+
+  @override
+  void startMonitoring({required bool isTracking}) {}
+
+  @override
+  void stopMonitoring() {}
+
+  @override
+  void dispose() => _controller.close();
 }

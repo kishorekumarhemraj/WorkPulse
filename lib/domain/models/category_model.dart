@@ -1,5 +1,13 @@
 import 'package:equatable/equatable.dart';
 
+/// The *kind* of work — coding, meetings, triage, review.
+///
+/// Categories carry no financial meaning. That moved to
+/// [FinancialClassification] on the WorkItem, because whether an hour is
+/// capitalizable depends on what the work is for, not on what shape it takes;
+/// the same meeting can be either. What a category is still for is the
+/// "coding versus meetings" breakdown *within* a classification, which is the
+/// question it was always good at answering.
 class Category extends Equatable {
   final String id;
   final String workspaceId;

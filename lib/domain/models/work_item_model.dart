@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:workpulse/domain/models/financial_classification.dart';
 
 class WorkItem extends Equatable {
   final String id;
@@ -6,6 +7,15 @@ class WorkItem extends Equatable {
   final String name;
   final String projectId;
   final String categoryId;
+
+  /// Whether time on this task is capitalizable, operational, or unclassified.
+  ///
+  /// Sessions inherit this at read time rather than copying it, so correcting
+  /// a misclassified task corrects its whole history in one edit. A session
+  /// that needs to differ overrides it explicitly — see
+  /// [Session.financialClassification].
+  final FinancialClassification financialClassification;
+
   final String? notes;
   final List<String> tagIds;
   final List<String> peopleIds;
@@ -20,6 +30,7 @@ class WorkItem extends Equatable {
     required this.name,
     required this.projectId,
     required this.categoryId,
+    this.financialClassification = FinancialClassification.none,
     this.notes,
     this.tagIds = const [],
     this.peopleIds = const [],
@@ -37,6 +48,7 @@ class WorkItem extends Equatable {
     String? name,
     String? projectId,
     String? categoryId,
+    FinancialClassification? financialClassification,
     String? notes,
     List<String>? tagIds,
     List<String>? peopleIds,
@@ -51,6 +63,8 @@ class WorkItem extends Equatable {
       name: name ?? this.name,
       projectId: projectId ?? this.projectId,
       categoryId: categoryId ?? this.categoryId,
+      financialClassification:
+          financialClassification ?? this.financialClassification,
       notes: notes ?? this.notes,
       tagIds: tagIds ?? this.tagIds,
       peopleIds: peopleIds ?? this.peopleIds,
@@ -68,6 +82,7 @@ class WorkItem extends Equatable {
         name,
         projectId,
         categoryId,
+        financialClassification,
         notes,
         tagIds,
         peopleIds,

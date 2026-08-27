@@ -23,6 +23,7 @@ class ProjectsNotifier extends AsyncNotifier<List<Project>> {
     required String name,
     String? description,
     String? colorHex,
+    String? timesheetCode,
   }) async {
     final workspace = await ref.read(currentWorkspaceProvider.future);
     final projectRepo = ref.read(projectRepositoryProvider);
@@ -35,6 +36,8 @@ class ProjectsNotifier extends AsyncNotifier<List<Project>> {
       description:
           description?.trim().isEmpty == true ? null : description?.trim(),
       colorHex: colorHex ?? '#0A84FF',
+      timesheetCode:
+          timesheetCode?.trim().isEmpty == true ? null : timesheetCode?.trim(),
       createdAt: now,
       updatedAt: now,
     );
