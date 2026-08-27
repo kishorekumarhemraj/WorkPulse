@@ -2,6 +2,7 @@ import 'package:equatable/equatable.dart';
 import 'package:workpulse/domain/models/attribute_model.dart';
 import 'package:workpulse/domain/models/financial_classification.dart';
 import 'package:workpulse/domain/models/date_range.dart';
+import 'package:workpulse/domain/services/timesheet_code_resolver.dart';
 
 /// Which duration the Time Sheet reports.
 ///
@@ -136,6 +137,81 @@ class TimesheetRow extends Equatable {
       [id, label, colorHex, code, net, gross, sessionCount];
 }
 
+/// Where this row's hours came from — a code can be fed by more than one
+/// project, and by more than one release within a project.
+class TimesheetCodeContribution extends Equatable {
+  final String projectId;
+  final String projectName;
+  final String? optionLabel; // the release, where there is one
+  final TimesheetCodeSource source;
+  final ClassificationSplit net;
+  final ClassificationSplit gross;
+
+  const TimesheetCodeContribution({
+    required this.projectId,
+    required this.projectName,
+    this.optionLabel,
+    required this.source,
+    this.net = ClassificationSplit.zero,
+    this.gross = ClassificationSplit.zero,
+  });
+
+  TimesheetCodeContribution copyWith({
+    String? projectId,
+    String? projectName,
+    String? optionLabel,
+    TimesheetCodeSource? source,
+    ClassificationSplit? net,
+    ClassificationSplit? gross,
+  }) {
+    return TimesheetCodeContribution(
+      projectId: projectId ?? this.projectId,
+      projectName: projectName ?? this.projectName,
+      optionLabel: optionLabel ?? this.optionLabel,
+      source: source ?? this.source,
+      net: net ?? this.net,
+      gross: gross ?? this.gross,
+    );
+  }
+
+  @override
+  List<Object?> get props =>
+      [projectId, projectName, optionLabel, source, net, gross];
+}
+
+/// One line of the sheet the user actually fills in.
+class TimesheetCodeRow extends Equatable {
+  /// The code, or '' for the row holding time that could not be coded.
+  final String code;
+  final String label; // code, or 'No timesheet code'
+  final ClassificationSplit net;
+  final ClassificationSplit gross;
+  final int sessionCount;
+
+  /// Where this row's hours came from — a code can be fed by more than one
+  /// project, and by more than one release within a project.
+  final List<TimesheetCodeContribution> contributions;
+
+  const TimesheetCodeRow({
+    required this.code,
+    required this.label,
+    this.net = ClassificationSplit.zero,
+    this.gross = ClassificationSplit.zero,
+    this.sessionCount = 0,
+    this.contributions = const [],
+  });
+
+  bool get needsAttention =>
+      contributions.any((c) => c.source.needsAttention);
+
+  ClassificationSplit split(TimesheetHoursBasis basis) =>
+      basis == TimesheetHoursBasis.net ? net : gross;
+
+  @override
+  List<Object?> get props =>
+      [code, label, net, gross, sessionCount, contributions];
+}
+
 /// One attribute's worth of rows — a table per configurable attribute.
 class TimesheetAttributeSection extends Equatable {
   final AttributeDefinition definition;
@@ -180,6 +256,9 @@ class TimesheetData extends Equatable {
   /// The grand total across every session in range.
   final TimesheetRow total;
 
+  /// Headline table: time grouped by resolved timesheet code.
+  final List<TimesheetCodeRow> codeRows;
+
   final List<TimesheetRow> projectRows;
 
   /// Time by task — the level the classification is now set at, so this is
@@ -195,6 +274,7 @@ class TimesheetData extends Equatable {
   const TimesheetData({
     required this.range,
     required this.total,
+    this.codeRows = const [],
     this.projectRows = const [],
     this.taskRows = const [],
     this.categorySections = const [],
@@ -208,6 +288,7 @@ class TimesheetData extends Equatable {
   List<Object?> get props => [
         range,
         total,
+        codeRows,
         projectRows,
         taskRows,
         categorySections,

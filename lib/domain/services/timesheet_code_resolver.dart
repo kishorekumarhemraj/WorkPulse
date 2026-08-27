@@ -18,7 +18,13 @@ enum TimesheetCodeSource {
   missingCode,
 
   /// The record has no project at all.
-  unknownProject,
+  unknownProject;
+
+  /// Whether this source is something the user should go and fix.
+  bool get needsAttention =>
+      this == TimesheetCodeSource.unmappedOption ||
+      this == TimesheetCodeSource.missingCode ||
+      this == TimesheetCodeSource.unknownProject;
 }
 
 class TimesheetCodeResolution extends Equatable {
@@ -37,10 +43,7 @@ class TimesheetCodeResolution extends Equatable {
   bool get isBookable => code != null && code!.trim().isNotEmpty;
 
   /// Whether this resolution is something the user should go and fix.
-  bool get needsAttention =>
-      source == TimesheetCodeSource.unmappedOption ||
-      source == TimesheetCodeSource.missingCode ||
-      source == TimesheetCodeSource.unknownProject;
+  bool get needsAttention => source.needsAttention;
 
   @override
   List<Object?> get props => [code, source, optionId, optionLabel];
