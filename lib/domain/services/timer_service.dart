@@ -24,12 +24,14 @@ class TimerService {
   /// Starts tracking time on a work item.
   /// Enforces the Single-Active-Session invariant: stops any currently running session.
   ///
-  /// A work item's own category, tags and people seed its **first** session
-  /// only. Every session after that starts unclassified and belongs to the
-  /// user: the second hour on a task is often not the same kind of work as the
-  /// first — the same work item can be reading, then a call about it, then the
-  /// change itself — and copying the work item's classification forward made
-  /// every one of those look identical in reporting.
+  /// A work item's own tags and people seed its **first** session only. Every
+  /// session after that starts with none and belongs to the user: who was in
+  /// an hour and what that hour was about genuinely vary session to session.
+  ///
+  /// **Category is inherited from the task's previous session**, falling back
+  /// to the work item's own category on the first session. A category names the
+  /// kind of work, which is usually stable across a task's life, and an
+  /// unclassified session stays unclassified because nobody revisits it.
   ///
   /// Anything the caller passes explicitly always wins, whichever session this
   /// is; Quick Capture lets the user classify at the moment they start, and
@@ -56,13 +58,14 @@ class TimerService {
     var effectiveTagIds = tagIds;
     var effectivePeopleIds = peopleIds;
 
-    // Counted rather than fetched: this is the Quick Capture hot path.
-    final isFirstSession = await _sessionRepository.countByWorkItemId(
-          workItemId,
-        ) ==
-        0;
+    // One row rather than a count: this answers both questions the seeding
+    // rules ask — "has this task been tracked before?" and "what was it
+    // classified as last time?" — and it is still the Quick Capture hot path.
+    final previous = await _sessionRepository.getLatestByWorkItemId(workItemId);
 
-    if (isFirstSession) {
+    if (previous == null) {
+      // First session on this task: the work item's own classification is the
+      // only thing there is to start from.
       final workItem = await _workItemRepository.getById(workItemId);
       if (workItem != null) {
         effectiveCategoryId ??= workItem.categoryId;
@@ -71,6 +74,12 @@ class TimerService {
           effectivePeopleIds = workItem.peopleIds;
         }
       }
+    } else {
+      // Continuing a task: the kind of work it was last time is the best
+      // available guess at the kind of work it is now, and a session that
+      // starts blank tends to stay blank. Tags and people are not carried —
+      // see AGENTS.md rule 7.
+      effectiveCategoryId ??= previous.categoryId;
     }
 
     // Create new session

@@ -30,7 +30,7 @@ class TimesheetSummary extends StatelessWidget {
 
     final tiles = <Widget>[
       _SummaryTile(
-        label: '${basis.label} total',
+        label: '${basis.label} Total',
         hours: split.total,
         color: colors.textPrimary,
         caption: '$sessionCount session${sessionCount == 1 ? '' : 's'}',

@@ -5,6 +5,7 @@ import 'package:workpulse/core/theme/app_typography.dart';
 import 'package:workpulse/core/theme/design_tokens.dart';
 import 'package:workpulse/domain/services/export_service.dart';
 import 'package:workpulse/domain/services/timer_service.dart';
+import 'package:workpulse/domain/services/timesheet_code_resolver.dart';
 import 'package:workpulse/features/reports/widgets/session_row.dart';
 
 /// One day of sessions, under a header carrying the day's total.
@@ -16,6 +17,7 @@ import 'package:workpulse/features/reports/widgets/session_row.dart';
 class SessionDayGroup extends StatelessWidget {
   final DateTime day;
   final List<SessionExportRecord> records;
+  final TimesheetCodeResolver codes;
   final void Function(SessionExportRecord record) onEdit;
   final void Function(SessionExportRecord record) onDelete;
 
@@ -23,6 +25,7 @@ class SessionDayGroup extends StatelessWidget {
     super.key,
     required this.day,
     required this.records,
+    this.codes = const TimesheetCodeResolver(),
     required this.onEdit,
     required this.onDelete,
   });
@@ -107,6 +110,7 @@ class SessionDayGroup extends StatelessWidget {
                   if (i > 0) Divider(height: 1, color: colors.divider),
                   SessionRow(
                     record: records[i],
+                    codes: codes,
                     isFirst: i == 0,
                     isLast: i == records.length - 1,
                     onEdit: () => onEdit(records[i]),

@@ -68,7 +68,7 @@ class TimesheetCodeTable extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('By timesheet code',
+                      Text('By Timesheet Code',
                           style: theme.textTheme.titleMedium),
                       const SizedBox(height: Spacing.xxs),
                       Text(

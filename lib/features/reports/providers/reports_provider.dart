@@ -246,6 +246,7 @@ class SessionEditorController {
 
     _ref.invalidate(sessionHistoryProvider);
     _ref.invalidate(sessionsForWorkItemProvider(session.workItemId));
+    _ref.invalidate(workItemSessionRecordsProvider(session.workItemId));
     _ref.invalidate(sessionAttributeValuesFamilyProvider(sessionId));
   }
 
@@ -256,6 +257,7 @@ class SessionEditorController {
     _ref.invalidate(sessionHistoryProvider);
     if (session != null) {
       _ref.invalidate(sessionsForWorkItemProvider(session.workItemId));
+      _ref.invalidate(workItemSessionRecordsProvider(session.workItemId));
     }
   }
 }
