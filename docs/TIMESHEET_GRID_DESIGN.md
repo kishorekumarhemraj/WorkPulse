@@ -74,7 +74,7 @@ Two changes, in this order down the page:
 | # | Decision | Why |
 |---|---|---|
 | D1 | Grid row key is **(resolved timesheet code, financial classification)** | The portal splits one project ID across two rows by resource category (§1). |
-| D2 | **Week start day is a setting**, default Saturday | WorkPulse's week currently starts Sunday (`analytics_model.dart:26`, `now.weekday % 7`). The portal's starts Saturday. Off by one day, every week, silently. |
+| D2 | **Week start day is a setting**, default Sunday | Aligns with `DashboardTimeRange.thisWeek` (`analytics_model.dart:26`), which has always started Sunday. |
 | D3 | **One grid block per week** in the selected range, capped at 6 | Removes any possibility of the grid and the tables below disagreeing about dates. A month range yields four or five blocks — which is a month of timesheets. |
 | D4 | **Every total is the sum of the rounded cells**, never the rounded sum | The portal computes its own totals from what is typed. See §6 — this is the highest-risk part of the whole feature. |
 | D5 | **A zero cell renders blank** | Matches the form, and a screen of `0.00` is unreadable. |

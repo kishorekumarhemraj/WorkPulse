@@ -34,10 +34,10 @@ void main() {
       await dbService.close();
     });
 
-    test('defaults to Saturday week start and 0.25 increment', () async {
+    test('defaults to Sunday week start and 0.25 increment', () async {
       final settings = await container.read(appSettingsProvider.future);
 
-      expect(settings.timesheetWeekStartDay, DateTime.saturday);
+      expect(settings.timesheetWeekStartDay, DateTime.sunday);
       expect(settings.timesheetRoundingIncrement, 0.25);
     });
 

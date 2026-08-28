@@ -166,23 +166,6 @@ class _ProjectFormDialogState extends ConsumerState<ProjectFormDialog> {
     }
   }
 
-  /// A code has to be present and has to be this project's alone — two
-  /// projects sharing one would book their hours to the same line, which is
-  /// precisely the error this screen exists to prevent.
-  String? _validateTimesheetCode(String? value) {
-    final code = value?.trim() ?? '';
-    if (code.isEmpty) return 'Default timesheet code is required';
-
-    final needle = code.toLowerCase();
-    final clash = (ref.read(projectsProvider).value ?? [])
-        .where((p) => p.id != widget.project?.id)
-        .where((p) => p.timesheetCode?.trim().toLowerCase() == needle)
-        .firstOrNull;
-
-    if (clash != null) return 'Already used by "${clash.name}"';
-    return null;
-  }
-
   @override
   Widget build(BuildContext context) {
     final isEditing = widget.project != null;
@@ -268,8 +251,7 @@ class _ProjectFormDialogState extends ConsumerState<ProjectFormDialog> {
             ),
             const SizedBox(height: Spacing.lg),
             DialogField(
-              label: 'Default Timesheet Code',
-              required: true,
+              label: 'Default Timesheet Code (Optional)',
               helperText: 'The fallback code booked when tasks have no '
                   'specific option set, or when the project has a single '
                   'code.',
@@ -279,7 +261,6 @@ class _ProjectFormDialogState extends ConsumerState<ProjectFormDialog> {
                 decoration: const InputDecoration(
                   hintText: 'e.g. PRJ-1042, CC-7781, WBS.4.2',
                 ),
-                validator: _validateTimesheetCode,
                 onFieldSubmitted: (_) => _submit(),
               ),
             ),

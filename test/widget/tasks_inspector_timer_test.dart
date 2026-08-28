@@ -9,6 +9,7 @@ import 'package:workpulse/domain/models/work_item_model.dart';
 import 'package:workpulse/domain/models/workspace_model.dart';
 import 'package:workpulse/features/categories/providers/categories_provider.dart';
 import 'package:workpulse/features/projects/providers/projects_provider.dart';
+import 'package:workpulse/domain/services/export_service.dart';
 import 'package:workpulse/features/tasks/providers/task_sessions_provider.dart';
 import 'package:workpulse/features/tasks/providers/work_items_provider.dart';
 import 'package:workpulse/features/tasks/views/tasks_view.dart';
@@ -79,6 +80,8 @@ void main() {
           // The inspector reads both; neither is what these tests are about.
           sessionsForWorkItemProvider
               .overrideWith((ref, id) => Future.value(const <Session>[])),
+          workItemSessionRecordsProvider.overrideWith(
+              (ref, id) => Future.value(const <SessionExportRecord>[])),
           taskTotalDurationProvider
               .overrideWith((ref, id) => Future.value(Duration.zero)),
         ],
@@ -180,6 +183,66 @@ void main() {
       // A switch the user cancels in the confirmation dialog lands here too:
       // nothing is tracking, so nothing is revealed.
       expect(find.byType(WorkItemInspector), findsNothing);
+    });
+  });
+
+  group('WorkItemInspector sessions rendering', () {
+    testWidgets('renders session metadata chips and note block',
+        (tester) async {
+      final sess = Session(
+        id: 'sess-1',
+        workItemId: alpha.id,
+        categoryId: category.id,
+        startTime: now.subtract(const Duration(minutes: 90)),
+        endTime: now,
+        notes: 'Refactored state layer',
+        createdAt: now.subtract(const Duration(minutes: 90)),
+      );
+
+      final record = SessionExportRecord(
+        session: sess,
+        workItem: alpha,
+        project: project,
+        category: category,
+        grossDuration: const Duration(minutes: 90),
+        idleDuration: Duration.zero,
+        netActiveDuration: const Duration(minutes: 90),
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            currentWorkspaceProvider
+                .overrideWith(() => _FakeWorkspace(workspace)),
+            workItemSessionRecordsProvider
+                .overrideWith((ref, id) => Future.value([record])),
+            taskTotalDurationProvider
+                .overrideWith((ref, id) => Future.value(const Duration(minutes: 90))),
+            timerProvider.overrideWith(() => timer),
+          ],
+          child: MaterialApp(
+            theme: AppTheme.darkTheme,
+            home: Scaffold(
+              body: WorkItemInspector(
+                item: alpha,
+                project: project,
+                category: category,
+                tags: const [],
+                people: const [],
+                peopleMap: const {},
+                onEdit: () {},
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('SESSIONS (1)'), findsOneWidget);
+      expect(find.text('Engineering'), findsWidgets);
+      // Project is omitted from per-session chips
+      expect(find.text('Refactored state layer'), findsOneWidget);
+      expect(find.text('01:30:00'), findsOneWidget);
     });
   });
 }

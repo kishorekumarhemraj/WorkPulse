@@ -122,7 +122,7 @@ class TimesheetView extends ConsumerWidget {
               TimesheetSectionItem(
                 rowCount: data.projectRows.length,
                 widget: TimesheetTable(
-                  title: 'By project',
+                  title: 'By Project',
                   icon: Icons.folder_outlined,
                   subtitle: 'Where the hours went, and how much of each '
                       'project is capitalizable.',
@@ -134,7 +134,7 @@ class TimesheetView extends ConsumerWidget {
               TimesheetSectionItem(
                 rowCount: data.taskRows.length,
                 widget: TimesheetTable(
-                  title: 'By work item',
+                  title: 'By Work Item',
                   icon: Icons.check_circle_outline,
                   subtitle: 'The level the classification is set at, so a '
                       'figure that looks wrong is traceable to the task '
@@ -147,7 +147,7 @@ class TimesheetView extends ConsumerWidget {
               TimesheetSectionItem(
                 rowCount: data.categoryRows.length,
                 widget: TimesheetTable(
-                  title: 'By category',
+                  title: 'By Category',
                   icon: Icons.category_outlined,
                   subtitle: 'How tracked time breaks down across categories '
                       'between capitalizable, operational, and unclassified work.',
@@ -240,7 +240,7 @@ class _NoAttributesHint extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'No attributes to break down by',
+                  'No Attributes to Break Down By',
                   style: theme.textTheme.titleSmall,
                 ),
                 const SizedBox(height: Spacing.xs),
