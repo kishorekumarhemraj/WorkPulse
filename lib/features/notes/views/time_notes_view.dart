@@ -563,6 +563,8 @@ class _TaskNoteCard extends StatelessWidget {
                               EntityChip(
                                 label: group.category!.name,
                                 icon: IconUtils.getIcon(group.category!.iconName),
+                                color: ColorUtils.parseHex(
+                                    group.category!.colorHex),
                               ),
                             if (group.classification.isClassified)
                               StatusBadge(
@@ -590,6 +592,7 @@ class _TaskNoteCard extends StatelessWidget {
                               EntityChip(
                                 label: person.name,
                                 icon: Icons.person,
+                                color: ColorUtils.deterministicColor(person.id),
                                 plain: true,
                               ),
                           ],
