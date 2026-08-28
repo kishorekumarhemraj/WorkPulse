@@ -44,6 +44,25 @@ class SqliteSessionRepository implements SessionRepository {
   }
 
   @override
+  Future<Session?> getLatestByWorkItemId(String workItemId) async {
+    final results = await _db.query(
+      Tables.sessions,
+      where: 'work_item_id = ?',
+      whereArgs: [workItemId],
+      orderBy: 'start_time DESC',
+      limit: 1,
+    );
+
+    if (results.isEmpty) return null;
+
+    final sessionMap = results.first;
+    final id = sessionMap['id'] as String;
+    final peopleIds = await _getPeopleIds(id);
+    final tagIds = await _getTagIds(id);
+    return _fromMap(sessionMap, peopleIds, tagIds);
+  }
+
+  @override
   Future<int> countByWorkItemId(String workItemId) async {
     final rows = await _db.rawQuery(
       'SELECT COUNT(*) AS count FROM ${Tables.sessions} WHERE work_item_id = ?',

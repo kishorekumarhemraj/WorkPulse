@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:workpulse/core/theme/app_colors.dart';
 import 'package:workpulse/core/theme/app_typography.dart';
+import 'package:workpulse/core/theme/classification_style.dart';
 import 'package:workpulse/core/theme/color_utils.dart';
 import 'package:workpulse/core/theme/design_tokens.dart';
 import 'package:workpulse/core/theme/icon_utils.dart';
@@ -16,12 +17,15 @@ import 'package:workpulse/core/widgets/hoverable.dart';
 import 'package:workpulse/core/widgets/page_header.dart';
 import 'package:workpulse/core/widgets/segmented_control.dart';
 import 'package:workpulse/core/widgets/skeleton_loader.dart';
+import 'package:workpulse/core/widgets/status_badge.dart';
 import 'package:workpulse/domain/models/analytics_model.dart';
-import 'package:workpulse/domain/services/export_service.dart';
+import 'package:workpulse/domain/models/time_note_model.dart';
 import 'package:workpulse/domain/services/timer_service.dart';
-import 'package:workpulse/features/notes/models/time_note_entry.dart';
+import 'package:workpulse/domain/services/timesheet_code_resolver.dart';
 import 'package:workpulse/features/notes/providers/time_notes_provider.dart';
 import 'package:workpulse/features/reports/views/session_edit_dialog.dart';
+import 'package:workpulse/features/reports/widgets/session_metadata.dart';
+import 'package:workpulse/features/timesheet/providers/timesheet_provider.dart';
 
 class TimeNotesView extends ConsumerWidget {
   const TimeNotesView({super.key});
@@ -98,32 +102,38 @@ class TimeNotesView extends ConsumerWidget {
 
   void _copyStandupNotes(
     BuildContext context,
-    Map<DateTime, List<TimeNoteEntry>> dayGroups,
+    TimeNotesReport report,
   ) {
-    if (dayGroups.isEmpty) return;
+    if (report.isEmpty) return;
 
     final buffer = StringBuffer();
     final dayFormat = DateFormat('EEEE, MMMM d, yyyy');
     final timeFormat = DateFormat('HH:mm');
 
-    for (final entry in dayGroups.entries) {
-      buffer.writeln('### ${dayFormat.format(entry.key)}');
+    for (final dayGroup in report.dayGroups) {
+      buffer.writeln('### ${dayFormat.format(dayGroup.day)}');
       buffer.writeln();
 
-      for (final note in entry.value) {
-        final start = timeFormat.format(note.startTime.toLocal());
-        final end = note.endTime != null
-            ? timeFormat.format(note.endTime!.toLocal())
-            : 'running';
-        final dur = TimerService.formatDuration(note.duration, compact: true);
-        final proj = note.project != null ? ' [${note.project!.name}]' : '';
+      for (final taskGroup in dayGroup.taskGroups) {
+        final proj = taskGroup.project != null ? ' [${taskGroup.project!.name}]' : '';
+        final dur = TimerService.formatDuration(taskGroup.totalDuration, compact: true);
+        buffer.writeln(
+            '- **${taskGroup.workItem.name}**$proj (${taskGroup.sessionCount} sessions • $dur)');
 
-        buffer
-            .writeln('- **${note.workItem.name}**$proj ($start - $end • $dur)');
-        final noteLines = note.note.split('\n');
-        for (final line in noteLines) {
-          if (line.trim().isNotEmpty) {
-            buffer.writeln('  • ${line.trim()}');
+        for (final entry in taskGroup.entries) {
+          final start = timeFormat.format(entry.record.session.startTime.toLocal());
+          final end = entry.record.session.endTime != null
+              ? timeFormat.format(entry.record.session.endTime!.toLocal())
+              : 'running';
+          final noteLines = entry.note.split('\n');
+          for (var i = 0; i < noteLines.length; i++) {
+            final line = noteLines[i].trim();
+            if (line.isEmpty) continue;
+            if (i == 0) {
+              buffer.writeln('  • ($start – $end) $line');
+            } else {
+              buffer.writeln('    $line');
+            }
           }
         }
       }
@@ -144,6 +154,8 @@ class TimeNotesView extends ConsumerWidget {
     final selectedRange = ref.watch(timeNotesRangeProvider);
     final selectedDate = ref.watch(timeNotesDateProvider);
     final notesAsync = ref.watch(timeNotesProvider);
+    final codes = ref.watch(timesheetCodeResolverProvider).value ??
+        const TimesheetCodeResolver();
 
     final now = DateTime.now();
 
@@ -203,10 +215,10 @@ class TimeNotesView extends ConsumerWidget {
             onPickDate: () => _pickDate(context, ref),
           ),
           notesAsync.maybeWhen(
-            data: (groups) => ElevatedButton.icon(
-              onPressed: groups.isEmpty
+            data: (report) => ElevatedButton.icon(
+              onPressed: report.isEmpty
                   ? null
-                  : () => _copyStandupNotes(context, groups),
+                  : () => _copyStandupNotes(context, report),
               icon: const Icon(Icons.copy_all, size: IconSizes.md),
               label: const Text('Copy Notes'),
             ),
@@ -252,14 +264,14 @@ class TimeNotesView extends ConsumerWidget {
             // Content
             Expanded(
               child: notesAsync.when(
-                loading: () => const SkeletonList(itemCount: 6),
+                loading: () => const SkeletonList(itemCount: 4, itemHeight: 140),
                 error: (error, _) => ErrorState(
                   title: 'Could not load time notes',
                   error: error,
                   onRetry: () => ref.invalidate(timeNotesProvider),
                 ),
-                data: (dayGroups) {
-                  if (dayGroups.isEmpty) {
+                data: (report) {
+                  if (report.isEmpty) {
                     final isFiltered =
                         ref.watch(timeNotesSearchProvider).isNotEmpty;
                     return EmptyState(
@@ -273,18 +285,46 @@ class TimeNotesView extends ConsumerWidget {
                     );
                   }
 
-                  return ListView.builder(
-                    padding: const EdgeInsets.only(bottom: Spacing.xxl),
-                    itemCount: dayGroups.length,
-                    itemBuilder: (context, index) {
-                      final dayKey = dayGroups.keys.elementAt(index);
-                      final dayNotes = dayGroups[dayKey]!;
-                      return _DayNotesGroup(
-                        day: dayKey,
-                        notes: dayNotes,
-                        onNoteEdited: () => ref.invalidate(timeNotesProvider),
-                      );
-                    },
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _NotesSummaryCard(report: report),
+                      const SizedBox(height: Spacing.lg),
+                      Expanded(
+                        child: ListView.separated(
+                          padding: const EdgeInsets.only(bottom: Spacing.xxl),
+                          itemCount: report.dayGroups.length,
+                          separatorBuilder: (_, __) =>
+                              const SizedBox(height: Spacing.xl),
+                          itemBuilder: (context, index) {
+                            final dayGroup = report.dayGroups[index];
+                            if (report.isSingleDay) {
+                              return Column(
+                                children: [
+                                  for (var i = 0;
+                                      i < dayGroup.taskGroups.length;
+                                      i++) ...[
+                                    if (i > 0)
+                                      const SizedBox(height: Spacing.md),
+                                    _TaskNoteCard(
+                                      group: dayGroup.taskGroups[i],
+                                      codes: codes,
+                                      onEdited: () =>
+                                          ref.invalidate(timeNotesProvider),
+                                    ),
+                                  ],
+                                ],
+                              );
+                            }
+                            return _DayNotesSection(
+                              dayGroup: dayGroup,
+                              codes: codes,
+                              onEdited: () => ref.invalidate(timeNotesProvider),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
                   );
                 },
               ),
@@ -296,109 +336,100 @@ class TimeNotesView extends ConsumerWidget {
   }
 }
 
-class _DayNotesGroup extends StatelessWidget {
-  final DateTime day;
-  final List<TimeNoteEntry> notes;
-  final VoidCallback onNoteEdited;
+class _NotesSummaryCard extends StatelessWidget {
+  final TimeNotesReport report;
 
-  const _DayNotesGroup({
-    required this.day,
-    required this.notes,
-    required this.onNoteEdited,
-  });
+  const _NotesSummaryCard({required this.report});
 
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
     final theme = Theme.of(context);
-    final isToday = DateUtils.isSameDay(day, DateTime.now());
-    final isYesterday = DateUtils.isSameDay(
-      day,
-      DateTime.now().subtract(const Duration(days: 1)),
-    );
-
-    final dayLabel = isToday
-        ? 'Today • ${DateFormat('EEEE, MMM d').format(day)}'
-        : (isYesterday
-            ? 'Yesterday • ${DateFormat('EEEE, MMM d').format(day)}'
-            : DateFormat('EEEE, MMMM d, yyyy').format(day));
 
     return Container(
-      margin: const EdgeInsets.only(bottom: Spacing.xl),
+      padding: const EdgeInsets.symmetric(
+        horizontal: Spacing.lg,
+        vertical: Spacing.md,
+      ),
       decoration: BoxDecoration(
-        color: colors.surface,
-        borderRadius: Radii.xlAll,
+        color: colors.surfaceSunken,
+        borderRadius: Radii.lgAll,
         border: Border.all(color: colors.divider),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          // Day Header
-          Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: Spacing.lg,
-              vertical: Spacing.md,
-            ),
-            decoration: BoxDecoration(
-              color: colors.surfaceSunken,
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(12),
+          _SummaryMetric(
+            label: 'Notes',
+            value: '${report.totalNotes}',
+          ),
+          const SizedBox(width: Spacing.xl),
+          _SummaryMetric(
+            label: 'Tasks',
+            value: '${report.totalTasks}',
+          ),
+          const SizedBox(width: Spacing.xl),
+          _SummaryMetric(
+            label: 'Tracked Time',
+            value: TimerService.formatDuration(report.totalDuration, includeSeconds: false),
+          ),
+          const Spacer(),
+          if (report.unnotedSessions > 0)
+            Text(
+              '${report.unnotedSessions} unnoted session${report.unnotedSessions == 1 ? '' : 's'}',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: colors.textTertiary,
+                fontStyle: FontStyle.italic,
               ),
-              border: Border(bottom: BorderSide(color: colors.divider)),
             ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.calendar_today,
-                  size: IconSizes.sm,
-                  color: isToday ? colors.accent : colors.textSecondary,
-                ),
-                const SizedBox(width: Spacing.sm),
-                Text(
-                  dayLabel,
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: isToday ? FontWeight.bold : FontWeight.w600,
-                    color: isToday ? colors.accent : colors.textPrimary,
-                  ),
-                ),
-                const Spacer(),
-                Text(
-                  '${notes.length} ${notes.length == 1 ? 'note' : 'notes'}',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: colors.textTertiary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Notes items
-          ListView.separated(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: notes.length,
-            separatorBuilder: (_, __) =>
-                Divider(height: 1, color: colors.divider),
-            itemBuilder: (context, i) {
-              final note = notes[i];
-              return _TimeNoteCard(
-                entry: note,
-                onEdited: onNoteEdited,
-              );
-            },
-          ),
         ],
       ),
     );
   }
 }
 
-class _TimeNoteCard extends StatelessWidget {
-  final TimeNoteEntry entry;
+class _SummaryMetric extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _SummaryMetric({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    final theme = Theme.of(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label.toUpperCase(),
+          style: theme.textTheme.labelSmall?.copyWith(
+            color: colors.textTertiary,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          value,
+          style: AppTypography.numeric(
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
+            color: colors.textPrimary,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _DayNotesSection extends StatelessWidget {
+  final NotesDayGroup dayGroup;
+  final TimesheetCodeResolver codes;
   final VoidCallback onEdited;
 
-  const _TimeNoteCard({
-    required this.entry,
+  const _DayNotesSection({
+    required this.dayGroup,
+    required this.codes,
     required this.onEdited,
   });
 
@@ -406,15 +437,239 @@ class _TimeNoteCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.colors;
     final theme = Theme.of(context);
+    final isToday = DateUtils.isSameDay(dayGroup.day, DateTime.now());
+    final isYesterday = DateUtils.isSameDay(
+      dayGroup.day,
+      DateTime.now().subtract(const Duration(days: 1)),
+    );
+
+    final dayLabel = isToday
+        ? 'Today • ${DateFormat('EEEE, MMM d').format(dayGroup.day)}'
+        : (isYesterday
+            ? 'Yesterday • ${DateFormat('EEEE, MMM d').format(dayGroup.day)}'
+            : DateFormat('EEEE, MMMM d, yyyy').format(dayGroup.day));
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(
+            left: Spacing.xs,
+            right: Spacing.xs,
+            bottom: Spacing.sm,
+          ),
+          child: Row(
+            children: [
+              Icon(
+                Icons.calendar_today_outlined,
+                size: IconSizes.sm,
+                color: isToday ? colors.accent : colors.textSecondary,
+              ),
+              const SizedBox(width: Spacing.sm),
+              Text(
+                dayLabel,
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: isToday ? FontWeight.bold : FontWeight.w600,
+                  color: isToday ? colors.accent : colors.textPrimary,
+                ),
+              ),
+              const SizedBox(width: Spacing.md),
+              Expanded(child: Divider(height: 1, color: colors.divider)),
+              const SizedBox(width: Spacing.md),
+              Text(
+                '${dayGroup.noteCount} note${dayGroup.noteCount == 1 ? '' : 's'} • ${TimerService.formatDuration(dayGroup.totalDuration, includeSeconds: false)}',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: colors.textTertiary,
+                ),
+              ),
+            ],
+          ),
+        ),
+        for (var i = 0; i < dayGroup.taskGroups.length; i++) ...[
+          if (i > 0) const SizedBox(height: Spacing.md),
+          _TaskNoteCard(
+            group: dayGroup.taskGroups[i],
+            codes: codes,
+            onEdited: onEdited,
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _TaskNoteCard extends StatelessWidget {
+  final TaskNoteGroup group;
+  final TimesheetCodeResolver codes;
+  final VoidCallback onEdited;
+
+  const _TaskNoteCard({
+    required this.group,
+    required this.codes,
+    required this.onEdited,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    final theme = Theme.of(context);
+    final projectColor = ColorUtils.parseHex(group.project?.colorHex);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: colors.surface,
+        borderRadius: Radii.xlAll,
+        border: Border.all(color: colors.divider),
+      ),
+      child: ClipRRect(
+        borderRadius: Radii.xlAll,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Task Card Header: Promoted metadata
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: Spacing.lg,
+                vertical: Spacing.md,
+              ),
+              decoration: BoxDecoration(
+                color: colors.surfaceSunken,
+                border: Border(bottom: BorderSide(color: colors.divider)),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          group.workItem.name,
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: Spacing.xs),
+                        Wrap(
+                          spacing: Spacing.xs,
+                          runSpacing: Spacing.xxs,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: [
+                            if (group.project != null)
+                              EntityChip(
+                                label: group.project!.name,
+                                color: projectColor,
+                              ),
+                            if (group.category != null)
+                              EntityChip(
+                                label: group.category!.name,
+                                icon: IconUtils.getIcon(group.category!.iconName),
+                              ),
+                            if (group.classification.isClassified)
+                              StatusBadge(
+                                label: group.classification.label,
+                                icon: group.classification.icon,
+                                color: group.classification.colorOf(context),
+                                outlined: true,
+                              ),
+                            if (group.timesheetCode?.code != null &&
+                                group.timesheetCode!.code!.isNotEmpty)
+                              EntityChip(
+                                icon: Icons.receipt_long_outlined,
+                                label: group.timesheetCode!.code!,
+                                color: group.timesheetCode!.needsAttention
+                                    ? colors.warning
+                                    : null,
+                                plain: true,
+                              ),
+                            for (final tag in group.tags)
+                              EntityChip(
+                                label: '#${tag.name}',
+                                color: ColorUtils.parseHex(tag.colorHex),
+                              ),
+                            for (final person in group.people)
+                              EntityChip(
+                                label: person.name,
+                                icon: Icons.person,
+                                plain: true,
+                              ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: Spacing.md),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        TimerService.formatDuration(
+                          group.totalDuration,
+                          includeSeconds: false,
+                        ),
+                        style: AppTypography.numeric(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: colors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '${group.sessionCount} session${group.sessionCount == 1 ? '' : 's'}',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: colors.textTertiary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+
+            // Entries
+            for (var i = 0; i < group.entries.length; i++) ...[
+              if (i > 0) Divider(height: 1, color: colors.divider),
+              _TaskNoteEntryRow(
+                entry: group.entries[i],
+                promotedFields: group.promotedFields,
+                codes: codes,
+                onEdited: onEdited,
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TaskNoteEntryRow extends StatelessWidget {
+  final TimeNoteEntry entry;
+  final Set<SessionMetadataField> promotedFields;
+  final TimesheetCodeResolver codes;
+  final VoidCallback onEdited;
+
+  const _TaskNoteEntryRow({
+    required this.entry,
+    required this.promotedFields,
+    required this.codes,
+    required this.onEdited,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
     final timeFormat = DateFormat('HH:mm');
 
-    final start = timeFormat.format(entry.startTime.toLocal());
-    final end = entry.endTime != null
-        ? timeFormat.format(entry.endTime!.toLocal())
+    final start = timeFormat.format(entry.record.session.startTime.toLocal());
+    final end = entry.record.session.endTime != null
+        ? timeFormat.format(entry.record.session.endTime!.toLocal())
         : 'Running';
-    final isRunning = entry.endTime == null;
+    final isRunning = entry.record.session.endTime == null;
 
-    final projectColor = ColorUtils.parseHex(entry.project?.colorHex);
+    final codeResolution = codes.resolveFor(
+      project: entry.record.project,
+      attributeOptionIds: entry.record.attributeOptionIds,
+    );
 
     return Hoverable(
       cursor: SystemMouseCursors.click,
@@ -424,18 +679,7 @@ class _TimeNoteCard extends StatelessWidget {
           child: InkWell(
             hoverColor: Colors.transparent,
             onTap: () async {
-              final record = SessionExportRecord(
-                session: entry.session,
-                workItem: entry.workItem,
-                project: entry.project,
-                category: entry.category,
-                people: entry.people,
-                tags: entry.tags,
-                grossDuration: entry.duration,
-                idleDuration: Duration.zero,
-                netActiveDuration: entry.duration,
-              );
-              await SessionEditDialog.show(context, record);
+              await SessionEditDialog.show(context, entry.record);
               onEdited();
             },
             child: Padding(
@@ -443,86 +687,66 @@ class _TimeNoteCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Top Row: Time Badge + Task Name + Chips
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      // Time badge
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: Spacing.sm,
-                          vertical: Spacing.xxs,
-                        ),
-                        decoration: BoxDecoration(
-                          color: isRunning
-                              ? colors.successSubtle
-                              : colors.surfaceSunken,
-                          borderRadius: Radii.smAll,
-                          border: Border.all(
-                            color: isRunning
-                                ? colors.success.withValues(alpha: 0.4)
-                                : colors.divider,
+                      if (entry.source == TimeNoteSource.session)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: Spacing.sm,
+                            vertical: Spacing.xxs,
                           ),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              isRunning ? Icons.play_arrow : Icons.access_time,
-                              size: 12,
+                          decoration: BoxDecoration(
+                            color: isRunning
+                                ? colors.successSubtle
+                                : colors.surfaceSunken,
+                            borderRadius: Radii.smAll,
+                            border: Border.all(
                               color: isRunning
-                                  ? colors.success
-                                  : colors.textSecondary,
+                                  ? colors.success.withValues(alpha: 0.4)
+                                  : colors.divider,
                             ),
-                            const SizedBox(width: 4),
-                            Text(
-                              '$start – $end • ${TimerService.formatDuration(entry.duration, compact: true)}',
-                              style: AppTypography.numeric(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                isRunning ? Icons.play_arrow : Icons.access_time,
+                                size: 12,
                                 color: isRunning
                                     ? colors.success
-                                    : colors.textPrimary,
+                                    : colors.textSecondary,
                               ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: Spacing.md),
-
-                      // Task Name
-                      Expanded(
-                        child: Text(
-                          entry.workItem.name,
-                          style: theme.textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.w600,
+                              const SizedBox(width: 4),
+                              Text(
+                                '$start – $end • ${TimerService.formatDuration(entry.duration, compact: true)}',
+                                style: AppTypography.numeric(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  color: isRunning
+                                      ? colors.success
+                                      : colors.textPrimary,
+                                ),
+                              ),
+                            ],
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                        )
+                      else
+                        const StatusBadge(
+                          label: 'Task note',
+                          icon: Icons.notes,
+                          tone: BadgeTone.neutral,
+                        ),
+                      const SizedBox(width: Spacing.sm),
+                      Expanded(
+                        child: SessionMetadataChips(
+                          record: entry.record,
+                          code: codeResolution,
+                          omit: promotedFields,
+                          dense: true,
                         ),
                       ),
-
-                      // Chips
-                      if (entry.project != null) ...[
-                        EntityChip(
-                          label: entry.project!.name,
-                          color: projectColor,
-                        ),
-                        const SizedBox(width: Spacing.xs),
-                      ],
-                      if (entry.category != null) ...[
-                        EntityChip(
-                          label: entry.category!.name,
-                          icon: IconUtils.getIcon(entry.category!.iconName),
-                        ),
-                        const SizedBox(width: Spacing.xs),
-                      ],
-                      for (final tag in entry.tags) ...[
-                        EntityChip(
-                          label: '#${tag.name}',
-                          color: ColorUtils.parseHex(tag.colorHex),
-                        ),
-                        const SizedBox(width: Spacing.xs),
-                      ],
+                      const SizedBox(width: Spacing.sm),
                       AnimatedOpacity(
                         opacity: isHovered ? 1.0 : 0.35,
                         duration: Motion.duration(context, Motion.fast),
@@ -534,47 +758,11 @@ class _TimeNoteCard extends StatelessWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: Spacing.md),
-
-                  // Note callout container
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(Spacing.md),
-                    decoration: BoxDecoration(
-                      color: colors.surfaceSunken,
-                      borderRadius: Radii.mdAll,
-                      border: Border.all(color: colors.divider),
-                    ),
-                    child: Text(
-                      entry.note,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        height: 1.45,
-                        color: colors.textPrimary,
-                      ),
-                    ),
+                  const SizedBox(height: Spacing.sm),
+                  SessionNoteBlock(
+                    note: entry.note,
+                    callout: true,
                   ),
-
-                  // People tagged
-                  if (entry.people.isNotEmpty) ...[
-                    const SizedBox(height: Spacing.sm),
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.people_outline,
-                          size: 13,
-                          color: colors.textTertiary,
-                        ),
-                        const SizedBox(width: 6),
-                        for (final person in entry.people) ...[
-                          EntityChip(
-                            label: person.name,
-                            plain: true,
-                          ),
-                          const SizedBox(width: 4),
-                        ],
-                      ],
-                    ),
-                  ],
                 ],
               ),
             ),

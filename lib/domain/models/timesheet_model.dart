@@ -225,10 +225,6 @@ class TimesheetAttributeSection extends Equatable {
   List<Object?> get props => [definition, rows];
 }
 
-/// One classification's worth of category rows — "coding versus meetings"
-/// inside CapEx, and again inside OpEx.
-///
-/// This is the breakdown that the old category-level model could not express:
 /// One line of the entry grid form.
 class TimesheetGridRow extends Equatable {
   /// The resolved timesheet code. Empty string where none could be resolved.

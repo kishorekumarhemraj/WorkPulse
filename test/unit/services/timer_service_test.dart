@@ -222,9 +222,9 @@ void main() {
           '2h 30m');
     });
 
-    /// A work item's classification is a starting point, not a stamp applied
-    /// to everything ever tracked against it.
-    group('a work item seeds only its first session', () {
+    /// Category is inherited forward from the previous session; tags and people
+    /// seed only on the first session from the work item.
+    group('category is inherited forward; tags and people are not', () {
       late WorkItem classified;
 
       setUp(() async {
@@ -265,19 +265,53 @@ void main() {
         expect(first.peopleIds, ['person-seed']);
       });
 
-      test('every session after the first starts unclassified', () async {
-        await timerService.startSession(classified.id);
+      test('a later session inherits the previous session\'s category, not the task\'s',
+          () async {
+        final first = await timerService.startSession(classified.id);
+        expect(first.categoryId, defaultCategory.id);
+
+        // Edit session 1 to a different category
+        await timerService.updateSessionCategory(first.id, 'cat-edited');
+
         final second = await timerService.startSession(classified.id);
 
-        expect(second.categoryId, isNull);
+        expect(second.categoryId, 'cat-edited');
         expect(second.tagIds, isEmpty);
         expect(second.peopleIds, isEmpty);
 
-        // The first session is untouched by the second starting.
+        // The first session is untouched
         final all = await sessionRepo.getByWorkItemId(classified.id);
         expect(all, hasLength(2));
         final firstAgain = all.firstWhere((s) => s.id != second.id);
-        expect(firstAgain.categoryId, defaultCategory.id);
+        expect(firstAgain.categoryId, 'cat-edited');
+      });
+
+      test(
+          'a later session on a task whose previous session is unclassified stays unclassified',
+          () async {
+        final first = await timerService.startSession(classified.id);
+        expect(first.categoryId, defaultCategory.id);
+
+        // Edit session 1 to have no category
+        await timerService.updateSessionCategory(first.id, null);
+
+        final second = await timerService.startSession(classified.id);
+        expect(second.categoryId, isNull);
+      });
+
+      test(
+          'a later session inherits previous session even when work item category differs',
+          () async {
+        // Start session 1 explicitly with a different category
+        final first = await timerService.startSession(
+          classified.id,
+          categoryId: 'cat-custom',
+        );
+        expect(first.categoryId, 'cat-custom');
+
+        // Start session 2 without explicit category -> inherits from previous session, not classified.categoryId
+        final second = await timerService.startSession(classified.id);
+        expect(second.categoryId, 'cat-custom');
       });
 
       test('an explicit choice always wins, on any session', () async {

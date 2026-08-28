@@ -269,20 +269,20 @@ void main() {
         (tester) async {
       await pumpSheet(tester, sheet(), size: const Size(800, 3000));
 
-      expect(find.text('By timesheet code'), findsOneWidget);
-      expect(find.text('By project'), findsOneWidget);
-      expect(find.text('By work item'), findsOneWidget);
-      expect(find.text('By category'), findsOneWidget);
+      expect(find.text('By Timesheet Code'), findsOneWidget);
+      expect(find.text('By Project'), findsOneWidget);
+      expect(find.text('By Work Item'), findsOneWidget);
+      expect(find.text('By Category'), findsOneWidget);
     });
 
     testWidgets('at or above Breakpoints.medium renders two-column layout',
         (tester) async {
       await pumpSheet(tester, sheet(), size: const Size(1200, 2600));
 
-      expect(find.text('By timesheet code'), findsOneWidget);
-      expect(find.text('By project'), findsOneWidget);
-      expect(find.text('By work item'), findsOneWidget);
-      expect(find.text('By category'), findsOneWidget);
+      expect(find.text('By Timesheet Code'), findsOneWidget);
+      expect(find.text('By Project'), findsOneWidget);
+      expect(find.text('By Work Item'), findsOneWidget);
+      expect(find.text('By Category'), findsOneWidget);
       expect(find.byType(Row), findsWidgets);
     });
 
@@ -303,10 +303,10 @@ void main() {
       await pumpSheet(tester, sheet());
 
       expect(find.text('Time Sheet'), findsOneWidget);
-      expect(find.text('By timesheet code'), findsOneWidget);
-      expect(find.text('By project'), findsOneWidget);
-      expect(find.text('By work item'), findsOneWidget);
-      expect(find.text('By category'), findsOneWidget);
+      expect(find.text('By Timesheet Code'), findsOneWidget);
+      expect(find.text('By Project'), findsOneWidget);
+      expect(find.text('By Work Item'), findsOneWidget);
+      expect(find.text('By Category'), findsOneWidget);
       expect(find.text('By Cost Centre'), findsOneWidget);
       expect(find.text('Apollo'), findsWidgets);
       expect(find.text('Build the thing'), findsOneWidget);
@@ -323,7 +323,7 @@ void main() {
         (tester) async {
       await pumpSheet(tester, sheet());
 
-      expect(find.text('By timesheet code'), findsOneWidget);
+      expect(find.text('By Timesheet Code'), findsOneWidget);
       expect(find.text('CODE'), findsNWidgets(3));
       expect(find.text('PRJ-1042'), findsNWidgets(4));
       expect(find.text('No code'), findsNWidgets(3));
@@ -409,7 +409,7 @@ void main() {
       );
 
       expect(find.text('No tracked time in this period'), findsOneWidget);
-      expect(find.text('By project'), findsNothing);
+      expect(find.text('By Project'), findsNothing);
     });
   });
 }
