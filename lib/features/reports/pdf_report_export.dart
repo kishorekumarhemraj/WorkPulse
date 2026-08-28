@@ -4,7 +4,11 @@ import 'package:workpulse/core/keyboard/shortcut_labels.dart';
 import 'package:workpulse/core/platform/pdf_export_handler.dart';
 import 'package:workpulse/core/widgets/app_snack_bar.dart';
 import 'package:workpulse/domain/models/date_range.dart';
+import 'package:workpulse/domain/models/work_pattern_model.dart';
+import 'package:workpulse/domain/services/timesheet_code_resolver.dart';
+import 'package:workpulse/features/dashboard/providers/dashboard_provider.dart';
 import 'package:workpulse/features/reports/providers/reports_provider.dart';
+import 'package:workpulse/features/timesheet/providers/timesheet_provider.dart';
 import 'package:workpulse/features/workspace/providers/workspace_provider.dart';
 
 /// Generates a PDF report, saves it, opens it, and reports the outcome.
@@ -35,9 +39,18 @@ class PdfReportExport {
 
     try {
       final workspace = await ref.read(currentWorkspaceProvider.future);
+      final codes = ref.read(timesheetCodeResolverProvider).value ??
+          const TimesheetCodeResolver();
+      WorkPatternReport? patterns;
+      try {
+        patterns = ref.read(workPatternReportProvider).value;
+      } catch (_) {}
+
       final bytes = await ref.read(exportServiceProvider).generatePdf(
             workspaceId: workspace.id,
             range: range,
+            codes: codes,
+            patterns: patterns,
           );
 
       final result = await PdfExportHandler.savePdf(

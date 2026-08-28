@@ -62,6 +62,10 @@ class TimesheetCodeResolver {
   })  : _codesByProject = codesByProject,
         _optionsById = optionsById;
 
+  Map<String, Map<String, String>> get codesByProject => _codesByProject;
+  Map<String, AttributeOption> get optionsById => _optionsById;
+  bool get hasMappings => _codesByProject.isNotEmpty;
+
   TimesheetCodeResolution resolveFor({
     required Project? project,
     required Map<String, List<String>> attributeOptionIds,

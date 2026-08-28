@@ -16,7 +16,7 @@ import 'package:workpulse/features/workspace/providers/workspace_provider.dart';
 const _uuid = Uuid();
 
 final pdfReportServiceProvider = Provider<PdfReportService>((ref) {
-  return PdfReportService();
+  return const PdfReportService();
 });
 
 final exportServiceProvider = Provider<ExportService>((ref) {
