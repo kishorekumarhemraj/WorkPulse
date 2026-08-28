@@ -465,6 +465,16 @@ void main() {
       final totalMinutes =
           itemSessions.fold<int>(0, (sum, s) => sum + s.duration.inMinutes);
       expect(totalMinutes, equals(75 + 60)); // 135 mins = 2h 15m
+
+      // Verify getLatestByWorkItemId
+      final latest = await sessionRepo.getLatestByWorkItemId('wi-1');
+      expect(latest, isNotNull);
+      expect(latest!.id, equals('sess-2'));
+      expect(latest.startTime, equals(DateTime.utc(2026, 8, 23, 14, 0)));
+
+      final untrackedLatest =
+          await sessionRepo.getLatestByWorkItemId('untracked-id');
+      expect(untrackedLatest, isNull);
     });
 
     test('Idle period recording and settings persistence', () async {

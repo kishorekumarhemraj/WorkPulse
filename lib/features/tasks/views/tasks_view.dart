@@ -248,7 +248,7 @@ class _TasksViewState extends ConsumerState<TasksView> {
                         row,
                         const SizedBox(height: Spacing.sm),
                         SizedBox(
-                          height: 320,
+                          height: 420,
                           child: WorkItemInspector(
                             item: item,
                             project: projectMap[item.projectId],

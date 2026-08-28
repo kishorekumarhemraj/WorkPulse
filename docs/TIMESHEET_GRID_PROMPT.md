@@ -32,8 +32,8 @@ into two columns so they stop requiring a scroll.
 1. **A row is keyed by (timesheet code, financial classification)**, never by
    code alone. The real form splits one project ID across two rows by resource
    category; that second dimension is what WorkPulse tracks as CapEx/OpEx.
-2. **Week start day is a setting, defaulting to Saturday.** WorkPulse's existing
-   week starts Sunday. Do not change that — the grid's week is its own concept.
+2. **Week start day is a setting, defaulting to Sunday.** Aligns with
+   WorkPulse's existing week start.
 3. **One grid block per week in the selected range**, capped at six.
 4. **Every total is the sum of the already-rounded cells**, never the rounded
    sum of exact values.

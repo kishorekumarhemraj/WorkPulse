@@ -40,15 +40,7 @@ class TimesheetService {
     final codeRows = <String, _CodeRowBuilder>{};
     final projects = <String, _RowBuilder>{};
     final tasks = <String, _RowBuilder>{};
-
-    // Categories, keyed by classification then by category. This is the
-    // "coding versus meetings inside CapEx" question, which only became
-    // askable once the classification stopped being the category.
-    final categoriesByClassification =
-        <FinancialClassification, Map<String, _RowBuilder>>{
-      for (final value in FinancialClassification.values)
-        value: <String, _RowBuilder>{},
-    };
+    final categories = <String, _RowBuilder>{};
 
     // Only attributes the user marked reportable, and only live ones. This
     // is the same filter the dashboard's attribute breakdowns apply, so the
@@ -130,10 +122,13 @@ class TimesheetService {
       // still holds for it.
       final categoryId = record.category?.id ?? _uncategorisedKey;
       final categoryName = record.category?.name ?? 'Uncategorized';
-      categoriesByClassification[classification]!
+      categories
           .putIfAbsent(
             categoryId,
-            () => _RowBuilder(id: categoryId, label: categoryName),
+            () => _RowBuilder(
+              id: categoryId,
+              label: categoryName,
+            ),
           )
           .add(classification, net: net, gross: gross);
 
@@ -286,14 +281,7 @@ class TimesheetService {
       weeksTruncated: weeksTruncated,
       projectRows: _sorted(projects.values),
       taskRows: _sorted(tasks.values),
-      categorySections: [
-        for (final value in FinancialClassification.values)
-          if (categoriesByClassification[value]!.isNotEmpty)
-            ClassificationCategorySection(
-              classification: value,
-              rows: _sorted(categoriesByClassification[value]!.values),
-            ),
-      ],
+      categoryRows: _sorted(categories.values),
       attributeSections: [
         for (final def in reportableDefs)
           if (attributeRows[def.id]!.isNotEmpty)

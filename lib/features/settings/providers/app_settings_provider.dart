@@ -24,14 +24,14 @@ class AppSettings {
   final Duration idleThreshold;
 
   /// The first day of the week on the timesheet grid (1 = Monday, 7 = Sunday).
-  /// Defaults to Saturday (6) to match standard timesheet cycles.
+  /// Defaults to Sunday (7) to match dashboard cycles.
   final int timesheetWeekStartDay;
 
   /// Rounding granularity for timesheet grid cells (0.01, 0.05, 0.25, 0.50).
   /// Defaults to 0.25 (quarter-hour).
   final double timesheetRoundingIncrement;
 
-  static const defaultTimesheetWeekStartDay = DateTime.saturday;
+  static const defaultTimesheetWeekStartDay = DateTime.sunday;
   static const defaultTimesheetRoundingIncrement = 0.25;
 
   const AppSettings({

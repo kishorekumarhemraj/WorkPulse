@@ -225,29 +225,6 @@ class TimesheetAttributeSection extends Equatable {
   List<Object?> get props => [definition, rows];
 }
 
-/// One classification's worth of category rows — "coding versus meetings"
-/// inside CapEx, and again inside OpEx.
-///
-/// This is the breakdown that the old category-level model could not express:
-/// when the category *was* the classification, asking which categories made
-/// up CapEx had only one possible answer.
-class ClassificationCategorySection extends Equatable {
-  final FinancialClassification classification;
-
-  /// Category rows, longest first. Each row's split holds only this
-  /// classification's bucket, so a row total is that category's time within
-  /// this classification.
-  final List<TimesheetRow> rows;
-
-  const ClassificationCategorySection({
-    required this.classification,
-    required this.rows,
-  });
-
-  @override
-  List<Object?> get props => [classification, rows];
-}
-
 /// One line of the entry grid form.
 class TimesheetGridRow extends Equatable {
   /// The resolved timesheet code. Empty string where none could be resolved.
@@ -364,8 +341,8 @@ class TimesheetData extends Equatable {
   /// where a wrong CapEx figure gets traced back to.
   final List<TimesheetRow> taskRows;
 
-  /// Categories within each classification, in enum order.
-  final List<ClassificationCategorySection> categorySections;
+  /// Categories broken down by classification.
+  final List<TimesheetRow> categoryRows;
 
   final List<TimesheetAttributeSection> attributeSections;
   final int sessionCount;
@@ -378,7 +355,7 @@ class TimesheetData extends Equatable {
     this.weeksTruncated = false,
     this.projectRows = const [],
     this.taskRows = const [],
-    this.categorySections = const [],
+    this.categoryRows = const [],
     this.attributeSections = const [],
     this.sessionCount = 0,
   });
@@ -394,7 +371,7 @@ class TimesheetData extends Equatable {
         weeksTruncated,
         projectRows,
         taskRows,
-        categorySections,
+        categoryRows,
         attributeSections,
         sessionCount,
       ];

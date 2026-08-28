@@ -11,11 +11,13 @@ import 'package:workpulse/core/widgets/page_header.dart';
 import 'package:workpulse/core/widgets/skeleton_loader.dart';
 import 'package:workpulse/domain/services/export_service.dart';
 import 'package:workpulse/domain/services/timer_service.dart';
+import 'package:workpulse/domain/services/timesheet_code_resolver.dart';
 import 'package:workpulse/features/reports/providers/reports_provider.dart';
 import 'package:workpulse/features/reports/views/export_dialog.dart';
 import 'package:workpulse/features/reports/views/session_edit_dialog.dart';
 import 'package:workpulse/features/reports/widgets/reports_range_controls.dart';
 import 'package:workpulse/features/reports/widgets/session_day_group.dart';
+import 'package:workpulse/features/timesheet/providers/timesheet_provider.dart';
 
 class SessionHistoryView extends ConsumerWidget {
   const SessionHistoryView({super.key});
@@ -79,7 +81,7 @@ class SessionHistoryView extends ConsumerWidget {
           ),
         ],
         child: sessionsAsync.when(
-          loading: () => const SkeletonList(itemCount: 4, itemHeight: 96),
+          loading: () => const SkeletonList(itemCount: 4, itemHeight: 140),
           error: (err, stack) => ErrorState(
             title: 'Could not load sessions',
             error: err,
@@ -94,6 +96,11 @@ class SessionHistoryView extends ConsumerWidget {
                     'see earlier sessions.',
               );
             }
+
+            final codes = ref
+                    .watch(timesheetCodeResolverProvider)
+                    .value ??
+                const TimesheetCodeResolver();
 
             // Group by local calendar day, newest first. The provider
             // already returns records ordered by start time, so each day's
@@ -131,6 +138,7 @@ class SessionHistoryView extends ConsumerWidget {
                       return SessionDayGroup(
                         day: day,
                         records: grouped[day]!,
+                        codes: codes,
                         onEdit: (record) =>
                             SessionEditDialog.show(context, record),
                         onDelete: (record) => _confirmDelete(

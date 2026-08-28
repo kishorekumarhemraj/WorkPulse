@@ -66,7 +66,7 @@ class _TimesheetSettingsDialogState
           DialogField(
             label: 'Week start day',
             helperText:
-                'The day each weekly timesheet grid begins. Defaults to Saturday.',
+                'The day each weekly timesheet grid begins. Defaults to Sunday.',
             child: AppSelect<int>(
               value: weekStartDay,
               placeholder: 'Select start day',
