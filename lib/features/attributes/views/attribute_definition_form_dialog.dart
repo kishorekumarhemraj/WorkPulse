@@ -141,6 +141,7 @@ class _AttributeDefinitionFormDialogState
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     final isEditing = widget.definition != null;
 
     return AppDialog(
@@ -156,12 +157,12 @@ class _AttributeDefinitionFormDialogState
         ElevatedButton(
           onPressed: _isSaving ? null : _save,
           child: _isSaving
-              ? const SizedBox(
+              ? SizedBox(
                   width: 16,
                   height: 16,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color: Colors.white,
+                    color: colors.onAccent,
                   ),
                 )
               : Text(isEditing ? 'Save Changes' : 'Create Attribute'),

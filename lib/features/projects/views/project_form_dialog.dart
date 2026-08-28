@@ -203,12 +203,12 @@ class _ProjectFormDialogState extends ConsumerState<ProjectFormDialog> {
         ElevatedButton(
           onPressed: _isSubmitting ? null : _submit,
           child: _isSubmitting
-              ? const SizedBox(
+              ? SizedBox(
                   width: 16,
                   height: 16,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color: Colors.white,
+                    color: colors.onAccent,
                   ),
                 )
               : Text(isEditing ? 'Save Changes' : 'Create Project'),

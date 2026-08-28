@@ -67,7 +67,7 @@ class EmptyState extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(Spacing.lg),
               decoration: BoxDecoration(
-                color: colors.card,
+                color: colors.surfaceSunken,
                 shape: BoxShape.circle,
               ),
               child: Icon(

@@ -13,7 +13,7 @@ class QuickCaptureDialog extends StatelessWidget {
   static Future<void> show(BuildContext context) {
     return showDialog(
       context: context,
-      barrierColor: Colors.black.withValues(alpha: 0.6),
+      barrierColor: context.colors.overlay,
       barrierDismissible: true,
       builder: (context) => const QuickCaptureDialog(),
     );
@@ -33,14 +33,7 @@ class QuickCaptureDialog extends StatelessWidget {
             color: colors.surface,
             borderRadius: Radii.xlAll,
             border: Border.all(color: colors.divider, width: 1.2),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.5),
-                offset: const Offset(0, 12),
-                blurRadius: 36,
-                spreadRadius: 4,
-              ),
-            ],
+            boxShadow: Elevation.high(colors.shadow),
           ),
           // Shrink-wraps its content, so the result list stays loose.
           child: QuickCaptureBody(

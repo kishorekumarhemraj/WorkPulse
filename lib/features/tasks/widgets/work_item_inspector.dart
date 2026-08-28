@@ -104,7 +104,7 @@ class WorkItemInspector extends ConsumerWidget {
                             color: colors.successSubtle,
                             borderRadius: Radii.mdAll,
                             border: Border.all(
-                              color: colors.success.withValues(alpha: 0.3),
+                              color: colors.success.withValues(alpha: Alphas.muted),
                             ),
                           ),
                           child: Row(
@@ -308,7 +308,7 @@ class WorkItemInspector extends ConsumerWidget {
                       }
                       return Container(
                         decoration: BoxDecoration(
-                          color: colors.surfaceSunken,
+                          color: colors.surface,
                           borderRadius: Radii.mdAll,
                           border: Border.all(color: colors.divider),
                         ),
