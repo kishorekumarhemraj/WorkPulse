@@ -9,6 +9,7 @@ import 'package:workpulse/domain/models/session_model.dart';
 import 'package:workpulse/domain/models/tag_model.dart';
 import 'package:workpulse/domain/models/work_item_model.dart';
 import 'package:workpulse/domain/models/workspace_model.dart';
+import 'package:workpulse/domain/services/export_service.dart';
 import 'package:workpulse/features/categories/providers/categories_provider.dart';
 import 'package:workpulse/features/people/providers/people_provider.dart';
 import 'package:workpulse/features/projects/providers/projects_provider.dart';
@@ -444,6 +445,19 @@ void main() {
           timerProvider.overrideWith(() => fakeTimer),
           sessionsForWorkItemProvider(testTaskA.id)
               .overrideWith((ref) async => [session]),
+          workItemSessionRecordsProvider(testTaskA.id).overrideWith(
+            (ref) async => [
+              SessionExportRecord(
+                session: session,
+                workItem: testTaskA,
+                project: testProject,
+                category: testCategory,
+                grossDuration: session.duration,
+                idleDuration: Duration.zero,
+                netActiveDuration: session.duration,
+              ),
+            ],
+          ),
         ],
         child: MaterialApp(
           theme: AppTheme.darkTheme,

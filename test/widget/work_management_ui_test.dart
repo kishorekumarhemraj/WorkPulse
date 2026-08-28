@@ -327,7 +327,8 @@ void main() {
       expect(find.text('Alice Smith'), findsOneWidget);
     });
 
-    testWidgets('ProjectFormDialog validates and saves', (tester) async {
+    testWidgets('ProjectFormDialog validates name and saves without timesheet code',
+        (tester) async {
       await tester.pumpWidget(
         createTestApp(
           child: Builder(
@@ -345,14 +346,39 @@ void main() {
 
       expect(find.text('New Project'), findsOneWidget);
 
-      // Trigger validation
+      // Trigger validation: only project name is required
       await tester.tap(find.text('Create Project'));
       await tester.pump();
       expect(find.text('Project name is required'), findsOneWidget);
 
-      // Fill name and timesheet code (both required), then save.
+      // Fill name only (timesheet code is optional), then save.
       await tester.enterText(find.byType(TextFormField).first, 'Beta Project');
-      await tester.enterText(find.byType(TextFormField).at(2), 'BETA-001');
+      await tester.tap(find.text('Create Project'));
+      await tester.pump();
+
+      expect(find.text('New Project'), findsNothing);
+    });
+
+    testWidgets('ProjectFormDialog allows sharing timesheet codes across projects',
+        (tester) async {
+      await tester.pumpWidget(
+        createTestApp(
+          child: Builder(
+            builder: (context) => ElevatedButton(
+              onPressed: () => ProjectFormDialog.show(context),
+              child: const Text('Open Project Dialog'),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      await tester.tap(find.text('Open Project Dialog'));
+      await tester.pump();
+
+      // Enter project name and a timesheet code that another project might have
+      await tester.enterText(find.byType(TextFormField).first, 'Gamma Project');
+      await tester.enterText(find.byType(TextFormField).at(2), 'PRJ-1042');
       await tester.tap(find.text('Create Project'));
       await tester.pump();
 

@@ -32,22 +32,17 @@ class TimesheetHoursBasisNotifier extends Notifier<TimesheetHoursBasis> {
 ///
 /// Built on top of [sessionHistoryProvider] rather than issuing its own
 /// queries: the Time Log has already resolved every session in range to its
-/// project, category and attribute values, and re-reading all of it to
-/// compute sums would double the database work for identical data.
+/// The project → option → code map, built once and shared.
 ///
-/// Both hour bases are computed here, so the Net/Gross toggle repaints
-/// without touching the database.
-final timesheetDataProvider = FutureProvider<TimesheetData>((ref) async {
-  final records = await ref.watch(sessionHistoryProvider.future);
-  final definitions = await ref.watch(attributeDefinitionsProvider.future);
-  final projects = await ref.watch(projectsProvider.future);
+/// Lifted out of [timesheetDataProvider] because the Time Log, the Work Items
+/// inspector and Time Notes all now show a session's timesheet code, and four
+/// screens resolving codes four ways is how they drift.
+final timesheetCodeResolverProvider =
+    FutureProvider<TimesheetCodeResolver>((ref) async {
   final workspace = await ref.watch(currentWorkspaceProvider.future);
   final projectRepo = ref.watch(projectRepositoryProvider);
   final attributeRepo = ref.watch(attributeRepositoryProvider);
-  final range = ref.watch(reportsDateRangeProvider);
-  final basis = ref.watch(timesheetHoursBasisProvider);
-  final settings = ref.watch(appSettingsProvider).value;
-  final service = ref.watch(timesheetServiceProvider);
+  final projects = await ref.watch(projectsProvider.future);
 
   final allCodes =
       await projectRepo.getAllTimesheetCodes(workspaceId: workspace.id);
@@ -68,10 +63,28 @@ final timesheetDataProvider = FutureProvider<TimesheetData>((ref) async {
     }
   }
 
-  final resolver = TimesheetCodeResolver(
+  return TimesheetCodeResolver(
     codesByProject: codesByProject,
     optionsById: optionsById,
   );
+});
+
+/// Computes the complete [TimesheetData] for the current date range.
+///
+/// Watches [sessionHistoryProvider] directly: that provider already hydrates
+/// project, category and attribute values, and re-reading all of it to
+/// compute sums would double the database work for identical data.
+///
+/// Both hour bases are computed here, so the Net/Gross toggle repaints
+/// without touching the database.
+final timesheetDataProvider = FutureProvider<TimesheetData>((ref) async {
+  final records = await ref.watch(sessionHistoryProvider.future);
+  final definitions = await ref.watch(attributeDefinitionsProvider.future);
+  final range = ref.watch(reportsDateRangeProvider);
+  final basis = ref.watch(timesheetHoursBasisProvider);
+  final settings = ref.watch(appSettingsProvider).value;
+  final service = ref.watch(timesheetServiceProvider);
+  final resolver = await ref.watch(timesheetCodeResolverProvider.future);
 
   return service.build(
     range: range,
