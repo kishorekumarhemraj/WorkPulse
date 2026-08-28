@@ -1,9 +1,11 @@
+import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:workpulse/core/platform/pdf_export_handler.dart';
 import 'package:workpulse/core/platform/user_info_service.dart';
 import 'package:workpulse/domain/models/attribute_model.dart';
 import 'package:workpulse/domain/models/category_model.dart';
 import 'package:workpulse/domain/models/date_range.dart';
+import 'package:workpulse/domain/models/financial_classification.dart';
 import 'package:workpulse/domain/models/person_model.dart';
 import 'package:workpulse/domain/models/project_model.dart';
 import 'package:workpulse/domain/models/session_model.dart';
@@ -60,6 +62,7 @@ void main() {
       notes: 'Completed PDF generation engine with modern colorful styling',
       tagIds: ['tag-1'],
       peopleIds: ['person-1'],
+      financialClassification: FinancialClassification.capex,
       createdAt: now,
       updatedAt: now,
     );
@@ -86,6 +89,7 @@ void main() {
       grossDuration: const Duration(hours: 2),
       idleDuration: const Duration(minutes: 15),
       netActiveDuration: const Duration(minutes: 105),
+      classification: FinancialClassification.capex,
       attributeValues: {
         'attr-billable': 'Yes',
         'attr-ticket': 'WP-502',
@@ -101,6 +105,7 @@ void main() {
         type: AttributeType.boolean,
         scope: AttributeScope.task,
         enabled: true,
+        reportable: true,
         createdAt: now,
         updatedAt: now,
       ),
@@ -112,13 +117,18 @@ void main() {
         type: AttributeType.text,
         scope: AttributeScope.task,
         enabled: true,
+        reportable: true,
         createdAt: now,
         updatedAt: now,
       ),
     ];
 
+    setUpAll(() {
+      TestWidgetsFlutterBinding.ensureInitialized();
+    });
+
     setUp(() {
-      pdfService = PdfReportService();
+      pdfService = const PdfReportService();
     });
 
     test(
@@ -180,80 +190,69 @@ void main() {
     });
 
     test(
-        'generateReportPdf handles single work item with multiple session categories (Design, Engineering, Meeting)',
+        'generateReportPdf verifies copy removals in uncompressed PDF output',
         () async {
       final range = DateRange(
-        start: DateTime.utc(2026, 8, 25, 0, 0, 0),
+        start: DateTime.utc(2026, 8, 20, 0, 0, 0),
         end: DateTime.utc(2026, 8, 25, 23, 59, 59),
       );
 
-      final catDesign = Category(
-        id: 'cat-design',
-        workspaceId: 'ws-1',
-        name: 'Design',
-        iconName: 'palette',
-        createdAt: now,
-        updatedAt: now,
+      final uncompressedPdfBytes = await pdfService.generateReportPdf(
+        workspaceName: 'Acme Corp',
+        userName: 'Alice Smith',
+        range: range,
+        records: [mockRecord],
+        compress: false,
       );
 
-      final catMeeting = Category(
-        id: 'cat-meeting',
-        workspaceId: 'ws-1',
-        name: 'Meeting',
-        iconName: 'groups',
-        createdAt: now,
-        updatedAt: now,
+      final pdfText = latin1.decode(uncompressedPdfBytes);
+
+      // Verify removed phrases are completely absent
+      expect(pdfText.contains('Prepared for Manager'), isFalse);
+      expect(pdfText.contains('Generated locally for'), isFalse);
+      expect(pdfText.contains('STANDUP'), isFalse);
+
+      // Verify document metadata
+      expect(pdfText.contains('WorkPulse'), isTrue);
+      expect(pdfText.contains('Alice Smith'), isTrue);
+    });
+
+    test('generateReportPdf generates 200 sessions without throwing', () async {
+      final range = DateRange(
+        start: DateTime.utc(2026, 8, 1, 0, 0, 0),
+        end: DateTime.utc(2026, 8, 30, 23, 59, 59),
       );
 
-      final sessionDesign = Session(
-        id: 'sess-design',
-        workItemId: 'task-1',
-        categoryId: 'cat-design',
-        startTime: now.subtract(const Duration(hours: 4)),
-        endTime: now.subtract(const Duration(hours: 3)),
-        notes: 'UI Mockups and styling adjustments',
-        createdAt: now.subtract(const Duration(hours: 4)),
-      );
-
-      final sessionMeeting = Session(
-        id: 'sess-meeting',
-        workItemId: 'task-1',
-        categoryId: 'cat-meeting',
-        startTime: now.subtract(const Duration(hours: 1)),
-        endTime: now,
-        notes: 'Sprint alignment meeting with team',
-        createdAt: now.subtract(const Duration(hours: 1)),
-      );
-
-      final recordDesign = SessionExportRecord(
-        session: sessionDesign,
-        workItem: mockWorkItem,
-        project: mockProject,
-        category: catDesign,
-        grossDuration: const Duration(hours: 1),
-        idleDuration: Duration.zero,
-        netActiveDuration: const Duration(hours: 1),
-      );
-
-      final recordMeeting = SessionExportRecord(
-        session: sessionMeeting,
-        workItem: mockWorkItem,
-        project: mockProject,
-        category: catMeeting,
-        grossDuration: const Duration(hours: 1),
-        idleDuration: Duration.zero,
-        netActiveDuration: const Duration(hours: 1),
+      final records = List.generate(
+        200,
+        (i) => SessionExportRecord(
+          session: Session(
+            id: 'sess-$i',
+            workItemId: 'task-1',
+            startTime: DateTime.utc(2026, 8, (i % 28) + 1, 9, 0),
+            endTime: DateTime.utc(2026, 8, (i % 28) + 1, 10, 0),
+            notes: 'Session $i completed successfully.',
+            createdAt: now,
+          ),
+          workItem: mockWorkItem,
+          project: mockProject,
+          category: mockCategory,
+          grossDuration: const Duration(hours: 1),
+          idleDuration: Duration.zero,
+          netActiveDuration: const Duration(hours: 1),
+          classification: FinancialClassification.capex,
+        ),
       );
 
       final pdfBytes = await pdfService.generateReportPdf(
-        workspaceName: 'WorkPulse Workspace',
+        workspaceName: 'Scale Test Workspace',
+        userName: 'Scale Tester',
         range: range,
-        records: [mockRecord, recordDesign, recordMeeting],
+        records: records,
       );
 
       expect(pdfBytes, isNotEmpty);
-      final header = String.fromCharCodes(pdfBytes.take(5));
-      expect(header, equals('%PDF-'));
+      expect(pdfBytes.length, greaterThan(1000));
     });
 
     test('PdfExportHandler formats single-day and date-range filenames cleanly',
@@ -281,25 +280,6 @@ void main() {
       UserInfoService.setMockUserName(null);
       final name = await UserInfoService.getCurrentUserFullName();
       expect(name, isNotEmpty);
-    });
-
-    test('generateReportPdf embeds custom user full name in output document',
-        () async {
-      final range = DateRange(
-        start: DateTime.utc(2026, 8, 25, 0, 0, 0),
-        end: DateTime.utc(2026, 8, 25, 23, 59, 59),
-      );
-
-      final pdfBytes = await pdfService.generateReportPdf(
-        workspaceName: 'WorkPulse Workspace',
-        userName: 'Kishore Kumar Hemraj',
-        range: range,
-        records: [mockRecord],
-      );
-
-      expect(pdfBytes, isNotEmpty);
-      final header = String.fromCharCodes(pdfBytes.take(5));
-      expect(header, equals('%PDF-'));
     });
   });
 }
