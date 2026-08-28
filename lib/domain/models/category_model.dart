@@ -14,6 +14,16 @@ class Category extends Equatable {
   final String name;
   final String? description;
   final String? iconName;
+
+  /// The category's own colour, as `#RRGGBB`.
+  ///
+  /// Stored rather than derived — a category set is small and curated, and
+  /// the user should be able to say which one is red. People's colours are
+  /// derived from their id instead, because people are many and added
+  /// casually. Backfilled for existing rows by MigrationV9, never null in
+  /// practice, but nullable so a future import cannot fail on it.
+  final String? colorHex;
+
   final DateTime createdAt;
   final DateTime updatedAt;
   final DateTime? archivedAt;
@@ -24,6 +34,7 @@ class Category extends Equatable {
     required this.name,
     this.description,
     this.iconName,
+    this.colorHex,
     required this.createdAt,
     required this.updatedAt,
     this.archivedAt,
@@ -37,6 +48,7 @@ class Category extends Equatable {
     String? name,
     String? description,
     String? iconName,
+    String? colorHex,
     DateTime? createdAt,
     DateTime? updatedAt,
     DateTime? archivedAt,
@@ -47,6 +59,7 @@ class Category extends Equatable {
       name: name ?? this.name,
       description: description ?? this.description,
       iconName: iconName ?? this.iconName,
+      colorHex: colorHex ?? this.colorHex,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       archivedAt: archivedAt ?? this.archivedAt,
@@ -60,6 +73,7 @@ class Category extends Equatable {
         name,
         description,
         iconName,
+        colorHex,
         createdAt,
         updatedAt,
         archivedAt

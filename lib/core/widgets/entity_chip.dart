@@ -42,14 +42,18 @@ class EntityChip extends StatelessWidget {
     final content = Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (color != null)
+        // An icon wins over the dot, and takes the entity's colour when it
+        // has one. Categories and people carry both: dropping their glyph to
+        // show a dot would trade the "what kind of thing is this" signal for
+        // the colour, when they can have both.
+        if (icon != null)
+          Icon(icon, size: IconSizes.xs, color: tint)
+        else if (color != null)
           Container(
             width: 7,
             height: 7,
             decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-          )
-        else if (icon != null)
-          Icon(icon, size: IconSizes.xs, color: colors.textSecondary),
+          ),
         const SizedBox(width: Spacing.xs + 1),
         Flexible(
           child: Text(

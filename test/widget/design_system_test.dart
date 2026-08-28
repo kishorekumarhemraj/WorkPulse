@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:workpulse/core/keyboard/shortcut_labels.dart';
 import 'package:workpulse/core/theme/app_colors.dart';
+import 'package:workpulse/core/theme/color_utils.dart';
 import 'package:workpulse/core/theme/app_theme.dart';
 import 'package:workpulse/core/theme/app_typography.dart';
 import 'package:workpulse/core/widgets/app_dialog.dart';
@@ -340,6 +341,39 @@ void main() {
           }
         }
       }
+    });
+
+    test('entities that carry no colour of their own get a stable derived one',
+        () {
+      // Categories, people and free-text attributes rendered as neutral chips
+      // because nothing gave EntityChip a colour, and they are the three most
+      // frequent chip types -- a session row read as five grey chips to one
+      // coloured. People and attribute fields derive theirs; categories store
+      // one (MigrationV9).
+      const seeds = ['person-a', 'person-b', 'def-jira', 'def-component'];
+
+      for (final seed in seeds) {
+        final first = ColorUtils.deterministicColor(seed);
+        // Stable across calls: a colour that moves between rebuilds is worse
+        // than no colour at all.
+        expect(ColorUtils.deterministicColor(seed), equals(first));
+        // Always a real palette entry, never the fallback-by-accident.
+        expect(
+          ColorUtils.paletteHex.map(ColorUtils.parseHex),
+          contains(first),
+        );
+      }
+
+      // Distinct seeds should mostly land on distinct swatches, or a row of
+      // people reads as one colour and the change buys nothing.
+      final distinct = seeds.map(ColorUtils.deterministicColor).toSet();
+      expect(distinct.length, greaterThan(1));
+
+      // Seeded on ids, not names: renaming a person must not recolour them.
+      expect(
+        ColorUtils.deterministicColor('person-a'),
+        isNot(equals(ColorUtils.deterministicColor('person-a-renamed'))),
+      );
     });
 
     test('body text never drops below 12pt', () {
