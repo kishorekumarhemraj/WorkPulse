@@ -11,6 +11,7 @@ import 'package:workpulse/domain/models/project_model.dart';
 import 'package:workpulse/domain/models/session_model.dart';
 import 'package:workpulse/domain/models/tag_model.dart';
 import 'package:workpulse/domain/models/work_item_model.dart';
+import 'package:workpulse/domain/models/work_pattern_model.dart';
 import 'package:workpulse/domain/repositories/attribute_repository.dart';
 import 'package:workpulse/domain/repositories/category_repository.dart';
 import 'package:workpulse/domain/repositories/idle_period_repository.dart';
@@ -103,7 +104,7 @@ class ExportService {
         _personRepository = personRepository,
         _attributeRepository = attributeRepository,
         _idlePeriodRepository = idlePeriodRepository,
-        _pdfReportService = pdfReportService ?? PdfReportService();
+        _pdfReportService = pdfReportService ?? const PdfReportService();
 
   /// Retrieves structured export records within a date range.
   Future<List<SessionExportRecord>> getExportRecords({
@@ -543,6 +544,8 @@ class ExportService {
     required String workspaceId,
     required DateRange range,
     String? userName,
+    TimesheetCodeResolver codes = const TimesheetCodeResolver(),
+    WorkPatternReport? patterns,
   }) async {
     final workspace = await _workspaceRepository.getById(workspaceId);
     final records =
@@ -561,6 +564,8 @@ class ExportService {
       records: records,
       attributeDefinitions: definitions,
       userName: effectiveUserName,
+      codes: codes,
+      patterns: patterns,
     );
   }
 
