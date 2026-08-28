@@ -1,1094 +1,878 @@
-import 'package:flutter/services.dart';
+import 'dart:math';
+import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:workpulse/domain/models/attribute_model.dart';
 import 'package:workpulse/domain/models/date_range.dart';
+import 'package:workpulse/domain/models/financial_classification.dart';
+import 'package:workpulse/domain/models/work_pattern_model.dart';
+import 'package:workpulse/domain/models/work_report_model.dart';
 import 'package:workpulse/domain/services/export_service.dart';
+import 'package:workpulse/domain/services/pdf/pdf_primitives.dart';
+import 'package:workpulse/domain/services/pdf/pdf_theme.dart';
+import 'package:workpulse/domain/services/report_builder_service.dart';
 import 'package:workpulse/domain/services/timer_service.dart';
+import 'package:workpulse/domain/services/timesheet_code_resolver.dart';
 
+/// Generates a modern, professional, 3-act executive PDF infographic report.
+///
+/// Layout follows `docs/PDF_REPORT_DESIGN.md`:
+/// - **Act I — The Story**: Exactly 1 page summarizing what happened.
+/// - **Act II — The Breakdown**: Bar-in-cell breakdown tables.
+/// - **Act III — The Record**: Task-grouped notes & dense session table.
 class PdfReportService {
-  // Brand & Modern Report Color Palette
-  static const _indigo = PdfColor.fromInt(0xFF4F46E5);
-  static const _indigoLight = PdfColor.fromInt(0xFFEEF2FF);
-  static const _indigoDark = PdfColor.fromInt(0xFF3730A3);
+  final ReportBuilderService _builder;
 
-  static const _emerald = PdfColor.fromInt(0xFF059669);
-  static const _emeraldLight = PdfColor.fromInt(0xFFECFDF5);
+  const PdfReportService({ReportBuilderService? builder})
+      : _builder = builder ?? const ReportBuilderService();
 
-  static const _amber = PdfColor.fromInt(0xFFD97706);
-  static const _amberLight = PdfColor.fromInt(0xFFFFFBEB);
-
-  static const _blue = PdfColor.fromInt(0xFF2563EB);
-  static const _blueLight = PdfColor.fromInt(0xFFEFF6FF);
-
-  static const _slate900 = PdfColor.fromInt(0xFF0F172A);
-  static const _slate800 = PdfColor.fromInt(0xFF1E293B);
-  static const _slate700 = PdfColor.fromInt(0xFF334155);
-  static const _slate500 = PdfColor.fromInt(0xFF64748B);
-  static const _slate400 = PdfColor.fromInt(0xFF94A3B8);
-  static const _slate200 = PdfColor.fromInt(0xFFE2E8F0);
-  static const _slate100 = PdfColor.fromInt(0xFFF1F5F9);
-  static const _slate50 = PdfColor.fromInt(0xFFF8FAFC);
-
-  static const _palette = [
-    PdfColor.fromInt(0xFF6366F1), // Indigo
-    PdfColor.fromInt(0xFF0EA5E9), // Sky
-    PdfColor.fromInt(0xFF10B981), // Emerald
-    PdfColor.fromInt(0xFFF59E0B), // Amber
-    PdfColor.fromInt(0xFFEC4899), // Pink
-    PdfColor.fromInt(0xFF8B5CF6), // Purple
-    PdfColor.fromInt(0xFF14B8A6), // Teal
-    PdfColor.fromInt(0xFFF97316), // Orange
-  ];
-
-  /// Generates a comprehensive, colorful modern PDF report.
+  /// Generates the complete PDF report byte array.
   Future<Uint8List> generateReportPdf({
     required String workspaceName,
     required DateRange range,
     required List<SessionExportRecord> records,
     List<AttributeDefinition> attributeDefinitions = const [],
     String? userName,
+    TimesheetCodeResolver codes = const TimesheetCodeResolver(),
+    WorkPatternReport? patterns,
+    @visibleForTesting bool compress = true,
   }) async {
-    final effectiveUserName = (userName != null && userName.trim().isNotEmpty)
-        ? userName.trim()
-        : 'User';
-    final doc = pw.Document();
+    final report = _builder.build(
+      workspaceName: workspaceName,
+      authorName: userName,
+      range: range,
+      records: records,
+      definitions: attributeDefinitions,
+      codes: codes,
+      patterns: patterns,
+    );
 
-    pw.ThemeData theme;
-    try {
-      final fontData = await rootBundle.load('assets/fonts/Inter-Regular.ttf');
-      final boldData = await rootBundle.load('assets/fonts/Inter-Bold.ttf');
-      theme = pw.ThemeData.withFont(
-        base: pw.Font.ttf(fontData),
-        bold: pw.Font.ttf(boldData),
-      );
-    } catch (_) {
-      theme = pw.ThemeData.base();
+    final typo = await PdfTypography.load();
+
+    final doc = pw.Document(
+      compress: compress,
+      title: '$workspaceName - Work Report, ${report.identity.dateSubtitle}',
+      author: userName ?? 'WorkPulse User',
+      creator: 'WorkPulse',
+      producer: 'WorkPulse',
+      subject: report.identity.dateSubtitle,
+    );
+
+    if (report.isEmpty) {
+      _buildEmptyReport(doc, report, typo);
+      return doc.save();
     }
 
-    // 1. Calculate Aggregations
-    Duration totalGross = Duration.zero;
-    Duration totalIdle = Duration.zero;
-    Duration totalNet = Duration.zero;
+    // --- Act I: The Story (Exactly 1 page, standalone Page widget) ---
+    doc.addPage(
+      pw.Page(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(24),
+        build: (context) => _buildActI(context, report, typo),
+      ),
+    );
 
-    final projectTotals = <String, Duration>{};
-    final projectColorMap = <String, PdfColor>{};
-    final categoryTotals = <String, Duration>{};
-    final taskTotals = <String, _TaskSummary>{};
-    final allNotes = <_SessionNoteSummary>[];
-
-    var colorIndex = 0;
-
-    for (final r in records) {
-      totalGross += r.grossDuration;
-      totalIdle += r.idleDuration;
-      totalNet += r.netActiveDuration;
-
-      // Project aggregation
-      final projName = r.project?.name ?? 'No Project';
-      projectTotals[projName] =
-          (projectTotals[projName] ?? Duration.zero) + r.netActiveDuration;
-      if (!projectColorMap.containsKey(projName)) {
-        projectColorMap[projName] = _palette[colorIndex % _palette.length];
-        colorIndex++;
-      }
-
-      // Category aggregation (accurately tracks each session's category override or task category)
-      final sessionCatName = r.category?.name ?? 'Uncategorized';
-      categoryTotals[sessionCatName] =
-          (categoryTotals[sessionCatName] ?? Duration.zero) +
-              r.netActiveDuration;
-
-      // Task aggregation (collects all session categories for the same work item)
-      final taskKey = r.workItem.id;
-      final existingTask = taskTotals[taskKey];
-      if (existingTask == null) {
-        taskTotals[taskKey] = _TaskSummary(
-          taskId: r.workItem.id,
-          taskName: r.workItem.name,
-          projectName: r.project?.name ?? '-',
-          categories: {sessionCatName},
-          totalDuration: r.netActiveDuration,
-          sessionCount: 1,
-        );
-      } else {
-        taskTotals[taskKey] = _TaskSummary(
-          taskId: r.workItem.id,
-          taskName: r.workItem.name,
-          projectName: r.project?.name ?? existingTask.projectName,
-          categories: {...existingTask.categories, sessionCatName},
-          totalDuration: existingTask.totalDuration + r.netActiveDuration,
-          sessionCount: existingTask.sessionCount + 1,
-        );
-      }
-
-      // Notes
-      final note = r.session.notes?.trim();
-      if (note != null && note.isNotEmpty) {
-        allNotes.add(_SessionNoteSummary(
-          taskName: r.workItem.name,
-          projectName: r.project?.name,
-          note: note,
-          duration: r.netActiveDuration,
-          startTime: r.session.startTime,
-        ));
-      }
-    }
-
-    final efficiency = totalGross.inSeconds > 0
-        ? (totalNet.inSeconds / totalGross.inSeconds) * 100
-        : 100.0;
-
-    final isSingleDay = _isSameCalendarDay(range.start, range.end);
-    final dateSubtitle = isSingleDay
-        ? DateFormat('EEEE, MMMM d, yyyy').format(range.start.toLocal())
-        : '${DateFormat('MMM d, yyyy').format(range.start.toLocal())} - ${DateFormat('MMM d, yyyy').format(range.end.toLocal())}';
-
-    // 2. Build Document Pages
+    // --- Act II & III: The Breakdown & The Record (MultiPage) ---
     doc.addPage(
       pw.MultiPage(
+        maxPages: 100,
         pageFormat: PdfPageFormat.a4,
-        margin: const pw.EdgeInsets.all(32),
-        theme: theme,
-        header: (context) => _buildPageHeader(
-          context: context,
-          workspaceName: workspaceName,
-          userName: effectiveUserName,
-          dateSubtitle: dateSubtitle,
-          isSingleDay: isSingleDay,
-        ),
-        footer: (context) => _buildPageFooter(
-          context: context,
-          userName: effectiveUserName,
-        ),
-        build: (context) {
-          return [
-            // Title & Workspace Banner
-            _buildBanner(
-              workspaceName: workspaceName,
-              userName: effectiveUserName,
-              dateSubtitle: dateSubtitle,
-              isSingleDay: isSingleDay,
-              totalNet: totalNet,
-              sessionCount: records.length,
-            ),
-            pw.SizedBox(height: 16),
+        margin: const pw.EdgeInsets.all(24),
+        header: (context) => _buildRunningHeader(context, report, typo),
+        footer: (context) => _buildRunningFooter(context, report, typo, pageOffset: 1),
+        build: (context) => [
+          // Act II: The Breakdown
+          ..._buildActII(report, typo),
+          pw.SizedBox(height: 20),
 
-            // Executive KPI Cards
-            _buildKpiSection(
-              totalGross: totalGross,
-              totalNet: totalNet,
-              totalIdle: totalIdle,
-              efficiency: efficiency,
-              taskCount: taskTotals.length,
-              sessionCount: records.length,
-            ),
-            pw.SizedBox(height: 20),
-
-            // Visual Categorization Breakdown (Projects & Categories)
-            _buildCategorizationSection(
-              totalNet: totalNet,
-              projectTotals: projectTotals,
-              projectColorMap: projectColorMap,
-              categoryTotals: categoryTotals,
-            ),
-            pw.SizedBox(height: 20),
-
-            // Task Aggregation Matrix
-            if (taskTotals.isNotEmpty) ...[
-              _buildTaskSummaryTable(
-                tasks: taskTotals.values.toList(),
-                totalDayNet: totalNet,
-              ),
-              pw.SizedBox(height: 20),
-            ],
-
-            // Daily Standup / Accomplishments Summary
-            if (allNotes.isNotEmpty) ...[
-              _buildNotesCallout(allNotes),
-              pw.SizedBox(height: 20),
-            ],
-
-            // Complete Chronological Session Timeline
-            _buildSessionTimeline(
-              records: records,
-              attributeDefinitions: attributeDefinitions,
-              projectColorMap: projectColorMap,
-            ),
-          ];
-        },
+          // Act III: The Record (Notes & Session Table)
+          ..._buildActIII(report, typo),
+        ],
       ),
     );
 
     return doc.save();
   }
 
-  // --- UI Components ---
-
-  static pw.Widget _buildPageHeader({
-    required pw.Context context,
-    required String workspaceName,
-    required String userName,
-    required String dateSubtitle,
-    required bool isSingleDay,
-  }) {
-    if (context.pageNumber == 1) {
-      return pw.SizedBox.shrink();
-    }
-    return pw.Container(
-      margin: const pw.EdgeInsets.only(bottom: 12),
-      padding: const pw.EdgeInsets.only(bottom: 6),
-      decoration: const pw.BoxDecoration(
-        border: pw.Border(bottom: pw.BorderSide(color: _slate200, width: 0.75)),
-      ),
-      child: pw.Row(
-        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-        children: [
-          pw.Text(
-            'WorkPulse | $userName | $workspaceName | $dateSubtitle',
-            style: const pw.TextStyle(
-              fontSize: 8,
-              color: _slate500,
+  // ===========================================================================
+  // Empty State Report (1 page)
+  // ===========================================================================
+  void _buildEmptyReport(
+    pw.Document doc,
+    WorkReport report,
+    PdfTypography typo,
+  ) {
+    doc.addPage(
+      pw.Page(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(24),
+        build: (context) => pw.Column(
+          crossAxisAlignment: pw.CrossAxisAlignment.start,
+          children: [
+            PdfPrimitives.masthead(
+              workspaceName: report.identity.workspaceName,
+              authorName: report.identity.authorName,
+              dateSubtitle: report.identity.dateSubtitle,
+              totalNet: Duration.zero,
+              typo: typo,
             ),
-          ),
-          pw.Text(
-            'Page ${context.pageNumber} of ${context.pagesCount}',
-            style: const pw.TextStyle(
-              fontSize: 8,
-              color: _slate500,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  static pw.Widget _buildPageFooter({
-    required pw.Context context,
-    required String userName,
-  }) {
-    return pw.Container(
-      margin: const pw.EdgeInsets.only(top: 14),
-      padding: const pw.EdgeInsets.only(top: 8),
-      decoration: const pw.BoxDecoration(
-        border: pw.Border(top: pw.BorderSide(color: _slate200, width: 0.75)),
-      ),
-      child: pw.Row(
-        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-        children: [
-          pw.Text(
-            'Generated locally for $userName with WorkPulse - Privacy-First & Offline-First',
-            style: const pw.TextStyle(fontSize: 7.5, color: _slate400),
-          ),
-          pw.Text(
-            'Page ${context.pageNumber} of ${context.pagesCount}',
-            style: const pw.TextStyle(
-              fontSize: 8,
-              fontWeight: pw.FontWeight.bold,
-              color: _slate500,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  static pw.Widget _buildBanner({
-    required String workspaceName,
-    required String userName,
-    required String dateSubtitle,
-    required bool isSingleDay,
-    required Duration totalNet,
-    required int sessionCount,
-  }) {
-    return pw.Container(
-      padding: const pw.EdgeInsets.all(16),
-      decoration: const pw.BoxDecoration(
-        color: _indigoDark,
-        borderRadius: pw.BorderRadius.all(pw.Radius.circular(8)),
-      ),
-      child: pw.Row(
-        crossAxisAlignment: pw.CrossAxisAlignment.center,
-        children: [
-          pw.Expanded(
-            child: pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.start,
-              children: [
-                pw.Row(
-                  children: [
-                    pw.Container(
-                      padding: const pw.EdgeInsets.symmetric(
-                          horizontal: 6, vertical: 2),
-                      decoration: const pw.BoxDecoration(
-                        color: _indigo,
-                        borderRadius:
-                            pw.BorderRadius.all(pw.Radius.circular(4)),
-                      ),
-                      child: pw.Text(
-                        isSingleDay
-                            ? 'DAILY WORK REPORT'
-                            : 'WORK & ACTIVITY REPORT',
-                        style: const pw.TextStyle(
-                          fontSize: 8,
-                          fontWeight: pw.FontWeight.bold,
-                          color: PdfColors.white,
-                        ),
-                      ),
-                    ),
-                    pw.SizedBox(width: 8),
-                    pw.Container(
-                      padding: const pw.EdgeInsets.symmetric(
-                          horizontal: 6, vertical: 2),
-                      decoration: const pw.BoxDecoration(
-                        color: _indigoLight,
-                        borderRadius:
-                            pw.BorderRadius.all(pw.Radius.circular(4)),
-                      ),
-                      child: pw.Text(
-                        'Report for $userName',
-                        style: const pw.TextStyle(
-                          fontSize: 8,
-                          fontWeight: pw.FontWeight.bold,
-                          color: _indigoDark,
-                        ),
-                      ),
-                    ),
-                    pw.SizedBox(width: 8),
-                    pw.Text(
-                      workspaceName,
-                      style: const pw.TextStyle(
-                        fontSize: 9.5,
-                        color: _indigoLight,
-                      ),
-                    ),
-                  ],
-                ),
-                pw.SizedBox(height: 6),
-                pw.Text(
-                  dateSubtitle,
-                  style: const pw.TextStyle(
-                    fontSize: 17,
-                    fontWeight: pw.FontWeight.bold,
-                    color: PdfColors.white,
-                  ),
-                ),
-                pw.SizedBox(height: 2),
-                pw.Text(
-                  'Team Member: $userName | Prepared for Manager / Standup Review | $sessionCount sessions recorded',
-                  style: const pw.TextStyle(fontSize: 8.5, color: _indigoLight),
-                ),
-              ],
-            ),
-          ),
-          pw.Container(
-            padding: const pw.EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-            decoration: const pw.BoxDecoration(
-              color: PdfColors.white,
-              borderRadius: pw.BorderRadius.all(pw.Radius.circular(6)),
-            ),
-            child: pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.end,
-              children: [
-                pw.Text(
-                  'TOTAL TIME',
-                  style: const pw.TextStyle(
-                    fontSize: 7.5,
-                    fontWeight: pw.FontWeight.bold,
-                    color: _slate500,
-                  ),
-                ),
-                pw.SizedBox(height: 2),
-                pw.Text(
-                  TimerService.formatDuration(totalNet, includeSeconds: false),
-                  style: const pw.TextStyle(
-                    fontSize: 18,
-                    fontWeight: pw.FontWeight.bold,
-                    color: _indigoDark,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  static pw.Widget _buildKpiSection({
-    required Duration totalGross,
-    required Duration totalNet,
-    required Duration totalIdle,
-    required double efficiency,
-    required int taskCount,
-    required int sessionCount,
-  }) {
-    return pw.Row(
-      children: [
-        pw.Expanded(
-          child: _buildKpiCard(
-            title: 'TOTAL TRACKED',
-            value:
-                TimerService.formatDuration(totalGross, includeSeconds: false),
-            subtitle: '$sessionCount sessions logged',
-            accentColor: _blue,
-            bgColor: _blueLight,
-          ),
-        ),
-        pw.SizedBox(width: 8),
-        pw.Expanded(
-          child: _buildKpiCard(
-            title: 'NET FOCUS TIME',
-            value: TimerService.formatDuration(totalNet, includeSeconds: false),
-            subtitle: '${efficiency.toStringAsFixed(0)}% focus efficiency',
-            accentColor: _emerald,
-            bgColor: _emeraldLight,
-          ),
-        ),
-        pw.SizedBox(width: 8),
-        pw.Expanded(
-          child: _buildKpiCard(
-            title: 'IDLE DEDUCTIONS',
-            value:
-                TimerService.formatDuration(totalIdle, includeSeconds: false),
-            subtitle: totalIdle.inMinutes > 0
-                ? 'Excluded inactivity'
-                : 'Zero idle detected',
-            accentColor: _amber,
-            bgColor: _amberLight,
-          ),
-        ),
-        pw.SizedBox(width: 8),
-        pw.Expanded(
-          child: _buildKpiCard(
-            title: 'ACTIVE TASKS',
-            value: '$taskCount',
-            subtitle: 'Worked on today',
-            accentColor: _indigo,
-            bgColor: _indigoLight,
-          ),
-        ),
-      ],
-    );
-  }
-
-  static pw.Widget _buildKpiCard({
-    required String title,
-    required String value,
-    required String subtitle,
-    required PdfColor accentColor,
-    required PdfColor bgColor,
-  }) {
-    return pw.Container(
-      padding: const pw.EdgeInsets.all(10),
-      decoration: pw.BoxDecoration(
-        color: bgColor,
-        borderRadius: const pw.BorderRadius.all(pw.Radius.circular(6)),
-        border: pw.Border.all(color: _slate200, width: 0.75),
-      ),
-      child: pw.Column(
-        crossAxisAlignment: pw.CrossAxisAlignment.start,
-        children: [
-          pw.Text(
-            title,
-            style: pw.TextStyle(
-              fontSize: 7,
-              fontWeight: pw.FontWeight.bold,
-              color: accentColor,
-            ),
-          ),
-          pw.SizedBox(height: 4),
-          pw.Text(
-            value,
-            style: const pw.TextStyle(
-              fontSize: 15,
-              fontWeight: pw.FontWeight.bold,
-              color: _slate900,
-            ),
-          ),
-          pw.SizedBox(height: 2),
-          pw.Text(
-            subtitle,
-            style: const pw.TextStyle(fontSize: 7.5, color: _slate500),
-          ),
-        ],
-      ),
-    );
-  }
-
-  static pw.Widget _buildCategorizationSection({
-    required Duration totalNet,
-    required Map<String, Duration> projectTotals,
-    required Map<String, PdfColor> projectColorMap,
-    required Map<String, Duration> categoryTotals,
-  }) {
-    final sortedProjects = projectTotals.entries.toList()
-      ..sort((a, b) => b.value.compareTo(a.value));
-    final sortedCategories = categoryTotals.entries.toList()
-      ..sort((a, b) => b.value.compareTo(a.value));
-
-    final totalSeconds = totalNet.inSeconds > 0 ? totalNet.inSeconds : 1;
-
-    return pw.Container(
-      padding: const pw.EdgeInsets.all(12),
-      decoration: pw.BoxDecoration(
-        color: _slate50,
-        borderRadius: const pw.BorderRadius.all(pw.Radius.circular(6)),
-        border: pw.Border.all(color: _slate200, width: 0.75),
-      ),
-      child: pw.Column(
-        crossAxisAlignment: pw.CrossAxisAlignment.start,
-        children: [
-          pw.Text(
-            'TIME BREAKDOWN & CATEGORIZATION',
-            style: const pw.TextStyle(
-              fontSize: 9,
-              fontWeight: pw.FontWeight.bold,
-              color: _slate800,
-            ),
-          ),
-          pw.SizedBox(height: 8),
-
-          // Visual Progress Bar for Projects
-          if (sortedProjects.isNotEmpty) ...[
-            pw.ClipRRect(
-              horizontalRadius: 3,
-              verticalRadius: 3,
+            pw.SizedBox(height: 40),
+            pw.Center(
               child: pw.Container(
-                height: 7,
-                child: pw.Row(
-                  children: sortedProjects.map((entry) {
-                    final flex = (entry.value.inSeconds / totalSeconds * 1000)
-                        .round()
-                        .clamp(1, 1000);
-                    return pw.Expanded(
-                      flex: flex,
-                      child: pw.Container(
-                        color: projectColorMap[entry.key] ?? _indigo,
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ),
-            ),
-            pw.SizedBox(height: 10),
-          ],
-
-          // Two Columns: Projects & Categories
-          pw.Row(
-            crossAxisAlignment: pw.CrossAxisAlignment.start,
-            children: [
-              // Projects Column
-              pw.Expanded(
-                child: pw.Column(
-                  crossAxisAlignment: pw.CrossAxisAlignment.start,
-                  children: [
-                    pw.Text(
-                      'Time by Project',
-                      style: const pw.TextStyle(
-                        fontSize: 8,
-                        fontWeight: pw.FontWeight.bold,
-                        color: _slate700,
-                      ),
-                    ),
-                    pw.SizedBox(height: 4),
-                    ...sortedProjects.map((entry) {
-                      final pct = (entry.value.inSeconds / totalSeconds) * 100;
-                      final col = projectColorMap[entry.key] ?? _indigo;
-                      return pw.Padding(
-                        padding: const pw.EdgeInsets.symmetric(vertical: 2),
-                        child: pw.Row(
-                          children: [
-                            pw.Container(
-                              width: 6,
-                              height: 6,
-                              decoration: pw.BoxDecoration(
-                                color: col,
-                                shape: pw.BoxShape.circle,
-                              ),
-                            ),
-                            pw.SizedBox(width: 5),
-                            pw.Expanded(
-                              child: pw.Text(
-                                entry.key,
-                                style: const pw.TextStyle(
-                                  fontSize: 8,
-                                  color: _slate800,
-                                ),
-                                maxLines: 1,
-                              ),
-                            ),
-                            pw.Text(
-                              '${TimerService.formatDuration(entry.value, compact: true)} (${pct.toStringAsFixed(0)}%)',
-                              style: const pw.TextStyle(
-                                fontSize: 7.5,
-                                fontWeight: pw.FontWeight.bold,
-                                color: _slate700,
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    }),
-                  ],
-                ),
-              ),
-              pw.SizedBox(width: 16),
-
-              // Categories Column
-              pw.Expanded(
-                child: pw.Column(
-                  crossAxisAlignment: pw.CrossAxisAlignment.start,
-                  children: [
-                    pw.Text(
-                      'Time by Category',
-                      style: const pw.TextStyle(
-                        fontSize: 8,
-                        fontWeight: pw.FontWeight.bold,
-                        color: _slate700,
-                      ),
-                    ),
-                    pw.SizedBox(height: 4),
-                    ...sortedCategories.map((entry) {
-                      final pct = (entry.value.inSeconds / totalSeconds) * 100;
-                      return pw.Padding(
-                        padding: const pw.EdgeInsets.symmetric(vertical: 2),
-                        child: pw.Row(
-                          children: [
-                            pw.Container(
-                              width: 4,
-                              height: 4,
-                              decoration: const pw.BoxDecoration(
-                                color: _slate500,
-                                shape: pw.BoxShape.circle,
-                              ),
-                            ),
-                            pw.SizedBox(width: 5),
-                            pw.Expanded(
-                              child: pw.Text(
-                                entry.key,
-                                style: const pw.TextStyle(
-                                  fontSize: 8,
-                                  color: _slate800,
-                                ),
-                                maxLines: 1,
-                              ),
-                            ),
-                            pw.Text(
-                              '${TimerService.formatDuration(entry.value, compact: true)} (${pct.toStringAsFixed(0)}%)',
-                              style: const pw.TextStyle(
-                                fontSize: 7.5,
-                                fontWeight: pw.FontWeight.bold,
-                                color: _slate700,
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    }),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  static pw.Widget _buildTaskSummaryTable({
-    required List<_TaskSummary> tasks,
-    required Duration totalDayNet,
-  }) {
-    tasks.sort((a, b) => b.totalDuration.compareTo(a.totalDuration));
-    final totalSeconds = totalDayNet.inSeconds > 0 ? totalDayNet.inSeconds : 1;
-
-    return pw.Container(
-      decoration: pw.BoxDecoration(
-        color: PdfColors.white,
-        borderRadius: const pw.BorderRadius.all(pw.Radius.circular(6)),
-        border: pw.Border.all(color: _slate200, width: 0.75),
-      ),
-      child: pw.Column(
-        crossAxisAlignment: pw.CrossAxisAlignment.start,
-        children: [
-          pw.Padding(
-            padding: const pw.EdgeInsets.fromLTRB(10, 8, 10, 6),
-            child: pw.Text(
-              'TASKS WORKED ON SUMMARY',
-              style: const pw.TextStyle(
-                fontSize: 9,
-                fontWeight: pw.FontWeight.bold,
-                color: _slate800,
-              ),
-            ),
-          ),
-          pw.TableHelper.fromTextArray(
-            border: null,
-            headerStyle: const pw.TextStyle(
-              fontSize: 7.5,
-              fontWeight: pw.FontWeight.bold,
-              color: _slate500,
-            ),
-            headerDecoration: const pw.BoxDecoration(
-              color: _slate100,
-            ),
-            cellHeight: 20,
-            cellAlignments: {
-              0: pw.Alignment.centerLeft,
-              1: pw.Alignment.centerLeft,
-              2: pw.Alignment.centerLeft,
-              3: pw.Alignment.center,
-              4: pw.Alignment.centerRight,
-              5: pw.Alignment.centerRight,
-            },
-            headers: [
-              'Task Name',
-              'Project',
-              'Category / Types',
-              'Sessions',
-              'Total Time',
-              'Share',
-            ],
-            data: tasks.map((t) {
-              final pct = (t.totalDuration.inSeconds / totalSeconds) * 100;
-              final catDisplay = t.categories.where((c) => c != '-').join(', ');
-              return [
-                t.taskName,
-                t.projectName,
-                catDisplay.isNotEmpty ? catDisplay : 'Uncategorized',
-                '${t.sessionCount}',
-                TimerService.formatDuration(t.totalDuration,
-                    includeSeconds: false),
-                '${pct.toStringAsFixed(0)}%',
-              ];
-            }).toList(),
-            cellStyle: const pw.TextStyle(fontSize: 8, color: _slate800),
-          ),
-        ],
-      ),
-    );
-  }
-
-  static pw.Widget _buildNotesCallout(List<_SessionNoteSummary> notes) {
-    return pw.Container(
-      padding: const pw.EdgeInsets.all(12),
-      decoration: pw.BoxDecoration(
-        color: _indigoLight,
-        borderRadius: const pw.BorderRadius.all(pw.Radius.circular(6)),
-        border: pw.Border.all(color: _indigo.shade(0.3), width: 0.75),
-      ),
-      child: pw.Column(
-        crossAxisAlignment: pw.CrossAxisAlignment.start,
-        children: [
-          pw.Row(
-            children: [
-              pw.Container(
-                width: 6,
-                height: 6,
+                padding: const pw.EdgeInsets.all(24),
                 decoration: const pw.BoxDecoration(
-                  color: _indigo,
-                  shape: pw.BoxShape.circle,
+                  color: PdfThemeColors.slate50,
+                  borderRadius: pw.BorderRadius.all(pw.Radius.circular(6)),
+                  border: pw.Border.fromBorderSide(
+                    pw.BorderSide(color: PdfThemeColors.slate200, width: 0.5),
+                  ),
+                ),
+                child: pw.Column(
+                  mainAxisSize: pw.MainAxisSize.min,
+                  children: [
+                    pw.Text(
+                      'No time tracked in this period',
+                      style: typo.h2.copyWith(color: PdfThemeColors.slate700),
+                    ),
+                    pw.SizedBox(height: 6),
+                    pw.Text(
+                      'Sessions logged within ${report.identity.dateSubtitle} will appear here.',
+                      style: typo.body.copyWith(color: PdfThemeColors.slate500),
+                    ),
+                  ],
                 ),
               ),
-              pw.SizedBox(width: 5),
-              pw.Text(
-                'STANDUP / PROGRESS HIGHLIGHTS & NOTES',
-                style: const pw.TextStyle(
-                  fontSize: 8.5,
-                  fontWeight: pw.FontWeight.bold,
-                  color: _indigoDark,
-                ),
-              ),
-            ],
-          ),
-          pw.SizedBox(height: 6),
-          ...notes.map((n) {
-            final projSuffix =
-                n.projectName != null ? ' [${n.projectName}]' : '';
-            return pw.Padding(
-              padding: const pw.EdgeInsets.symmetric(vertical: 3),
-              child: pw.Column(
-                crossAxisAlignment: pw.CrossAxisAlignment.start,
-                children: [
-                  pw.Text(
-                    '- ${n.taskName}$projSuffix (${TimerService.formatDuration(n.duration, compact: true)})',
-                    style: const pw.TextStyle(
-                      fontSize: 8,
-                      fontWeight: pw.FontWeight.bold,
-                      color: _slate900,
-                    ),
-                  ),
-                  pw.Padding(
-                    padding: const pw.EdgeInsets.only(left: 10, top: 1),
-                    child: pw.Text(
-                      n.note,
-                      style: const pw.TextStyle(
-                        fontSize: 7.5,
-                        color: _slate700,
-                        lineSpacing: 1.2,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }),
-        ],
+            ),
+            pw.Spacer(),
+            _buildRunningFooter(context, report, typo),
+          ],
+        ),
       ),
     );
   }
 
-  static pw.Widget _buildSessionTimeline({
-    required List<SessionExportRecord> records,
-    required List<AttributeDefinition> attributeDefinitions,
-    required Map<String, PdfColor> projectColorMap,
-  }) {
-    final timeFormat = DateFormat('HH:mm');
-
+  // ===========================================================================
+  // Act I: The Story (1 Page, fixed)
+  // ===========================================================================
+  pw.Widget _buildActI(
+    pw.Context context,
+    WorkReport report,
+    PdfTypography typo,
+  ) {
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
-        pw.Text(
-          'DETAILED SESSION TIMELINE',
-          style: const pw.TextStyle(
-            fontSize: 9,
-            fontWeight: pw.FontWeight.bold,
-            color: _slate800,
+        // 1. Masthead Hero Banner
+        PdfPrimitives.masthead(
+          workspaceName: report.identity.workspaceName,
+          authorName: report.identity.authorName,
+          dateSubtitle: report.identity.dateSubtitle,
+          totalNet: report.headline.totalNet,
+          typo: typo,
+        ),
+        pw.SizedBox(height: 10),
+
+        // 2. 5 Stat Tiles
+        PdfPrimitives.statTilesRow(
+          headline: report.headline,
+          typo: typo,
+        ),
+        pw.SizedBox(height: 12),
+
+        // 3. Middle Band: "Where the Time Went" + "How it Classifies"
+        pw.Row(
+          crossAxisAlignment: pw.CrossAxisAlignment.start,
+          children: [
+            // Left: Where the Time Went (Projects)
+            pw.Expanded(
+              flex: 11,
+              child: pw.Container(
+                padding: const pw.EdgeInsets.all(10),
+                decoration: const pw.BoxDecoration(
+                  color: PdfThemeColors.slate50,
+                  borderRadius: pw.BorderRadius.all(pw.Radius.circular(5)),
+                  border: pw.Border.fromBorderSide(
+                    pw.BorderSide(color: PdfThemeColors.slate200, width: 0.5),
+                  ),
+                ),
+                child: pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Text(
+                      'WHERE THE TIME WENT',
+                      style: typo.microBold.copyWith(
+                        color: PdfThemeColors.slate900,
+                        letterSpacing: 0.4,
+                      ),
+                    ),
+                    pw.SizedBox(height: 6),
+                    PdfPrimitives.stackedBar(
+                      slices: report.projects,
+                      totalDuration: report.headline.totalNet,
+                      typo: typo,
+                      height: 8,
+                    ),
+                    pw.SizedBox(height: 8),
+                    for (final p in report.projects.take(4))
+                      pw.Padding(
+                        padding: const pw.EdgeInsets.symmetric(vertical: 1.5),
+                        child: pw.Row(
+                          children: [
+                            pw.Container(
+                              width: 5,
+                              height: 5,
+                              decoration: pw.BoxDecoration(
+                                color: p.color,
+                                shape: pw.BoxShape.circle,
+                              ),
+                            ),
+                            pw.SizedBox(width: 4),
+                            pw.Expanded(
+                              child: pw.Text(
+                                p.label,
+                                style: typo.microMedium,
+                                maxLines: 1,
+                                overflow: pw.TextOverflow.clip,
+                              ),
+                            ),
+                            pw.Text(
+                              TimerService.formatDuration(p.duration, includeSeconds: false),
+                              style: typo.monoMicro,
+                            ),
+                            pw.SizedBox(width: 6),
+                            pw.SizedBox(
+                              width: 24,
+                              child: pw.Text(
+                                '${(p.share * 100).toStringAsFixed(0)}%',
+                                textAlign: pw.TextAlign.right,
+                                style: typo.monoMicro.copyWith(color: PdfThemeColors.slate500),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+            pw.SizedBox(width: 10),
+
+            // Right: How It Classifies (Donut)
+            pw.Expanded(
+              flex: 10,
+              child: pw.Container(
+                padding: const pw.EdgeInsets.all(10),
+                decoration: const pw.BoxDecoration(
+                  color: PdfThemeColors.slate50,
+                  borderRadius: pw.BorderRadius.all(pw.Radius.circular(5)),
+                  border: pw.Border.fromBorderSide(
+                    pw.BorderSide(color: PdfThemeColors.slate200, width: 0.5),
+                  ),
+                ),
+                child: pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Text(
+                      'HOW IT CLASSIFIES',
+                      style: typo.microBold.copyWith(
+                        color: PdfThemeColors.slate900,
+                        letterSpacing: 0.4,
+                      ),
+                    ),
+                    pw.SizedBox(height: 6),
+                    pw.Row(
+                      children: [
+                        PdfPrimitives.donutChart(
+                          capexShare: report.classification.capex.inSeconds.toDouble(),
+                          opexShare: report.classification.opex.inSeconds.toDouble(),
+                          unclassifiedShare: report.classification.none.inSeconds.toDouble(),
+                          centerLabel: report.classification.classifiedTotal > Duration.zero
+                              ? '${report.classification.capexShare.toStringAsFixed(0)}%'
+                              : '—',
+                          centerSub: 'CapEx',
+                          typo: typo,
+                          size: 64,
+                        ),
+                        pw.SizedBox(width: 10),
+                        pw.Expanded(
+                          child: pw.Column(
+                            crossAxisAlignment: pw.CrossAxisAlignment.start,
+                            children: [
+                              _buildClassLegendRow('CapEx', report.classification.capex,
+                                  report.classification.capexShare, PdfThemeColors.capex, typo),
+                              pw.SizedBox(height: 3),
+                              _buildClassLegendRow('OpEx', report.classification.opex,
+                                  report.classification.opexShare, PdfThemeColors.opex, typo),
+                              if (report.classification.hasNone) ...[
+                                pw.SizedBox(height: 3),
+                                _buildClassLegendRow('Unclass', report.classification.none,
+                                    null, PdfThemeColors.unclassified, typo),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+        pw.SizedBox(height: 12),
+
+        // 4. Daily Rhythm Section
+        pw.Container(
+          padding: const pw.EdgeInsets.all(10),
+          decoration: const pw.BoxDecoration(
+            color: PdfThemeColors.slate50,
+            borderRadius: pw.BorderRadius.all(pw.Radius.circular(5)),
+            border: pw.Border.fromBorderSide(
+              pw.BorderSide(color: PdfThemeColors.slate200, width: 0.5),
+            ),
+          ),
+          child: pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Text(
+                    'DAILY RHYTHM',
+                    style: typo.microBold.copyWith(
+                      color: PdfThemeColors.slate900,
+                      letterSpacing: 0.4,
+                    ),
+                  ),
+                  pw.Text(
+                    report.rhythmAxis == RhythmAxis.hour
+                        ? 'Hour of Day (06:00 – 22:00)'
+                        : (report.rhythmAxis == RhythmAxis.week ? 'Weekly Rollup' : 'Active Days'),
+                    style: typo.micro.copyWith(color: PdfThemeColors.slate500),
+                  ),
+                ],
+              ),
+              pw.SizedBox(height: 6),
+              _buildRhythmBars(report.rhythm, typo),
+            ],
           ),
         ),
-        pw.SizedBox(height: 8),
-        ...records.map((r) {
-          final s = r.session;
-          final start = s.startTime.toLocal();
-          final end = s.endTime?.toLocal();
-          final timeRangeStr = end != null
-              ? '${timeFormat.format(start)} - ${timeFormat.format(end)}'
-              : '${timeFormat.format(start)} - in progress';
+        pw.SizedBox(height: 10),
 
-          return pw.Container(
-            margin: const pw.EdgeInsets.only(bottom: 8),
-            padding: const pw.EdgeInsets.all(10),
-            decoration: pw.BoxDecoration(
-              color: PdfColors.white,
-              borderRadius: const pw.BorderRadius.all(pw.Radius.circular(6)),
-              border: pw.Border.all(color: _slate200, width: 0.75),
-            ),
-            child: pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.start,
-              children: [
-                // Top Header Row: Time Badge + Task Name + Duration
-                pw.Row(
-                  crossAxisAlignment: pw.CrossAxisAlignment.center,
-                  children: [
-                    // Time range pill
-                    pw.Container(
-                      padding: const pw.EdgeInsets.symmetric(
-                          horizontal: 6, vertical: 2),
-                      decoration: const pw.BoxDecoration(
-                        color: _slate100,
-                        borderRadius:
-                            pw.BorderRadius.all(pw.Radius.circular(4)),
-                      ),
-                      child: pw.Text(
-                        timeRangeStr,
-                        style: const pw.TextStyle(
-                          fontSize: 7.5,
-                          fontWeight: pw.FontWeight.bold,
-                          color: _slate700,
-                        ),
-                      ),
-                    ),
-                    pw.SizedBox(width: 8),
-
-                    // Task Title
-                    pw.Expanded(
-                      child: pw.Text(
-                        r.workItem.name,
-                        style: const pw.TextStyle(
-                          fontSize: 9,
-                          fontWeight: pw.FontWeight.bold,
-                          color: _slate900,
-                        ),
-                        maxLines: 1,
-                      ),
-                    ),
-
-                    // Duration
-                    pw.Text(
-                      TimerService.formatDuration(r.netActiveDuration,
-                          includeSeconds: false),
-                      style: const pw.TextStyle(
-                        fontSize: 9.5,
-                        fontWeight: pw.FontWeight.bold,
-                        color: _indigo,
-                      ),
-                    ),
-                  ],
+        // 5. Headline Prose Summary
+        pw.Container(
+          width: double.infinity,
+          padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          decoration: const pw.BoxDecoration(
+            color: PdfThemeColors.indigoLight,
+            borderRadius: pw.BorderRadius.all(pw.Radius.circular(5)),
+          ),
+          child: pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Text(
+                'WHAT THIS PERIOD LOOKED LIKE',
+                style: typo.microBold.copyWith(
+                  color: PdfThemeColors.indigoDark,
+                  letterSpacing: 0.3,
                 ),
-                pw.SizedBox(height: 5),
+              ),
+              pw.SizedBox(height: 2),
+              pw.Text(
+                report.headline.proseLine,
+                style: typo.captionMedium.copyWith(color: PdfThemeColors.slate900),
+              ),
+            ],
+          ),
+        ),
+        pw.SizedBox(height: 10),
 
-                // Classification Pills: Project, Category, Tags, People
-                pw.Row(
-                  children: [
-                    if (r.project != null) ...[
-                      _buildChip(
-                        label: r.project!.name,
-                        bgColor: _indigoLight,
-                        textColor: _indigoDark,
-                        borderColor: _indigo.shade(0.3),
-                      ),
-                      pw.SizedBox(width: 4),
-                    ],
-                    if (r.category != null) ...[
-                      _buildChip(
-                        label: r.category!.name,
-                        bgColor: _emeraldLight,
-                        textColor: _emerald,
-                        borderColor: _emerald.shade(0.3),
-                      ),
-                      pw.SizedBox(width: 4),
-                    ],
-                    ...r.tags.map((tag) => pw.Padding(
-                          padding: const pw.EdgeInsets.only(right: 4),
-                          child: _buildChip(
-                            label: '#${tag.name}',
-                            bgColor: _slate100,
-                            textColor: _slate700,
-                            borderColor: _slate200,
-                          ),
-                        )),
-                    if (r.people.isNotEmpty) ...[
-                      _buildChip(
-                        label: 'with ${r.people.map((p) => p.name).join(', ')}',
-                        bgColor: _blueLight,
-                        textColor: _blue,
-                        borderColor: _blue.shade(0.3),
-                      ),
-                      pw.SizedBox(width: 4),
-                    ],
-                    if (r.idleDuration.inSeconds > 0)
-                      _buildChip(
-                        label:
-                            '-${TimerService.formatDuration(r.idleDuration, compact: true)} idle',
-                        bgColor: _amberLight,
-                        textColor: _amber,
-                        borderColor: _amber.shade(0.3),
-                      ),
-                  ],
+        // 6. Insight Cards (Capped at 3, dropped if space demands)
+        if (report.insights.isNotEmpty) ...[
+          pw.Row(
+            children: [
+              for (final ins in report.insights.take(3)) ...[
+                pw.Expanded(
+                  child: PdfPrimitives.insightCard(insight: ins, typo: typo),
                 ),
-
-                // Session Notes
-                if ((s.notes ?? '').trim().isNotEmpty) ...[
-                  pw.SizedBox(height: 5),
-                  pw.Container(
-                    width: double.infinity,
-                    padding: const pw.EdgeInsets.all(6),
-                    decoration: const pw.BoxDecoration(
-                      color: _slate50,
-                      borderRadius: pw.BorderRadius.all(pw.Radius.circular(4)),
-                    ),
-                    child: pw.Text(
-                      s.notes!.trim(),
-                      style: const pw.TextStyle(
-                        fontSize: 7.5,
-                        color: _slate700,
-                        lineSpacing: 1.2,
-                      ),
-                    ),
-                  ),
-                ],
-
-                // Configurable Custom Attributes
-                if (r.attributeValues.isNotEmpty) ...[
-                  pw.SizedBox(height: 4),
-                  pw.Wrap(
-                    spacing: 6,
-                    runSpacing: 2,
-                    children: r.attributeValues.entries.map((entry) {
-                      final def = attributeDefinitions
-                          .where((d) => d.id == entry.key)
-                          .firstOrNull;
-                      final label = def?.name ?? entry.key;
-                      return pw.Text(
-                        '$label: ${entry.value}',
-                        style: const pw.TextStyle(
-                          fontSize: 7,
-                          color: _slate500,
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ],
+                if (ins != report.insights.take(3).last) pw.SizedBox(width: 8),
               ],
-            ),
-          );
-        }),
+            ],
+          ),
+        ],
+
+        pw.Spacer(),
+        // Running footer for Page 1
+        _buildRunningFooter(context, report, typo),
       ],
     );
   }
 
-  static pw.Widget _buildChip({
-    required String label,
-    required PdfColor bgColor,
-    required PdfColor textColor,
-    PdfColor? borderColor,
-  }) {
-    return pw.Container(
-      padding: const pw.EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
-      decoration: pw.BoxDecoration(
-        color: bgColor,
-        borderRadius: const pw.BorderRadius.all(pw.Radius.circular(3)),
-        border: pw.Border.all(color: borderColor ?? bgColor, width: 0.5),
-      ),
-      child: pw.Text(
-        label,
-        style: pw.TextStyle(
-          fontSize: 6.5,
-          fontWeight: pw.FontWeight.bold,
-          color: textColor,
+  pw.Widget _buildClassLegendRow(
+    String label,
+    Duration duration,
+    double? share,
+    PdfColor color,
+    PdfTypography typo,
+  ) {
+    final shareStr = share != null ? ' (${share.toStringAsFixed(0)}%)' : '';
+    return pw.Row(
+      children: [
+        pw.Container(
+          width: 5,
+          height: 5,
+          decoration: pw.BoxDecoration(color: color, shape: pw.BoxShape.circle),
         ),
+        pw.SizedBox(width: 4),
+        pw.Text(label, style: typo.microBold.copyWith(color: PdfThemeColors.slate800)),
+        pw.Spacer(),
+        pw.Text(
+          '${TimerService.formatDuration(duration, compact: true)}$shareStr',
+          style: typo.monoMicro,
+        ),
+      ],
+    );
+  }
+
+  pw.Widget _buildRhythmBars(List<ReportBucket> rhythm, PdfTypography typo) {
+    if (rhythm.isEmpty) {
+      return pw.SizedBox(height: 28);
+    }
+
+    final maxDurSeconds = rhythm.map((b) => b.totalDuration.inSeconds).fold(0, max);
+    final maxSafe = maxDurSeconds > 0 ? maxDurSeconds : 1;
+
+    return pw.Container(
+      height: 38,
+      child: pw.Row(
+        crossAxisAlignment: pw.CrossAxisAlignment.end,
+        children: [
+          for (final b in rhythm)
+            pw.Expanded(
+              child: pw.Padding(
+                padding: const pw.EdgeInsets.symmetric(horizontal: 1),
+                child: pw.Column(
+                  mainAxisAlignment: pw.MainAxisAlignment.end,
+                  children: [
+                    if (b.totalDuration > Duration.zero)
+                      pw.Container(
+                        height: (b.totalDuration.inSeconds / maxSafe * 24).clamp(3.0, 24.0),
+                        decoration: pw.BoxDecoration(
+                          color: b.capexDuration > b.opexDuration
+                              ? PdfThemeColors.capex
+                              : PdfThemeColors.opex,
+                          borderRadius: const pw.BorderRadius.all(pw.Radius.circular(1.5)),
+                        ),
+                      )
+                    else
+                      pw.Container(
+                        height: 2,
+                        color: PdfThemeColors.slate200,
+                      ),
+                    pw.SizedBox(height: 3),
+                    pw.Text(
+                      b.label,
+                      style: typo.micro.copyWith(fontSize: 5.5, color: PdfThemeColors.slate500),
+                      maxLines: 1,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }
 
-  static bool _isSameCalendarDay(DateTime a, DateTime b) {
-    final la = a.toLocal();
-    final lb = b.toLocal();
-    return la.year == lb.year && la.month == lb.month && la.day == lb.day;
+  // ===========================================================================
+  // Act II: The Breakdown (Bar-in-cell tables)
+  // ===========================================================================
+  // ===========================================================================
+  // Act II: The Breakdown (Bar-in-cell tables)
+  // ===========================================================================
+  List<pw.Widget> _buildActII(WorkReport report, PdfTypography typo) {
+    return [
+      PdfPrimitives.sectionHeader('ACT II — THE BREAKDOWN', typo: typo),
+      pw.SizedBox(height: 10),
+
+      // 1. By Project
+      if (report.projects.isNotEmpty) ...[
+        pw.Text('By Project', style: typo.h3),
+        pw.SizedBox(height: 4),
+        for (final p in report.projects)
+          PdfPrimitives.barInCellRow(
+            label: p.label,
+            duration: p.duration,
+            share: p.share,
+            color: p.color,
+            sessionCount: p.sessionCount,
+            typo: typo,
+          ),
+        pw.SizedBox(height: 12),
+      ],
+
+      // 2. By Category (Uncategorized sorts last)
+      if (report.categories.isNotEmpty) ...[
+        pw.Text('By Category', style: typo.h3),
+        pw.SizedBox(height: 4),
+        for (final c in report.categories)
+          PdfPrimitives.barInCellRow(
+            label: c.label,
+            duration: c.duration,
+            share: c.share,
+            color: c.color,
+            sessionCount: c.sessionCount,
+            isUncategorized: c.isUncategorized,
+            typo: typo,
+          ),
+        pw.SizedBox(height: 12),
+      ],
+
+      // 3. By Financial Classification
+      pw.Text('By Financial Classification', style: typo.h3),
+      pw.SizedBox(height: 4),
+      PdfPrimitives.barInCellRow(
+        label: 'CapEx (Capitalizable)',
+        duration: report.classification.capex,
+        share: report.headline.totalNet.inSeconds > 0
+            ? report.classification.capex.inSeconds / report.headline.totalNet.inSeconds
+            : 0.0,
+        color: PdfThemeColors.capex,
+        typo: typo,
+      ),
+      PdfPrimitives.barInCellRow(
+        label: 'OpEx (Operational)',
+        duration: report.classification.opex,
+        share: report.headline.totalNet.inSeconds > 0
+            ? report.classification.opex.inSeconds / report.headline.totalNet.inSeconds
+            : 0.0,
+        color: PdfThemeColors.opex,
+        typo: typo,
+      ),
+      if (report.classification.hasNone)
+        PdfPrimitives.barInCellRow(
+          label: 'Unclassified',
+          duration: report.classification.none,
+          share: report.headline.totalNet.inSeconds > 0
+              ? report.classification.none.inSeconds / report.headline.totalNet.inSeconds
+              : 0.0,
+          color: PdfThemeColors.unclassified,
+          isUncategorized: true,
+          typo: typo,
+        ),
+      pw.SizedBox(height: 12),
+
+      // 4. By Timesheet Code
+      if (report.codes.isNotEmpty) ...[
+        pw.Text('By Timesheet Code', style: typo.h3),
+        pw.SizedBox(height: 4),
+        for (final code in report.codes)
+          PdfPrimitives.barInCellRow(
+            label: code.code,
+            duration: code.duration,
+            share: code.share,
+            color: code.needsAttention ? PdfThemeColors.attention : PdfThemeColors.slate700,
+            isAttention: code.needsAttention,
+            typo: typo,
+          ),
+        pw.SizedBox(height: 12),
+      ],
+
+      // 5. Configurable Attributes Breakdown
+      for (final attr in report.attributes) ...[
+        pw.Text('By ${attr.definitionName}', style: typo.h3),
+        pw.SizedBox(height: 4),
+        for (final s in attr.slices)
+          PdfPrimitives.barInCellRow(
+            label: s.label,
+            duration: s.duration,
+            share: s.share,
+            color: s.color,
+            sessionCount: s.sessionCount,
+            isUncategorized: s.isUncategorized,
+            typo: typo,
+          ),
+        pw.SizedBox(height: 12),
+      ],
+
+      // 6. Top Tasks Table
+      if (report.topTasks.isNotEmpty) ...[
+        pw.Text('Top Work Items', style: typo.h3),
+        pw.SizedBox(height: 4),
+        for (final t in report.topTasks)
+          PdfPrimitives.barInCellRow(
+            label: t.taskName,
+            duration: t.totalDuration,
+            share: t.share,
+            color: PdfThemeColors.entityColor(t.projectColorHex, t.taskId),
+            sessionCount: t.sessionCount,
+            typo: typo,
+          ),
+        if (report.topTasksRemainderCount > 0) ...[
+          pw.SizedBox(height: 3),
+          pw.Text(
+            '+ ${report.topTasksRemainderCount} more tasks',
+            style: typo.micro.copyWith(color: PdfThemeColors.slate500, fontStyle: pw.FontStyle.italic),
+          ),
+        ],
+        pw.SizedBox(height: 12),
+      ],
+
+      // 7. People & Tags summary chips
+      if (report.people.isNotEmpty || report.tags.isNotEmpty) ...[
+        pw.Text('Collaborators & Tags', style: typo.h3),
+        pw.SizedBox(height: 4),
+        pw.Wrap(
+          spacing: 4,
+          runSpacing: 4,
+          children: [
+            for (final p in report.people)
+              PdfPrimitives.chip(
+                text: '${p.label} (${TimerService.formatDuration(p.duration, compact: true)})',
+                dotColor: p.color,
+                typo: typo,
+              ),
+            for (final t in report.tags)
+              PdfPrimitives.chip(
+                text: '${t.label} (${TimerService.formatDuration(t.duration, compact: true)})',
+                barColor: t.color,
+                typo: typo,
+              ),
+          ],
+        ),
+      ],
+    ];
   }
-}
 
-class _TaskSummary {
-  final String taskId;
-  final String taskName;
-  final String projectName;
-  final Set<String> categories;
-  final Duration totalDuration;
-  final int sessionCount;
+  // ===========================================================================
+  // Act III: The Record (Notes & Detailed Session Table)
+  // ===========================================================================
+  List<pw.Widget> _buildActIII(WorkReport report, PdfTypography typo) {
+    return [
+      PdfPrimitives.sectionHeader('ACT III — THE RECORD', typo: typo),
+      pw.SizedBox(height: 10),
 
-  const _TaskSummary({
-    required this.taskId,
-    required this.taskName,
-    required this.projectName,
-    required this.categories,
-    required this.totalDuration,
-    required this.sessionCount,
-  });
-}
+      // 6a: Task-Grouped Notes (via TimeNotesService)
+      if (report.notes.totalNotes > 0) ...[
+        pw.Text('Notes & Highlights', style: typo.h2),
+        pw.SizedBox(height: 6),
+        for (final dayGroup in report.notes.dayGroups) ...[
+          pw.Container(
+            padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: const pw.BoxDecoration(
+              color: PdfThemeColors.slate100,
+              borderRadius: pw.BorderRadius.all(pw.Radius.circular(3)),
+            ),
+            child: pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              children: [
+                pw.Text(
+                  DateFormat('EEEE, MMMM d, yyyy').format(dayGroup.day),
+                  style: typo.captionBold,
+                ),
+                pw.Text(
+                  '${TimerService.formatDuration(dayGroup.totalDuration, compact: true)} · ${dayGroup.noteCount} notes',
+                  style: typo.monoCaption,
+                ),
+              ],
+            ),
+          ),
+          pw.SizedBox(height: 6),
+          for (final taskGroup in dayGroup.taskGroups)
+            pw.Padding(
+              padding: const pw.EdgeInsets.only(left: 8, bottom: 8),
+              child: pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  // Task header with promoted metadata
+                  pw.Row(
+                    children: [
+                      pw.Text(taskGroup.workItem.name, style: typo.bodyBold),
+                      pw.SizedBox(width: 6),
+                      pw.Text(
+                        '(${taskGroup.sessionCount} sessions · ${TimerService.formatDuration(taskGroup.totalDuration, compact: true)})',
+                        style: typo.caption.copyWith(color: PdfThemeColors.slate500),
+                      ),
+                    ],
+                  ),
+                  pw.SizedBox(height: 2),
+                  // Promoted chips
+                  pw.Wrap(
+                    spacing: 4,
+                    runSpacing: 2,
+                    children: [
+                      if (taskGroup.project != null)
+                        PdfPrimitives.chip(
+                          text: taskGroup.project!.name,
+                          dotColor: PdfThemeColors.entityColor(
+                              taskGroup.project!.colorHex, taskGroup.project!.id),
+                          dense: true,
+                          typo: typo,
+                        ),
+                      if (taskGroup.category != null)
+                        PdfPrimitives.chip(
+                          text: taskGroup.category!.name,
+                          dotColor: PdfThemeColors.entityColor(null, taskGroup.category!.id),
+                          dense: true,
+                          typo: typo,
+                        ),
+                      if (taskGroup.classification != FinancialClassification.none)
+                        PdfPrimitives.chip(
+                          text: taskGroup.classification.label,
+                          dotColor: taskGroup.classification == FinancialClassification.capex
+                              ? PdfThemeColors.capex
+                              : PdfThemeColors.opex,
+                          dense: true,
+                          typo: typo,
+                        ),
+                    ],
+                  ),
+                  pw.SizedBox(height: 4),
+                  // Individual notes
+                  for (final entry in taskGroup.entries)
+                    if (entry.note.isNotEmpty)
+                      pw.Padding(
+                        padding: const pw.EdgeInsets.only(left: 6, bottom: 3),
+                        child: pw.Row(
+                          crossAxisAlignment: pw.CrossAxisAlignment.start,
+                          children: [
+                            pw.Text('• ', style: typo.body.copyWith(color: PdfThemeColors.indigo)),
+                            pw.Expanded(
+                              child: pw.Text(
+                                entry.note,
+                                style: typo.body.copyWith(color: PdfThemeColors.slate800),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                ],
+              ),
+            ),
+        ],
+        pw.SizedBox(height: 14),
+      ],
 
-class _SessionNoteSummary {
-  final String taskName;
-  final String? projectName;
-  final String note;
-  final Duration duration;
-  final DateTime startTime;
+      // 6b: Dense Session Table
+      pw.Text('Session Log', style: typo.h2),
+      pw.SizedBox(height: 6),
+      _buildSessionTable(report.sessions, typo),
+    ];
+  }
 
-  const _SessionNoteSummary({
-    required this.taskName,
-    this.projectName,
-    required this.note,
-    required this.duration,
-    required this.startTime,
-  });
+  pw.Widget _buildSessionTable(List<ReportSessionLine> sessions, PdfTypography typo) {
+    return pw.TableHelper.fromTextArray(
+      headers: [
+        'Date',
+        'Time',
+        'Task',
+        'Project',
+        'Category',
+        'Class',
+        'Code',
+        'Net',
+      ],
+      data: [
+        for (final s in sessions)
+          [
+            DateFormat('MM/dd').format(s.session.startTime.toLocal()),
+            '${DateFormat('HH:mm').format(s.session.startTime.toLocal())}–${s.session.endTime != null ? DateFormat('HH:mm').format(s.session.endTime!.toLocal()) : 'now'}',
+            s.workItem.name,
+            s.project?.name ?? '—',
+            s.category?.name ?? 'Unclass',
+            s.classification.label,
+            s.code ?? '—',
+            TimerService.formatDuration(s.netActiveDuration, compact: true),
+          ],
+      ],
+      headerStyle: typo.microBold.copyWith(color: PdfThemeColors.slate900),
+      headerDecoration: const pw.BoxDecoration(color: PdfThemeColors.slate100),
+      cellStyle: typo.micro.copyWith(color: PdfThemeColors.slate800),
+      cellAlignment: pw.Alignment.centerLeft,
+      cellAlignments: {
+        7: pw.Alignment.centerRight,
+      },
+      rowDecoration: const pw.BoxDecoration(
+        border: pw.Border(
+          bottom: pw.BorderSide(color: PdfThemeColors.slate200, width: 0.5),
+        ),
+      ),
+      oddRowDecoration: const pw.BoxDecoration(
+        color: PdfThemeColors.slate50,
+      ),
+      columnWidths: {
+        0: const pw.FixedColumnWidth(34),
+        1: const pw.FixedColumnWidth(54),
+        2: const pw.FlexColumnWidth(3),
+        3: const pw.FlexColumnWidth(2),
+        4: const pw.FlexColumnWidth(2),
+        5: const pw.FixedColumnWidth(36),
+        6: const pw.FixedColumnWidth(44),
+        7: const pw.FixedColumnWidth(36),
+      },
+    );
+  }
+
+  // ===========================================================================
+  // Running Header & Footer
+  // ===========================================================================
+  pw.Widget _buildRunningHeader(
+    pw.Context context,
+    WorkReport report,
+    PdfTypography typo,
+  ) {
+    return pw.Container(
+      margin: const pw.EdgeInsets.only(bottom: 12),
+      padding: const pw.EdgeInsets.only(bottom: 4),
+      decoration: const pw.BoxDecoration(
+        border: pw.Border(
+          bottom: pw.BorderSide(color: PdfThemeColors.slate200, width: 0.5),
+        ),
+      ),
+      child: pw.Row(
+        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+        children: [
+          pw.Text(
+            '${report.identity.workspaceName} · ${report.identity.dateSubtitle}',
+            style: typo.micro.copyWith(color: PdfThemeColors.slate500),
+          ),
+          pw.Text(
+            'WorkPulse',
+            style: typo.microBold.copyWith(color: PdfThemeColors.slate500),
+          ),
+        ],
+      ),
+    );
+  }
+
+  pw.Widget _buildRunningFooter(
+    pw.Context context,
+    WorkReport report,
+    PdfTypography typo, {
+    int pageOffset = 0,
+  }) {
+    return pw.Container(
+      margin: const pw.EdgeInsets.only(top: 10),
+      padding: const pw.EdgeInsets.only(top: 4),
+      decoration: const pw.BoxDecoration(
+        border: pw.Border(
+          top: pw.BorderSide(color: PdfThemeColors.slate200, width: 0.5),
+        ),
+      ),
+      child: pw.Row(
+        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+        children: [
+          pw.Text(
+            '${report.identity.workspaceName} · ${report.identity.dateSubtitle}',
+            style: typo.micro.copyWith(color: PdfThemeColors.slate400),
+          ),
+          pw.Text(
+            'Page ${context.pageNumber} of ${context.pagesCount}',
+            style: typo.microBold.copyWith(color: PdfThemeColors.slate500),
+          ),
+        ],
+      ),
+    );
+  }
 }
