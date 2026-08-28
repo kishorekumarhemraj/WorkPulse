@@ -85,6 +85,7 @@ class _CategoryFormDialogState extends ConsumerState<CategoryFormDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     final isEditing = widget.category != null;
 
     return AppDialog(
@@ -99,12 +100,12 @@ class _CategoryFormDialogState extends ConsumerState<CategoryFormDialog> {
         ElevatedButton(
           onPressed: _isSubmitting ? null : _submit,
           child: _isSubmitting
-              ? const SizedBox(
+              ? SizedBox(
                   width: 16,
                   height: 16,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color: Colors.white,
+                    color: colors.onAccent,
                   ),
                 )
               : Text(isEditing ? 'Save Changes' : 'Create Category'),

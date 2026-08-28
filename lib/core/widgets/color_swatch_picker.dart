@@ -77,10 +77,10 @@ class ColorSwatchPicker extends StatelessWidget {
                         shape: BoxShape.circle,
                       ),
                       child: isSelected
-                          ? const Icon(
+                          ? Icon(
                               Icons.check,
                               size: IconSizes.sm,
-                              color: Colors.white,
+                              color: colors.onAccent,
                             )
                           : null,
                     ),

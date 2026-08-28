@@ -79,115 +79,121 @@ class AppDialog extends StatelessWidget {
         maxHeight: MediaQuery.sizeOf(context).height * 0.85,
       ),
       decoration: BoxDecoration(
-        color: colors.surfaceRaised,
         borderRadius: Radii.xlAll,
-        border: Border.all(color: colors.divider),
         // A light dialog is white on a near-white page; the hairline alone
         // does not read as "in front of".
         boxShadow: Elevation.high(colors.shadow),
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Header
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              Spacing.xl,
-              Spacing.xl,
-              Spacing.md,
-              Spacing.lg,
-            ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (icon != null) ...[
-                  Container(
-                    padding: const EdgeInsets.all(Spacing.sm),
-                    decoration: BoxDecoration(
-                      color:
-                          (iconColor ?? colors.accent).withValues(alpha: 0.15),
-                      borderRadius: Radii.mdAll,
-                    ),
-                    child: Icon(
-                      icon,
-                      size: IconSizes.lg,
-                      color: iconColor ?? colors.accent,
-                    ),
-                  ),
-                  const SizedBox(width: Spacing.md),
-                ],
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(title, style: theme.textTheme.titleLarge),
-                      if (subtitle != null) ...[
-                        const SizedBox(height: Spacing.xxs),
-                        Text(subtitle!, style: theme.textTheme.bodySmall),
-                      ],
-                    ],
-                  ),
-                ),
-                const SizedBox(width: Spacing.sm),
-                IconButton(
-                  icon: const Icon(Icons.close, size: IconSizes.lg),
-                  tooltip: 'Close',
-                  onPressed: () => Navigator.of(context).maybePop(),
-                ),
-              ],
-            ),
-          ),
-          Divider(height: 1, color: colors.divider),
-
-          // Body
-          Flexible(
-            child: scrollableBody
-                ? SingleChildScrollView(
-                    padding: const EdgeInsets.all(Spacing.xl),
-                    child: child,
-                  )
-                : Padding(
-                    padding: const EdgeInsets.all(Spacing.xl),
-                    child: child,
-                  ),
-          ),
-
-          // Footer
-          if (actions.isNotEmpty || leadingFooter != null) ...[
-            Divider(height: 1, color: colors.divider),
+      child: Material(
+        color: colors.surfaceRaised,
+        shape: RoundedRectangleBorder(
+          borderRadius: Radii.xlAll,
+          side: BorderSide(color: colors.divider),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Header
             Padding(
-              padding: const EdgeInsets.all(Spacing.lg),
+              padding: const EdgeInsets.fromLTRB(
+                Spacing.xl,
+                Spacing.xl,
+                Spacing.md,
+                Spacing.lg,
+              ),
               child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (leadingFooter != null) ...[
-                    leadingFooter!,
+                  if (icon != null) ...[
+                    Container(
+                      padding: const EdgeInsets.all(Spacing.sm),
+                      decoration: BoxDecoration(
+                        color:
+                            (iconColor ?? colors.accent).withValues(alpha: Alphas.subtle),
+                        borderRadius: Radii.mdAll,
+                      ),
+                      child: Icon(
+                        icon,
+                        size: IconSizes.lg,
+                        color: iconColor ?? colors.accent,
+                      ),
+                    ),
                     const SizedBox(width: Spacing.md),
                   ],
-                  // A Wrap rather than a Row: the submit hint is wider on
-                  // Windows ("Ctrl" "Enter" against "⌘" "↩") and a fixed row
-                  // overflowed the narrower dialogs. It drops to its own line
-                  // instead of being clipped.
                   Expanded(
-                    child: Wrap(
-                      alignment: WrapAlignment.end,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      spacing: Spacing.sm,
-                      runSpacing: Spacing.sm,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        if (onSubmit != null)
-                          Padding(
-                            padding: const EdgeInsets.only(right: Spacing.sm),
-                            child: KeycapGroup(ShortcutLabels.submitKeys),
-                          ),
-                        ...actions,
+                        Text(title, style: theme.textTheme.titleLarge),
+                        if (subtitle != null) ...[
+                          const SizedBox(height: Spacing.xxs),
+                          Text(subtitle!, style: theme.textTheme.bodySmall),
+                        ],
                       ],
                     ),
+                  ),
+                  const SizedBox(width: Spacing.sm),
+                  IconButton(
+                    icon: const Icon(Icons.close, size: IconSizes.lg),
+                    tooltip: 'Close',
+                    onPressed: () => Navigator.of(context).maybePop(),
                   ),
                 ],
               ),
             ),
+            Divider(height: 1, color: colors.divider),
+
+            // Body
+            Flexible(
+              child: scrollableBody
+                  ? SingleChildScrollView(
+                      padding: const EdgeInsets.all(Spacing.xl),
+                      child: child,
+                    )
+                  : Padding(
+                      padding: const EdgeInsets.all(Spacing.xl),
+                      child: child,
+                    ),
+            ),
+
+            // Footer
+            if (actions.isNotEmpty || leadingFooter != null) ...[
+              Divider(height: 1, color: colors.divider),
+              Padding(
+                padding: const EdgeInsets.all(Spacing.lg),
+                child: Row(
+                  children: [
+                    if (leadingFooter != null) ...[
+                      leadingFooter!,
+                      const SizedBox(width: Spacing.md),
+                    ],
+                    // A Wrap rather than a Row: the submit hint is wider on
+                    // Windows ("Ctrl" "Enter" against "⌘" "↩") and a fixed row
+                    // overflowed the narrower dialogs. It drops to its own line
+                    // instead of being clipped.
+                    Expanded(
+                      child: Wrap(
+                        alignment: WrapAlignment.end,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        spacing: Spacing.sm,
+                        runSpacing: Spacing.sm,
+                        children: [
+                          if (onSubmit != null)
+                            Padding(
+                              padding: const EdgeInsets.only(right: Spacing.sm),
+                              child: KeycapGroup(ShortcutLabels.submitKeys),
+                            ),
+                          ...actions,
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ],
-        ],
+        ),
       ),
     );
 

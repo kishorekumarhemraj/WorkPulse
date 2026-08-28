@@ -150,7 +150,7 @@ class _IdlePromptDialogState extends ConsumerState<IdlePromptDialog> {
                 color: colors.warningSubtle,
                 borderRadius: Radii.lgAll,
                 border: Border.all(
-                  color: colors.warning.withValues(alpha: 0.3),
+                  color: colors.warning.withValues(alpha: Alphas.muted),
                 ),
               ),
               child: Column(
@@ -183,7 +183,7 @@ class _IdlePromptDialogState extends ConsumerState<IdlePromptDialog> {
                 vertical: Spacing.sm + 2,
               ),
               decoration: BoxDecoration(
-                color: colors.card,
+                color: colors.surface,
                 borderRadius: Radii.mdAll,
                 border: Border.all(color: colors.divider),
               ),
@@ -274,7 +274,7 @@ class _IdlePromptDialogState extends ConsumerState<IdlePromptDialog> {
       button: true,
       label: '$title. $subtitle',
       child: Material(
-        color: colors.card,
+        color: colors.surface,
         borderRadius: Radii.mdAll,
         child: InkWell(
           onTap: _isProcessing ? null : onTap,
@@ -293,7 +293,7 @@ class _IdlePromptDialogState extends ConsumerState<IdlePromptDialog> {
                 Container(
                   padding: const EdgeInsets.all(Spacing.xs + 2),
                   decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.15),
+                    color: color.withValues(alpha: Alphas.subtle),
                     borderRadius: Radii.smAll,
                   ),
                   child: Icon(icon, color: color, size: IconSizes.lg),

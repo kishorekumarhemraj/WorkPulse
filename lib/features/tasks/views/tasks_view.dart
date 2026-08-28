@@ -316,7 +316,7 @@ class _InspectorPlaceholder extends StatelessWidget {
     final colors = context.colors;
     return Container(
       decoration: BoxDecoration(
-        color: colors.surface.withValues(alpha: 0.4),
+        color: colors.surface.withValues(alpha: Alphas.muted),
         borderRadius: Radii.xlAll,
         border: Border.all(
           color: colors.divider,

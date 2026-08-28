@@ -513,7 +513,7 @@ class _InsightCardState extends State<_InsightCard> {
             width: double.infinity,
             padding: const EdgeInsets.all(Spacing.md),
             decoration: BoxDecoration(
-              color: colors.surfaceSunken,
+              color: colors.surface,
               borderRadius: Radii.smAll,
               border: Border(left: BorderSide(color: tone, width: 2)),
             ),

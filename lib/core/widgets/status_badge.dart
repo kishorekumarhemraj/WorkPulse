@@ -52,7 +52,7 @@ class StatusBadge extends StatelessWidget {
     };
 
     final fg = color ?? foreground;
-    final bg = color?.withValues(alpha: 0.15) ?? fill;
+    final bg = color?.withValues(alpha: Alphas.subtle) ?? fill;
 
     final textStyle = emphasis
         ? theme.textTheme.labelSmall?.copyWith(color: fg)
@@ -67,7 +67,7 @@ class StatusBadge extends StatelessWidget {
       decoration: BoxDecoration(
         color: bg,
         borderRadius: Radii.smAll,
-        border: outlined ? Border.all(color: fg.withValues(alpha: 0.4)) : null,
+        border: outlined ? Border.all(color: fg.withValues(alpha: Alphas.muted)) : null,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

@@ -27,12 +27,13 @@ class Keycap extends StatelessWidget {
       ),
       decoration: BoxDecoration(
         color: onAccent
-            ? Colors.white.withValues(alpha: 0.18)
+            ? colors.onAccent.withValues(alpha: Alphas.subtle)
             : colors.surfaceSunken,
         borderRadius: Radii.xsAll,
         border: Border.all(
-          color:
-              onAccent ? Colors.white.withValues(alpha: 0.24) : colors.divider,
+          color: onAccent
+              ? colors.onAccent.withValues(alpha: Alphas.muted)
+              : colors.divider,
         ),
       ),
       child: Text(

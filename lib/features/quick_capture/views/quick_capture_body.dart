@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workpulse/core/theme/app_colors.dart';
 import 'package:workpulse/core/theme/color_utils.dart';
+import 'package:workpulse/core/theme/design_tokens.dart';
 import 'package:workpulse/core/theme/icon_utils.dart';
 import 'package:workpulse/core/widgets/app_select.dart';
 import 'package:workpulse/core/widgets/field_label.dart';
@@ -450,7 +451,7 @@ class _QuickCaptureBodyState extends ConsumerState<QuickCaptureBody> {
 
     return Container(
       decoration: BoxDecoration(
-        color: colors.card,
+        color: colors.surface,
         borderRadius: const BorderRadius.vertical(bottom: Radius.circular(14)),
         border: Border(top: BorderSide(color: colors.divider, width: 1)),
       ),
@@ -614,7 +615,7 @@ class _QuickCaptureBodyState extends ConsumerState<QuickCaptureBody> {
       ),
       child: Material(
         color: isSelected
-            ? colors.accent.withValues(alpha: 0.15)
+            ? colors.accent.withValues(alpha: Alphas.subtle)
             : Colors.transparent,
         child: InkWell(
           canRequestFocus: false,
@@ -707,7 +708,7 @@ class _QuickCaptureBodyState extends ConsumerState<QuickCaptureBody> {
       ),
       child: Material(
         color: isSelected
-            ? colors.successFill.withValues(alpha: 0.15)
+            ? colors.successFill.withValues(alpha: Alphas.subtle)
             : Colors.transparent,
         child: InkWell(
           canRequestFocus: false,
@@ -724,7 +725,7 @@ class _QuickCaptureBodyState extends ConsumerState<QuickCaptureBody> {
                   size: 18,
                   color: isSelected
                       ? colors.success
-                      : colors.success.withValues(alpha: 0.7),
+                      : colors.success.withValues(alpha: Alphas.heavy),
                 ),
                 const SizedBox(width: 12),
                 Expanded(

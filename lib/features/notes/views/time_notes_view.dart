@@ -160,7 +160,7 @@ class TimeNotesView extends ConsumerWidget {
     final now = DateTime.now();
 
     return Scaffold(
-      backgroundColor: colors.surface,
+      backgroundColor: colors.background,
       body: PageScaffold(
         title: 'Time Notes',
         subtitle: _formatSubtitle(selectedRange, selectedDate),
@@ -352,7 +352,7 @@ class _NotesSummaryCard extends StatelessWidget {
         vertical: Spacing.md,
       ),
       decoration: BoxDecoration(
-        color: colors.surfaceSunken,
+        color: colors.surface,
         borderRadius: Radii.lgAll,
         border: Border.all(color: colors.divider),
       ),
@@ -703,7 +703,7 @@ class _TaskNoteEntryRow extends StatelessWidget {
                             borderRadius: Radii.smAll,
                             border: Border.all(
                               color: isRunning
-                                  ? colors.success.withValues(alpha: 0.4)
+                                  ? colors.success.withValues(alpha: Alphas.muted)
                                   : colors.divider,
                             ),
                           ),
