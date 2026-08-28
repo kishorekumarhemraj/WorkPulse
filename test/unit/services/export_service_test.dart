@@ -366,5 +366,41 @@ void main() {
       final mappedLine = lines.firstWhere((l) => l.contains('Feature for R1'));
       expect(mappedLine, contains('MAPPED-R1,option_mapping'));
     });
+
+    test(
+        'getExportRecordsForWorkItem produces identical records to range export for a session in both',
+        () async {
+      final range = DateRange(
+        start: DateTime.utc(2026, 8, 23, 0, 0, 0),
+        end: DateTime.utc(2026, 8, 23, 23, 59, 59),
+      );
+
+      final rangeRecords =
+          await exportService.getExportRecords(workspaceId: wsId, range: range);
+      final itemRecords = await exportService.getExportRecordsForWorkItem(
+        workspaceId: wsId,
+        workItemId: 'task-1',
+      );
+
+      expect(itemRecords, isNotEmpty);
+      final rangeSession1 =
+          rangeRecords.firstWhere((r) => r.session.id == 'sess-1');
+      final itemSession1 =
+          itemRecords.firstWhere((r) => r.session.id == 'sess-1');
+
+      expect(itemSession1.session.id, rangeSession1.session.id);
+      expect(itemSession1.workItem.id, rangeSession1.workItem.id);
+      expect(itemSession1.project?.id, rangeSession1.project?.id);
+      expect(itemSession1.category?.id, rangeSession1.category?.id);
+      expect(itemSession1.grossDuration, rangeSession1.grossDuration);
+      expect(itemSession1.idleDuration, rangeSession1.idleDuration);
+      expect(itemSession1.netActiveDuration, rangeSession1.netActiveDuration);
+      expect(itemSession1.classification, rangeSession1.classification);
+      expect(itemSession1.attributeValues, rangeSession1.attributeValues);
+      expect(itemSession1.tags.map((t) => t.id),
+          rangeSession1.tags.map((t) => t.id));
+      expect(itemSession1.people.map((p) => p.id),
+          rangeSession1.people.map((p) => p.id));
+    });
   });
 }

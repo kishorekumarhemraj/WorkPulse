@@ -112,6 +112,27 @@ class ExportService {
   }) async {
     final allSessions =
         await _sessionRepository.getByDateRange(range.start, range.end);
+    return _hydrate(allSessions, workspaceId: workspaceId);
+  }
+
+  /// Every session logged against one work item, fully hydrated.
+  ///
+  /// Shares [_hydrate] with the range query rather than resolving a second
+  /// way — the classification fallback, the idle netting and the attribute
+  /// formatting all live in one place, which is the same reason
+  /// [SessionExportRecord.classification] exists at all.
+  Future<List<SessionExportRecord>> getExportRecordsForWorkItem({
+    required String workspaceId,
+    required String workItemId,
+  }) async {
+    final sessions = await _sessionRepository.getByWorkItemId(workItemId);
+    return _hydrate(sessions, workspaceId: workspaceId);
+  }
+
+  Future<List<SessionExportRecord>> _hydrate(
+    List<Session> sessions, {
+    required String workspaceId,
+  }) async {
     // includeArchived: true - a session for an archived task must still
     // appear in Time Log / Session History / CSV / JSON export.
     final allWorkItems = await _workItemRepository.getAll(
@@ -141,9 +162,10 @@ class ExportService {
       }
     }
 
+    final taskValuesCache = <String, List<WorkItemAttributeValue>>{};
     final records = <SessionExportRecord>[];
 
-    for (final s in allSessions) {
+    for (final s in sessions) {
       final workItem = workItemMap[s.workItemId];
       if (workItem == null) continue;
 
@@ -174,8 +196,13 @@ class ExportService {
       final net = gross > totalIdle ? gross - totalIdle : Duration.zero;
 
       // Custom Attributes (Task + Session values)
-      final taskValues =
-          await _attributeRepository.getWorkItemValues(workItem.id);
+      List<WorkItemAttributeValue> taskValues;
+      if (taskValuesCache.containsKey(workItem.id)) {
+        taskValues = taskValuesCache[workItem.id]!;
+      } else {
+        taskValues = await _attributeRepository.getWorkItemValues(workItem.id);
+        taskValuesCache[workItem.id] = taskValues;
+      }
       final sessionValues = await _attributeRepository.getSessionValues(s.id);
 
       final attrMap = <String, String>{};

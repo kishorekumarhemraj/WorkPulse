@@ -14,13 +14,15 @@ import 'package:workpulse/core/widgets/status_badge.dart';
 import 'package:workpulse/domain/models/category_model.dart';
 import 'package:workpulse/domain/models/person_model.dart';
 import 'package:workpulse/domain/models/project_model.dart';
-import 'package:workpulse/domain/models/session_model.dart';
 import 'package:workpulse/domain/models/tag_model.dart';
 import 'package:workpulse/domain/models/work_item_model.dart';
 import 'package:workpulse/domain/services/export_service.dart';
 import 'package:workpulse/domain/services/timer_service.dart';
+import 'package:workpulse/domain/services/timesheet_code_resolver.dart';
 import 'package:workpulse/features/reports/views/session_edit_dialog.dart';
+import 'package:workpulse/features/reports/widgets/session_metadata.dart';
 import 'package:workpulse/features/tasks/providers/task_sessions_provider.dart';
+import 'package:workpulse/features/timesheet/providers/timesheet_provider.dart';
 import 'package:workpulse/features/timer/providers/task_duration_provider.dart';
 import 'package:workpulse/features/timer/providers/timer_provider.dart';
 
@@ -60,7 +62,9 @@ class WorkItemInspector extends ConsumerWidget {
     final timerState = ref.watch(timerProvider).value;
     final isTrackingThisItem = timerState?.isRunning == true &&
         timerState?.activeWorkItem?.id == item.id;
-    final sessionsAsync = ref.watch(sessionsForWorkItemProvider(item.id));
+    final sessionsAsync = ref.watch(workItemSessionRecordsProvider(item.id));
+    final codes = ref.watch(timesheetCodeResolverProvider).value ??
+        const TimesheetCodeResolver();
     final totalAsync = ref.watch(taskTotalDurationProvider(item.id));
 
     return Container(
@@ -272,7 +276,7 @@ class WorkItemInspector extends ConsumerWidget {
                 const SizedBox(height: Spacing.xl),
                 _Section(
                   label: sessionsAsync.maybeWhen(
-                    data: (sessions) => 'Sessions (${sessions.length})',
+                    data: (records) => 'Sessions (${records.length})',
                     orElse: () => 'Sessions',
                   ),
                   child: sessionsAsync.when(
@@ -291,11 +295,11 @@ class WorkItemInspector extends ConsumerWidget {
                       error: err,
                       compact: true,
                       onRetry: () => ref.invalidate(
-                        sessionsForWorkItemProvider(item.id),
+                        workItemSessionRecordsProvider(item.id),
                       ),
                     ),
-                    data: (sessions) {
-                      if (sessions.isEmpty) {
+                    data: (records) {
+                      if (records.isEmpty) {
                         return const EmptyState(
                           icon: Icons.history_toggle_off,
                           title: 'No sessions recorded yet for this item.',
@@ -312,20 +316,24 @@ class WorkItemInspector extends ConsumerWidget {
                           borderRadius: Radii.mdAll,
                           child: Column(
                             children: [
-                              for (var i = 0; i < sessions.length; i++) ...[
+                              for (var i = 0; i < records.length; i++) ...[
                                 if (i > 0)
                                   Divider(height: 1, color: colors.divider),
                                 _InspectorSessionRow(
-                                  session: sessions[i],
-                                  workItem: item,
-                                  peopleMap: peopleMap,
-                                  liveElapsed: (sessions[i].endTime == null &&
+                                  record: records[i],
+                                  code: codes.resolveFor(
+                                    project: records[i].project,
+                                    attributeOptionIds:
+                                        records[i].attributeOptionIds,
+                                  ),
+                                  liveElapsed: (records[i].session.endTime ==
+                                              null &&
                                           isTrackingThisItem)
                                       ? timerState?.elapsed
                                       : null,
                                   onEdited: () {
                                     ref.invalidate(
-                                      sessionsForWorkItemProvider(item.id),
+                                      workItemSessionRecordsProvider(item.id),
                                     );
                                     ref.invalidate(
                                       taskTotalDurationProvider(item.id),
@@ -376,16 +384,14 @@ class _Section extends StatelessWidget {
 }
 
 class _InspectorSessionRow extends StatelessWidget {
-  final Session session;
-  final WorkItem workItem;
-  final Map<String, Person> peopleMap;
+  final SessionExportRecord record;
+  final TimesheetCodeResolution? code;
   final Duration? liveElapsed;
   final VoidCallback onEdited;
 
   const _InspectorSessionRow({
-    required this.session,
-    required this.workItem,
-    required this.peopleMap,
+    required this.record,
+    this.code,
     this.liveElapsed,
     required this.onEdited,
   });
@@ -397,13 +403,10 @@ class _InspectorSessionRow extends StatelessWidget {
     final dateFormat = DateFormat('MMM d • HH:mm');
     final timeFormat = DateFormat('HH:mm');
 
+    final session = record.session;
     final start = session.startTime.toLocal();
     final end = session.endTime?.toLocal();
     final isRunning = end == null;
-    final sessionPeople = session.peopleIds
-        .map((id) => peopleMap[id])
-        .whereType<Person>()
-        .toList();
 
     return Hoverable(
       cursor: SystemMouseCursors.click,
@@ -413,13 +416,6 @@ class _InspectorSessionRow extends StatelessWidget {
           child: InkWell(
             hoverColor: Colors.transparent,
             onTap: () async {
-              final record = SessionExportRecord(
-                session: session,
-                workItem: workItem,
-                grossDuration: session.duration,
-                idleDuration: Duration.zero,
-                netActiveDuration: session.duration,
-              );
               await SessionEditDialog.show(context, record);
               onEdited();
             },
@@ -429,11 +425,15 @@ class _InspectorSessionRow extends StatelessWidget {
                 vertical: Spacing.sm + 2,
               ),
               child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(
-                    isRunning ? Icons.play_circle : Icons.schedule,
-                    size: IconSizes.sm,
-                    color: isRunning ? colors.success : colors.textTertiary,
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Icon(
+                      isRunning ? Icons.play_circle : Icons.schedule,
+                      size: IconSizes.sm,
+                      color: isRunning ? colors.success : colors.textTertiary,
+                    ),
                   ),
                   const SizedBox(width: Spacing.sm),
                   Expanded(
@@ -450,56 +450,49 @@ class _InspectorSessionRow extends StatelessWidget {
                             fontWeight: FontWeight.w500,
                           ),
                         ),
+                        const SizedBox(height: Spacing.xs),
+                        SessionMetadataChips(
+                          record: record,
+                          code: code,
+                          dense: true,
+                          omit: const {SessionMetadataField.project},
+                        ),
                         if ((session.notes ?? '').trim().isNotEmpty) ...[
-                          const SizedBox(height: Spacing.xxs),
-                          Text(
-                            session.notes!.trim(),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              fontStyle: FontStyle.italic,
-                              color: colors.textTertiary,
-                            ),
-                          ),
-                        ],
-                        if (sessionPeople.isNotEmpty) ...[
                           const SizedBox(height: Spacing.xs),
-                          Wrap(
-                            spacing: Spacing.xs,
-                            runSpacing: Spacing.xxs,
-                            children: [
-                              for (final person in sessionPeople)
-                                EntityChip(
-                                  label: person.name,
-                                  icon: Icons.person,
-                                  plain: true,
-                                ),
-                            ],
+                          SessionNoteBlock(
+                            note: session.notes!.trim(),
+                            maxLines: 3,
                           ),
                         ],
                       ],
                     ),
                   ),
                   const SizedBox(width: Spacing.sm),
-                  Text(
-                    TimerService.formatDuration(
-                      liveElapsed ?? session.duration,
-                      includeSeconds: true,
-                    ),
-                    style: AppTypography.numeric(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: isRunning ? colors.success : colors.accent,
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Text(
+                      TimerService.formatDuration(
+                        liveElapsed ?? record.netActiveDuration,
+                        includeSeconds: true,
+                      ),
+                      style: AppTypography.numeric(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: isRunning ? colors.success : colors.accent,
+                      ),
                     ),
                   ),
                   const SizedBox(width: Spacing.sm),
-                  AnimatedOpacity(
-                    opacity: isHovered ? 1 : 0.35,
-                    duration: Motion.duration(context, Motion.fast),
-                    child: Icon(
-                      Icons.edit_outlined,
-                      size: IconSizes.sm,
-                      color: colors.textTertiary,
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: AnimatedOpacity(
+                      opacity: isHovered ? 1 : 0.35,
+                      duration: Motion.duration(context, Motion.fast),
+                      child: Icon(
+                        Icons.edit_outlined,
+                        size: IconSizes.sm,
+                        color: colors.textTertiary,
+                      ),
                     ),
                   ),
                 ],
