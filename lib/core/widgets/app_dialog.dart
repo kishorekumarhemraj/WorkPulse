@@ -109,8 +109,8 @@ class AppDialog extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(Spacing.sm),
                       decoration: BoxDecoration(
-                        color:
-                            (iconColor ?? colors.accent).withValues(alpha: Alphas.subtle),
+                        color: (iconColor ?? colors.accent)
+                            .withValues(alpha: Alphas.subtle),
                         borderRadius: Radii.mdAll,
                       ),
                       child: Icon(

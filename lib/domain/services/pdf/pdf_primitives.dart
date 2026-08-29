@@ -435,8 +435,8 @@ class PdfPrimitives {
                   pw.LayoutBuilder(
                     builder: (context, constraints) {
                       final maxWidth = constraints?.maxWidth ?? 100.0;
-                      final barWidth =
-                          (maxWidth * share.clamp(0.0, 1.0)).clamp(2.0, maxWidth);
+                      final barWidth = (maxWidth * share.clamp(0.0, 1.0))
+                          .clamp(2.0, maxWidth);
                       return pw.Container(
                         width: barWidth,
                         height: 6,

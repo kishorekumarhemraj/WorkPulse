@@ -177,9 +177,7 @@ class _WeekGridCard extends StatelessWidget {
                           days: week.days,
                           today: today,
                         ),
-                        Divider(
-                            height: 1,
-                            color: colors.divider),
+                        Divider(height: 1, color: colors.divider),
                       ],
 
                       // Totals Row

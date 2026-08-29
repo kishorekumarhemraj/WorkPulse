@@ -265,7 +265,8 @@ void main() {
         expect(first.peopleIds, ['person-seed']);
       });
 
-      test('a later session inherits the previous session\'s category, not the task\'s',
+      test(
+          'a later session inherits the previous session\'s category, not the task\'s',
           () async {
         final first = await timerService.startSession(classified.id);
         expect(first.categoryId, defaultCategory.id);

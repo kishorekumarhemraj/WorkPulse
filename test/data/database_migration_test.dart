@@ -617,8 +617,8 @@ void main() {
         await dbService.initialize(customPath: dbPath);
         final upgraded = dbService.database;
 
-        final cols = await upgraded
-            .rawQuery('PRAGMA table_info(${Tables.categories});');
+        final cols =
+            await upgraded.rawQuery('PRAGMA table_info(${Tables.categories});');
         expect(cols.map((c) => c['name'] as String).toSet(),
             contains('color_hex'));
 

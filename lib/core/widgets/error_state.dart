@@ -34,7 +34,8 @@ class ErrorState extends StatelessWidget {
         decoration: BoxDecoration(
           color: colors.dangerSubtle,
           borderRadius: Radii.smAll,
-          border: Border.all(color: colors.danger.withValues(alpha: Alphas.muted)),
+          border:
+              Border.all(color: colors.danger.withValues(alpha: Alphas.muted)),
         ),
         child: Row(
           children: [

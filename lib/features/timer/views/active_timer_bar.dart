@@ -188,8 +188,8 @@ class ActiveTimerBar extends ConsumerWidget {
                 decoration: BoxDecoration(
                   color: colors.successSubtle,
                   borderRadius: Radii.mdAll,
-                  border:
-                      Border.all(color: colors.success.withValues(alpha: Alphas.muted)),
+                  border: Border.all(
+                      color: colors.success.withValues(alpha: Alphas.muted)),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,

@@ -189,15 +189,13 @@ class SessionMetadataChips extends ConsumerWidget {
         record.attributeValues.isNotEmpty) {
       final definitions =
           ref.watch(attributeDefinitionsProvider).value ?? const [];
-      final sortedDefs = [...definitions]
-        ..sort((a, b) {
+      final sortedDefs = [...definitions]..sort((a, b) {
           final order = a.displayOrder.compareTo(b.displayOrder);
           if (order != 0) return order;
           return a.name.compareTo(b.name);
         });
 
-      final options =
-          ref.watch(allAttributeOptionsProvider).value ?? const {};
+      final options = ref.watch(allAttributeOptionsProvider).value ?? const {};
 
       /// The colour a value is drawn in: the option's own where the user
       /// picked one, otherwise derived from the *field*, so "JIRA" is the same

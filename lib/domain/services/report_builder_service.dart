@@ -284,9 +284,10 @@ class ReportBuilderService {
           project: r.project,
           attributeOptionIds: r.attributeOptionIds,
         );
-        final displayCode = (resolution.code != null && resolution.code!.isNotEmpty)
-            ? resolution.code!
-            : 'No code';
+        final displayCode =
+            (resolution.code != null && resolution.code!.isNotEmpty)
+                ? resolution.code!
+                : 'No code';
 
         codeDurations[displayCode] =
             (codeDurations[displayCode] ?? Duration.zero) + r.netActiveDuration;
@@ -295,7 +296,9 @@ class ReportBuilderService {
             (codeAttention[displayCode] ?? false) || resolution.needsAttention;
 
         if (r.project != null) {
-          codeProjects.putIfAbsent(displayCode, () => <String>{}).add(r.project!.name);
+          codeProjects
+              .putIfAbsent(displayCode, () => <String>{})
+              .add(r.project!.name);
         }
       }
 
@@ -380,7 +383,8 @@ class ReportBuilderService {
 
     if (isSingleDay) {
       rhythmAxis = RhythmAxis.hour;
-      final dayStart = DateTime(localStart.year, localStart.month, localStart.day);
+      final dayStart =
+          DateTime(localStart.year, localStart.month, localStart.day);
 
       for (var h = 6; h <= 22; h++) {
         final hourStart = dayStart.add(Duration(hours: h));
@@ -394,7 +398,8 @@ class ReportBuilderService {
 
         for (final r in records) {
           final sStart = r.session.startTime.toLocal();
-          final sEnd = (r.session.endTime ?? sStart.add(r.grossDuration)).toLocal();
+          final sEnd =
+              (r.session.endTime ?? sStart.add(r.grossDuration)).toLocal();
 
           final overlap = _intervalOverlap(sStart, sEnd, hourStart, hourEnd);
           if (overlap > Duration.zero) {
@@ -402,8 +407,10 @@ class ReportBuilderService {
             final ratio = r.grossDuration.inSeconds > 0
                 ? overlap.inSeconds / r.grossDuration.inSeconds
                 : 1.0;
-            final netPart = Duration(seconds: (r.netActiveDuration.inSeconds * ratio).round());
-            final idlePart = Duration(seconds: (r.idleDuration.inSeconds * ratio).round());
+            final netPart = Duration(
+                seconds: (r.netActiveDuration.inSeconds * ratio).round());
+            final idlePart =
+                Duration(seconds: (r.idleDuration.inSeconds * ratio).round());
 
             hNet += netPart;
             hIdle += idlePart;
@@ -448,7 +455,8 @@ class ReportBuilderService {
 
         for (final r in records) {
           final sStart = r.session.startTime.toLocal();
-          final sEnd = (r.session.endTime ?? sStart.add(r.grossDuration)).toLocal();
+          final sEnd =
+              (r.session.endTime ?? sStart.add(r.grossDuration)).toLocal();
 
           // Uses overlapOnDay from timesheet_grid_math.dart (AGENTS.md / Prompt)
           final overlap = overlapOnDay(sStart, sEnd, curDay);
@@ -456,8 +464,10 @@ class ReportBuilderService {
             final ratio = r.grossDuration.inSeconds > 0
                 ? overlap.inSeconds / r.grossDuration.inSeconds
                 : 1.0;
-            final netPart = Duration(seconds: (r.netActiveDuration.inSeconds * ratio).round());
-            final idlePart = Duration(seconds: (r.idleDuration.inSeconds * ratio).round());
+            final netPart = Duration(
+                seconds: (r.netActiveDuration.inSeconds * ratio).round());
+            final idlePart =
+                Duration(seconds: (r.idleDuration.inSeconds * ratio).round());
 
             dayNet += netPart;
             dayIdle += idlePart;
@@ -512,15 +522,19 @@ class ReportBuilderService {
 
         for (final r in records) {
           final sStart = r.session.startTime.toLocal();
-          final sEnd = (r.session.endTime ?? sStart.add(r.grossDuration)).toLocal();
+          final sEnd =
+              (r.session.endTime ?? sStart.add(r.grossDuration)).toLocal();
 
-          final overlap = _intervalOverlap(sStart, sEnd, curWeekStart, curWeekEnd);
+          final overlap =
+              _intervalOverlap(sStart, sEnd, curWeekStart, curWeekEnd);
           if (overlap > Duration.zero) {
             final ratio = r.grossDuration.inSeconds > 0
                 ? overlap.inSeconds / r.grossDuration.inSeconds
                 : 1.0;
-            final netPart = Duration(seconds: (r.netActiveDuration.inSeconds * ratio).round());
-            final idlePart = Duration(seconds: (r.idleDuration.inSeconds * ratio).round());
+            final netPart = Duration(
+                seconds: (r.netActiveDuration.inSeconds * ratio).round());
+            final idlePart =
+                Duration(seconds: (r.idleDuration.inSeconds * ratio).round());
 
             wNet += netPart;
             wIdle += idlePart;
@@ -570,7 +584,9 @@ class ReportBuilderService {
       taskDurations[tid] =
           (taskDurations[tid] ?? Duration.zero) + r.netActiveDuration;
       taskCounts[tid] = (taskCounts[tid] ?? 0) + 1;
-      taskCats.putIfAbsent(tid, () => <String>{}).add(r.category?.name ?? 'Uncategorized');
+      taskCats
+          .putIfAbsent(tid, () => <String>{})
+          .add(r.category?.name ?? 'Uncategorized');
       taskRecords[tid] = r;
     }
 
@@ -598,10 +614,12 @@ class ReportBuilderService {
 
     // 9. Headline Narrative Prose
     final busiestBucket = rhythmBuckets.isNotEmpty
-        ? rhythmBuckets.reduce((a, b) => a.totalDuration >= b.totalDuration ? a : b)
+        ? rhythmBuckets
+            .reduce((a, b) => a.totalDuration >= b.totalDuration ? a : b)
         : null;
 
-    final busiestClause = (busiestBucket != null && busiestBucket.totalDuration > Duration.zero)
+    final busiestClause = (busiestBucket != null &&
+            busiestBucket.totalDuration > Duration.zero)
         ? ' Busiest ${isSingleDay ? 'hour' : 'day'} ${busiestBucket.label} (${TimerService.formatDuration(busiestBucket.totalDuration, compact: true)}).'
         : '';
 

@@ -68,7 +68,8 @@ class TimeNotesSearchNotifier extends Notifier<String> {
 }
 
 /// Computes the effective DateRange and whether it represents a single day.
-final timeNotesDateRangeProvider = Provider<({DateRange range, bool isSingleDay})>((ref) {
+final timeNotesDateRangeProvider =
+    Provider<({DateRange range, bool isSingleDay})>((ref) {
   final timeRange = ref.watch(timeNotesRangeProvider);
   final selectedDate = ref.watch(timeNotesDateProvider);
 
