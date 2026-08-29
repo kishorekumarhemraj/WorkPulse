@@ -268,94 +268,204 @@ void main() {
           container.read(selectedTimeRangeProvider), DashboardTimeRange.custom);
     });
 
-    test('getHourlyBarColor thresholds: >45m green, 15-45m amber, <15m red',
+    test(
+        'getHourlyBarColor thresholds: off-hours green, work-hours >45m green, 15-45m amber, <15m red',
         () {
       const colors = WorkPulseColors.dark;
 
-      // > 45 mins -> green (successFill)
+      // Off-hours (9:00 PM to 9:00 AM, i.e. hour >= 21 or < 9) -> green irrespective of minutes
       expect(
         DailyActivityChart.getHourlyBarColor(
-            const Duration(minutes: 46), colors),
+          const Duration(minutes: 5),
+          colors,
+          hour: 21,
+        ),
         colors.successFill,
       );
       expect(
         DailyActivityChart.getHourlyBarColor(
-            const Duration(minutes: 60), colors),
+          const Duration(minutes: 10),
+          colors,
+          hour: 23,
+        ),
+        colors.successFill,
+      );
+      expect(
+        DailyActivityChart.getHourlyBarColor(
+          const Duration(minutes: 8),
+          colors,
+          hour: 0,
+        ),
+        colors.successFill,
+      );
+      expect(
+        DailyActivityChart.getHourlyBarColor(
+          const Duration(minutes: 2),
+          colors,
+          hour: 8,
+        ),
+        colors.successFill,
+      );
+
+      // Work hours (9:00 AM to 9:00 PM, e.g. hour 10, 14):
+      // > 45 mins -> green (successFill)
+      expect(
+        DailyActivityChart.getHourlyBarColor(
+          const Duration(minutes: 46),
+          colors,
+          hour: 10,
+        ),
+        colors.successFill,
+      );
+      expect(
+        DailyActivityChart.getHourlyBarColor(
+          const Duration(minutes: 60),
+          colors,
+          hour: 10,
+        ),
         colors.successFill,
       );
 
       // 15 - 45 mins -> amber (warningFill)
       expect(
         DailyActivityChart.getHourlyBarColor(
-            const Duration(minutes: 45), colors),
+          const Duration(minutes: 45),
+          colors,
+          hour: 14,
+        ),
         colors.warningFill,
       );
       expect(
         DailyActivityChart.getHourlyBarColor(
-            const Duration(minutes: 30), colors),
+          const Duration(minutes: 30),
+          colors,
+          hour: 14,
+        ),
         colors.warningFill,
       );
       expect(
         DailyActivityChart.getHourlyBarColor(
-            const Duration(minutes: 15), colors),
+          const Duration(minutes: 15),
+          colors,
+          hour: 14,
+        ),
         colors.warningFill,
       );
 
       // < 15 mins -> red (dangerFill)
       expect(
         DailyActivityChart.getHourlyBarColor(
-            const Duration(minutes: 14), colors),
+          const Duration(minutes: 14),
+          colors,
+          hour: 15,
+        ),
         colors.dangerFill,
       );
       expect(
         DailyActivityChart.getHourlyBarColor(
-            const Duration(minutes: 5), colors),
+          const Duration(minutes: 5),
+          colors,
+          hour: 15,
+        ),
         colors.dangerFill,
       );
       expect(
-        DailyActivityChart.getHourlyBarColor(Duration.zero, colors),
+        DailyActivityChart.getHourlyBarColor(
+          Duration.zero,
+          colors,
+          hour: 15,
+        ),
         colors.dangerFill,
       );
     });
 
-    test('getDailyBarColor thresholds: >=8.5h green, 4-8.5h amber, <4h red',
+    test(
+        'getDailyBarColor thresholds: weekends green, weekdays >=8.5h green, 4-8.5h amber, <4h red',
         () {
       const colors = WorkPulseColors.dark;
 
-      // >= 8.5 hours -> green (successFill)
+      final saturday = DateTime(2026, 8, 29); // Saturday
+      final sunday = DateTime(2026, 8, 30); // Sunday
+      final monday = DateTime(2026, 8, 24); // Monday
+
+      // Weekends (Saturday & Sunday) -> always green irrespective of hours
       expect(
         DailyActivityChart.getDailyBarColor(
-            const Duration(hours: 8, minutes: 30), colors),
+          const Duration(hours: 1),
+          colors,
+          date: saturday,
+        ),
         colors.successFill,
       );
       expect(
-        DailyActivityChart.getDailyBarColor(const Duration(hours: 9), colors),
+        DailyActivityChart.getDailyBarColor(
+          const Duration(minutes: 30),
+          colors,
+          date: sunday,
+        ),
+        colors.successFill,
+      );
+
+      // Weekdays:
+      // >= 8.5 hours -> green (successFill)
+      expect(
+        DailyActivityChart.getDailyBarColor(
+          const Duration(hours: 8, minutes: 30),
+          colors,
+          date: monday,
+        ),
+        colors.successFill,
+      );
+      expect(
+        DailyActivityChart.getDailyBarColor(
+          const Duration(hours: 9),
+          colors,
+          date: monday,
+        ),
         colors.successFill,
       );
 
       // >= 4.0h and < 8.5h -> amber (warningFill)
       expect(
         DailyActivityChart.getDailyBarColor(
-            const Duration(hours: 8, minutes: 29), colors),
+          const Duration(hours: 8, minutes: 29),
+          colors,
+          date: monday,
+        ),
         colors.warningFill,
       );
       expect(
-        DailyActivityChart.getDailyBarColor(const Duration(hours: 4), colors),
+        DailyActivityChart.getDailyBarColor(
+          const Duration(hours: 4),
+          colors,
+          date: monday,
+        ),
         colors.warningFill,
       );
 
       // < 4 hours -> red (dangerFill)
       expect(
         DailyActivityChart.getDailyBarColor(
-            const Duration(hours: 3, minutes: 59), colors),
+          const Duration(hours: 3, minutes: 59),
+          colors,
+          date: monday,
+        ),
         colors.dangerFill,
       );
       expect(
-        DailyActivityChart.getDailyBarColor(const Duration(hours: 1), colors),
+        DailyActivityChart.getDailyBarColor(
+          const Duration(hours: 1),
+          colors,
+          date: monday,
+        ),
         colors.dangerFill,
       );
       expect(
-        DailyActivityChart.getDailyBarColor(Duration.zero, colors),
+        DailyActivityChart.getDailyBarColor(
+          Duration.zero,
+          colors,
+          date: monday,
+        ),
         colors.dangerFill,
       );
     });
