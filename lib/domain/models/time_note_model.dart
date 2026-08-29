@@ -34,7 +34,8 @@ class TimeNoteEntry extends Equatable {
   });
 
   @override
-  List<Object?> get props => [record.session.id, note, source, timestamp, duration];
+  List<Object?> get props =>
+      [record.session.id, note, source, timestamp, duration];
 }
 
 /// All notes and sessions for a single task within a calendar day.
@@ -100,7 +101,8 @@ class NotesDayGroup extends Equatable {
   });
 
   @override
-  List<Object?> get props => [day, taskGroups, totalDuration, noteCount, taskCount];
+  List<Object?> get props =>
+      [day, taskGroups, totalDuration, noteCount, taskCount];
 }
 
 /// Complete report of time notes for a date range.

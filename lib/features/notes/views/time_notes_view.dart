@@ -115,13 +115,16 @@ class TimeNotesView extends ConsumerWidget {
       buffer.writeln();
 
       for (final taskGroup in dayGroup.taskGroups) {
-        final proj = taskGroup.project != null ? ' [${taskGroup.project!.name}]' : '';
-        final dur = TimerService.formatDuration(taskGroup.totalDuration, compact: true);
+        final proj =
+            taskGroup.project != null ? ' [${taskGroup.project!.name}]' : '';
+        final dur =
+            TimerService.formatDuration(taskGroup.totalDuration, compact: true);
         buffer.writeln(
             '- **${taskGroup.workItem.name}**$proj (${taskGroup.sessionCount} sessions • $dur)');
 
         for (final entry in taskGroup.entries) {
-          final start = timeFormat.format(entry.record.session.startTime.toLocal());
+          final start =
+              timeFormat.format(entry.record.session.startTime.toLocal());
           final end = entry.record.session.endTime != null
               ? timeFormat.format(entry.record.session.endTime!.toLocal())
               : 'running';
@@ -264,7 +267,8 @@ class TimeNotesView extends ConsumerWidget {
             // Content
             Expanded(
               child: notesAsync.when(
-                loading: () => const SkeletonList(itemCount: 4, itemHeight: 140),
+                loading: () =>
+                    const SkeletonList(itemCount: 4, itemHeight: 140),
                 error: (error, _) => ErrorState(
                   title: 'Could not load time notes',
                   error: error,
@@ -370,7 +374,8 @@ class _NotesSummaryCard extends StatelessWidget {
           const SizedBox(width: Spacing.xl),
           _SummaryMetric(
             label: 'Tracked Time',
-            value: TimerService.formatDuration(report.totalDuration, includeSeconds: false),
+            value: TimerService.formatDuration(report.totalDuration,
+                includeSeconds: false),
           ),
           const Spacer(),
           if (report.unnotedSessions > 0)
@@ -562,7 +567,8 @@ class _TaskNoteCard extends StatelessWidget {
                             if (group.category != null)
                               EntityChip(
                                 label: group.category!.name,
-                                icon: IconUtils.getIcon(group.category!.iconName),
+                                icon:
+                                    IconUtils.getIcon(group.category!.iconName),
                                 color: ColorUtils.parseHex(
                                     group.category!.colorHex),
                               ),
@@ -706,7 +712,8 @@ class _TaskNoteEntryRow extends StatelessWidget {
                             borderRadius: Radii.smAll,
                             border: Border.all(
                               color: isRunning
-                                  ? colors.success.withValues(alpha: Alphas.muted)
+                                  ? colors.success
+                                      .withValues(alpha: Alphas.muted)
                                   : colors.divider,
                             ),
                           ),
@@ -714,7 +721,9 @@ class _TaskNoteEntryRow extends StatelessWidget {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(
-                                isRunning ? Icons.play_arrow : Icons.access_time,
+                                isRunning
+                                    ? Icons.play_arrow
+                                    : Icons.access_time,
                                 size: 12,
                                 color: isRunning
                                     ? colors.success

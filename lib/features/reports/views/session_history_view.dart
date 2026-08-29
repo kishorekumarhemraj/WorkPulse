@@ -97,9 +97,7 @@ class SessionHistoryView extends ConsumerWidget {
               );
             }
 
-            final codes = ref
-                    .watch(timesheetCodeResolverProvider)
-                    .value ??
+            final codes = ref.watch(timesheetCodeResolverProvider).value ??
                 const TimesheetCodeResolver();
 
             // Group by local calendar day, newest first. The provider

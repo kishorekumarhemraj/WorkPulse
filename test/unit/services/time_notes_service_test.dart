@@ -45,8 +45,10 @@ void main() {
       updatedAt: now,
     );
 
-    final tag1 = Tag(id: 'tg1', workspaceId: 'ws-1', name: 'billing', createdAt: now);
-    final tag2 = Tag(id: 'tg2', workspaceId: 'ws-1', name: 'api', createdAt: now);
+    final tag1 =
+        Tag(id: 'tg1', workspaceId: 'ws-1', name: 'billing', createdAt: now);
+    final tag2 =
+        Tag(id: 'tg2', workspaceId: 'ws-1', name: 'api', createdAt: now);
 
     final taskA = WorkItem(
       id: 't1',
@@ -80,7 +82,9 @@ void main() {
       end: DateTime.utc(2026, 8, 25),
     );
 
-    test('groups multiple sessions on one task into forward chronological entries', () {
+    test(
+        'groups multiple sessions on one task into forward chronological entries',
+        () {
       final s1 = Session(
         id: 's1',
         workItemId: 't1',
@@ -137,11 +141,15 @@ void main() {
       expect(group.entries[0].note, 'First hour: setup and schema');
       expect(group.entries[1].note, 'Second hour: business logic');
       expect(group.promotedFields, contains(SessionMetadataField.category));
-      expect(group.promotedFields, contains(SessionMetadataField.classification));
-      expect(group.promotedFields, contains(SessionMetadataField.timesheetCode));
+      expect(
+          group.promotedFields, contains(SessionMetadataField.classification));
+      expect(
+          group.promotedFields, contains(SessionMetadataField.timesheetCode));
     });
 
-    test('promotes unanimous metadata and keeps varying metadata at session level', () {
+    test(
+        'promotes unanimous metadata and keeps varying metadata at session level',
+        () {
       final s1 = Session(
         id: 's1',
         workItemId: 't1',
@@ -191,8 +199,10 @@ void main() {
 
       final group = report.dayGroups.first.taskGroups.first;
       expect(group.promotedFields, contains(SessionMetadataField.project));
-      expect(group.promotedFields, contains(SessionMetadataField.classification));
-      expect(group.promotedFields, isNot(contains(SessionMetadataField.category)));
+      expect(
+          group.promotedFields, contains(SessionMetadataField.classification));
+      expect(
+          group.promotedFields, isNot(contains(SessionMetadataField.category)));
       expect(group.promotedFields, isNot(contains(SessionMetadataField.tags)));
     });
 

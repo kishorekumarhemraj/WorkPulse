@@ -163,8 +163,9 @@ class _ArchivedToggle extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: Radii.mdAll,
             border: Border.all(
-              color:
-                  isOn ? colors.warning.withValues(alpha: Alphas.strong) : colors.divider,
+              color: isOn
+                  ? colors.warning.withValues(alpha: Alphas.strong)
+                  : colors.divider,
             ),
           ),
           child: Row(
@@ -285,7 +286,8 @@ class _Chip extends StatelessWidget {
       decoration: BoxDecoration(
         color: colors.accentSubtle,
         borderRadius: Radii.smAll,
-        border: Border.all(color: colors.accent.withValues(alpha: Alphas.muted)),
+        border:
+            Border.all(color: colors.accent.withValues(alpha: Alphas.muted)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

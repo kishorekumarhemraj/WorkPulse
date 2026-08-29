@@ -177,7 +177,9 @@ void main() {
       }
     });
 
-    test('hue lock: all neutral tokens sit on the 240° hue line or have minimal chroma', () {
+    test(
+        'hue lock: all neutral tokens sit on the 240° hue line or have minimal chroma',
+        () {
       for (final entry in {
         'dark': WorkPulseColors.dark,
         'light': WorkPulseColors.light,
@@ -220,7 +222,8 @@ void main() {
             expect(
               h,
               inInclusiveRange(238.0, 242.0),
-              reason: '${entry.key}: ${neutral.key} hue ($h°) must be within 238°-242°',
+              reason:
+                  '${entry.key}: ${neutral.key} hue ($h°) must be within 238°-242°',
             );
           }
         }
@@ -627,15 +630,14 @@ void main() {
 
   group('CI Grep Guard', () {
     final libDir = Directory('lib');
-    final dartFiles = libDir
-        .listSync(recursive: true)
-        .whereType<File>()
-        .where((f) => f.path.endsWith('.dart'))
-        .where((f) =>
-            !f.path.contains('lib/core/theme/') &&
-            !f.path.contains('lib/domain/services/pdf/') &&
-            !f.path.endsWith('lib/main.dart'))
-        .toList();
+    final dartFiles =
+        libDir.listSync(recursive: true).whereType<File>().where((f) {
+      final p = f.path.replaceAll(r'\', '/');
+      return p.endsWith('.dart') &&
+          !p.contains('lib/core/theme/') &&
+          !p.contains('lib/domain/services/pdf/') &&
+          !p.endsWith('lib/main.dart');
+    }).toList();
 
     test('no raw Colors.white or Colors.black outside theme and pdf', () {
       final violations = <String>[];
@@ -702,7 +704,8 @@ void main() {
           final trimmed = line.trim();
           if (trimmed.startsWith('//') || trimmed.startsWith('///')) continue;
           if (line.contains('BoxShadow') &&
-              (line.contains('Colors.black') || line.contains('Colors.white'))) {
+              (line.contains('Colors.black') ||
+                  line.contains('Colors.white'))) {
             violations.add('${file.path}:${i + 1}: $line');
           }
         }

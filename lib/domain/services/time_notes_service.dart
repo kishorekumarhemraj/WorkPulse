@@ -50,7 +50,8 @@ class TimeNotesService {
 
       for (final taskRecords in dayTasks.values) {
         // Sort task sessions ascending by start time for forward narrative
-        taskRecords.sort((a, b) => a.session.startTime.compareTo(b.session.startTime));
+        taskRecords
+            .sort((a, b) => a.session.startTime.compareTo(b.session.startTime));
 
         final firstRecord = taskRecords.first;
         final workItem = firstRecord.workItem;
@@ -108,7 +109,8 @@ class TimeNotesService {
 
         // Category promotion: unanimous category across all task sessions on this day
         final firstCatId = firstRecord.category?.id;
-        final isCategoryUnanimous = taskRecords.every((r) => r.category?.id == firstCatId);
+        final isCategoryUnanimous =
+            taskRecords.every((r) => r.category?.id == firstCatId);
         Category? promotedCategory;
         if (isCategoryUnanimous) {
           promotedCategory = firstRecord.category;
@@ -117,8 +119,10 @@ class TimeNotesService {
 
         // Classification promotion: unanimous classification
         final firstClass = firstRecord.classification;
-        final isClassificationUnanimous = taskRecords.every((r) => r.classification == firstClass);
-        FinancialClassification promotedClassification = FinancialClassification.none;
+        final isClassificationUnanimous =
+            taskRecords.every((r) => r.classification == firstClass);
+        FinancialClassification promotedClassification =
+            FinancialClassification.none;
         if (isClassificationUnanimous) {
           promotedClassification = firstClass;
           promotedFields.add(SessionMetadataField.classification);
@@ -170,16 +174,27 @@ class TimeNotesService {
         List<TimeNoteEntry> filteredEntries = entries;
         if (query.isNotEmpty) {
           final taskNameMatches = workItem.name.toLowerCase().contains(query);
-          final projectNameMatches = project?.name.toLowerCase().contains(query) ?? false;
-          final categoryNameMatches = (promotedCategory?.name.toLowerCase().contains(query) ?? false) ||
-              taskRecords.any((r) => r.category?.name.toLowerCase().contains(query) ?? false);
-          final tagsMatch = taskRecords.any((r) => r.tags.any((t) => t.name.toLowerCase().contains(query)));
-          final peopleMatch = taskRecords.any((r) => r.people.any((p) => p.name.toLowerCase().contains(query)));
+          final projectNameMatches =
+              project?.name.toLowerCase().contains(query) ?? false;
+          final categoryNameMatches =
+              (promotedCategory?.name.toLowerCase().contains(query) ?? false) ||
+                  taskRecords.any((r) =>
+                      r.category?.name.toLowerCase().contains(query) ?? false);
+          final tagsMatch = taskRecords.any(
+              (r) => r.tags.any((t) => t.name.toLowerCase().contains(query)));
+          final peopleMatch = taskRecords.any(
+              (r) => r.people.any((p) => p.name.toLowerCase().contains(query)));
 
-          final metadataMatches = taskNameMatches || projectNameMatches || categoryNameMatches || tagsMatch || peopleMatch;
+          final metadataMatches = taskNameMatches ||
+              projectNameMatches ||
+              categoryNameMatches ||
+              tagsMatch ||
+              peopleMatch;
 
           if (!metadataMatches) {
-            filteredEntries = entries.where((e) => e.note.toLowerCase().contains(query)).toList();
+            filteredEntries = entries
+                .where((e) => e.note.toLowerCase().contains(query))
+                .toList();
           }
         }
 
@@ -209,7 +224,8 @@ class TimeNotesService {
       }
 
       // Sort task groups by the earliest session timestamp
-      taskGroups.sort((a, b) => a.entries.first.timestamp.compareTo(b.entries.first.timestamp));
+      taskGroups.sort((a, b) =>
+          a.entries.first.timestamp.compareTo(b.entries.first.timestamp));
 
       final dayTotalDuration = taskGroups.fold<Duration>(
         Duration.zero,
@@ -233,7 +249,8 @@ class TimeNotesService {
 
     final totalNotes = dayGroups.fold<int>(0, (sum, dg) => sum + dg.noteCount);
     final totalTasks = dayGroups.fold<int>(0, (sum, dg) => sum + dg.taskCount);
-    final totalDuration = dayGroups.fold<Duration>(Duration.zero, (sum, dg) => sum + dg.totalDuration);
+    final totalDuration = dayGroups.fold<Duration>(
+        Duration.zero, (sum, dg) => sum + dg.totalDuration);
 
     return TimeNotesReport(
       dayGroups: dayGroups,
