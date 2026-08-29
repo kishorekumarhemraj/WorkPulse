@@ -327,7 +327,8 @@ void main() {
       expect(find.text('Alice Smith'), findsOneWidget);
     });
 
-    testWidgets('ProjectFormDialog validates name and saves without timesheet code',
+    testWidgets(
+        'ProjectFormDialog validates name and saves without timesheet code',
         (tester) async {
       await tester.pumpWidget(
         createTestApp(
@@ -359,7 +360,8 @@ void main() {
       expect(find.text('New Project'), findsNothing);
     });
 
-    testWidgets('ProjectFormDialog allows sharing timesheet codes across projects',
+    testWidgets(
+        'ProjectFormDialog allows sharing timesheet codes across projects',
         (tester) async {
       await tester.pumpWidget(
         createTestApp(

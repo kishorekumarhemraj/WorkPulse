@@ -216,8 +216,8 @@ void main() {
                 .overrideWith(() => _FakeWorkspace(workspace)),
             workItemSessionRecordsProvider
                 .overrideWith((ref, id) => Future.value([record])),
-            taskTotalDurationProvider
-                .overrideWith((ref, id) => Future.value(const Duration(minutes: 90))),
+            taskTotalDurationProvider.overrideWith(
+                (ref, id) => Future.value(const Duration(minutes: 90))),
             timerProvider.overrideWith(() => timer),
           ],
           child: MaterialApp(

@@ -104,7 +104,8 @@ class WorkItemInspector extends ConsumerWidget {
                             color: colors.successSubtle,
                             borderRadius: Radii.mdAll,
                             border: Border.all(
-                              color: colors.success.withValues(alpha: Alphas.muted),
+                              color: colors.success
+                                  .withValues(alpha: Alphas.muted),
                             ),
                           ),
                           child: Row(
@@ -331,11 +332,11 @@ class WorkItemInspector extends ConsumerWidget {
                                     attributeOptionIds:
                                         records[i].attributeOptionIds,
                                   ),
-                                  liveElapsed: (records[i].session.endTime ==
-                                              null &&
-                                          isTrackingThisItem)
-                                      ? timerState?.elapsed
-                                      : null,
+                                  liveElapsed:
+                                      (records[i].session.endTime == null &&
+                                              isTrackingThisItem)
+                                          ? timerState?.elapsed
+                                          : null,
                                   onEdited: () {
                                     ref.invalidate(
                                       workItemSessionRecordsProvider(item.id),

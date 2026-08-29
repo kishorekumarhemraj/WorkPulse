@@ -218,7 +218,9 @@ class DynamicAttributeFields extends ConsumerWidget {
                   checkmarkColor: col,
                   labelStyle: TextStyle(
                     fontSize: 12,
-                    color: isSel ? context.colors.onAccent : context.colors.textSecondary,
+                    color: isSel
+                        ? context.colors.onAccent
+                        : context.colors.textSecondary,
                     fontWeight: isSel ? FontWeight.bold : FontWeight.normal,
                   ),
                   backgroundColor: context.colors.card,

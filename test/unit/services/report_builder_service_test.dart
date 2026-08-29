@@ -55,8 +55,10 @@ void main() {
       updatedAt: now,
     );
 
-    final tag1 = Tag(id: 't1', workspaceId: 'ws-1', name: 'release', createdAt: now);
-    final person1 = Person(id: 'per1', workspaceId: 'ws-1', name: 'Alice', createdAt: now);
+    final tag1 =
+        Tag(id: 't1', workspaceId: 'ws-1', name: 'release', createdAt: now);
+    final person1 =
+        Person(id: 'per1', workspaceId: 'ws-1', name: 'Alice', createdAt: now);
 
     final taskA = WorkItem(
       id: 'task-1',
@@ -194,11 +196,13 @@ void main() {
       expect(report.headline.totalNet, equals(expectedTotalNet));
 
       // Project sum
-      final projectTotal = report.projects.fold(Duration.zero, (a, b) => a + b.duration);
+      final projectTotal =
+          report.projects.fold(Duration.zero, (a, b) => a + b.duration);
       expect(projectTotal, equals(expectedTotalNet));
 
       // Category sum
-      final catTotal = report.categories.fold(Duration.zero, (a, b) => a + b.duration);
+      final catTotal =
+          report.categories.fold(Duration.zero, (a, b) => a + b.duration);
       expect(catTotal, equals(expectedTotalNet));
 
       // Classification sum
@@ -209,11 +213,13 @@ void main() {
 
       // Attribute breakdown sum
       expect(report.attributes.length, 1);
-      final attrTotal = report.attributes.first.slices.fold(Duration.zero, (a, b) => a + b.duration);
+      final attrTotal = report.attributes.first.slices
+          .fold(Duration.zero, (a, b) => a + b.duration);
       expect(attrTotal, equals(expectedTotalNet));
 
       // Timesheet codes sum
-      final codeTotal = report.codes.fold(Duration.zero, (a, b) => a + b.duration);
+      final codeTotal =
+          report.codes.fold(Duration.zero, (a, b) => a + b.duration);
       expect(codeTotal, equals(expectedTotalNet));
     });
 
@@ -266,7 +272,8 @@ void main() {
       expect(report.categories.last.label, equals('Uncategorized'));
     });
 
-    test('midnight crossing sessions attribute duration to each day by overlap', () {
+    test('midnight crossing sessions attribute duration to each day by overlap',
+        () {
       // Session starts at 23:00 on Aug 24 and ends at 01:00 on Aug 25 (2 hours total)
       final midnightSession = Session(
         id: 'sess-midnight',
@@ -306,7 +313,8 @@ void main() {
       expect(report.rhythm[1].totalDuration, equals(const Duration(hours: 1)));
     });
 
-    test('single-day input selects hour axis; 90-day input selects week axis', () {
+    test('single-day input selects hour axis; 90-day input selects week axis',
+        () {
       final singleDayRange = DateRange(
         start: DateTime(2026, 8, 24, 0, 0),
         end: DateTime(2026, 8, 24, 23, 59),

@@ -95,7 +95,8 @@ class _AppCardState extends State<AppCard> {
             boxShadow: widget.emphasisColor != null
                 ? [
                     BoxShadow(
-                      color: widget.emphasisColor!.withValues(alpha: Alphas.subtle),
+                      color: widget.emphasisColor!
+                          .withValues(alpha: Alphas.subtle),
                       blurRadius: 10,
                       spreadRadius: 1,
                     ),
