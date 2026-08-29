@@ -80,7 +80,8 @@ class PdfReportService {
         pageFormat: PdfPageFormat.a4,
         margin: const pw.EdgeInsets.all(24),
         header: (context) => _buildRunningHeader(context, report, typo),
-        footer: (context) => _buildRunningFooter(context, report, typo, pageOffset: 1),
+        footer: (context) =>
+            _buildRunningFooter(context, report, typo, pageOffset: 1),
         build: (context) => [
           // Act II: The Breakdown
           ..._buildActII(report, typo),
@@ -237,7 +238,8 @@ class PdfReportService {
                               ),
                             ),
                             pw.Text(
-                              TimerService.formatDuration(p.duration, includeSeconds: false),
+                              TimerService.formatDuration(p.duration,
+                                  includeSeconds: false),
                               style: typo.monoMicro,
                             ),
                             pw.SizedBox(width: 6),
@@ -246,7 +248,8 @@ class PdfReportService {
                               child: pw.Text(
                                 '${(p.share * 100).toStringAsFixed(0)}%',
                                 textAlign: pw.TextAlign.right,
-                                style: typo.monoMicro.copyWith(color: PdfThemeColors.slate500),
+                                style: typo.monoMicro
+                                    .copyWith(color: PdfThemeColors.slate500),
                               ),
                             ),
                           ],
@@ -284,10 +287,14 @@ class PdfReportService {
                     pw.Row(
                       children: [
                         PdfPrimitives.donutChart(
-                          capexShare: report.classification.capex.inSeconds.toDouble(),
-                          opexShare: report.classification.opex.inSeconds.toDouble(),
-                          unclassifiedShare: report.classification.none.inSeconds.toDouble(),
-                          centerLabel: report.classification.classifiedTotal > Duration.zero
+                          capexShare:
+                              report.classification.capex.inSeconds.toDouble(),
+                          opexShare:
+                              report.classification.opex.inSeconds.toDouble(),
+                          unclassifiedShare:
+                              report.classification.none.inSeconds.toDouble(),
+                          centerLabel: report.classification.classifiedTotal >
+                                  Duration.zero
                               ? '${report.classification.capexShare.toStringAsFixed(0)}%'
                               : '—',
                           centerSub: 'CapEx',
@@ -299,15 +306,27 @@ class PdfReportService {
                           child: pw.Column(
                             crossAxisAlignment: pw.CrossAxisAlignment.start,
                             children: [
-                              _buildClassLegendRow('CapEx', report.classification.capex,
-                                  report.classification.capexShare, PdfThemeColors.capex, typo),
+                              _buildClassLegendRow(
+                                  'CapEx',
+                                  report.classification.capex,
+                                  report.classification.capexShare,
+                                  PdfThemeColors.capex,
+                                  typo),
                               pw.SizedBox(height: 3),
-                              _buildClassLegendRow('OpEx', report.classification.opex,
-                                  report.classification.opexShare, PdfThemeColors.opex, typo),
+                              _buildClassLegendRow(
+                                  'OpEx',
+                                  report.classification.opex,
+                                  report.classification.opexShare,
+                                  PdfThemeColors.opex,
+                                  typo),
                               if (report.classification.hasNone) ...[
                                 pw.SizedBox(height: 3),
-                                _buildClassLegendRow('Unclass', report.classification.none,
-                                    null, PdfThemeColors.unclassified, typo),
+                                _buildClassLegendRow(
+                                    'Unclass',
+                                    report.classification.none,
+                                    null,
+                                    PdfThemeColors.unclassified,
+                                    typo),
                               ],
                             ],
                           ),
@@ -348,7 +367,9 @@ class PdfReportService {
                   pw.Text(
                     report.rhythmAxis == RhythmAxis.hour
                         ? 'Hour of Day (06:00 – 22:00)'
-                        : (report.rhythmAxis == RhythmAxis.week ? 'Weekly Rollup' : 'Active Days'),
+                        : (report.rhythmAxis == RhythmAxis.week
+                            ? 'Weekly Rollup'
+                            : 'Active Days'),
                     style: typo.micro.copyWith(color: PdfThemeColors.slate500),
                   ),
                 ],
@@ -381,7 +402,8 @@ class PdfReportService {
               pw.SizedBox(height: 2),
               pw.Text(
                 report.headline.proseLine,
-                style: typo.captionMedium.copyWith(color: PdfThemeColors.slate900),
+                style:
+                    typo.captionMedium.copyWith(color: PdfThemeColors.slate900),
               ),
             ],
           ),
@@ -425,7 +447,8 @@ class PdfReportService {
           decoration: pw.BoxDecoration(color: color, shape: pw.BoxShape.circle),
         ),
         pw.SizedBox(width: 4),
-        pw.Text(label, style: typo.microBold.copyWith(color: PdfThemeColors.slate800)),
+        pw.Text(label,
+            style: typo.microBold.copyWith(color: PdfThemeColors.slate800)),
         pw.Spacer(),
         pw.Text(
           '${TimerService.formatDuration(duration, compact: true)}$shareStr',
@@ -440,7 +463,8 @@ class PdfReportService {
       return pw.SizedBox(height: 28);
     }
 
-    final maxDurSeconds = rhythm.map((b) => b.totalDuration.inSeconds).fold(0, max);
+    final maxDurSeconds =
+        rhythm.map((b) => b.totalDuration.inSeconds).fold(0, max);
     final maxSafe = maxDurSeconds > 0 ? maxDurSeconds : 1;
 
     return pw.Container(
@@ -457,12 +481,14 @@ class PdfReportService {
                   children: [
                     if (b.totalDuration > Duration.zero)
                       pw.Container(
-                        height: (b.totalDuration.inSeconds / maxSafe * 24).clamp(3.0, 24.0),
+                        height: (b.totalDuration.inSeconds / maxSafe * 24)
+                            .clamp(3.0, 24.0),
                         decoration: pw.BoxDecoration(
                           color: b.capexDuration > b.opexDuration
                               ? PdfThemeColors.capex
                               : PdfThemeColors.opex,
-                          borderRadius: const pw.BorderRadius.all(pw.Radius.circular(1.5)),
+                          borderRadius: const pw.BorderRadius.all(
+                              pw.Radius.circular(1.5)),
                         ),
                       )
                     else
@@ -473,7 +499,8 @@ class PdfReportService {
                     pw.SizedBox(height: 3),
                     pw.Text(
                       b.label,
-                      style: typo.micro.copyWith(fontSize: 5.5, color: PdfThemeColors.slate500),
+                      style: typo.micro.copyWith(
+                          fontSize: 5.5, color: PdfThemeColors.slate500),
                       maxLines: 1,
                     ),
                   ],
@@ -536,7 +563,8 @@ class PdfReportService {
         label: 'CapEx (Capitalizable)',
         duration: report.classification.capex,
         share: report.headline.totalNet.inSeconds > 0
-            ? report.classification.capex.inSeconds / report.headline.totalNet.inSeconds
+            ? report.classification.capex.inSeconds /
+                report.headline.totalNet.inSeconds
             : 0.0,
         color: PdfThemeColors.capex,
         typo: typo,
@@ -545,7 +573,8 @@ class PdfReportService {
         label: 'OpEx (Operational)',
         duration: report.classification.opex,
         share: report.headline.totalNet.inSeconds > 0
-            ? report.classification.opex.inSeconds / report.headline.totalNet.inSeconds
+            ? report.classification.opex.inSeconds /
+                report.headline.totalNet.inSeconds
             : 0.0,
         color: PdfThemeColors.opex,
         typo: typo,
@@ -555,7 +584,8 @@ class PdfReportService {
           label: 'Unclassified',
           duration: report.classification.none,
           share: report.headline.totalNet.inSeconds > 0
-              ? report.classification.none.inSeconds / report.headline.totalNet.inSeconds
+              ? report.classification.none.inSeconds /
+                  report.headline.totalNet.inSeconds
               : 0.0,
           color: PdfThemeColors.unclassified,
           isUncategorized: true,
@@ -572,7 +602,9 @@ class PdfReportService {
             label: code.code,
             duration: code.duration,
             share: code.share,
-            color: code.needsAttention ? PdfThemeColors.attention : PdfThemeColors.slate700,
+            color: code.needsAttention
+                ? PdfThemeColors.attention
+                : PdfThemeColors.slate700,
             isAttention: code.needsAttention,
             typo: typo,
           ),
@@ -613,7 +645,8 @@ class PdfReportService {
           pw.SizedBox(height: 3),
           pw.Text(
             '+ ${report.topTasksRemainderCount} more tasks',
-            style: typo.micro.copyWith(color: PdfThemeColors.slate500, fontStyle: pw.FontStyle.italic),
+            style: typo.micro.copyWith(
+                color: PdfThemeColors.slate500, fontStyle: pw.FontStyle.italic),
           ),
         ],
         pw.SizedBox(height: 12),
@@ -629,13 +662,15 @@ class PdfReportService {
           children: [
             for (final p in report.people)
               PdfPrimitives.chip(
-                text: '${p.label} (${TimerService.formatDuration(p.duration, compact: true)})',
+                text:
+                    '${p.label} (${TimerService.formatDuration(p.duration, compact: true)})',
                 dotColor: p.color,
                 typo: typo,
               ),
             for (final t in report.tags)
               PdfPrimitives.chip(
-                text: '${t.label} (${TimerService.formatDuration(t.duration, compact: true)})',
+                text:
+                    '${t.label} (${TimerService.formatDuration(t.duration, compact: true)})',
                 barColor: t.color,
                 typo: typo,
               ),
@@ -692,7 +727,8 @@ class PdfReportService {
                       pw.SizedBox(width: 6),
                       pw.Text(
                         '(${taskGroup.sessionCount} sessions · ${TimerService.formatDuration(taskGroup.totalDuration, compact: true)})',
-                        style: typo.caption.copyWith(color: PdfThemeColors.slate500),
+                        style: typo.caption
+                            .copyWith(color: PdfThemeColors.slate500),
                       ),
                     ],
                   ),
@@ -706,21 +742,25 @@ class PdfReportService {
                         PdfPrimitives.chip(
                           text: taskGroup.project!.name,
                           dotColor: PdfThemeColors.entityColor(
-                              taskGroup.project!.colorHex, taskGroup.project!.id),
+                              taskGroup.project!.colorHex,
+                              taskGroup.project!.id),
                           dense: true,
                           typo: typo,
                         ),
                       if (taskGroup.category != null)
                         PdfPrimitives.chip(
                           text: taskGroup.category!.name,
-                          dotColor: PdfThemeColors.entityColor(null, taskGroup.category!.id),
+                          dotColor: PdfThemeColors.entityColor(
+                              null, taskGroup.category!.id),
                           dense: true,
                           typo: typo,
                         ),
-                      if (taskGroup.classification != FinancialClassification.none)
+                      if (taskGroup.classification !=
+                          FinancialClassification.none)
                         PdfPrimitives.chip(
                           text: taskGroup.classification.label,
-                          dotColor: taskGroup.classification == FinancialClassification.capex
+                          dotColor: taskGroup.classification ==
+                                  FinancialClassification.capex
                               ? PdfThemeColors.capex
                               : PdfThemeColors.opex,
                           dense: true,
@@ -737,11 +777,14 @@ class PdfReportService {
                         child: pw.Row(
                           crossAxisAlignment: pw.CrossAxisAlignment.start,
                           children: [
-                            pw.Text('• ', style: typo.body.copyWith(color: PdfThemeColors.indigo)),
+                            pw.Text('• ',
+                                style: typo.body
+                                    .copyWith(color: PdfThemeColors.indigo)),
                             pw.Expanded(
                               child: pw.Text(
                                 entry.note,
-                                style: typo.body.copyWith(color: PdfThemeColors.slate800),
+                                style: typo.body
+                                    .copyWith(color: PdfThemeColors.slate800),
                               ),
                             ),
                           ],
@@ -761,7 +804,8 @@ class PdfReportService {
     ];
   }
 
-  pw.Widget _buildSessionTable(List<ReportSessionLine> sessions, PdfTypography typo) {
+  pw.Widget _buildSessionTable(
+      List<ReportSessionLine> sessions, PdfTypography typo) {
     return pw.TableHelper.fromTextArray(
       headers: [
         'Date',

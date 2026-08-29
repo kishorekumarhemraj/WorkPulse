@@ -488,7 +488,8 @@ class _Gridlines extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Widget line() => Container(height: 1, color: color.withValues(alpha: Alphas.strong));
+    Widget line() =>
+        Container(height: 1, color: color.withValues(alpha: Alphas.strong));
     return Column(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [line(), line(), line()],

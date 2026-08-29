@@ -189,8 +189,7 @@ void main() {
       expect(header, equals('%PDF-'));
     });
 
-    test(
-        'generateReportPdf verifies copy removals in uncompressed PDF output',
+    test('generateReportPdf verifies copy removals in uncompressed PDF output',
         () async {
       final range = DateRange(
         start: DateTime.utc(2026, 8, 20, 0, 0, 0),
