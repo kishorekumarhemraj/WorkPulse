@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:workpulse/core/theme/app_colors.dart';
 import 'package:workpulse/core/theme/app_theme.dart';
 import 'package:workpulse/domain/models/analytics_model.dart';
 import 'package:workpulse/domain/models/date_range.dart';
 import 'package:workpulse/features/dashboard/providers/dashboard_provider.dart';
 import 'package:workpulse/features/dashboard/views/dashboard_view.dart';
+import 'package:workpulse/features/dashboard/widgets/daily_activity_chart.dart';
 import 'package:workpulse/features/dashboard/widgets/metric_card.dart';
 
 void main() {
@@ -264,6 +266,146 @@ void main() {
       expect(container.read(dashboardDateProvider), tomorrow);
       expect(
           container.read(selectedTimeRangeProvider), DashboardTimeRange.custom);
+    });
+
+    test('getHourlyBarColor thresholds: >45m green, 15-45m amber, <15m red',
+        () {
+      const colors = WorkPulseColors.dark;
+
+      // > 45 mins -> green (successFill)
+      expect(
+        DailyActivityChart.getHourlyBarColor(
+            const Duration(minutes: 46), colors),
+        colors.successFill,
+      );
+      expect(
+        DailyActivityChart.getHourlyBarColor(
+            const Duration(minutes: 60), colors),
+        colors.successFill,
+      );
+
+      // 15 - 45 mins -> amber (warningFill)
+      expect(
+        DailyActivityChart.getHourlyBarColor(
+            const Duration(minutes: 45), colors),
+        colors.warningFill,
+      );
+      expect(
+        DailyActivityChart.getHourlyBarColor(
+            const Duration(minutes: 30), colors),
+        colors.warningFill,
+      );
+      expect(
+        DailyActivityChart.getHourlyBarColor(
+            const Duration(minutes: 15), colors),
+        colors.warningFill,
+      );
+
+      // < 15 mins -> red (dangerFill)
+      expect(
+        DailyActivityChart.getHourlyBarColor(
+            const Duration(minutes: 14), colors),
+        colors.dangerFill,
+      );
+      expect(
+        DailyActivityChart.getHourlyBarColor(
+            const Duration(minutes: 5), colors),
+        colors.dangerFill,
+      );
+      expect(
+        DailyActivityChart.getHourlyBarColor(Duration.zero, colors),
+        colors.dangerFill,
+      );
+    });
+
+    test('getDailyBarColor thresholds: >=8.5h green, 4-8.5h amber, <4h red',
+        () {
+      const colors = WorkPulseColors.dark;
+
+      // >= 8.5 hours -> green (successFill)
+      expect(
+        DailyActivityChart.getDailyBarColor(
+            const Duration(hours: 8, minutes: 30), colors),
+        colors.successFill,
+      );
+      expect(
+        DailyActivityChart.getDailyBarColor(const Duration(hours: 9), colors),
+        colors.successFill,
+      );
+
+      // >= 4.0h and < 8.5h -> amber (warningFill)
+      expect(
+        DailyActivityChart.getDailyBarColor(
+            const Duration(hours: 8, minutes: 29), colors),
+        colors.warningFill,
+      );
+      expect(
+        DailyActivityChart.getDailyBarColor(const Duration(hours: 4), colors),
+        colors.warningFill,
+      );
+
+      // < 4 hours -> red (dangerFill)
+      expect(
+        DailyActivityChart.getDailyBarColor(
+            const Duration(hours: 3, minutes: 59), colors),
+        colors.dangerFill,
+      );
+      expect(
+        DailyActivityChart.getDailyBarColor(const Duration(hours: 1), colors),
+        colors.dangerFill,
+      );
+      expect(
+        DailyActivityChart.getDailyBarColor(Duration.zero, colors),
+        colors.dangerFill,
+      );
+    });
+
+    testWidgets(
+        'Hourly and Daily charts render their respective threshold legends',
+        (tester) async {
+      tester.view.physicalSize = const Size(1280, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.darkTheme,
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: Column(
+                children: [
+                  DailyActivityChart(
+                    isHourly: true,
+                    hourlyActivities: mockHourlyActivity,
+                  ),
+                  DailyActivityChart(
+                    isHourly: false,
+                    activities: mockDailyActivity,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      // Hourly legends
+      expect(find.text('>45m'), findsOneWidget);
+      expect(find.text('15–45m'), findsOneWidget);
+      expect(find.text('<15m'), findsOneWidget);
+
+      // Daily legends
+      expect(find.text('≥8.5h'), findsOneWidget);
+      expect(find.text('4–8.5h'), findsOneWidget);
+      expect(find.text('<4h'), findsOneWidget);
+
+      // Idle swatches (one for each chart)
+      expect(find.text('Idle'), findsNWidgets(2));
     });
   });
 }
