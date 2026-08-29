@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workpulse/core/theme/app_colors.dart';
 import 'package:workpulse/core/theme/design_tokens.dart';
+import 'package:workpulse/core/theme/color_utils.dart';
 import 'package:workpulse/core/theme/icon_utils.dart';
 import 'package:workpulse/core/widgets/confirm_dialog.dart';
 import 'package:workpulse/core/widgets/empty_state.dart';
@@ -89,6 +90,7 @@ class _CategoriesViewState extends ConsumerState<CategoriesView> {
                   EntityCard(
                     name: category.name,
                     icon: IconUtils.getIcon(category.iconName),
+                    color: ColorUtils.parseHex(category.colorHex),
                     count: workItemsAsync.value
                             ?.where((w) => w.categoryId == category.id)
                             .length ??

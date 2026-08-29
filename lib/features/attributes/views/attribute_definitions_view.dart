@@ -521,7 +521,7 @@ class _OptionsList extends ConsumerWidget {
                       vertical: Spacing.sm + 2,
                     ),
                     decoration: BoxDecoration(
-                      color: colors.surfaceSunken,
+                      color: colors.surface,
                       borderRadius: Radii.mdAll,
                       border: Border.all(color: colors.divider),
                     ),
@@ -589,7 +589,7 @@ class _OptionsPlaceholder extends StatelessWidget {
     final colors = context.colors;
     return Container(
       decoration: BoxDecoration(
-        color: colors.surface.withValues(alpha: 0.4),
+        color: colors.surface.withValues(alpha: Alphas.muted),
         borderRadius: Radii.xlAll,
         border: Border.all(color: colors.divider),
       ),

@@ -107,6 +107,31 @@ final attributeOptionsFamilyProvider =
   return repo.getOptions(definitionId, includeArchived: false);
 });
 
+/// Every select option in the workspace, keyed by id.
+///
+/// Select options already carry a `colorHex` the user picked, and the session
+/// chip rows threw it away — so a value like "WB-0987" rendered as neutral
+/// text next to a coloured project. One map, built once, rather than a
+/// per-definition fetch inside a list row.
+final allAttributeOptionsProvider =
+    FutureProvider<Map<String, AttributeOption>>((ref) async {
+  final definitions = await ref.watch(attributeDefinitionsProvider.future);
+  final repo = ref.watch(attributeRepositoryProvider);
+  final byId = <String, AttributeOption>{};
+  for (final def in definitions) {
+    if (def.type != AttributeType.singleSelect &&
+        def.type != AttributeType.multiSelect) {
+      continue;
+    }
+    // includeArchived: a historical value must keep the colour it was
+    // recorded under, the same reason export_service reads archived options.
+    for (final option in await repo.getOptions(def.id, includeArchived: true)) {
+      byId[option.id] = option;
+    }
+  }
+  return byId;
+});
+
 final attributeOptionsControllerProvider =
     Provider<AttributeOptionsController>((ref) {
   return AttributeOptionsController(ref);

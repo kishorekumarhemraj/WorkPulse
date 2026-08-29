@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:workpulse/core/theme/app_colors.dart';
 import 'package:workpulse/core/theme/design_tokens.dart';
 import 'package:workpulse/core/widgets/app_dialog.dart';
 import 'package:workpulse/core/widgets/app_snack_bar.dart';
@@ -90,6 +91,7 @@ class _PersonFormDialogState extends ConsumerState<PersonFormDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     final isEditing = widget.person != null;
 
     return AppDialog(
@@ -104,12 +106,12 @@ class _PersonFormDialogState extends ConsumerState<PersonFormDialog> {
         ElevatedButton(
           onPressed: _isSubmitting ? null : _submit,
           child: _isSubmitting
-              ? const SizedBox(
+              ? SizedBox(
                   width: 16,
                   height: 16,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color: Colors.white,
+                    color: colors.onAccent,
                   ),
                 )
               : Text(isEditing ? 'Save Changes' : 'Create Person'),

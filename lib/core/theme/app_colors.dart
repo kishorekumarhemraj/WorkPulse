@@ -60,9 +60,15 @@ class WorkPulseColors extends ThemeExtension<WorkPulseColors> {
   final Color borderStrong;
 
   /// Overlay applied on pointer hover.
+  ///
+  /// Mixed from [accentTint], not from black or white. A neutral overlay only
+  /// ever makes a surface darker, so every interaction read as another shade
+  /// of grey; a tint changes hue instead and stays light. Note that a hue tint
+  /// barely moves *luminance* — it is visible by chroma, which is why the
+  /// design-system test measures it that way.
   final Color hover;
 
-  /// Overlay applied while pressed.
+  /// Overlay applied while pressed. Mixed from [accentTint]; see [hover].
   final Color pressed;
 
   /// Keyboard focus ring.
@@ -71,7 +77,9 @@ class WorkPulseColors extends ThemeExtension<WorkPulseColors> {
   /// Scrim behind modal surfaces.
   final Color overlay;
 
-  /// Selected row / active nav item fill.
+  /// Selected row / active nav item fill. Mixed from [accentTint]; see
+  /// [hover]. Pair it with a leading stripe rather than relying on the tint
+  /// alone — colour and shape, so the state survives greyscale.
   final Color selected;
 
   /// The colour drop shadows are drawn in — see [Elevation].
@@ -89,6 +97,20 @@ class WorkPulseColors extends ThemeExtension<WorkPulseColors> {
 
   /// A pressed/hovered variant of [accent].
   final Color accentHover;
+
+  /// The hue every interaction tint is mixed from — [hover], [pressed],
+  /// [selected] and [accentSubtle].
+  ///
+  /// Deliberately *not* [accent]. An accent has to be dark enough to clear AA
+  /// as text on a light surface, and a colour that dark diluted to 14% loses
+  /// its chroma into the grey behind it — which is what made the selected row
+  /// read as slate rather than blue. This is the same dark-text/vivid-fill
+  /// split [success] and [successFill] already carry, applied to the accent.
+  ///
+  /// **Never use this as a text, icon, or text-border colour.** On the light
+  /// theme it is 3.65:1 on white and fails AA. It tints shapes; [accent]
+  /// carries glyphs.
+  final Color accentTint;
 
   /// The background of a *filled* accent button.
   ///
@@ -165,6 +187,7 @@ class WorkPulseColors extends ThemeExtension<WorkPulseColors> {
     required this.shadow,
     required this.accent,
     required this.accentHover,
+    required this.accentTint,
     required this.accentFill,
     required this.accentSubtle,
     required this.success,
@@ -199,14 +222,15 @@ class WorkPulseColors extends ThemeExtension<WorkPulseColors> {
     onAccent: Color(0xFFFFFFFF),
     divider: Color(0xFF3A3A3F),
     borderStrong: Color(0xFF4A4A50),
-    hover: Color(0x14FFFFFF),
-    pressed: Color(0x24FFFFFF),
+    hover: Color(0x1F1C96FF),
+    pressed: Color(0x2E1C96FF),
     focusRing: Color(0xFF1C96FF),
     overlay: Color(0x99000000),
-    selected: Color(0x261C96FF),
+    selected: Color(0x331C96FF),
     shadow: Color(0x66000000),
     accent: Color(0xFF1C96FF),
     accentHover: Color(0xFF52ABFF),
+    accentTint: Color(0xFF1C96FF),
     accentFill: Color(0xFF0076DF),
     accentSubtle: Color(0x161C96FF),
     success: Color(0xFF30D158),
@@ -223,49 +247,62 @@ class WorkPulseColors extends ThemeExtension<WorkPulseColors> {
     infoSubtle: Color(0x2664D2FF),
   );
 
-  /// Light appearance.
+  /// Light appearance — white-first.
   ///
-  /// Retuned so the surfaces actually separate: the old palette placed
-  /// [background], [card] and [surfaceSunken] within 4% luminance of each
-  /// other, which left every filled control invisible on the page and grey on
-  /// a white sheet at the same time. Depth now comes from a real
-  /// [background]/[surface] step, a [divider] heavy enough to read on white,
-  /// and [Elevation] shadows — not from stacking near-identical greys.
+  /// Panels are white and the page is a whisper off it. Depth comes from the
+  /// [divider] hairline and [Elevation] shadows, not from stacking greys: an
+  /// earlier cut built five neutral steps and every one of them read as grey,
+  /// because grey was the mechanism.
+  ///
+  /// Two rules generate these values:
+  ///
+  /// 1. **Neutrals get lighter as regions get larger.** [surface] is white,
+  ///    [surfaceSunken] is a 6% tint for small wells, [card] a 4% tint for
+  ///    chips and table headers. Anything large enough to read as a container
+  ///    gets no fill at all — a border and a heading already say it is one.
+  /// 2. **State is carried by hue, not darkness.** [hover], [pressed],
+  ///    [selected] and [accentSubtle] are all mixed from [accentTint], so
+  ///    nothing in the interaction model makes a surface darker.
+  ///
+  /// [background] and [surface] are only 1.05:1 apart, which is deliberate and
+  /// is why [divider] is heavier here than in any previous version — the
+  /// hairline carries the separation the luminance step used to.
   static const WorkPulseColors light = WorkPulseColors(
-    background: Color(0xFFF1F2F5),
+    background: Color(0xFFF9F9FC),
     surface: Color(0xFFFFFFFF),
-    card: Color(0xFFEDEEF2),
+    card: Color(0xFFF6F6FA),
     field: Color(0xFFFFFFFF),
     surfaceRaised: Color(0xFFFFFFFF),
-    surfaceSunken: Color(0xFFE9EAEF),
-    textPrimary: Color(0xFF16161A),
-    textSecondary: Color(0xFF53535E),
-    textTertiary: Color(0xFF63636D),
+    surfaceSunken: Color(0xFFF0F0F7),
+    textPrimary: Color(0xFF14141A),
+    textSecondary: Color(0xFF4C4C5D),
+    textTertiary: Color(0xFF606071),
     onAccent: Color(0xFFFFFFFF),
-    divider: Color(0xFFD8D9E0),
-    borderStrong: Color(0xFFB6B7C1),
-    hover: Color(0x14000000),
-    pressed: Color(0x24000000),
+    divider: Color(0xFFD4D4E0),
+    borderStrong: Color(0xFFA9A9BC),
+    hover: Color(0x140A84FF),
+    pressed: Color(0x240A84FF),
     focusRing: Color(0xFF005FD1),
     overlay: Color(0x59000000),
-    selected: Color(0x24005FD1),
+    selected: Color(0x2B0A84FF),
     shadow: Color(0x1F0B0B14),
     accent: Color(0xFF005FD1),
     accentHover: Color(0xFF0049A3),
+    accentTint: Color(0xFF0A84FF),
     accentFill: Color(0xFF005FD1),
-    accentSubtle: Color(0x1C005FD1),
+    accentSubtle: Color(0x1C0A84FF),
     success: Color(0xFF0B7333),
     successFill: Color(0xFF16A34A),
-    successSubtle: Color(0x2916A34A),
+    successSubtle: Color(0x1416A34A),
     warning: Color(0xFF9A5300),
     warningFill: Color(0xFFEA8C00),
-    warningSubtle: Color(0x2BEA8C00),
+    warningSubtle: Color(0x14EA8C00),
     danger: Color(0xFFCE0016),
     dangerFill: Color(0xFFCE0016),
-    dangerSubtle: Color(0x13CE0016),
+    dangerSubtle: Color(0x10CE0016),
     info: Color(0xFF0A6E93),
     infoFill: Color(0xFF0EA5C6),
-    infoSubtle: Color(0x220EA5C6),
+    infoSubtle: Color(0x160EA5C6),
   );
 
   @override
@@ -290,6 +327,7 @@ class WorkPulseColors extends ThemeExtension<WorkPulseColors> {
     Color? shadow,
     Color? accent,
     Color? accentHover,
+    Color? accentTint,
     Color? accentFill,
     Color? accentSubtle,
     Color? success,
@@ -326,6 +364,7 @@ class WorkPulseColors extends ThemeExtension<WorkPulseColors> {
       shadow: shadow ?? this.shadow,
       accent: accent ?? this.accent,
       accentHover: accentHover ?? this.accentHover,
+      accentTint: accentTint ?? this.accentTint,
       accentFill: accentFill ?? this.accentFill,
       accentSubtle: accentSubtle ?? this.accentSubtle,
       success: success ?? this.success,
@@ -368,6 +407,7 @@ class WorkPulseColors extends ThemeExtension<WorkPulseColors> {
       shadow: c(shadow, other.shadow),
       accent: c(accent, other.accent),
       accentHover: c(accentHover, other.accentHover),
+      accentTint: c(accentTint, other.accentTint),
       accentFill: c(accentFill, other.accentFill),
       accentSubtle: c(accentSubtle, other.accentSubtle),
       success: c(success, other.success),

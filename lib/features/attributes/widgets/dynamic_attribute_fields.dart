@@ -214,11 +214,11 @@ class DynamicAttributeFields extends ConsumerWidget {
                 return FilterChip(
                   label: Text(opt.label),
                   selected: isSel,
-                  selectedColor: col.withValues(alpha: 0.3),
+                  selectedColor: col.withValues(alpha: Alphas.muted),
                   checkmarkColor: col,
                   labelStyle: TextStyle(
                     fontSize: 12,
-                    color: isSel ? Colors.white : context.colors.textSecondary,
+                    color: isSel ? context.colors.onAccent : context.colors.textSecondary,
                     fontWeight: isSel ? FontWeight.bold : FontWeight.normal,
                   ),
                   backgroundColor: context.colors.card,

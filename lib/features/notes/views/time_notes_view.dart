@@ -160,7 +160,7 @@ class TimeNotesView extends ConsumerWidget {
     final now = DateTime.now();
 
     return Scaffold(
-      backgroundColor: colors.surface,
+      backgroundColor: colors.background,
       body: PageScaffold(
         title: 'Time Notes',
         subtitle: _formatSubtitle(selectedRange, selectedDate),
@@ -352,7 +352,7 @@ class _NotesSummaryCard extends StatelessWidget {
         vertical: Spacing.md,
       ),
       decoration: BoxDecoration(
-        color: colors.surfaceSunken,
+        color: colors.surface,
         borderRadius: Radii.lgAll,
         border: Border.all(color: colors.divider),
       ),
@@ -563,6 +563,8 @@ class _TaskNoteCard extends StatelessWidget {
                               EntityChip(
                                 label: group.category!.name,
                                 icon: IconUtils.getIcon(group.category!.iconName),
+                                color: ColorUtils.parseHex(
+                                    group.category!.colorHex),
                               ),
                             if (group.classification.isClassified)
                               StatusBadge(
@@ -590,6 +592,7 @@ class _TaskNoteCard extends StatelessWidget {
                               EntityChip(
                                 label: person.name,
                                 icon: Icons.person,
+                                color: ColorUtils.deterministicColor(person.id),
                                 plain: true,
                               ),
                           ],
@@ -703,7 +706,7 @@ class _TaskNoteEntryRow extends StatelessWidget {
                             borderRadius: Radii.smAll,
                             border: Border.all(
                               color: isRunning
-                                  ? colors.success.withValues(alpha: 0.4)
+                                  ? colors.success.withValues(alpha: Alphas.muted)
                                   : colors.divider,
                             ),
                           ),
