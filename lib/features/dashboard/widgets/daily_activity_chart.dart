@@ -31,6 +31,30 @@ class DailyActivityChart extends StatefulWidget {
     this.isToday = true,
   });
 
+  static Color getHourlyBarColor(Duration duration, WorkPulseColors colors) {
+    final totalMinutes = duration.inMinutes;
+    if (totalMinutes > 45) {
+      return colors.successFill;
+    } else if (totalMinutes >= 15) {
+      return colors.warningFill;
+    } else {
+      return colors.dangerFill;
+    }
+  }
+
+  static Color getDailyBarColor(Duration duration, WorkPulseColors colors) {
+    final totalSeconds = duration.inSeconds;
+    // 8.5 hours = 30600 seconds
+    // 4.0 hours = 14400 seconds
+    if (totalSeconds >= 30600) {
+      return colors.successFill;
+    } else if (totalSeconds >= 14400) {
+      return colors.warningFill;
+    } else {
+      return colors.dangerFill;
+    }
+  }
+
   @override
   State<DailyActivityChart> createState() => _DailyActivityChartState();
 }
@@ -74,6 +98,8 @@ class _DailyActivityChartState extends State<DailyActivityChart> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
+
     if (widget.isHourly) {
       if (widget.hourlyActivities.isEmpty) return const SizedBox.shrink();
       final chartTitle = widget.title ??
@@ -82,6 +108,7 @@ class _DailyActivityChartState extends State<DailyActivityChart> {
         context,
         title: chartTitle,
         icon: Icons.access_time,
+        isHourly: true,
         bars: [
           for (final h in widget.hourlyActivities)
             _BarData(
@@ -92,6 +119,8 @@ class _DailyActivityChartState extends State<DailyActivityChart> {
               sessionCount: h.sessionCount,
               isNow: widget.isToday && h.hour == DateTime.now().hour,
               showLabel: h.hour % 3 == 0,
+              color: DailyActivityChart.getHourlyBarColor(
+                  h.activeDuration, colors),
             ),
         ],
       );
@@ -108,6 +137,7 @@ class _DailyActivityChartState extends State<DailyActivityChart> {
       context,
       title: 'Daily Activity',
       icon: Icons.bar_chart,
+      isHourly: false,
       bars: [
         for (var i = 0; i < widget.activities.length; i++)
           () {
@@ -123,6 +153,8 @@ class _DailyActivityChartState extends State<DailyActivityChart> {
                   date.month == today.month &&
                   date.day == today.day,
               showLabel: i % labelEvery == 0,
+              color:
+                  DailyActivityChart.getDailyBarColor(a.activeDuration, colors),
             );
           }(),
       ],
@@ -133,6 +165,7 @@ class _DailyActivityChartState extends State<DailyActivityChart> {
     BuildContext context, {
     required String title,
     required IconData icon,
+    required bool isHourly,
     required List<_BarData> bars,
   }) {
     final colors = context.colors;
@@ -157,9 +190,21 @@ class _DailyActivityChartState extends State<DailyActivityChart> {
               Expanded(
                 child: Text(title, style: theme.textTheme.titleMedium),
               ),
-              _LegendSwatch(label: 'Active', color: colors.successFill),
-              const SizedBox(width: Spacing.md),
-              _LegendSwatch(label: 'Idle', color: colors.warningFill),
+              if (isHourly) ...[
+                _LegendSwatch(label: '>45m', color: colors.successFill),
+                const SizedBox(width: Spacing.sm),
+                _LegendSwatch(label: '15–45m', color: colors.warningFill),
+                const SizedBox(width: Spacing.sm),
+                _LegendSwatch(label: '<15m', color: colors.dangerFill),
+              ] else ...[
+                _LegendSwatch(label: '≥8.5h', color: colors.successFill),
+                const SizedBox(width: Spacing.sm),
+                _LegendSwatch(label: '4–8.5h', color: colors.warningFill),
+                const SizedBox(width: Spacing.sm),
+                _LegendSwatch(label: '<4h', color: colors.dangerFill),
+              ],
+              const SizedBox(width: Spacing.sm),
+              _LegendSwatch(label: 'Idle', color: colors.textTertiary),
             ],
           ),
           const SizedBox(height: Spacing.xl),
@@ -237,6 +282,7 @@ class _BarData {
   final int sessionCount;
   final bool isNow;
   final bool showLabel;
+  final Color color;
 
   const _BarData({
     required this.label,
@@ -246,6 +292,7 @@ class _BarData {
     required this.sessionCount,
     required this.isNow,
     required this.showLabel,
+    required this.color,
   });
 
   Duration get total => active + idle;
@@ -324,14 +371,14 @@ class _Bar extends StatelessWidget {
                           if (idleHeight > 0)
                             _Segment(
                               height: idleHeight,
-                              color: colors.warningFill,
+                              color: colors.textTertiary,
                               isHovered: isHovered,
                               isTop: true,
                             ),
                           if (activeHeight > 0)
                             _Segment(
                               height: activeHeight,
-                              color: colors.successFill,
+                              color: data.color,
                               isHovered: isHovered,
                               isTop: idleHeight <= 0,
                             ),
