@@ -31,7 +31,17 @@ class DailyActivityChart extends StatefulWidget {
     this.isToday = true,
   });
 
-  static Color getHourlyBarColor(Duration duration, WorkPulseColors colors) {
+  static Color getHourlyBarColor(
+    Duration duration,
+    WorkPulseColors colors, {
+    int? hour,
+  }) {
+    // If the hours are outside work hours (09:00 PM to 09:00 AM, i.e. hour >= 21 or < 9),
+    // show green irrespective of minutes.
+    if (hour != null && (hour < 9 || hour >= 21)) {
+      return colors.successFill;
+    }
+
     final totalMinutes = duration.inMinutes;
     if (totalMinutes > 45) {
       return colors.successFill;
@@ -42,7 +52,18 @@ class DailyActivityChart extends StatefulWidget {
     }
   }
 
-  static Color getDailyBarColor(Duration duration, WorkPulseColors colors) {
+  static Color getDailyBarColor(
+    Duration duration,
+    WorkPulseColors colors, {
+    DateTime? date,
+  }) {
+    // If the day is a weekend (Saturday or Sunday), show green irrespective of hours.
+    if (date != null &&
+        (date.weekday == DateTime.saturday ||
+            date.weekday == DateTime.sunday)) {
+      return colors.successFill;
+    }
+
     final totalSeconds = duration.inSeconds;
     // 8.5 hours = 30600 seconds
     // 4.0 hours = 14400 seconds
@@ -120,7 +141,10 @@ class _DailyActivityChartState extends State<DailyActivityChart> {
               isNow: widget.isToday && h.hour == DateTime.now().hour,
               showLabel: h.hour % 3 == 0,
               color: DailyActivityChart.getHourlyBarColor(
-                  h.activeDuration, colors),
+                h.activeDuration,
+                colors,
+                hour: h.hour,
+              ),
             ),
         ],
       );
@@ -153,8 +177,11 @@ class _DailyActivityChartState extends State<DailyActivityChart> {
                   date.month == today.month &&
                   date.day == today.day,
               showLabel: i % labelEvery == 0,
-              color:
-                  DailyActivityChart.getDailyBarColor(a.activeDuration, colors),
+              color: DailyActivityChart.getDailyBarColor(
+                a.activeDuration,
+                colors,
+                date: date,
+              ),
             );
           }(),
       ],
