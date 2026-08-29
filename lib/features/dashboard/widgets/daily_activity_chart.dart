@@ -431,7 +431,7 @@ class _Segment extends StatelessWidget {
         width: double.infinity,
         height: value,
         decoration: BoxDecoration(
-          color: isHovered ? color : color.withValues(alpha: 0.78),
+          color: isHovered ? color : color.withValues(alpha: Alphas.heavy),
           borderRadius: isTop
               ? const BorderRadius.vertical(top: Radius.circular(3))
               : BorderRadius.zero,
@@ -488,7 +488,7 @@ class _Gridlines extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Widget line() => Container(height: 1, color: color.withValues(alpha: 0.55));
+    Widget line() => Container(height: 1, color: color.withValues(alpha: Alphas.strong));
     return Column(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [line(), line(), line()],

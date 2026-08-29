@@ -233,12 +233,12 @@ class _SessionEditDialogState extends ConsumerState<SessionEditDialog> {
         ElevatedButton(
           onPressed: _isSubmitting ? null : _submit,
           child: _isSubmitting
-              ? const SizedBox(
+              ? SizedBox(
                   width: 16,
                   height: 16,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color: Colors.white,
+                    color: colors.onAccent,
                   ),
                 )
               : const Text('Save Changes'),

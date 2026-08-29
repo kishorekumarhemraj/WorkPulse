@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:flutter/services.dart';
@@ -5,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:workpulse/core/keyboard/shortcut_labels.dart';
 import 'package:workpulse/core/theme/app_colors.dart';
+import 'package:workpulse/core/theme/color_utils.dart';
 import 'package:workpulse/core/theme/app_theme.dart';
 import 'package:workpulse/core/theme/app_typography.dart';
 import 'package:workpulse/core/widgets/app_dialog.dart';
@@ -60,56 +62,77 @@ void main() {
           AppTypography.ticker(color: Colors.white).fontFeatures, isNotEmpty);
     });
 
+    double relativeLuminance(Color c) {
+      double channel(double v) => v <= 0.03928
+          ? v / 12.92
+          : math.pow((v + 0.055) / 1.055, 2.4) as double;
+      return 0.2126 * channel(c.r) +
+          0.7152 * channel(c.g) +
+          0.0722 * channel(c.b);
+    }
+
+    double contrast(Color a, Color b) {
+      final la = relativeLuminance(a);
+      final lb = relativeLuminance(b);
+      final hi = la > lb ? la : lb;
+      final lo = la > lb ? lb : la;
+      return (hi + 0.05) / (lo + 0.05);
+    }
+
     test('every text colour clears WCAG AA on every surface', () {
       // Contrast is easy to lose when a palette is hand-tuned, and the
       // failure is invisible to anyone not looking for it. This pins it.
-      double relativeLuminance(Color c) {
-        double channel(double v) => v <= 0.03928
-            ? v / 12.92
-            : math.pow((v + 0.055) / 1.055, 2.4) as double;
-        return 0.2126 * channel(c.r) +
-            0.7152 * channel(c.g) +
-            0.0722 * channel(c.b);
-      }
-
-      double contrast(Color a, Color b) {
-        final la = relativeLuminance(a);
-        final lb = relativeLuminance(b);
-        final hi = la > lb ? la : lb;
-        final lo = la > lb ? lb : la;
-        return (hi + 0.05) / (lo + 0.05);
-      }
-
       for (final entry in {
         'dark': WorkPulseColors.dark,
         'light': WorkPulseColors.light,
       }.entries) {
         final c = entry.value;
-        final foregrounds = {
+        final textTokens = {
           'textPrimary': c.textPrimary,
           'textSecondary': c.textSecondary,
           'textTertiary': c.textTertiary,
+        };
+        final allSurfaces = {
+          'background': c.background,
+          'surface': c.surface,
+          'card': c.card,
+          'field': c.field,
+          'surfaceRaised': c.surfaceRaised,
+          'surfaceSunken': c.surfaceSunken,
+        };
+
+        // Every text token clears WCAG AA against all surfaces in both themes.
+        for (final text in textTokens.entries) {
+          for (final bg in allSurfaces.entries) {
+            expect(
+              contrast(text.value, bg.value),
+              greaterThanOrEqualTo(4.5),
+              reason: '${entry.key}: ${text.key} on ${bg.key} is below WCAG AA',
+            );
+          }
+        }
+
+        // Semantic tokens clear WCAG AA on standard content surfaces.
+        final semanticTokens = {
           'accent': c.accent,
           'success': c.success,
           'warning': c.warning,
           'danger': c.danger,
           'info': c.info,
         };
-        final backgrounds = {
+        final standardSurfaces = {
           'background': c.background,
           'surface': c.surface,
           'card': c.card,
-          // Split out of card once light inputs stopped being grey slabs;
-          // text sits on it just the same.
           'field': c.field,
         };
 
-        for (final fg in foregrounds.entries) {
-          for (final bg in backgrounds.entries) {
+        for (final sem in semanticTokens.entries) {
+          for (final bg in standardSurfaces.entries) {
             expect(
-              contrast(fg.value, bg.value),
+              contrast(sem.value, bg.value),
               greaterThanOrEqualTo(4.5),
-              reason: '${entry.key}: ${fg.key} on ${bg.key} is below WCAG AA',
+              reason: '${entry.key}: ${sem.key} on ${bg.key} is below WCAG AA',
             );
           }
         }
@@ -131,9 +154,7 @@ void main() {
         // A badge is a label on its own tinted fill, and the fill is
         // translucent -- so the real question is not whether the label
         // clears the surface, but whether it clears the fill *once
-        // composited over* whichever surface the badge landed on. The old
-        // light palette derived these tints from the dark-mode hues, which
-        // is how its labels and fills ended up different colours.
+        // composited over* whichever surface the badge landed on.
         final tinted = {
           'accent': (c.accent, c.accentSubtle),
           'success': (c.success, c.successSubtle),
@@ -144,7 +165,7 @@ void main() {
         for (final tint in tinted.entries) {
           final (label, fill) = tint.value;
           for (final base in ['background', 'surface']) {
-            final composited = Color.alphaBlend(fill, backgrounds[base]!);
+            final composited = Color.alphaBlend(fill, allSurfaces[base]!);
             expect(
               contrast(label, composited),
               greaterThanOrEqualTo(4.5),
@@ -154,6 +175,82 @@ void main() {
           }
         }
       }
+    });
+
+    test('hue lock: all neutral tokens sit on the 240° hue line or have minimal chroma', () {
+      for (final entry in {
+        'dark': WorkPulseColors.dark,
+        'light': WorkPulseColors.light,
+      }.entries) {
+        final c = entry.value;
+        final neutrals = {
+          'surfaceSunken': c.surfaceSunken,
+          'background': c.background,
+          'surface': c.surface,
+          'card': c.card,
+          'field': c.field,
+          'surfaceRaised': c.surfaceRaised,
+          'divider': c.divider,
+          'borderStrong': c.borderStrong,
+          'textTertiary': c.textTertiary,
+          'textSecondary': c.textSecondary,
+          'textPrimary': c.textPrimary,
+        };
+
+        for (final neutral in neutrals.entries) {
+          final color = neutral.value;
+          final r = color.r * 255.0;
+          final g = color.g * 255.0;
+          final b = color.b * 255.0;
+          final maxVal = math.max(r, math.max(g, b));
+          final minVal = math.min(r, math.min(g, b));
+          final chroma = maxVal - minVal;
+
+          if (chroma > 2.0) {
+            double h;
+            if (maxVal == r) {
+              h = ((g - b) / chroma) % 6;
+            } else if (maxVal == g) {
+              h = ((b - r) / chroma) + 2;
+            } else {
+              h = ((r - g) / chroma) + 4;
+            }
+            h = h * 60;
+            if (h < 0) h += 360;
+            expect(
+              h,
+              inInclusiveRange(238.0, 242.0),
+              reason: '${entry.key}: ${neutral.key} hue ($h°) must be within 238°-242°',
+            );
+          }
+        }
+      }
+    });
+
+    test('surface luminance ordering is monotonic in both themes', () {
+      const light = WorkPulseColors.light;
+      final lightSunken = relativeLuminance(light.surfaceSunken);
+      final lightCard = relativeLuminance(light.card);
+      final lightBg = relativeLuminance(light.background);
+      final lightSurface = relativeLuminance(light.surface);
+      final lightRaised = relativeLuminance(light.surfaceRaised);
+
+      expect(lightSunken, lessThan(lightCard));
+      expect(lightCard, lessThan(lightBg));
+      expect(lightBg, lessThan(lightSurface));
+      expect(lightSurface, lessThanOrEqualTo(lightRaised));
+
+      const dark = WorkPulseColors.dark;
+      final darkSunken = relativeLuminance(dark.surfaceSunken);
+      final darkBg = relativeLuminance(dark.background);
+      final darkSurface = relativeLuminance(dark.surface);
+      final darkCard = relativeLuminance(dark.card);
+      final darkRaised = relativeLuminance(dark.surfaceRaised);
+
+      expect(darkSunken, lessThan(darkBg));
+      expect(darkBg, lessThan(darkSurface));
+      expect(darkSurface, lessThan(darkCard));
+      expect(darkCard, lessThanOrEqualTo(darkRaised));
     });
 
     test('the fill variants stay the vivid reading of their role', () {
@@ -175,48 +272,107 @@ void main() {
       expect(dark.infoFill, dark.info);
     });
 
-    test('light surfaces separate far enough to be told apart', () {
-      // The complaint that started this was "too grayish", and the cause was
-      // measurable: background and card were 1.044:1 apart, so a filled
-      // control was invisible on the page it sat on. These floors are what
-      // stop the palette drifting back.
-      double relativeLuminance(Color c) {
-        double channel(double v) => v <= 0.03928
-            ? v / 12.92
-            : math.pow((v + 0.055) / 1.055, 2.4) as double;
-        return 0.2126 * channel(c.r) +
-            0.7152 * channel(c.g) +
-            0.0722 * channel(c.b);
+    test('surfaces separate far enough to be told apart in both themes', () {
+      for (final entry in {
+        'dark': WorkPulseColors.dark,
+        'light': WorkPulseColors.light,
+      }.entries) {
+        final c = entry.value;
+        // A panel is separated from the page by luminance on dark, and by its
+        // hairline on light -- the light theme is white-first, so background
+        // and surface are deliberately close and the divider below carries
+        // the separation instead. Lifting this floor back would push the page
+        // grey again, which is the whole thing being fixed.
+        expect(
+          contrast(c.background, c.surface),
+          greaterThanOrEqualTo(entry.key == 'light' ? 1.01 : 1.10),
+          reason: '${entry.key}: a panel must be distinguishable from the page',
+        );
+        expect(
+          contrast(c.surface, c.divider),
+          greaterThanOrEqualTo(1.35),
+          reason: '${entry.key}: a hairline must read on surface',
+        );
+        expect(
+          contrast(c.surface, c.card),
+          greaterThanOrEqualTo(1.06),
+          reason: '${entry.key}: card must separate from surface',
+        );
+        expect(
+          contrast(c.card, c.surfaceSunken),
+          greaterThanOrEqualTo(1.04),
+          reason: '${entry.key}: sunken well must separate from card',
+        );
+        if (entry.key == 'light') {
+          expect(
+            contrast(c.textSecondary, c.textTertiary),
+            greaterThanOrEqualTo(1.15),
+            reason: 'light: the text ramp needs distinct steps',
+          );
+        }
+
+        // Hover and pressed are mixed from accentTint, so they shift *hue*
+        // rather than darkness -- a tint that is plainly visible measures only
+        // ~1.10 on a luminance ratio. Requiring luminance alone would drag
+        // these states back toward the grey overlay they replaced, so a state
+        // qualifies on either axis.
+        double chromaOf(Color x) {
+          final r = x.r * 255.0, g = x.g * 255.0, b = x.b * 255.0;
+          return math.max(r, math.max(g, b)) - math.min(r, math.min(g, b));
+        }
+
+        for (final state in [('hover', c.hover), ('pressed', c.pressed)]) {
+          for (final surface in [
+            ('background', c.background),
+            ('surface', c.surface),
+            ('card', c.card),
+            ('surfaceSunken', c.surfaceSunken),
+            ('surfaceRaised', c.surfaceRaised),
+          ]) {
+            final composited = Color.alphaBlend(state.$2, surface.$2);
+            final byLuminance = contrast(composited, surface.$2);
+            final byChroma = chromaOf(composited) - chromaOf(surface.$2);
+            expect(
+              byLuminance >= 1.06 || byChroma >= 12.0,
+              isTrue,
+              reason: '${entry.key}: ${state.$1} on ${surface.$1} is invisible '
+                  '(luminance $byLuminance, chroma delta $byChroma)',
+            );
+          }
+        }
+      }
+    });
+
+    test('entities that carry no colour of their own get a stable derived one',
+        () {
+      // Categories, people and free-text attributes rendered as neutral chips
+      // because nothing gave EntityChip a colour, and they are the three most
+      // frequent chip types -- a session row read as five grey chips to one
+      // coloured. People and attribute fields derive theirs; categories store
+      // one (MigrationV9).
+      const seeds = ['person-a', 'person-b', 'def-jira', 'def-component'];
+
+      for (final seed in seeds) {
+        final first = ColorUtils.deterministicColor(seed);
+        // Stable across calls: a colour that moves between rebuilds is worse
+        // than no colour at all.
+        expect(ColorUtils.deterministicColor(seed), equals(first));
+        // Always a real palette entry, never the fallback-by-accident.
+        expect(
+          ColorUtils.paletteHex.map(ColorUtils.parseHex),
+          contains(first),
+        );
       }
 
-      double contrast(Color a, Color b) {
-        final la = relativeLuminance(a);
-        final lb = relativeLuminance(b);
-        final hi = la > lb ? la : lb;
-        final lo = la > lb ? lb : la;
-        return (hi + 0.05) / (lo + 0.05);
-      }
+      // Distinct seeds should mostly land on distinct swatches, or a row of
+      // people reads as one colour and the change buys nothing.
+      final distinct = seeds.map(ColorUtils.deterministicColor).toSet();
+      expect(distinct.length, greaterThan(1));
 
-      const c = WorkPulseColors.light;
+      // Seeded on ids, not names: renaming a person must not recolour them.
       expect(
-        contrast(c.background, c.surface),
-        greaterThanOrEqualTo(1.10),
-        reason: 'a panel must lift off the page it sits on',
-      );
-      expect(
-        contrast(c.surface, c.divider),
-        greaterThanOrEqualTo(1.35),
-        reason: 'a hairline must read on white',
-      );
-      expect(
-        contrast(Color.alphaBlend(c.hover, c.surface), c.surface),
-        greaterThanOrEqualTo(1.15),
-        reason: 'hover must be visible, not theoretical',
-      );
-      expect(
-        contrast(c.textSecondary, c.textTertiary),
-        greaterThanOrEqualTo(1.15),
-        reason: 'the text ramp needs three steps, not two wearing a disguise',
+        ColorUtils.deterministicColor('person-a'),
+        isNot(equals(ColorUtils.deterministicColor('person-a-renamed'))),
       );
     });
 
@@ -466,6 +622,93 @@ void main() {
       await tester.tap(find.byTooltip('Close'));
       await tester.pumpAndSettle();
       expect(find.text('Edit Task'), findsNothing);
+    });
+  });
+
+  group('CI Grep Guard', () {
+    final libDir = Directory('lib');
+    final dartFiles = libDir
+        .listSync(recursive: true)
+        .whereType<File>()
+        .where((f) => f.path.endsWith('.dart'))
+        .where((f) =>
+            !f.path.contains('lib/core/theme/') &&
+            !f.path.contains('lib/domain/services/pdf/') &&
+            !f.path.endsWith('lib/main.dart'))
+        .toList();
+
+    test('no raw Colors.white or Colors.black outside theme and pdf', () {
+      final violations = <String>[];
+      for (final file in dartFiles) {
+        final lines = file.readAsLinesSync();
+        for (var i = 0; i < lines.length; i++) {
+          final line = lines[i];
+          final trimmed = line.trim();
+          if (trimmed.startsWith('//') ||
+              trimmed.startsWith('///') ||
+              trimmed.startsWith('*')) {
+            continue;
+          }
+          if (line.contains('Colors.white') || line.contains('Colors.black')) {
+            violations.add('${file.path}:${i + 1}: $line');
+          }
+        }
+      }
+      expect(violations, isEmpty,
+          reason: 'Raw Colors.white/black forbidden in UI code');
+    });
+
+    test('barrierColor must use tokenized overlay color', () {
+      final violations = <String>[];
+      for (final file in dartFiles) {
+        final lines = file.readAsLinesSync();
+        for (var i = 0; i < lines.length; i++) {
+          final line = lines[i];
+          final trimmed = line.trim();
+          if (trimmed.startsWith('//') || trimmed.startsWith('///')) continue;
+          if (line.contains('barrierColor:') && !line.contains('overlay')) {
+            violations.add('${file.path}:${i + 1}: $line');
+          }
+        }
+      }
+      expect(violations, isEmpty,
+          reason: 'barrierColor must use context.colors.overlay');
+    });
+
+    test('withValues(alpha:) must use Alphas scale constants', () {
+      final violations = <String>[];
+      final literalAlphaRegex = RegExp(r'withValues\s*\(\s*alpha:\s*0\.\d+');
+      for (final file in dartFiles) {
+        final lines = file.readAsLinesSync();
+        for (var i = 0; i < lines.length; i++) {
+          final line = lines[i];
+          final trimmed = line.trim();
+          if (trimmed.startsWith('//') || trimmed.startsWith('///')) continue;
+          if (literalAlphaRegex.hasMatch(line)) {
+            violations.add('${file.path}:${i + 1}: $line');
+          }
+        }
+      }
+      expect(violations, isEmpty,
+          reason: 'withValues(alpha: ...) must use Alphas.* scale');
+    });
+
+    test('BoxShadow must not hardcode raw Colors.black or Colors.white', () {
+      final violations = <String>[];
+      for (final file in dartFiles) {
+        final lines = file.readAsLinesSync();
+        for (var i = 0; i < lines.length; i++) {
+          final line = lines[i];
+          final trimmed = line.trim();
+          if (trimmed.startsWith('//') || trimmed.startsWith('///')) continue;
+          if (line.contains('BoxShadow') &&
+              (line.contains('Colors.black') || line.contains('Colors.white'))) {
+            violations.add('${file.path}:${i + 1}: $line');
+          }
+        }
+      }
+      expect(violations, isEmpty,
+          reason: 'BoxShadow must use colors.shadow via Elevation.*');
     });
   });
 }

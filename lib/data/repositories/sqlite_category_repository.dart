@@ -133,6 +133,7 @@ class SqliteCategoryRepository implements CategoryRepository {
       'name': category.name,
       'description': category.description,
       'icon_name': category.iconName,
+      'color_hex': category.colorHex,
       'created_at': category.createdAt.toStorageString(),
       'updated_at': category.updatedAt.toStorageString(),
       'archived_at': category.archivedAt?.toStorageString(),
@@ -146,6 +147,7 @@ class SqliteCategoryRepository implements CategoryRepository {
       name: map['name'] as String,
       description: map['description'] as String?,
       iconName: map['icon_name'] as String?,
+      colorHex: map['color_hex'] as String?,
       createdAt: DateTime.parse(map['created_at'] as String),
       updatedAt: DateTime.parse(map['updated_at'] as String),
       archivedAt: map['archived_at'] != null

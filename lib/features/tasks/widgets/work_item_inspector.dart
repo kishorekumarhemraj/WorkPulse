@@ -104,7 +104,7 @@ class WorkItemInspector extends ConsumerWidget {
                             color: colors.successSubtle,
                             borderRadius: Radii.mdAll,
                             border: Border.all(
-                              color: colors.success.withValues(alpha: 0.3),
+                              color: colors.success.withValues(alpha: Alphas.muted),
                             ),
                           ),
                           child: Row(
@@ -236,6 +236,7 @@ class WorkItemInspector extends ConsumerWidget {
                         EntityChip(
                           label: category!.name,
                           icon: IconUtils.getIcon(category!.iconName),
+                          color: ColorUtils.parseHex(category!.colorHex),
                         ),
                       for (final tag in tags)
                         EntityChip(
@@ -243,7 +244,11 @@ class WorkItemInspector extends ConsumerWidget {
                           color: ColorUtils.parseHex(tag.colorHex),
                         ),
                       for (final person in people)
-                        EntityChip(label: person.name, icon: Icons.person),
+                        EntityChip(
+                          label: person.name,
+                          icon: Icons.person,
+                          color: ColorUtils.deterministicColor(person.id),
+                        ),
                       if (project == null &&
                           category == null &&
                           tags.isEmpty &&
@@ -308,7 +313,7 @@ class WorkItemInspector extends ConsumerWidget {
                       }
                       return Container(
                         decoration: BoxDecoration(
-                          color: colors.surfaceSunken,
+                          color: colors.surface,
                           borderRadius: Radii.mdAll,
                           border: Border.all(color: colors.divider),
                         ),

@@ -38,7 +38,7 @@ Future<bool> confirmDestructive(
             onPressed: () => Navigator.of(ctx).pop(true),
             style: ElevatedButton.styleFrom(
               backgroundColor: colors.dangerFill,
-              foregroundColor: Colors.white,
+              foregroundColor: colors.onAccent,
             ),
             child: Text(confirmLabel),
           ),

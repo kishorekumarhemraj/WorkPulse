@@ -160,7 +160,7 @@ class _TaskSwitchDialogState extends ConsumerState<TaskSwitchDialog> {
               labelColor: colors.accent,
               name: widget.targetItem.name,
               background: colors.accentSubtle,
-              borderColor: colors.accent.withValues(alpha: 0.4),
+              borderColor: colors.accent.withValues(alpha: Alphas.muted),
             ),
             const SizedBox(height: Spacing.lg),
 

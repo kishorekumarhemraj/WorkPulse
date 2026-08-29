@@ -7,6 +7,25 @@ import 'package:flutter/material.dart';
 /// raw double for these properties — reach for the nearest token instead, so
 /// the whole app rescales and re-skins from one place.
 
+/// The only sanctioned opacities. A value not on this scale is a decision
+/// nobody made.
+abstract class Alphas {
+  /// 0.08 — barely-there tints
+  static const double faint = 0.08;
+
+  /// 0.16 — resting tinted fills
+  static const double subtle = 0.16;
+
+  /// 0.32 — de-emphasised marks
+  static const double muted = 0.32;
+
+  /// 0.56 — pressed / dragged states
+  static const double strong = 0.56;
+
+  /// 0.78 — scrims over content
+  static const double heavy = 0.78;
+}
+
 /// Spacing scale (4pt grid).
 abstract class Spacing {
   /// 2 — hairline separation inside dense badges.
