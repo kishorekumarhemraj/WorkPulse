@@ -5,6 +5,8 @@ import 'package:workpulse/core/theme/design_tokens.dart';
 import 'package:workpulse/core/theme/icon_utils.dart';
 import 'package:workpulse/core/widgets/app_dialog.dart';
 import 'package:workpulse/core/widgets/app_snack_bar.dart';
+import 'package:workpulse/core/theme/color_utils.dart';
+import 'package:workpulse/core/widgets/color_swatch_picker.dart';
 import 'package:workpulse/domain/models/category_model.dart';
 import 'package:workpulse/features/categories/providers/categories_provider.dart';
 
@@ -30,6 +32,7 @@ class _CategoryFormDialogState extends ConsumerState<CategoryFormDialog> {
   late final TextEditingController _nameController;
   late final TextEditingController _descController;
   late String _selectedIconName;
+  late String _selectedColorHex;
   bool _isSubmitting = false;
 
   @override
@@ -39,6 +42,8 @@ class _CategoryFormDialogState extends ConsumerState<CategoryFormDialog> {
     _descController =
         TextEditingController(text: widget.category?.description ?? '');
     _selectedIconName = widget.category?.iconName ?? 'folder';
+    _selectedColorHex =
+        widget.category?.colorHex ?? ColorUtils.paletteHex.first;
   }
 
   @override
@@ -59,6 +64,7 @@ class _CategoryFormDialogState extends ConsumerState<CategoryFormDialog> {
                   name: _nameController.text.trim(),
                   description: _descController.text.trim(),
                   iconName: _selectedIconName,
+                  colorHex: _selectedColorHex,
                 );
         if (mounted) Navigator.of(context).pop(created);
       } else {
@@ -68,6 +74,7 @@ class _CategoryFormDialogState extends ConsumerState<CategoryFormDialog> {
                     name: _nameController.text.trim(),
                     description: _descController.text.trim(),
                     iconName: _selectedIconName,
+                    colorHex: _selectedColorHex,
                   ),
                 );
         if (mounted) Navigator.of(context).pop(updated);
@@ -85,6 +92,7 @@ class _CategoryFormDialogState extends ConsumerState<CategoryFormDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     final isEditing = widget.category != null;
 
     return AppDialog(
@@ -99,12 +107,12 @@ class _CategoryFormDialogState extends ConsumerState<CategoryFormDialog> {
         ElevatedButton(
           onPressed: _isSubmitting ? null : _submit,
           child: _isSubmitting
-              ? const SizedBox(
+              ? SizedBox(
                   width: 16,
                   height: 16,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color: Colors.white,
+                    color: colors.onAccent,
                   ),
                 )
               : Text(isEditing ? 'Save Changes' : 'Create Category'),
@@ -151,6 +159,14 @@ class _CategoryFormDialogState extends ConsumerState<CategoryFormDialog> {
               child: _IconPicker(
                 selected: _selectedIconName,
                 onChanged: (name) => setState(() => _selectedIconName = name),
+              ),
+            ),
+            const SizedBox(height: Spacing.lg),
+            DialogField(
+              label: 'Color',
+              child: ColorSwatchPicker(
+                selectedHex: _selectedColorHex,
+                onChanged: (hex) => setState(() => _selectedColorHex = hex),
               ),
             ),
           ],

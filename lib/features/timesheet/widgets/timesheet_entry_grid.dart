@@ -127,7 +127,7 @@ class _WeekGridCard extends StatelessWidget {
                     vertical: Spacing.xs,
                   ),
                   decoration: BoxDecoration(
-                    color: colors.accent.withValues(alpha: 0.12),
+                    color: colors.accent.withValues(alpha: Alphas.subtle),
                     borderRadius: Radii.smAll,
                   ),
                   child: Text(
@@ -179,7 +179,7 @@ class _WeekGridCard extends StatelessWidget {
                         ),
                         Divider(
                             height: 1,
-                            color: colors.divider.withValues(alpha: 0.5)),
+                            color: colors.divider),
                       ],
 
                       // Totals Row
@@ -283,7 +283,7 @@ class _HeaderRow extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Container(
-      color: colors.card.withValues(alpha: 0.35),
+      color: colors.card,
       padding: const EdgeInsets.symmetric(
           horizontal: Spacing.lg, vertical: Spacing.sm),
       child: Row(
@@ -352,7 +352,7 @@ class _DayHeaderCell extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: Spacing.xs, vertical: 2),
       decoration: BoxDecoration(
         color: isToday
-            ? colors.accent.withValues(alpha: 0.08)
+            ? colors.accent.withValues(alpha: Alphas.faint)
             : Colors.transparent,
         borderRadius: Radii.xsAll,
       ),
@@ -575,7 +575,7 @@ class _DayDataCell extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: Spacing.xs),
       decoration: BoxDecoration(
         color: isToday
-            ? colors.accent.withValues(alpha: 0.04)
+            ? colors.accent.withValues(alpha: Alphas.faint)
             : Colors.transparent,
       ),
       child: Text(
@@ -603,7 +603,7 @@ class _TotalsRow extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Container(
-      color: colors.card.withValues(alpha: 0.2),
+      color: colors.card,
       padding: const EdgeInsets.symmetric(
           horizontal: Spacing.lg, vertical: Spacing.sm),
       child: Row(
@@ -624,7 +624,7 @@ class _TotalsRow extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: Spacing.xs),
               decoration: BoxDecoration(
                 color: _HeaderRow._isSameDay(week.days[i], today)
-                    ? colors.accent.withValues(alpha: 0.08)
+                    ? colors.accent.withValues(alpha: Alphas.faint)
                     : Colors.transparent,
               ),
               child: Text(

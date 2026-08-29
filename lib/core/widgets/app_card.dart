@@ -70,10 +70,10 @@ class _AppCardState extends State<AppCard> {
           borderColor = colors.focusRing;
           borderWidth = 2;
         } else if (widget.emphasisColor != null) {
-          borderColor = widget.emphasisColor!.withValues(alpha: 0.7);
+          borderColor = widget.emphasisColor!.withValues(alpha: Alphas.heavy);
           borderWidth = 1.5;
         } else if (widget.isSelected) {
-          borderColor = colors.accent.withValues(alpha: 0.7);
+          borderColor = colors.accent.withValues(alpha: Alphas.heavy);
           borderWidth = 1.5;
         } else if (isHovered && isTappable) {
           borderColor = colors.borderStrong;
@@ -95,7 +95,7 @@ class _AppCardState extends State<AppCard> {
             boxShadow: widget.emphasisColor != null
                 ? [
                     BoxShadow(
-                      color: widget.emphasisColor!.withValues(alpha: 0.12),
+                      color: widget.emphasisColor!.withValues(alpha: Alphas.subtle),
                       blurRadius: 10,
                       spreadRadius: 1,
                     ),

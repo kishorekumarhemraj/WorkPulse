@@ -157,7 +157,7 @@ class SidebarHeader extends StatelessWidget {
                 decoration: BoxDecoration(
                   borderRadius: Radii.mdAll,
                   border: Border.all(
-                    color: colors.accent.withValues(alpha: 0.35),
+                    color: colors.accent.withValues(alpha: Alphas.muted),
                   ),
                 ),
                 padding: const EdgeInsets.symmetric(

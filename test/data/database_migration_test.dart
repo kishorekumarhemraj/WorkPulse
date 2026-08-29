@@ -12,6 +12,7 @@ import 'package:workpulse/data/migrations/migration_v4.dart';
 import 'package:workpulse/data/migrations/migration_v5.dart';
 import 'package:workpulse/data/migrations/migration_v6.dart';
 import 'package:workpulse/data/migrations/migration_v8.dart';
+import 'package:workpulse/data/migrations/migration_v9.dart';
 
 void main() {
   setUpAll(() {
@@ -566,6 +567,83 @@ void main() {
 
         // 3. Test running MigrationV8 a second time is a no-op
         await expectLater(MigrationV8.execute(upgradedDb), completes);
+
+        await dbService.close();
+      } finally {
+        await tempDir.delete(recursive: true);
+      }
+    });
+
+    test(
+        'v8 -> v9 upgrade adds category colour and backfills every existing row',
+        () async {
+      final tempDir =
+          await Directory.systemTemp.createTemp('workpulse_v9_upgrade_test');
+      final dbPath = p.join(tempDir.path, 'v9_test.db');
+
+      try {
+        // 1. A v8 database, with categories that predate the colour column.
+        final db = await databaseFactoryFfi.openDatabase(
+          dbPath,
+          options: OpenDatabaseOptions(
+            version: 8,
+            onConfigure: (db) => db.execute('PRAGMA foreign_keys = ON;'),
+            onCreate: (db, version) async {
+              await MigrationV1.execute(db);
+              await MigrationV2.execute(db);
+              await MigrationV3.execute(db);
+              await MigrationV4.execute(db);
+              await MigrationV5.execute(db);
+              await MigrationV6.execute(db);
+              await MigrationV8.execute(db);
+            },
+          ),
+        );
+
+        final base = DateTime.utc(2026, 1, 1);
+        for (var i = 0; i < 3; i++) {
+          await db.insert(Tables.categories, {
+            'id': 'cat-v8-$i',
+            'workspace_id': MigrationV1.defaultWorkspaceId,
+            'name': 'Legacy $i',
+            'created_at': base.add(Duration(minutes: i)).toIso8601String(),
+            'updated_at': base.add(Duration(minutes: i)).toIso8601String(),
+          });
+        }
+        await db.close();
+
+        // 2. Upgrade.
+        final dbService = DatabaseService();
+        await dbService.initialize(customPath: dbPath);
+        final upgraded = dbService.database;
+
+        final cols = await upgraded
+            .rawQuery('PRAGMA table_info(${Tables.categories});');
+        expect(cols.map((c) => c['name'] as String).toSet(),
+            contains('color_hex'));
+
+        // Every pre-existing category is coloured. A nullable column with no
+        // backfill would leave the app looking exactly as it did before until
+        // the user hand-edited each one.
+        final rows = await upgraded.query(Tables.categories,
+            orderBy: 'created_at ASC, id ASC');
+        expect(rows, hasLength(3));
+        for (final row in rows) {
+          final hex = row['color_hex'] as String?;
+          expect(hex, isNotNull);
+          expect(hex, matches(RegExp(r'^#[0-9A-Fa-f]{6}$')));
+        }
+
+        // Distinct colours, so a list of categories does not read as one hue.
+        expect(rows.map((r) => r['color_hex']).toSet(), hasLength(3));
+
+        // 3. Re-running must not recolour a category the user has since set.
+        await upgraded.update(Tables.categories, {'color_hex': '#123456'},
+            where: 'id = ?', whereArgs: ['cat-v8-0']);
+        await expectLater(MigrationV9.execute(upgraded), completes);
+        final kept = await upgraded
+            .query(Tables.categories, where: 'id = ?', whereArgs: ['cat-v8-0']);
+        expect(kept.first['color_hex'], equals('#123456'));
 
         await dbService.close();
       } finally {
