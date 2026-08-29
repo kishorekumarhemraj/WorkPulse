@@ -60,13 +60,7 @@ class ActiveTimerBar extends ConsumerWidget {
       decoration: BoxDecoration(
         color: colors.surface,
         border: Border(bottom: BorderSide(color: colors.divider)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.12),
-            offset: const Offset(0, 2),
-            blurRadius: 8,
-          ),
-        ],
+        boxShadow: Elevation.low(colors.shadow),
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {
@@ -195,7 +189,7 @@ class ActiveTimerBar extends ConsumerWidget {
                   color: colors.successSubtle,
                   borderRadius: Radii.mdAll,
                   border:
-                      Border.all(color: colors.success.withValues(alpha: 0.3)),
+                      Border.all(color: colors.success.withValues(alpha: Alphas.muted)),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -242,7 +236,7 @@ class ActiveTimerBar extends ConsumerWidget {
                     shape: RoundedRectangleBorder(
                       borderRadius: Radii.mdAll,
                       side: BorderSide(
-                        color: colors.danger.withValues(alpha: 0.5),
+                        color: colors.danger.withValues(alpha: Alphas.strong),
                       ),
                     ),
                   ),
@@ -278,7 +272,7 @@ class _LiveDot extends StatelessWidget {
         shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
-            color: colors.successFill.withValues(alpha: 0.45),
+            color: colors.successFill.withValues(alpha: Alphas.strong),
             blurRadius: 7,
             spreadRadius: 1,
           ),

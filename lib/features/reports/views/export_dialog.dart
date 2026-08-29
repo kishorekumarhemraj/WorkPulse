@@ -134,6 +134,7 @@ class _ExportDialogState extends ConsumerState<ExportDialog> {
     final rangeLabel =
         '${DateFormat.yMMMd().format(range.start.toLocal())} – ${DateFormat.yMMMd().format(range.end.toLocal())}';
 
+    final colors = context.colors;
     final isPdf = _format == ExportFormat.pdf;
     final buttonLabel = isPdf
         ? (_exportedContent != null
@@ -157,12 +158,12 @@ class _ExportDialogState extends ConsumerState<ExportDialog> {
         ElevatedButton.icon(
           onPressed: _isExporting ? null : _exportData,
           icon: _isExporting
-              ? const SizedBox(
+              ? SizedBox(
                   width: 14,
                   height: 14,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color: Colors.white,
+                    color: colors.onAccent,
                   ),
                 )
               : Icon(

@@ -77,7 +77,7 @@ class CommandPalette extends ConsumerStatefulWidget {
   }) {
     return showDialog<void>(
       context: context,
-      barrierColor: Colors.black.withValues(alpha: 0.4),
+      barrierColor: context.colors.overlay,
       builder: (_) => CommandPalette(
         onNavigate: onNavigate,
         onOpenQuickCapture: onOpenQuickCapture,
@@ -338,13 +338,7 @@ class _CommandPaletteState extends ConsumerState<CommandPalette> {
             color: colors.surfaceRaised,
             borderRadius: Radii.xxlAll,
             border: Border.all(color: colors.divider),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.35),
-                blurRadius: 32,
-                offset: const Offset(0, 12),
-              ),
-            ],
+            boxShadow: Elevation.high(colors.shadow),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,

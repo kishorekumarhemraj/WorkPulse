@@ -35,6 +35,31 @@ class AppTheme {
           borderSide: BorderSide(color: color, width: width),
         );
 
+    // Material 3 derives a button's hover from colorScheme.primary, so half the
+    // app's controls hovered blue while rows and icon buttons hovered neutral.
+    // One resolver, shared by every button style.
+    WidgetStateProperty<Color?> buttonOverlay(WorkPulseColors c) =>
+        WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.pressed)) return c.pressed;
+          if (states.contains(WidgetState.hovered)) return c.hover;
+          if (states.contains(WidgetState.focused)) return c.hover;
+          return null;
+        });
+
+    // Filled accent buttons carry onAccent text on accentFill. A white 8%
+    // overlay on that is nearly invisible, so they use onAccent tints instead.
+    WidgetStateProperty<Color?> accentButtonOverlay(WorkPulseColors c) =>
+        WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.pressed)) {
+            return c.onAccent.withValues(alpha: 0.20);
+          }
+          if (states.contains(WidgetState.hovered) ||
+              states.contains(WidgetState.focused)) {
+            return c.onAccent.withValues(alpha: 0.12);
+          }
+          return null;
+        });
+
     return ThemeData(
       useMaterial3: true,
       splashFactory: InkRipple.splashFactory,
@@ -44,6 +69,9 @@ class AppTheme {
       scaffoldBackgroundColor: c.background,
       canvasColor: c.surface,
       dividerColor: c.divider,
+      hoverColor: c.hover,
+      highlightColor: c.pressed,
+      splashColor: c.pressed,
       // Material's default (12% black/white) is barely visible on these
       // surfaces. Controls that draw their own ring — AppCard, SidebarNavItem,
       // AppSelect — opt out locally; everything else inherits this.
@@ -117,6 +145,19 @@ class AppTheme {
           ),
         ),
       ),
+      menuButtonTheme: MenuButtonThemeData(
+        style: ButtonStyle(
+          foregroundColor: WidgetStatePropertyAll(c.textPrimary),
+          overlayColor: buttonOverlay(c),
+          backgroundColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.hovered) ||
+                states.contains(WidgetState.focused)) {
+              return c.hover;
+            }
+            return Colors.transparent;
+          }),
+        ),
+      ),
       dividerTheme: DividerThemeData(
         color: c.divider,
         thickness: 1,
@@ -152,12 +193,12 @@ class AppTheme {
       scrollbarTheme: ScrollbarThemeData(
         thumbColor: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.dragged)) {
-            return c.textSecondary.withValues(alpha: 0.7);
+            return c.textSecondary.withValues(alpha: Alphas.heavy);
           }
           if (states.contains(WidgetState.hovered)) {
-            return c.textSecondary.withValues(alpha: 0.5);
+            return c.textSecondary.withValues(alpha: Alphas.strong);
           }
-          return c.textSecondary.withValues(alpha: 0.28);
+          return c.textSecondary.withValues(alpha: Alphas.muted);
         }),
         thickness: WidgetStateProperty.resolveWith(
           (states) => states.contains(WidgetState.hovered) ? 9 : 7,
@@ -180,16 +221,23 @@ class AppTheme {
           padding: const EdgeInsets.symmetric(horizontal: Spacing.lg),
           shape: const RoundedRectangleBorder(borderRadius: Radii.mdAll),
           textStyle: textTheme.labelLarge,
+        ).copyWith(
+          overlayColor: accentButtonOverlay(c),
         ),
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           backgroundColor: c.accentFill,
           foregroundColor: c.onAccent,
+          disabledBackgroundColor: c.card,
+          disabledForegroundColor: c.textTertiary,
+          elevation: 0,
           minimumSize: const Size(0, ControlSizes.standard),
           padding: const EdgeInsets.symmetric(horizontal: Spacing.lg),
           shape: const RoundedRectangleBorder(borderRadius: Radii.mdAll),
           textStyle: textTheme.labelLarge,
+        ).copyWith(
+          overlayColor: accentButtonOverlay(c),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
@@ -200,6 +248,8 @@ class AppTheme {
           shape: const RoundedRectangleBorder(borderRadius: Radii.mdAll),
           textStyle:
               textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w500),
+        ).copyWith(
+          overlayColor: buttonOverlay(c),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
@@ -211,6 +261,8 @@ class AppTheme {
           shape: const RoundedRectangleBorder(borderRadius: Radii.mdAll),
           textStyle:
               textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w500),
+        ).copyWith(
+          overlayColor: buttonOverlay(c),
         ),
       ),
       iconButtonTheme: IconButtonThemeData(
@@ -219,6 +271,8 @@ class AppTheme {
           hoverColor: c.hover,
           highlightColor: c.pressed,
           shape: const RoundedRectangleBorder(borderRadius: Radii.smAll),
+        ).copyWith(
+          overlayColor: buttonOverlay(c),
         ),
       ),
       chipTheme: ChipThemeData(
@@ -235,7 +289,25 @@ class AppTheme {
         shape: const RoundedRectangleBorder(borderRadius: Radii.mdAll),
         showCheckmark: false,
       ),
+      checkboxTheme: CheckboxThemeData(
+        fillColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return c.accent;
+          return Colors.transparent;
+        }),
+        checkColor: WidgetStatePropertyAll(c.onAccent),
+        side: BorderSide(color: c.divider),
+        shape: const RoundedRectangleBorder(borderRadius: Radii.xsAll),
+        overlayColor: buttonOverlay(c),
+      ),
+      radioTheme: RadioThemeData(
+        fillColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return c.accent;
+          return c.textSecondary;
+        }),
+        overlayColor: buttonOverlay(c),
+      ),
       switchTheme: SwitchThemeData(
+        // Switch thumb is white on macOS in both light and dark themes by platform convention.
         thumbColor: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.disabled)) return c.textTertiary;
           return Colors.white;
@@ -255,6 +327,7 @@ class AppTheme {
           shape: const WidgetStatePropertyAll(
             RoundedRectangleBorder(borderRadius: Radii.smAll),
           ),
+          overlayColor: buttonOverlay(c),
         ),
       ),
       progressIndicatorTheme: ProgressIndicatorThemeData(
@@ -265,6 +338,8 @@ class AppTheme {
       listTileTheme: ListTileThemeData(
         iconColor: c.textSecondary,
         textColor: c.textPrimary,
+        selectedTileColor: c.selected,
+        selectedColor: c.accent,
         shape: const RoundedRectangleBorder(borderRadius: Radii.smAll),
       ),
 
@@ -285,7 +360,7 @@ class AppTheme {
         focusedBorder: inputBorder(c.focusRing, 1.5),
         errorBorder: inputBorder(c.danger),
         focusedErrorBorder: inputBorder(c.danger, 1.5),
-        disabledBorder: inputBorder(c.divider.withValues(alpha: 0.5)),
+        disabledBorder: inputBorder(c.divider),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: Spacing.md,
           vertical: Spacing.sm + 2,

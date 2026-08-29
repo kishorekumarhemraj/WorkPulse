@@ -80,6 +80,7 @@ class SessionMetadataChips extends ConsumerWidget {
             EntityChip(
               label: record.category!.name,
               icon: IconUtils.getIcon(record.category!.iconName),
+              color: ColorUtils.parseHex(record.category!.colorHex),
               plain: dense,
             ),
           ),
@@ -173,7 +174,10 @@ class SessionMetadataChips extends ConsumerWidget {
             EntityChip(
               label: person.name,
               icon: Icons.person,
-              plain: true,
+              // People carry no colour in the schema, so this is derived from
+              // the id and is stable across renames and restarts.
+              color: ColorUtils.deterministicColor(person.id),
+              plain: dense,
             ),
           ),
         );
@@ -192,6 +196,21 @@ class SessionMetadataChips extends ConsumerWidget {
           return a.name.compareTo(b.name);
         });
 
+      final options =
+          ref.watch(allAttributeOptionsProvider).value ?? const {};
+
+      /// The colour a value is drawn in: the option's own where the user
+      /// picked one, otherwise derived from the *field*, so "JIRA" is the same
+      /// colour on every row even though its values are free text.
+      Color attributeColor(String definitionId) {
+        final ids = record.attributeOptionIds[definitionId];
+        if (ids != null && ids.length == 1) {
+          final hex = options[ids.first]?.colorHex;
+          if (hex != null && hex.isNotEmpty) return ColorUtils.parseHex(hex);
+        }
+        return ColorUtils.deterministicColor(definitionId);
+      }
+
       final renderedKeys = <String>{};
       for (final def in sortedDefs) {
         final val = record.attributeValues[def.id];
@@ -201,7 +220,8 @@ class SessionMetadataChips extends ConsumerWidget {
             _constrained(
               EntityChip(
                 label: '${def.name}: $val',
-                plain: true,
+                color: attributeColor(def.id),
+                plain: dense,
               ),
             ),
           );
@@ -214,7 +234,8 @@ class SessionMetadataChips extends ConsumerWidget {
             _constrained(
               EntityChip(
                 label: '${entry.key}: ${entry.value}',
-                plain: true,
+                color: attributeColor(entry.key),
+                plain: dense,
               ),
             ),
           );

@@ -164,7 +164,7 @@ class _AppFilterDropdownState<T> extends State<AppFilterDropdown<T>> {
               borderColor = colors.focusRing;
               borderWidth = 1.5;
             } else if (hasValue) {
-              borderColor = colors.accent.withValues(alpha: 0.6);
+              borderColor = colors.accent.withValues(alpha: Alphas.strong);
               borderWidth = 1.0;
             } else {
               borderColor = isHovered ? colors.borderStrong : colors.divider;

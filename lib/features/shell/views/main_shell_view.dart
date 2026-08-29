@@ -273,7 +273,7 @@ class _MainShellViewState extends ConsumerState<MainShellView>
             width: double.infinity,
             padding: const EdgeInsets.all(Spacing.lg),
             decoration: BoxDecoration(
-              color: colors.card,
+              color: colors.surface,
               borderRadius: Radii.mdAll,
               border: Border.all(color: colors.divider),
             ),

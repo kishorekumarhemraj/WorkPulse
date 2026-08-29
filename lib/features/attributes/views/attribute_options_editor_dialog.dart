@@ -264,7 +264,10 @@ class _AttributeOptionsEditorDialogState
                                 color: col,
                                 shape: BoxShape.circle,
                                 border: isSel
-                                    ? Border.all(color: Colors.white, width: 2)
+                                    ? Border.all(
+                                        color: context.colors.onAccent,
+                                        width: 2,
+                                      )
                                     : null,
                               ),
                             ),

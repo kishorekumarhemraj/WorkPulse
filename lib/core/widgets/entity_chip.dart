@@ -42,14 +42,18 @@ class EntityChip extends StatelessWidget {
     final content = Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (color != null)
+        // An icon wins over the dot, and takes the entity's colour when it
+        // has one. Categories and people carry both: dropping their glyph to
+        // show a dot would trade the "what kind of thing is this" signal for
+        // the colour, when they can have both.
+        if (icon != null)
+          Icon(icon, size: IconSizes.xs, color: tint)
+        else if (color != null)
           Container(
             width: 7,
             height: 7,
             decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-          )
-        else if (icon != null)
-          Icon(icon, size: IconSizes.xs, color: colors.textSecondary),
+          ),
         const SizedBox(width: Spacing.xs + 1),
         Flexible(
           child: Text(
@@ -72,12 +76,12 @@ class EntityChip extends StatelessWidget {
         vertical: Spacing.xxs + 1,
       ),
       decoration: BoxDecoration(
-        color: color?.withValues(alpha: 0.13) ?? colors.card,
+        color: color?.withValues(alpha: Alphas.subtle) ?? colors.card,
         borderRadius: Radii.smAll,
         // The neutral fill sits close to the page behind it, so the border is
         // what gives an uncoloured chip an edge rather than pure decoration.
         border: Border.all(
-          color: color?.withValues(alpha: 0.28) ?? colors.divider,
+          color: color?.withValues(alpha: Alphas.muted) ?? colors.divider,
         ),
       ),
       child: content,
@@ -125,10 +129,10 @@ class MetricChip extends StatelessWidget {
         vertical: Spacing.xxs + 1,
       ),
       decoration: BoxDecoration(
-        color: color?.withValues(alpha: 0.13) ?? colors.card,
+        color: color?.withValues(alpha: Alphas.subtle) ?? colors.card,
         borderRadius: Radii.smAll,
         border: Border.all(
-          color: color?.withValues(alpha: 0.3) ?? colors.divider,
+          color: color?.withValues(alpha: Alphas.muted) ?? colors.divider,
         ),
       ),
       child: Row(

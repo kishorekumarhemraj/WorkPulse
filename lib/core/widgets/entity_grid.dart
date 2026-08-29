@@ -80,7 +80,7 @@ class EntityCard extends StatelessWidget {
                 width: 30,
                 height: 30,
                 decoration: BoxDecoration(
-                  color: accent.withValues(alpha: 0.15),
+                  color: accent.withValues(alpha: Alphas.subtle),
                   borderRadius: Radii.smAll,
                 ),
                 child: icon != null

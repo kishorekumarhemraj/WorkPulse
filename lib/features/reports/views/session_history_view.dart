@@ -184,7 +184,7 @@ class _RangeSummary extends StatelessWidget {
         vertical: Spacing.md,
       ),
       decoration: BoxDecoration(
-        color: colors.card,
+        color: colors.surface,
         borderRadius: Radii.mdAll,
         border: Border.all(color: colors.divider),
       ),

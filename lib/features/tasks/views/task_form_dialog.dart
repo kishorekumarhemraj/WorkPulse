@@ -330,12 +330,12 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
           ElevatedButton(
             onPressed: _isSubmitting ? null : _submit,
             child: _isSubmitting
-                ? const SizedBox(
+                ? SizedBox(
                     width: 16,
                     height: 16,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      color: Colors.white,
+                      color: context.colors.onAccent,
                     ),
                   )
                 : Text(isEditing ? 'Save Changes' : 'Create Task'),
@@ -884,7 +884,7 @@ class _TaskNotesRollup extends ConsumerWidget {
             return Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: colors.card,
+                color: colors.surface,
                 borderRadius: Radii.mdAll,
                 border: Border.all(color: colors.divider),
               ),

@@ -17,7 +17,7 @@ class TimesheetSettingsDialog extends ConsumerStatefulWidget {
   static Future<void> show(BuildContext context) {
     return showDialog<void>(
       context: context,
-      barrierColor: Colors.black.withValues(alpha: 0.4),
+      barrierColor: context.colors.overlay,
       builder: (_) => const TimesheetSettingsDialog(),
     );
   }
