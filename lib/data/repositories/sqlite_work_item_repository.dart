@@ -3,8 +3,10 @@ import 'package:workpulse/core/database/database_service.dart';
 import 'package:workpulse/core/errors/app_exceptions.dart';
 import 'package:workpulse/core/extensions/datetime_extensions.dart';
 import 'package:workpulse/data/database/tables.dart';
+import 'package:workpulse/domain/models/calendar_date.dart';
 import 'package:workpulse/domain/models/financial_classification.dart';
 import 'package:workpulse/domain/models/work_item_model.dart';
+import 'package:workpulse/domain/models/work_item_plan.dart';
 import 'package:workpulse/domain/repositories/work_item_repository.dart';
 
 class SqliteWorkItemRepository implements WorkItemRepository {
@@ -252,6 +254,85 @@ class SqliteWorkItemRepository implements WorkItemRepository {
   }
 
   @override
+  Future<void> updatePlan(String id, WorkItemPlan plan) async {
+    final now = DateTime.now().toUtc().toIso8601String();
+    final count = await _db.update(
+      Tables.workItems,
+      {
+        'planned_start_date': plan.plannedStart?.toStorageString(),
+        'due_date': plan.due?.toStorageString(),
+        'completed_at': plan.completedAt?.toStorageString(),
+        'updated_at': now,
+      },
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+
+    if (count == 0) {
+      throw NotFoundException('WorkItem with id $id not found');
+    }
+  }
+
+  @override
+  Future<List<WorkItem>> getByDueRange({
+    required String workspaceId,
+    CalendarDate? from,
+    CalendarDate? to,
+    bool includeOverdue = true,
+    bool includeCompleted = false,
+  }) async {
+    final whereClauses = <String>[
+      'workspace_id = ?',
+      'archived_at IS NULL',
+    ];
+    final whereArgs = <dynamic>[workspaceId];
+
+    if (!includeCompleted) {
+      whereClauses.add('completed_at IS NULL');
+    }
+
+    final dateClauses = <String>[];
+    if (from != null && to != null) {
+      dateClauses.add('(due_date >= ? AND due_date <= ?)');
+      whereArgs.add(from.toStorageString());
+      whereArgs.add(to.toStorageString());
+    } else if (from != null) {
+      dateClauses.add('due_date >= ?');
+      whereArgs.add(from.toStorageString());
+    } else if (to != null) {
+      dateClauses.add('due_date <= ?');
+      whereArgs.add(to.toStorageString());
+    }
+
+    if (includeOverdue && from != null) {
+      dateClauses.add('(due_date < ? AND completed_at IS NULL)');
+      whereArgs.add(from.toStorageString());
+    }
+
+    if (dateClauses.isNotEmpty) {
+      whereClauses.add('(${dateClauses.join(' OR ')})');
+    } else {
+      whereClauses.add('due_date IS NOT NULL');
+    }
+
+    final results = await _db.query(
+      Tables.workItems,
+      where: whereClauses.join(' AND '),
+      whereArgs: whereArgs,
+      orderBy: 'due_date ASC',
+    );
+
+    final workItems = <WorkItem>[];
+    for (final map in results) {
+      final id = map['id'] as String;
+      final tagIds = await _getTagIds(id);
+      final peopleIds = await _getPeopleIds(id);
+      workItems.add(_fromMap(map, tagIds, peopleIds));
+    }
+    return workItems;
+  }
+
+  @override
   Future<void> updateLastWorkedAt(String id, DateTime timestamp) async {
     final count = await _db.update(
       Tables.workItems,
@@ -341,6 +422,9 @@ class SqliteWorkItemRepository implements WorkItemRepository {
       'project_id': item.projectId,
       'category_id': item.categoryId,
       'financial_classification': item.financialClassification.value,
+      'planned_start_date': item.plan.plannedStart?.toStorageString(),
+      'due_date': item.plan.due?.toStorageString(),
+      'completed_at': item.plan.completedAt?.toStorageString(),
       'notes': item.notes,
       'created_at': item.createdAt.toStorageString(),
       'updated_at': item.updatedAt.toStorageString(),
@@ -359,6 +443,14 @@ class SqliteWorkItemRepository implements WorkItemRepository {
       categoryId: map['category_id'] as String,
       financialClassification: FinancialClassification.fromString(
         map['financial_classification'] as String?,
+      ),
+      plan: WorkItemPlan(
+        plannedStart:
+            CalendarDate.tryParse(map['planned_start_date'] as String?),
+        due: CalendarDate.tryParse(map['due_date'] as String?),
+        completedAt: map['completed_at'] != null
+            ? DateTime.parse(map['completed_at'] as String)
+            : null,
       ),
       notes: map['notes'] as String?,
       tagIds: tagIds,

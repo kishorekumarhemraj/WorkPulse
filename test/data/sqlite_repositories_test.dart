@@ -13,6 +13,7 @@ import 'package:workpulse/data/repositories/sqlite_tag_repository.dart';
 import 'package:workpulse/data/repositories/sqlite_work_item_repository.dart';
 import 'package:workpulse/data/repositories/sqlite_workspace_repository.dart';
 import 'package:workpulse/domain/models/attribute_model.dart';
+import 'package:workpulse/domain/models/calendar_date.dart';
 import 'package:workpulse/domain/models/category_model.dart';
 import 'package:workpulse/domain/models/idle_period_model.dart';
 import 'package:workpulse/domain/models/person_model.dart';
@@ -21,6 +22,7 @@ import 'package:workpulse/domain/models/project_timesheet_code.dart';
 import 'package:workpulse/domain/models/session_model.dart';
 import 'package:workpulse/domain/models/tag_model.dart';
 import 'package:workpulse/domain/models/work_item_model.dart';
+import 'package:workpulse/domain/models/work_item_plan.dart';
 import 'package:workpulse/domain/models/workspace_model.dart';
 
 void main() {
@@ -523,6 +525,146 @@ void main() {
       await settingsRepo.setSetting('global_hotkey', 'Option + Space');
       final hotkey = await settingsRepo.getSetting('global_hotkey');
       expect(hotkey, equals('Option + Space'));
+    });
+
+    test(
+        'WorkItemPlan persistence, updatePlan preserves join tables, and getByDueRange',
+        () async {
+      final now = DateTime.utc(2026, 9, 3, 10, 0);
+
+      await projectRepo.create(Project(
+        id: 'p-plan',
+        workspaceId: wsId,
+        name: 'Planning Project',
+        createdAt: now,
+        updatedAt: now,
+      ));
+      await categoryRepo.create(Category(
+        id: 'c-plan',
+        workspaceId: wsId,
+        name: 'Planning Category',
+        createdAt: now,
+        updatedAt: now,
+      ));
+      await tagRepo.create(
+          Tag(id: 't-plan', workspaceId: wsId, name: 'PlanTag', createdAt: now));
+      await personRepo.create(Person(
+          id: 'per-plan',
+          workspaceId: wsId,
+          name: 'Planner',
+          createdAt: now));
+
+      // 1. Create with plan
+      final item1 = WorkItem(
+        id: 'wi-p1',
+        workspaceId: wsId,
+        name: 'Task with plan',
+        projectId: 'p-plan',
+        categoryId: 'c-plan',
+        plan: const WorkItemPlan(
+          plannedStart: CalendarDate(2026, 9, 1),
+          due: CalendarDate(2026, 9, 5),
+        ),
+        tagIds: const ['t-plan'],
+        peopleIds: const ['per-plan'],
+        createdAt: now,
+        updatedAt: now,
+      );
+      await workItemRepo.create(item1);
+
+      final fetched1 = await workItemRepo.getById('wi-p1');
+      expect(fetched1, isNotNull);
+      expect(fetched1!.plan.plannedStart,
+          equals(const CalendarDate(2026, 9, 1)));
+      expect(fetched1.plan.due, equals(const CalendarDate(2026, 9, 5)));
+      expect(fetched1.plan.completedAt, isNull);
+
+      // 2. updatePlan updates plan fields and leaves tags and people join tables untouched
+      final completionTime = DateTime.utc(2026, 9, 4, 15, 30);
+      final newPlan = WorkItemPlan(
+        plannedStart: const CalendarDate(2026, 9, 1),
+        due: const CalendarDate(2026, 9, 6),
+        completedAt: completionTime,
+      );
+      await workItemRepo.updatePlan('wi-p1', newPlan);
+
+      final fetchedAfterUpdate = await workItemRepo.getById('wi-p1');
+      expect(fetchedAfterUpdate!.plan.due,
+          equals(const CalendarDate(2026, 9, 6)));
+      expect(fetchedAfterUpdate.plan.completedAt, equals(completionTime));
+      // Join tables must remain intact!
+      expect(fetchedAfterUpdate.tagIds, contains('t-plan'));
+      expect(fetchedAfterUpdate.peopleIds, contains('per-plan'));
+
+      // 3. Create overdue, due in range, and completed items for getByDueRange
+      // Overdue item (due 2026-09-02, not completed)
+      await workItemRepo.create(WorkItem(
+        id: 'wi-overdue',
+        workspaceId: wsId,
+        name: 'Overdue task',
+        projectId: 'p-plan',
+        categoryId: 'c-plan',
+        plan: const WorkItemPlan(due: CalendarDate(2026, 9, 2)),
+        createdAt: now,
+        updatedAt: now,
+      ));
+
+      // Due in range (due 2026-09-04, not completed)
+      await workItemRepo.create(WorkItem(
+        id: 'wi-today',
+        workspaceId: wsId,
+        name: 'Today task',
+        projectId: 'p-plan',
+        categoryId: 'c-plan',
+        plan: const WorkItemPlan(due: CalendarDate(2026, 9, 4)),
+        createdAt: now,
+        updatedAt: now,
+      ));
+
+      // Due later (due 2026-09-10, not completed)
+      await workItemRepo.create(WorkItem(
+        id: 'wi-future',
+        workspaceId: wsId,
+        name: 'Future task',
+        projectId: 'p-plan',
+        categoryId: 'c-plan',
+        plan: const WorkItemPlan(due: CalendarDate(2026, 9, 10)),
+        createdAt: now,
+        updatedAt: now,
+      ));
+
+      // Range: [2026-09-03, 2026-09-05]
+      // With includeOverdue = true: wi-overdue (due 09-02) + wi-today (due 09-04)
+      // Note wi-p1 is completed so it is excluded by default (includeCompleted = false)
+      final rangeWithOverdue = await workItemRepo.getByDueRange(
+        workspaceId: wsId,
+        from: const CalendarDate(2026, 9, 3),
+        to: const CalendarDate(2026, 9, 5),
+        includeOverdue: true,
+        includeCompleted: false,
+      );
+      expect(rangeWithOverdue.map((i) => i.id),
+          equals(['wi-overdue', 'wi-today']));
+
+      // With includeOverdue = false: only wi-today
+      final rangeWithoutOverdue = await workItemRepo.getByDueRange(
+        workspaceId: wsId,
+        from: const CalendarDate(2026, 9, 3),
+        to: const CalendarDate(2026, 9, 5),
+        includeOverdue: false,
+        includeCompleted: false,
+      );
+      expect(rangeWithoutOverdue.map((i) => i.id), equals(['wi-today']));
+
+      // With includeCompleted = true: includes wi-p1 (due 09-06 is out of range, but if range is 09-01..09-07 it will include it)
+      final wideRangeWithCompleted = await workItemRepo.getByDueRange(
+        workspaceId: wsId,
+        from: const CalendarDate(2026, 9, 1),
+        to: const CalendarDate(2026, 9, 7),
+        includeCompleted: true,
+      );
+      expect(wideRangeWithCompleted.map((i) => i.id),
+          containsAll(['wi-overdue', 'wi-today', 'wi-p1']));
     });
   });
 }
