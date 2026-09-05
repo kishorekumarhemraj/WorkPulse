@@ -5,6 +5,7 @@ import 'package:workpulse/data/repositories/sqlite_category_repository.dart';
 import 'package:workpulse/data/repositories/sqlite_idle_period_repository.dart';
 import 'package:workpulse/data/repositories/sqlite_person_repository.dart';
 import 'package:workpulse/data/repositories/sqlite_project_repository.dart';
+import 'package:workpulse/data/repositories/sqlite_reminder_repository.dart';
 import 'package:workpulse/data/repositories/sqlite_session_repository.dart';
 import 'package:workpulse/data/repositories/sqlite_settings_repository.dart';
 import 'package:workpulse/data/repositories/sqlite_tag_repository.dart';
@@ -15,6 +16,7 @@ import 'package:workpulse/domain/repositories/category_repository.dart';
 import 'package:workpulse/domain/repositories/idle_period_repository.dart';
 import 'package:workpulse/domain/repositories/person_repository.dart';
 import 'package:workpulse/domain/repositories/project_repository.dart';
+import 'package:workpulse/domain/repositories/reminder_repository.dart';
 import 'package:workpulse/domain/repositories/session_repository.dart';
 import 'package:workpulse/domain/repositories/settings_repository.dart';
 import 'package:workpulse/domain/repositories/tag_repository.dart';
@@ -74,3 +76,9 @@ final settingsRepositoryProvider = Provider<SettingsRepository>((ref) {
   final dbService = ref.watch(databaseServiceProvider);
   return SqliteSettingsRepository(dbService);
 });
+
+final reminderRepositoryProvider = Provider<ReminderRepository>((ref) {
+  final dbService = ref.watch(databaseServiceProvider);
+  return SqliteReminderRepository(dbService);
+});
+
