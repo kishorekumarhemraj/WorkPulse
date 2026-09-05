@@ -203,20 +203,34 @@ class TimesheetService {
 
           for (var dayIdx = 0; dayIdx < 7; dayIdx++) {
             final day = days[dayIdx];
-            final grossOnDay =
+            final sessionOnDay =
                 overlapOnDay(sessionStartLocal, sessionEndLocal, day);
-            if (grossOnDay <= Duration.zero) continue;
+            if (sessionOnDay <= Duration.zero) continue;
 
             var idleOnDay = Duration.zero;
+            var idleInsideSessionOnDay = Duration.zero;
             for (final idle in record.idlePeriods) {
               if (idle.resolution != IdleResolution.markIdle) continue;
               final idleStartLocal = idle.startTime.toLocal();
               final idleEndLocal = idle.endTime.toLocal();
               idleOnDay += overlapOnDay(idleStartLocal, idleEndLocal, day);
+
+              final overlapStart = idleStartLocal.isAfter(sessionStartLocal)
+                  ? idleStartLocal
+                  : sessionStartLocal;
+              final overlapEnd = idleEndLocal.isBefore(sessionEndLocal)
+                  ? idleEndLocal
+                  : sessionEndLocal;
+              if (overlapEnd.isAfter(overlapStart)) {
+                idleInsideSessionOnDay +=
+                    overlapOnDay(overlapStart, overlapEnd, day);
+              }
             }
 
-            final netOnDay =
-                grossOnDay > idleOnDay ? grossOnDay - idleOnDay : Duration.zero;
+            final netOnDay = sessionOnDay > idleInsideSessionOnDay
+                ? sessionOnDay - idleInsideSessionOnDay
+                : Duration.zero;
+            final grossOnDay = netOnDay + idleOnDay;
             final dayDuration =
                 basis == TimesheetHoursBasis.net ? netOnDay : grossOnDay;
 
