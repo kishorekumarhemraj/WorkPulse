@@ -7,6 +7,7 @@ import 'package:workpulse/domain/models/financial_classification.dart';
 import 'package:workpulse/domain/models/work_item_model.dart';
 import 'package:workpulse/domain/models/work_item_plan.dart';
 import 'package:workpulse/features/reminders/providers/reminder_scheduler_provider.dart';
+import 'package:workpulse/features/timer/providers/timer_provider.dart';
 import 'package:workpulse/features/workspace/providers/workspace_provider.dart';
 
 const _uuid = Uuid();
@@ -325,6 +326,13 @@ class WorkItemsNotifier extends AsyncNotifier<List<WorkItem>> {
   }
 
   Future<void> completeWorkItem(String id, [DateTime? completedAt]) async {
+    final timerState = ref.read(timerProvider).value;
+    if (timerState != null &&
+        timerState.isRunning &&
+        timerState.activeWorkItem?.id == id) {
+      await ref.read(timerProvider.notifier).stopTimer();
+    }
+
     final workItemRepo = ref.read(workItemRepositoryProvider);
     final existing = await workItemRepo.getById(id);
     if (existing == null) return;
