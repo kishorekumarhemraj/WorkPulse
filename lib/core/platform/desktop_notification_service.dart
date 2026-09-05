@@ -40,25 +40,45 @@ class DesktopNotificationServiceImpl implements DesktopNotificationService {
 
     try {
       if (Platform.isMacOS) {
-        // Escape quotes and backslashes for AppleScript
-        final safeTitle = title.replaceAll('\\', '\\\\').replaceAll('"', '\\"');
-        final safeBody = body.replaceAll('\\', '\\\\').replaceAll('"', '\\"');
+        // Escape quotes, backslashes, and carriage returns/newlines for AppleScript
+        final safeTitle = title
+            .replaceAll('\\', '\\\\')
+            .replaceAll('"', '\\"')
+            .replaceAll('\r', ' ')
+            .replaceAll('\n', ' ');
+        final safeBody = body
+            .replaceAll('\\', '\\\\')
+            .replaceAll('"', '\\"')
+            .replaceAll('\r', ' ')
+            .replaceAll('\n', ' ');
         await Process.run('osascript', [
           '-e',
           'display notification "$safeBody" with title "WorkPulse" subtitle "$safeTitle"',
         ]);
       } else if (Platform.isWindows) {
-        // Fallback or PowerShell notification
-        final safeTitle = title.replaceAll('"', '`"');
-        final safeBody = body.replaceAll('"', '`"');
-        await Process.run('powershell', [
+        // Use PowerShell with arguments passed via stdin to avoid command-line injection
+        final process = await Process.start('powershell', [
+          '-NoProfile',
+          '-NonInteractive',
           '-Command',
-          'Add-Type -AssemblyName System.Windows.Forms; '
-              '\$notify = New-Object System.Windows.Forms.NotifyIcon; '
-              '\$notify.Icon = [System.Drawing.SystemIcons]::Information; '
-              '\$notify.Visible = \$True; '
-              '\$notify.ShowBalloonTip(5000, "$safeTitle", "$safeBody", [System.Windows.Forms.ToolTipIcon]::Info);',
+          r'$title = [Console]::In.ReadLine(); '
+              r'$body = [Console]::In.ReadLine(); '
+              r'Add-Type -AssemblyName System.Windows.Forms; '
+              r'$notify = New-Object System.Windows.Forms.NotifyIcon; '
+              r'$notify.Icon = [System.Drawing.SystemIcons]::Information; '
+              r'$notify.Visible = $True; '
+              r'$notify.ShowBalloonTip(5000, $title, $body, [System.Windows.Forms.ToolTipIcon]::Info);',
         ]);
+        // Normalize newlines in title and body to single line for ReadLine
+        final singleLineTitle =
+            title.replaceAll('\r', ' ').replaceAll('\n', ' ');
+        final singleLineBody =
+            body.replaceAll('\r', ' ').replaceAll('\n', ' ');
+        process.stdin.writeln(singleLineTitle);
+        process.stdin.writeln(singleLineBody);
+        await process.stdin.flush();
+        await process.stdin.close();
+        await process.exitCode;
       }
     } catch (e) {
       debugPrint('[WorkPulse Notification] Failed to display native notification: $e');
