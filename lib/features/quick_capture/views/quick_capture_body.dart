@@ -193,7 +193,8 @@ class _QuickCaptureBodyState extends ConsumerState<QuickCaptureBody> {
   /// over, and the copies were free to disagree.
   _QuickCaptureResults _currentResults() {
     final query = ref.read(quickCaptureProvider).query;
-    final workItems = ref.read(workItemsProvider).value ?? const <WorkItem>[];
+    final workItems =
+        ref.read(unfilteredWorkItemsProvider).value ?? const <WorkItem>[];
     return _QuickCaptureResults.from(query: query, workItems: workItems);
   }
 
@@ -251,7 +252,8 @@ class _QuickCaptureBodyState extends ConsumerState<QuickCaptureBody> {
   Widget build(BuildContext context) {
     final colors = context.colors;
     final qcState = ref.watch(quickCaptureProvider);
-    final workItems = ref.watch(workItemsProvider).value ?? const <WorkItem>[];
+    final workItems =
+        ref.watch(unfilteredWorkItemsProvider).value ?? const <WorkItem>[];
     final projects = ref.watch(projectsProvider).value ?? const <Project>[];
     final categories =
         ref.watch(categoriesProvider).value ?? const <Category>[];
