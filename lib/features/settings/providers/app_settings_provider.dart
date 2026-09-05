@@ -7,13 +7,23 @@ import 'package:hotkey_manager/hotkey_manager.dart';
 import 'package:workpulse/core/keyboard/shortcut_labels.dart';
 import 'package:workpulse/core/platform/idle_detector_service.dart';
 import 'package:workpulse/data/providers/repository_providers.dart';
+import 'package:workpulse/domain/models/reminder_rule.dart';
 import 'package:workpulse/domain/repositories/settings_repository.dart';
+
+export 'package:workpulse/domain/models/reminder_rule.dart';
 
 const _themeModeKey = 'theme_mode';
 const _quickCaptureHotKeyKey = 'quick_capture_hotkey';
 const _idleThresholdMinutesKey = 'idle_threshold_minutes';
 const _timesheetWeekStartDayKey = 'timesheet_week_start_day';
 const _timesheetRoundingIncrementKey = 'timesheet_rounding_increment';
+const _enabledReminderRulesKey = 'enabled_reminder_rules';
+const _dailyDigestTimeKey = 'daily_digest_time';
+const _dueReminderLeadTimeMinutesKey = 'due_reminder_lead_time_minutes';
+const _quietHoursStartKey = 'quiet_hours_start';
+const _quietHoursEndKey = 'quiet_hours_end';
+const _weekendRemindersKey = 'weekend_reminders';
+const _snoozeDefaultMinutesKey = 'snooze_default_minutes';
 
 class AppSettings {
   final ThemeMode themeMode;
@@ -31,8 +41,32 @@ class AppSettings {
   /// Defaults to 0.25 (quarter-hour).
   final double timesheetRoundingIncrement;
 
+  /// Enabled reminder notification rules.
+  final Set<ReminderRule> enabledReminderRules;
+
+  /// Time of day when daily digest / morning reminders fire.
+  final TimeOfDay dailyDigestTime;
+
+  /// Lead time before due date/time to send reminder.
+  final Duration dueReminderLeadTime;
+
+  /// Quiet hours start time (e.g. 20:00).
+  final TimeOfDay? quietHoursStart;
+
+  /// Quiet hours end time (e.g. 08:00).
+  final TimeOfDay? quietHoursEnd;
+
+  /// Whether reminders are allowed to deliver on weekends (Saturday & Sunday).
+  final bool weekendReminders;
+
+  /// Default snooze duration.
+  final Duration snoozeDefault;
+
   static const defaultTimesheetWeekStartDay = DateTime.sunday;
   static const defaultTimesheetRoundingIncrement = 0.25;
+  static const defaultDailyDigestTime = TimeOfDay(hour: 9, minute: 0);
+  static const defaultDueReminderLeadTime = Duration(hours: 1);
+  static const defaultSnoozeDefault = Duration(hours: 1);
 
   const AppSettings({
     required this.themeMode,
@@ -40,6 +74,18 @@ class AppSettings {
     required this.idleThreshold,
     this.timesheetWeekStartDay = defaultTimesheetWeekStartDay,
     this.timesheetRoundingIncrement = defaultTimesheetRoundingIncrement,
+    this.enabledReminderRules = const {
+      ReminderRule.dueMorning,
+      ReminderRule.due1h,
+      ReminderRule.overdueDaily,
+      ReminderRule.startMorning,
+    },
+    this.dailyDigestTime = defaultDailyDigestTime,
+    this.dueReminderLeadTime = defaultDueReminderLeadTime,
+    this.quietHoursStart,
+    this.quietHoursEnd,
+    this.weekendReminders = false,
+    this.snoozeDefault = defaultSnoozeDefault,
   });
 
   factory AppSettings.defaults() {
@@ -49,6 +95,13 @@ class AppSettings {
       idleThreshold: DesktopIdleDetectorService.defaultIdleThreshold,
       timesheetWeekStartDay: defaultTimesheetWeekStartDay,
       timesheetRoundingIncrement: defaultTimesheetRoundingIncrement,
+      enabledReminderRules: ReminderRule.values.toSet(),
+      dailyDigestTime: defaultDailyDigestTime,
+      dueReminderLeadTime: defaultDueReminderLeadTime,
+      quietHoursStart: null,
+      quietHoursEnd: null,
+      weekendReminders: false,
+      snoozeDefault: defaultSnoozeDefault,
     );
   }
 
@@ -58,6 +111,15 @@ class AppSettings {
     Duration? idleThreshold,
     int? timesheetWeekStartDay,
     double? timesheetRoundingIncrement,
+    Set<ReminderRule>? enabledReminderRules,
+    TimeOfDay? dailyDigestTime,
+    Duration? dueReminderLeadTime,
+    TimeOfDay? quietHoursStart,
+    bool clearQuietHoursStart = false,
+    TimeOfDay? quietHoursEnd,
+    bool clearQuietHoursEnd = false,
+    bool? weekendReminders,
+    Duration? snoozeDefault,
   }) {
     return AppSettings(
       themeMode: themeMode ?? this.themeMode,
@@ -67,6 +129,16 @@ class AppSettings {
           timesheetWeekStartDay ?? this.timesheetWeekStartDay,
       timesheetRoundingIncrement:
           timesheetRoundingIncrement ?? this.timesheetRoundingIncrement,
+      enabledReminderRules: enabledReminderRules ?? this.enabledReminderRules,
+      dailyDigestTime: dailyDigestTime ?? this.dailyDigestTime,
+      dueReminderLeadTime: dueReminderLeadTime ?? this.dueReminderLeadTime,
+      quietHoursStart: clearQuietHoursStart
+          ? null
+          : (quietHoursStart ?? this.quietHoursStart),
+      quietHoursEnd:
+          clearQuietHoursEnd ? null : (quietHoursEnd ?? this.quietHoursEnd),
+      weekendReminders: weekendReminders ?? this.weekendReminders,
+      snoozeDefault: snoozeDefault ?? this.snoozeDefault,
     );
   }
 }
@@ -133,6 +205,17 @@ class AppSettingsNotifier extends AsyncNotifier<AppSettings> {
     final weekStartDayStr = await _repo.getSetting(_timesheetWeekStartDayKey);
     final roundingIncrementStr =
         await _repo.getSetting(_timesheetRoundingIncrementKey);
+    final reminderRulesJson =
+        await _repo.getSetting(_enabledReminderRulesKey);
+    final dailyDigestStr = await _repo.getSetting(_dailyDigestTimeKey);
+    final leadTimeMinutesStr =
+        await _repo.getSetting(_dueReminderLeadTimeMinutesKey);
+    final quietStartStr = await _repo.getSetting(_quietHoursStartKey);
+    final quietEndStr = await _repo.getSetting(_quietHoursEndKey);
+    final weekendRemindersStr =
+        await _repo.getSetting(_weekendRemindersKey);
+    final snoozeDefaultMinutesStr =
+        await _repo.getSetting(_snoozeDefaultMinutesKey);
 
     return AppSettings(
       themeMode: _themeModeFromName(themeModeName),
@@ -141,7 +224,85 @@ class AppSettingsNotifier extends AsyncNotifier<AppSettings> {
       timesheetWeekStartDay: _weekStartDayFromValue(weekStartDayStr),
       timesheetRoundingIncrement:
           _roundingIncrementFromValue(roundingIncrementStr),
+      enabledReminderRules: _reminderRulesFromJson(reminderRulesJson),
+      dailyDigestTime: _timeOfDayFromJson(
+          dailyDigestStr, AppSettings.defaultDailyDigestTime),
+      dueReminderLeadTime: _durationFromMinutes(
+          leadTimeMinutesStr, AppSettings.defaultDueReminderLeadTime),
+      quietHoursStart: _timeOfDayNullableFromJson(quietStartStr),
+      quietHoursEnd: _timeOfDayNullableFromJson(quietEndStr),
+      weekendReminders: weekendRemindersStr == 'true',
+      snoozeDefault: _durationFromMinutes(
+          snoozeDefaultMinutesStr, AppSettings.defaultSnoozeDefault),
     );
+  }
+
+  Future<void> setReminderRule(ReminderRule rule, bool enabled) async {
+    final current = state.value ?? AppSettings.defaults();
+    final updated = Set<ReminderRule>.from(current.enabledReminderRules);
+    if (enabled) {
+      updated.add(rule);
+    } else {
+      updated.remove(rule);
+    }
+    await _repo.setSetting(
+      _enabledReminderRulesKey,
+      jsonEncode(updated.map((r) => r.name).toList()),
+    );
+    state = AsyncData(current.copyWith(enabledReminderRules: updated));
+  }
+
+  Future<void> setDailyDigestTime(TimeOfDay time) async {
+    await _repo.setSetting(_dailyDigestTimeKey, _timeOfDayToJson(time)!);
+    state = AsyncData((state.value ?? AppSettings.defaults()).copyWith(
+      dailyDigestTime: time,
+    ));
+  }
+
+  Future<void> setDueReminderLeadTime(Duration duration) async {
+    await _repo.setSetting(
+      _dueReminderLeadTimeMinutesKey,
+      '${duration.inMinutes}',
+    );
+    state = AsyncData((state.value ?? AppSettings.defaults()).copyWith(
+      dueReminderLeadTime: duration,
+    ));
+  }
+
+  Future<void> setQuietHours({TimeOfDay? start, TimeOfDay? end}) async {
+    if (start != null) {
+      await _repo.setSetting(_quietHoursStartKey, _timeOfDayToJson(start)!);
+    } else {
+      await _repo.setSetting(_quietHoursStartKey, '');
+    }
+    if (end != null) {
+      await _repo.setSetting(_quietHoursEndKey, _timeOfDayToJson(end)!);
+    } else {
+      await _repo.setSetting(_quietHoursEndKey, '');
+    }
+    state = AsyncData((state.value ?? AppSettings.defaults()).copyWith(
+      quietHoursStart: start,
+      clearQuietHoursStart: start == null,
+      quietHoursEnd: end,
+      clearQuietHoursEnd: end == null,
+    ));
+  }
+
+  Future<void> setWeekendReminders(bool enabled) async {
+    await _repo.setSetting(_weekendRemindersKey, '$enabled');
+    state = AsyncData((state.value ?? AppSettings.defaults()).copyWith(
+      weekendReminders: enabled,
+    ));
+  }
+
+  Future<void> setSnoozeDefault(Duration duration) async {
+    await _repo.setSetting(
+      _snoozeDefaultMinutesKey,
+      '${duration.inMinutes}',
+    );
+    state = AsyncData((state.value ?? AppSettings.defaults()).copyWith(
+      snoozeDefault: duration,
+    ));
   }
 
   Future<void> setIdleThreshold(Duration threshold) async {
@@ -231,6 +392,65 @@ class AppSettingsNotifier extends AsyncNotifier<AppSettings> {
     return Duration(minutes: minutes);
   }
 
+  Duration _durationFromMinutes(String? value, Duration fallback) {
+    final minutes = int.tryParse(value ?? '');
+    if (minutes == null || minutes <= 0) {
+      return fallback;
+    }
+    return Duration(minutes: minutes);
+  }
+
+  Set<ReminderRule> _reminderRulesFromJson(String? value) {
+    if (value == null || value.isEmpty) {
+      return ReminderRule.values.toSet();
+    }
+    try {
+      final list = jsonDecode(value) as List<dynamic>;
+      final set = <ReminderRule>{};
+      for (final item in list) {
+        for (final rule in ReminderRule.values) {
+          if (rule.name == item) {
+            set.add(rule);
+          }
+        }
+      }
+      return set;
+    } catch (_) {
+      return ReminderRule.values.toSet();
+    }
+  }
+
+  TimeOfDay _timeOfDayFromJson(String? value, TimeOfDay fallback) {
+    if (value == null || !value.contains(':')) return fallback;
+    try {
+      final parts = value.split(':');
+      final h = int.parse(parts[0]);
+      final m = int.parse(parts[1]);
+      return TimeOfDay(hour: h, minute: m);
+    } catch (_) {
+      return fallback;
+    }
+  }
+
+  TimeOfDay? _timeOfDayNullableFromJson(String? value) {
+    if (value == null || value.isEmpty || !value.contains(':')) return null;
+    try {
+      final parts = value.split(':');
+      final h = int.parse(parts[0]);
+      final m = int.parse(parts[1]);
+      return TimeOfDay(hour: h, minute: m);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  String? _timeOfDayToJson(TimeOfDay? time) {
+    if (time == null) return null;
+    final h = time.hour.toString().padLeft(2, '0');
+    final m = time.minute.toString().padLeft(2, '0');
+    return '$h:$m';
+  }
+
   HotKey _hotKeyFromJson(String? value) {
     if (value == null || value.isEmpty) return defaultQuickCaptureHotKey();
 
@@ -271,3 +491,4 @@ String hotKeyLabel(HotKey hotKey) {
 
   return ShortcutLabels.usesCommandKey ? parts.join(' ') : parts.join('+');
 }
+
