@@ -22,9 +22,11 @@ import 'package:workpulse/features/idle/views/idle_prompt_dialog.dart';
 import 'package:workpulse/features/notes/views/time_notes_view.dart';
 import 'package:workpulse/features/patterns/views/patterns_view.dart';
 import 'package:workpulse/features/people/views/people_view.dart';
+import 'package:workpulse/features/planner/views/planner_view.dart';
 import 'package:workpulse/features/projects/views/project_form_dialog.dart';
 import 'package:workpulse/features/projects/views/projects_view.dart';
 import 'package:workpulse/features/quick_capture/views/quick_capture_body.dart';
+import 'package:workpulse/features/reminders/providers/reminder_scheduler_provider.dart';
 import 'package:workpulse/features/reports/views/export_dialog.dart';
 import 'package:workpulse/features/reports/views/session_history_view.dart';
 import 'package:workpulse/features/settings/providers/app_settings_provider.dart';
@@ -98,6 +100,7 @@ class _MainShellViewState extends ConsumerState<MainShellView>
     _hotKeyService = ref.read(hotKeyServiceProvider);
     _windowService = ref.read(windowServiceProvider);
     _heartbeat = ref.read(activityHeartbeatServiceProvider);
+    ref.read(reminderSchedulerProvider);
     WidgetsBinding.instance.addObserver(this);
     Future.microtask(_initializeHotKey);
 
@@ -211,6 +214,7 @@ class _MainShellViewState extends ConsumerState<MainShellView>
         await ProjectFormDialog.show(context);
       case ShellNavTab.dashboard:
       case ShellNavTab.patterns:
+      case ShellNavTab.planner:
       case ShellNavTab.history:
       case ShellNavTab.notes:
       case ShellNavTab.timesheet:
@@ -571,6 +575,7 @@ class _ContentViewport extends StatelessWidget {
         child: switch (activeTab) {
           ShellNavTab.dashboard => const DashboardView(),
           ShellNavTab.patterns => const PatternsView(),
+          ShellNavTab.planner => const PlannerView(),
           ShellNavTab.history => const SessionHistoryView(),
           ShellNavTab.tasks => const TasksView(),
           ShellNavTab.notes => const TimeNotesView(),

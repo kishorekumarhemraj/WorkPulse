@@ -13,6 +13,7 @@ import 'package:workpulse/data/migrations/migration_v5.dart';
 import 'package:workpulse/data/migrations/migration_v6.dart';
 import 'package:workpulse/data/migrations/migration_v8.dart';
 import 'package:workpulse/data/migrations/migration_v9.dart';
+import 'package:workpulse/data/migrations/migration_v10.dart';
 
 void main() {
   setUpAll(() {
@@ -32,7 +33,7 @@ void main() {
       await dbService.close();
     });
 
-    test('All 18 SQLite tables are created with proper schema', () async {
+    test('All 19 SQLite tables are created with proper schema', () async {
       final db = dbService.database;
 
       final tables = [
@@ -53,6 +54,7 @@ void main() {
         Tables.workItemAttributeValues,
         Tables.sessionAttributeValues,
         Tables.projectTimesheetCodes,
+        Tables.workItemReminders,
         Tables.settings,
       ];
 
@@ -644,6 +646,136 @@ void main() {
         final kept = await upgraded
             .query(Tables.categories, where: 'id = ?', whereArgs: ['cat-v8-0']);
         expect(kept.first['color_hex'], equals('#123456'));
+
+        await dbService.close();
+      } finally {
+        await tempDir.delete(recursive: true);
+      }
+    });
+
+    test(
+        'v9 -> v10 upgrade adds columns and reminder table, is idempotent, enforces UNIQUE and cascade',
+        () async {
+      final tempDir =
+          await Directory.systemTemp.createTemp('workpulse_v10_upgrade_test');
+      final dbPath = p.join(tempDir.path, 'v10_test.db');
+
+      try {
+        // 1. A v9 database
+        final db = await databaseFactoryFfi.openDatabase(
+          dbPath,
+          options: OpenDatabaseOptions(
+            version: 9,
+            onConfigure: (db) => db.execute('PRAGMA foreign_keys = ON;'),
+            onCreate: (db, version) async {
+              await MigrationV1.execute(db);
+              await MigrationV2.execute(db);
+              await MigrationV3.execute(db);
+              await MigrationV4.execute(db);
+              await MigrationV5.execute(db);
+              await MigrationV6.execute(db);
+              await MigrationV8.execute(db);
+              await MigrationV9.execute(db);
+            },
+          ),
+        );
+
+        final now = DateTime.now().toUtc().toIso8601String();
+        await db.insert(Tables.projects, {
+          'id': 'proj-v9',
+          'workspace_id': MigrationV1.defaultWorkspaceId,
+          'name': 'Existing Project',
+          'created_at': now,
+          'updated_at': now,
+        });
+        await db.insert(Tables.categories, {
+          'id': 'cat-v9',
+          'workspace_id': MigrationV1.defaultWorkspaceId,
+          'name': 'Existing Category',
+          'color_hex': '#0A84FF',
+          'created_at': now,
+          'updated_at': now,
+        });
+        await db.insert(Tables.workItems, {
+          'id': 'wi-v9',
+          'workspace_id': MigrationV1.defaultWorkspaceId,
+          'name': 'Existing Task',
+          'project_id': 'proj-v9',
+          'category_id': 'cat-v9',
+          'created_at': now,
+          'updated_at': now,
+        });
+        await db.close();
+
+        // 2. Upgrade to v10
+        final dbService = DatabaseService();
+        await dbService.initialize(customPath: dbPath);
+        final upgraded = dbService.database;
+
+        final wiCols =
+            await upgraded.rawQuery('PRAGMA table_info(${Tables.workItems});');
+        final wiColNames = wiCols.map((c) => c['name'] as String).toSet();
+        expect(wiColNames, contains('planned_start_date'));
+        expect(wiColNames, contains('due_date'));
+        expect(wiColNames, contains('completed_at'));
+
+        // Existing row has NULLs
+        final existingWi = await upgraded.query(
+          Tables.workItems,
+          where: 'id = ?',
+          whereArgs: ['wi-v9'],
+        );
+        expect(existingWi.first['planned_start_date'], isNull);
+        expect(existingWi.first['due_date'], isNull);
+        expect(existingWi.first['completed_at'], isNull);
+
+        // Reminders table exists
+        final reminderCols = await upgraded
+            .rawQuery('PRAGMA table_info(${Tables.workItemReminders});');
+        final reminderColNames =
+            reminderCols.map((c) => c['name'] as String).toSet();
+        expect(reminderColNames, contains('rule'));
+        expect(reminderColNames, contains('occurrence_key'));
+        expect(reminderColNames, contains('anchor_date'));
+        expect(reminderColNames, contains('delivered_at'));
+
+        // Test UNIQUE constraint on (work_item_id, rule, occurrence_key)
+        await upgraded.insert(Tables.workItemReminders, {
+          'id': 'rem-1',
+          'work_item_id': 'wi-v9',
+          'rule': 'due_today',
+          'occurrence_key': '2026-09-03',
+          'anchor_date': '2026-09-03',
+          'delivered_at': now,
+        });
+
+        expect(
+          () async => await upgraded.insert(Tables.workItemReminders, {
+            'id': 'rem-2',
+            'work_item_id': 'wi-v9',
+            'rule': 'due_today',
+            'occurrence_key': '2026-09-03',
+            'anchor_date': '2026-09-03',
+            'delivered_at': now,
+          }),
+          throwsA(isA<DatabaseException>()),
+        );
+
+        // Test ON DELETE CASCADE
+        await upgraded.delete(
+          Tables.workItems,
+          where: 'id = ?',
+          whereArgs: ['wi-v9'],
+        );
+        final remainingReminders = await upgraded.query(
+          Tables.workItemReminders,
+          where: 'work_item_id = ?',
+          whereArgs: ['wi-v9'],
+        );
+        expect(remainingReminders, isEmpty);
+
+        // 3. Re-run idempotency
+        await expectLater(MigrationV10.execute(upgraded), completes);
 
         await dbService.close();
       } finally {

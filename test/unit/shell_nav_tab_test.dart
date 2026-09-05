@@ -3,7 +3,7 @@ import 'package:workpulse/features/shell/models/shell_nav_tab.dart';
 
 void main() {
   group('Sidebar navigation order', () {
-    test('Track runs Dashboard, Patterns, Work Items, Log, Notes, Sheet', () {
+    test('Track runs Dashboard, Patterns, Planner, Work Items, Log, Notes, Sheet', () {
       // Pinned because the order is what a user's muscle memory and the
       // digit shortcuts both key off — it must not drift when a tab is added.
       expect(
@@ -11,6 +11,7 @@ void main() {
         [
           'Dashboard',
           'Patterns & Signals',
+          'Planner',
           'Work Items',
           'Time Log',
           'Time Notes',
@@ -40,7 +41,9 @@ void main() {
 
     test('shortcut digits follow the sidebar, starting at 1', () {
       expect(ShellNavTab.dashboard.shortcutDigit, 1);
-      expect(ShellNavTab.timesheet.shortcutDigit, 6);
+      expect(ShellNavTab.planner.shortcutDigit, 3);
+      expect(ShellNavTab.tasks.shortcutDigit, 4);
+      expect(ShellNavTab.timesheet.shortcutDigit, 7);
     });
 
     test('the Time Sheet is findable by what it reports on', () {
