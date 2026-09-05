@@ -15,9 +15,11 @@ import 'package:workpulse/core/widgets/app_snack_bar.dart';
 import 'package:workpulse/core/widgets/searchable_multi_select.dart';
 import 'package:workpulse/data/providers/repository_providers.dart';
 import 'package:workpulse/domain/models/attribute_model.dart';
+import 'package:workpulse/domain/models/calendar_date.dart';
 import 'package:workpulse/domain/models/financial_classification.dart';
 import 'package:workpulse/domain/models/session_model.dart';
 import 'package:workpulse/domain/models/work_item_model.dart';
+import 'package:workpulse/domain/models/work_item_plan.dart';
 import 'package:workpulse/domain/services/export_service.dart';
 import 'package:workpulse/domain/services/timer_service.dart';
 import 'package:workpulse/features/attributes/providers/attribute_definitions_provider.dart';
@@ -76,6 +78,9 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
   String? _selectedProjectId;
   String? _selectedCategoryId;
   late FinancialClassification _classification;
+  CalendarDate? _plannedStart;
+  CalendarDate? _due;
+  DateTime? _completedAt;
   late List<String> _selectedTagIds;
   late List<String> _selectedPeopleIds;
   final Map<String, dynamic> _attributeValues = {};
@@ -91,6 +96,9 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
         widget.workItem?.categoryId ?? widget.initialCategoryId;
     _classification = widget.workItem?.financialClassification ??
         FinancialClassification.none;
+    _plannedStart = widget.workItem?.plan.plannedStart;
+    _due = widget.workItem?.plan.due;
+    _completedAt = widget.workItem?.plan.completedAt;
     _selectedTagIds = List.from(widget.workItem?.tagIds ?? []);
     _selectedPeopleIds = List.from(widget.workItem?.peopleIds ?? []);
 
@@ -166,8 +174,25 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
       return;
     }
 
+    if (_plannedStart != null && _due != null && _due! < _plannedStart!) {
+      final startStr =
+          DateFormat('d MMM').format(_plannedStart!.toLocalDateTime());
+      ScaffoldMessenger.of(context).showAppSnackBar(
+        AppSnackBar.failure(
+          message: 'Due date is before the planned start ($startStr)',
+        ),
+      );
+      return;
+    }
+
     setState(() => _isSubmitting = true);
     try {
+      final plan = WorkItemPlan(
+        plannedStart: _plannedStart,
+        due: _due,
+        completedAt: _completedAt,
+      );
+
       WorkItem result;
       if (widget.workItem == null) {
         result = await ref.read(workItemsProvider.notifier).createWorkItem(
@@ -175,6 +200,7 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
               projectId: _selectedProjectId!,
               categoryId: _selectedCategoryId!,
               classification: _classification,
+              plan: plan,
               tagIds: _selectedTagIds,
               peopleIds: _selectedPeopleIds,
             );
@@ -185,6 +211,7 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
                 projectId: _selectedProjectId!,
                 categoryId: _selectedCategoryId!,
                 financialClassification: _classification,
+                plan: plan,
                 tagIds: _selectedTagIds,
                 peopleIds: _selectedPeopleIds,
               ),
@@ -281,6 +308,23 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
       ScaffoldMessenger.of(context).showAppSnackBar(
         AppSnackBar.failure(message: 'Could not create tag: $error'),
       );
+    }
+  }
+
+  Future<void> _pickDate({
+    required CalendarDate? initialDate,
+    required ValueChanged<CalendarDate?> onSelected,
+  }) async {
+    final now = DateTime.now();
+    final initial = initialDate?.toLocalDateTime() ?? now;
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initial,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+    );
+    if (picked != null) {
+      onSelected(CalendarDate.fromLocal(picked));
     }
   }
 
@@ -524,6 +568,122 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
                 _classification.description,
                 style:
                     TextStyle(fontSize: 12, color: context.colors.textTertiary),
+              ),
+              const SizedBox(height: 16),
+
+              // Plan section: Planned start, Due date, and Mark complete
+              Text('Plan',
+                  style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: context.colors.textSecondary)),
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  Expanded(
+                    child: _DateField(
+                      label: 'Planned Start',
+                      value: _plannedStart,
+                      onTap: () => _pickDate(
+                        initialDate: _plannedStart,
+                        onSelected: (date) =>
+                            setState(() => _plannedStart = date),
+                      ),
+                      onClear: _plannedStart != null
+                          ? () => setState(() => _plannedStart = null)
+                          : null,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: _DateField(
+                      label: 'Due Date',
+                      value: _due,
+                      onTap: () => _pickDate(
+                        initialDate: _due,
+                        onSelected: (date) => setState(() => _due = date),
+                      ),
+                      onClear: _due != null
+                          ? () => setState(() => _due = null)
+                          : null,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Checkbox(
+                    value: _completedAt != null,
+                    onChanged: (val) {
+                      setState(() {
+                        if (val == true) {
+                          _completedAt = DateTime.now().toUtc();
+                        } else {
+                          _completedAt = null;
+                        }
+                      });
+                    },
+                  ),
+                  InkWell(
+                    onTap: () {
+                      setState(() {
+                        if (_completedAt != null) {
+                          _completedAt = null;
+                        } else {
+                          _completedAt = DateTime.now().toUtc();
+                        }
+                      });
+                    },
+                    child: Text(
+                      'Mark complete',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: context.colors.textPrimary,
+                      ),
+                    ),
+                  ),
+                  if (_completedAt != null) ...[
+                    const SizedBox(width: 8),
+                    Text(
+                      '(${DateFormat('MMM d, HH:mm').format(_completedAt!.toLocal())})',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: context.colors.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    InkWell(
+                      onTap: () async {
+                        final picked = await showDatePicker(
+                          context: context,
+                          initialDate: _completedAt!.toLocal(),
+                          firstDate: DateTime(2000),
+                          lastDate: DateTime(2100),
+                        );
+                        if (picked != null) {
+                          final now = DateTime.now();
+                          final updated = DateTime(
+                            picked.year,
+                            picked.month,
+                            picked.day,
+                            now.hour,
+                            now.minute,
+                          ).toUtc();
+                          setState(() => _completedAt = updated);
+                        }
+                      },
+                      child: Text(
+                        'Edit date',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: context.colors.accent,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
               ),
               const SizedBox(height: 16),
 
@@ -994,3 +1154,83 @@ class _MultiSelectField extends StatelessWidget {
     );
   }
 }
+
+class _DateField extends StatelessWidget {
+  final String label;
+  final CalendarDate? value;
+  final VoidCallback onTap;
+  final VoidCallback? onClear;
+
+  const _DateField({
+    required this.label,
+    required this.value,
+    required this.onTap,
+    this.onClear,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    final text = value != null
+        ? DateFormat('d MMM yyyy').format(value!.toLocalDateTime())
+        : 'Not set';
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: Radii.smAll,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: colors.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            decoration: BoxDecoration(
+              border: Border.all(color: colors.divider),
+              borderRadius: Radii.smAll,
+              color: colors.surface,
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.calendar_today_outlined,
+                  size: 14,
+                  color: value != null ? colors.accent : colors.textSecondary,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    text,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: value != null
+                          ? colors.textPrimary
+                          : colors.textSecondary,
+                    ),
+                  ),
+                ),
+                if (onClear != null)
+                  InkWell(
+                    onTap: onClear,
+                    child: Icon(
+                      Icons.close,
+                      size: 14,
+                      color: colors.textSecondary,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+

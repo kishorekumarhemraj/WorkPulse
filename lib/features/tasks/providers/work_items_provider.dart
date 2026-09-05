@@ -2,11 +2,29 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import 'package:workpulse/data/providers/repository_providers.dart';
+import 'package:workpulse/domain/models/calendar_date.dart';
 import 'package:workpulse/domain/models/financial_classification.dart';
 import 'package:workpulse/domain/models/work_item_model.dart';
+import 'package:workpulse/domain/models/work_item_plan.dart';
 import 'package:workpulse/features/workspace/providers/workspace_provider.dart';
 
 const _uuid = Uuid();
+
+enum PlanFilter {
+  all,
+  overdue,
+  dueToday,
+  dueThisWeek,
+  scheduled,
+  unplanned,
+  completed,
+}
+
+enum WorkItemSort {
+  recent,
+  dueDate,
+  name,
+}
 
 class WorkItemFilter extends Equatable {
   final String searchQuery;
@@ -14,6 +32,8 @@ class WorkItemFilter extends Equatable {
   final String? categoryId;
   final String? tagId;
   final String? personId;
+  final PlanFilter planFilter;
+  final WorkItemSort sort;
   final bool includeArchived;
 
   const WorkItemFilter({
@@ -22,6 +42,8 @@ class WorkItemFilter extends Equatable {
     this.categoryId,
     this.tagId,
     this.personId,
+    this.planFilter = PlanFilter.all,
+    this.sort = WorkItemSort.recent,
     this.includeArchived = false,
   });
 
@@ -35,6 +57,8 @@ class WorkItemFilter extends Equatable {
     bool clearTag = false,
     String? personId,
     bool clearPerson = false,
+    PlanFilter? planFilter,
+    WorkItemSort? sort,
     bool? includeArchived,
   }) {
     return WorkItemFilter(
@@ -43,6 +67,8 @@ class WorkItemFilter extends Equatable {
       categoryId: clearCategory ? null : (categoryId ?? this.categoryId),
       tagId: clearTag ? null : (tagId ?? this.tagId),
       personId: clearPerson ? null : (personId ?? this.personId),
+      planFilter: planFilter ?? this.planFilter,
+      sort: sort ?? this.sort,
       includeArchived: includeArchived ?? this.includeArchived,
     );
   }
@@ -53,7 +79,79 @@ class WorkItemFilter extends Equatable {
       categoryId != null ||
       tagId != null ||
       personId != null ||
+      planFilter != PlanFilter.all ||
       includeArchived;
+
+  List<WorkItem> filter(List<WorkItem> items, {CalendarDate? today}) {
+    final curToday = today ?? CalendarDate.fromLocal(DateTime.now());
+    final filtered = items.where((item) {
+      if (!includeArchived && item.isArchived) {
+        return false;
+      }
+      if (searchQuery.isNotEmpty &&
+          !item.name.toLowerCase().contains(searchQuery.toLowerCase()) &&
+          !(item.notes?.toLowerCase().contains(searchQuery.toLowerCase()) ??
+              false)) {
+        return false;
+      }
+      if (projectId != null && item.projectId != projectId) {
+        return false;
+      }
+      if (categoryId != null && item.categoryId != categoryId) {
+        return false;
+      }
+      if (tagId != null && !item.tagIds.contains(tagId)) {
+        return false;
+      }
+      if (personId != null && !item.peopleIds.contains(personId)) {
+        return false;
+      }
+
+      switch (planFilter) {
+        case PlanFilter.all:
+          return true;
+        case PlanFilter.overdue:
+          return item.plan.statusOn(curToday) == PlanStatus.overdue;
+        case PlanFilter.dueToday:
+          return item.plan.statusOn(curToday) == PlanStatus.dueToday;
+        case PlanFilter.dueThisWeek:
+          if (item.plan.isComplete || item.plan.due == null) return false;
+          final diff = item.plan.due!.differenceInDays(curToday);
+          return diff >= 0 && diff <= 7;
+        case PlanFilter.scheduled:
+          return item.plan.statusOn(curToday) == PlanStatus.scheduled;
+        case PlanFilter.unplanned:
+          return item.plan.statusOn(curToday) == PlanStatus.unplanned;
+        case PlanFilter.completed:
+          return item.plan.statusOn(curToday) == PlanStatus.completed;
+      }
+    }).toList();
+
+    // Apply client-side sorting
+    filtered.sort((a, b) {
+      switch (sort) {
+        case WorkItemSort.recent:
+          final aTime = a.lastWorkedAt ?? a.updatedAt;
+          final bTime = b.lastWorkedAt ?? b.updatedAt;
+          return bTime.compareTo(aTime);
+        case WorkItemSort.dueDate:
+          final aDue = a.plan.due;
+          final bDue = b.plan.due;
+          if (aDue != null && bDue != null) {
+            final cmp = aDue.compareTo(bDue);
+            if (cmp != 0) return cmp;
+            return b.updatedAt.compareTo(a.updatedAt);
+          }
+          if (aDue != null && bDue == null) return -1;
+          if (aDue == null && bDue != null) return 1;
+          return b.updatedAt.compareTo(a.updatedAt);
+        case WorkItemSort.name:
+          return a.name.toLowerCase().compareTo(b.name.toLowerCase());
+      }
+    });
+
+    return filtered;
+  }
 
   @override
   List<Object?> get props => [
@@ -62,6 +160,8 @@ class WorkItemFilter extends Equatable {
         categoryId,
         tagId,
         personId,
+        planFilter,
+        sort,
         includeArchived,
       ];
 }
@@ -111,6 +211,14 @@ class WorkItemFilterNotifier extends Notifier<WorkItemFilter> {
     }
   }
 
+  void setPlanFilter(PlanFilter planFilter) {
+    state = state.copyWith(planFilter: planFilter);
+  }
+
+  void setSort(WorkItemSort sort) {
+    state = state.copyWith(sort: sort);
+  }
+
   void toggleIncludeArchived() {
     state = state.copyWith(includeArchived: !state.includeArchived);
   }
@@ -146,26 +254,8 @@ class WorkItemsNotifier extends AsyncNotifier<List<WorkItem>> {
       );
     }
 
-    // Apply client-side filters for project, category, tag, and person
-    return items.where((item) {
-      if (!filter.includeArchived && item.isArchived) {
-        return false;
-      }
-      if (filter.projectId != null && item.projectId != filter.projectId) {
-        return false;
-      }
-      if (filter.categoryId != null && item.categoryId != filter.categoryId) {
-        return false;
-      }
-      if (filter.tagId != null && !item.tagIds.contains(filter.tagId)) {
-        return false;
-      }
-      if (filter.personId != null &&
-          !item.peopleIds.contains(filter.personId)) {
-        return false;
-      }
-      return true;
-    }).toList();
+    final today = CalendarDate.fromLocal(DateTime.now());
+    return filter.filter(items, today: today);
   }
 
   Future<WorkItem> createWorkItem({
@@ -173,6 +263,7 @@ class WorkItemsNotifier extends AsyncNotifier<List<WorkItem>> {
     required String projectId,
     required String categoryId,
     FinancialClassification classification = FinancialClassification.none,
+    WorkItemPlan plan = const WorkItemPlan.unplanned(),
     String? notes,
     List<String> tagIds = const [],
     List<String> peopleIds = const [],
@@ -188,6 +279,7 @@ class WorkItemsNotifier extends AsyncNotifier<List<WorkItem>> {
       projectId: projectId,
       categoryId: categoryId,
       financialClassification: classification,
+      plan: plan,
       notes: notes?.trim().isEmpty == true ? null : notes?.trim(),
       tagIds: tagIds,
       peopleIds: peopleIds,
@@ -207,6 +299,35 @@ class WorkItemsNotifier extends AsyncNotifier<List<WorkItem>> {
     ref.invalidateSelf();
     await future;
     return updated;
+  }
+
+  Future<void> setPlan(String id, WorkItemPlan plan) async {
+    final workItemRepo = ref.read(workItemRepositoryProvider);
+    await workItemRepo.updatePlan(id, plan);
+    ref.invalidateSelf();
+    await future;
+  }
+
+  Future<void> completeWorkItem(String id, [DateTime? completedAt]) async {
+    final workItemRepo = ref.read(workItemRepositoryProvider);
+    final existing = await workItemRepo.getById(id);
+    if (existing == null) return;
+    final updatedPlan = existing.plan.copyWith(
+      completedAt: (completedAt ?? DateTime.now()).toUtc(),
+    );
+    await workItemRepo.updatePlan(id, updatedPlan);
+    ref.invalidateSelf();
+    await future;
+  }
+
+  Future<void> reopenWorkItem(String id) async {
+    final workItemRepo = ref.read(workItemRepositoryProvider);
+    final existing = await workItemRepo.getById(id);
+    if (existing == null) return;
+    final updatedPlan = existing.plan.copyWith(clearCompletedAt: true);
+    await workItemRepo.updatePlan(id, updatedPlan);
+    ref.invalidateSelf();
+    await future;
   }
 
   Future<void> archiveWorkItem(String id) async {
