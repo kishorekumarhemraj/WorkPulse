@@ -204,6 +204,14 @@ class _PlannerViewState extends ConsumerState<PlannerView> {
                 continue;
               }
 
+              final isDueThisWeek = plan.due != null &&
+                  plan.due! > today &&
+                  plan.due!.differenceInDays(today) <= daysUntilEndOfWeek;
+              final isStartingThisWeek = plan.plannedStart != null &&
+                  plan.plannedStart! > today &&
+                  plan.plannedStart!.differenceInDays(today) <=
+                      daysUntilEndOfWeek;
+
               if (plan.due != null && plan.due! < today) {
                 overdue.add(item);
               } else if (plan.due != null && plan.due! == today) {
@@ -211,9 +219,7 @@ class _PlannerViewState extends ConsumerState<PlannerView> {
               } else if (plan.plannedStart != null &&
                   plan.plannedStart! == today) {
                 startingToday.add(item);
-              } else if (plan.due != null &&
-                  plan.due! > today &&
-                  plan.due!.differenceInDays(today) <= daysUntilEndOfWeek) {
+              } else if (isDueThisWeek || isStartingThisWeek) {
                 thisWeek.add(item);
               } else if (plan.due != null || plan.plannedStart != null) {
                 later.add(item);
@@ -225,7 +231,11 @@ class _PlannerViewState extends ConsumerState<PlannerView> {
                 (a, b) => a.plan.due!.compareTo(b.plan.due!)); // oldest first
             dueToday.sort((a, b) => a.name.compareTo(b.name));
             startingToday.sort((a, b) => a.name.compareTo(b.name));
-            thisWeek.sort((a, b) => a.plan.due!.compareTo(b.plan.due!));
+            thisWeek.sort((a, b) {
+              final aDate = a.plan.due ?? a.plan.plannedStart!;
+              final bDate = b.plan.due ?? b.plan.plannedStart!;
+              return aDate.compareTo(bDate);
+            });
             later.sort((a, b) {
               final aDate = a.plan.due ?? a.plan.plannedStart!;
               final bDate = b.plan.due ?? b.plan.plannedStart!;
