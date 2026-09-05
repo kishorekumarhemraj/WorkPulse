@@ -187,14 +187,26 @@ class ExportService {
       // Idle Periods
       final idles = await _idlePeriodRepository.getIdlePeriodsForSession(s.id);
       Duration totalIdle = Duration.zero;
+      Duration idleInsideSession = Duration.zero;
+      final sessionEnd = s.endTime ?? DateTime.now().toUtc();
+
       for (final idl in idles) {
         if (idl.resolution == IdleResolution.markIdle) {
           totalIdle += idl.duration;
+          final overlapStart =
+              idl.startTime.isAfter(s.startTime) ? idl.startTime : s.startTime;
+          final overlapEnd =
+              idl.endTime.isBefore(sessionEnd) ? idl.endTime : sessionEnd;
+          if (overlapEnd.isAfter(overlapStart)) {
+            idleInsideSession += overlapEnd.difference(overlapStart);
+          }
         }
       }
 
-      final gross = s.duration;
-      final net = gross > totalIdle ? gross - totalIdle : Duration.zero;
+      final net = s.duration > idleInsideSession
+          ? s.duration - idleInsideSession
+          : Duration.zero;
+      final gross = net + totalIdle;
 
       // Custom Attributes (Task + Session values)
       List<WorkItemAttributeValue> taskValues;
