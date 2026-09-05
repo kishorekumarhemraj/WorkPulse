@@ -7,12 +7,15 @@ import 'package:workpulse/core/theme/icon_utils.dart';
 import 'package:workpulse/core/widgets/app_card.dart';
 import 'package:workpulse/core/widgets/entity_chip.dart';
 import 'package:workpulse/core/widgets/status_badge.dart';
+import 'package:workpulse/domain/models/calendar_date.dart';
 import 'package:workpulse/domain/models/category_model.dart';
 import 'package:workpulse/domain/models/person_model.dart';
 import 'package:workpulse/domain/models/project_model.dart';
 import 'package:workpulse/domain/models/tag_model.dart';
 import 'package:workpulse/domain/models/work_item_model.dart';
+import 'package:workpulse/domain/models/work_item_plan.dart';
 import 'package:workpulse/domain/services/timer_service.dart';
+import 'package:workpulse/features/tasks/providers/work_items_provider.dart';
 import 'package:workpulse/features/tasks/widgets/work_items_toolbar.dart';
 import 'package:workpulse/features/timer/providers/task_duration_provider.dart';
 import 'package:workpulse/features/timer/providers/timer_provider.dart';
@@ -51,12 +54,102 @@ class WorkItemRow extends ConsumerWidget {
     required this.onDelete,
   });
 
+  Widget? _buildPlanBadge(BuildContext context, WorkItemPlan plan) {
+    final today = CalendarDate.fromLocal(DateTime.now());
+    final status = plan.statusOn(today);
+    if (status == PlanStatus.unplanned) return null;
+
+    String monthName(int month) {
+      const months = [
+        'JAN',
+        'FEB',
+        'MAR',
+        'APR',
+        'MAY',
+        'JUN',
+        'JUL',
+        'AUG',
+        'SEP',
+        'OCT',
+        'NOV',
+        'DEC'
+      ];
+      return months[month - 1];
+    }
+
+    switch (status) {
+      case PlanStatus.overdue:
+        final days = plan.daysUntilDue(today)?.abs();
+        final label = days != null && days > 1 ? '$days DAYS LATE' : 'OVERDUE';
+        return StatusBadge(
+          label: label,
+          icon: Icons.warning_amber_rounded,
+          tone: BadgeTone.danger,
+          emphasis: true,
+        );
+      case PlanStatus.dueToday:
+        return const StatusBadge(
+          label: 'DUE TODAY',
+          icon: Icons.alarm,
+          tone: BadgeTone.warning,
+          emphasis: true,
+        );
+      case PlanStatus.startsToday:
+        return const StatusBadge(
+          label: 'STARTS TODAY',
+          icon: Icons.play_arrow_outlined,
+          tone: BadgeTone.accent,
+          emphasis: true,
+        );
+      case PlanStatus.scheduled:
+        final d = plan.plannedStart!;
+        return StatusBadge(
+          label: '${d.day} ${monthName(d.month)}',
+          icon: Icons.calendar_today_outlined,
+          tone: BadgeTone.info,
+        );
+      case PlanStatus.open:
+        final d = plan.due!;
+        return StatusBadge(
+          label: 'DUE ${d.day} ${monthName(d.month)}',
+          icon: Icons.event_outlined,
+          tone: BadgeTone.neutral,
+        );
+      case PlanStatus.completed:
+        if (plan.wasLate == true) {
+          return const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              StatusBadge(
+                label: 'DONE',
+                icon: Icons.check_circle_outline,
+                tone: BadgeTone.success,
+              ),
+              SizedBox(width: Spacing.xs),
+              StatusBadge(
+                label: 'LATE',
+                tone: BadgeTone.danger,
+              ),
+            ],
+          );
+        }
+        return const StatusBadge(
+          label: 'DONE',
+          icon: Icons.check_circle_outline,
+          tone: BadgeTone.success,
+        );
+      case PlanStatus.unplanned:
+        return null;
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = context.colors;
     final theme = Theme.of(context);
     final projectColor = ColorUtils.parseHex(project?.colorHex);
     final isCompact = density == ListDensity.compact;
+    final planBadge = _buildPlanBadge(context, item.plan);
 
     final isItemActive = ref.watch(
       timerProvider.select(
@@ -100,6 +193,10 @@ class WorkItemRow extends ConsumerWidget {
                         ),
                       ),
                     ),
+                    if (planBadge != null) ...[
+                      const SizedBox(width: Spacing.sm),
+                      planBadge,
+                    ],
                     if (isItemActive) ...[
                       const SizedBox(width: Spacing.sm),
                       const StatusBadge(
@@ -182,16 +279,74 @@ class WorkItemRow extends ConsumerWidget {
               color: colors.textSecondary,
             ),
             tooltip: 'More actions',
-            onSelected: (value) => switch (value) {
-              'edit' => onEdit(),
-              'archive' || 'unarchive' => onArchiveToggle(),
-              'delete' => onDelete(),
-              _ => null,
+            onSelected: (value) async {
+              switch (value) {
+                case 'edit':
+                  onEdit();
+                  break;
+                case 'complete':
+                  await ref
+                      .read(workItemsProvider.notifier)
+                      .completeWorkItem(item.id);
+                  break;
+                case 'reopen':
+                  await ref
+                      .read(workItemsProvider.notifier)
+                      .reopenWorkItem(item.id);
+                  break;
+                case 'set_due_date':
+                  final picked = await showDatePicker(
+                    context: context,
+                    initialDate: item.plan.due?.toLocalDateTime() ??
+                        DateTime.now(),
+                    firstDate: DateTime(2000),
+                    lastDate: DateTime(2100),
+                  );
+                  if (picked != null) {
+                    final newPlan = item.plan.copyWith(
+                      due: CalendarDate.fromLocal(picked),
+                    );
+                    await ref
+                        .read(workItemsProvider.notifier)
+                        .setPlan(item.id, newPlan);
+                  }
+                  break;
+                case 'archive':
+                case 'unarchive':
+                  onArchiveToggle();
+                  break;
+                case 'delete':
+                  onDelete();
+                  break;
+              }
             },
             itemBuilder: (context) => [
               const PopupMenuItem(
                 value: 'edit',
                 child: _MenuRow(icon: Icons.edit_outlined, label: 'Edit'),
+              ),
+              if (item.plan.isComplete)
+                const PopupMenuItem(
+                  value: 'reopen',
+                  child: _MenuRow(
+                    icon: Icons.replay_outlined,
+                    label: 'Reopen',
+                  ),
+                )
+              else
+                const PopupMenuItem(
+                  value: 'complete',
+                  child: _MenuRow(
+                    icon: Icons.check_circle_outline,
+                    label: 'Mark complete',
+                  ),
+                ),
+              const PopupMenuItem(
+                value: 'set_due_date',
+                child: _MenuRow(
+                  icon: Icons.calendar_today_outlined,
+                  label: 'Set due date…',
+                ),
               ),
               if (item.isArchived)
                 const PopupMenuItem(
