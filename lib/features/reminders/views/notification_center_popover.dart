@@ -29,7 +29,7 @@ class NotificationCenterDialog extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = context.colors;
     final remindersAsync = ref.watch(remindersProvider);
-    final workItems = ref.watch(workItemsProvider).value ?? [];
+    final workItems = ref.watch(unfilteredWorkItemsProvider).value ?? [];
     final workItemMap = {for (final item in workItems) item.id: item};
 
     return AppDialog(

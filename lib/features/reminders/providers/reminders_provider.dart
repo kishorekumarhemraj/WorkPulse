@@ -57,5 +57,5 @@ class RemindersNotifier extends AsyncNotifier<List<WorkItemReminderRecord>> {
 
 final unreadRemindersCountProvider = Provider<int>((ref) {
   final reminders = ref.watch(remindersProvider).value ?? [];
-  return reminders.where((r) => !r.isRead).length;
+  return reminders.where((r) => !r.isRead && !r.isSnoozed).length;
 });
