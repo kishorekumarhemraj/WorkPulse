@@ -58,7 +58,10 @@ class QuickCaptureNotifier extends Notifier<QuickCaptureState> {
   }
 
   void setCategory(String? categoryId) {
-    state = state.copyWith(selectedCategoryId: categoryId);
+    state = state.copyWith(
+      selectedCategoryId: categoryId,
+      hasExplicitCategorySelection: true,
+    );
   }
 
   void toggleTag(String tagId) {
@@ -94,21 +97,23 @@ class QuickCaptureNotifier extends Notifier<QuickCaptureState> {
     state = QuickCaptureState(
       selectedProjectId: projects.isNotEmpty ? projects.first.id : null,
       selectedCategoryId: categories.isNotEmpty ? categories.first.id : null,
+      hasExplicitCategorySelection: false,
     );
   }
 
   /// Starts tracking an existing work item.
+  /// Per AGENTS.md rule 7: TimerService handles session category inheritance
+  /// (from the task's previous session, or the task's category if first session)
+  /// unless the user explicitly selected a category in Quick Capture.
+  /// Similarly, tags and people seed only on the first session unless explicitly chosen.
   Future<void> startExistingTask(WorkItem task) async {
-    final sessionCatId = state.selectedCategoryId ?? task.categoryId;
+    final explicitCategoryId =
+        state.hasExplicitCategorySelection ? state.selectedCategoryId : null;
     await ref.read(timerProvider.notifier).startTimer(
           task,
-          categoryId: sessionCatId,
-          tagIds: state.selectedTagIds.isNotEmpty
-              ? state.selectedTagIds
-              : task.tagIds,
-          peopleIds: state.selectedPeopleIds.isNotEmpty
-              ? state.selectedPeopleIds
-              : task.peopleIds,
+          categoryId: explicitCategoryId,
+          tagIds: state.selectedTagIds,
+          peopleIds: state.selectedPeopleIds,
         );
     reset();
   }

@@ -183,8 +183,9 @@ class SessionEditorController {
     }
 
     // Save session-scoped attributes if provided
+    final attrRepo = _ref.read(attributeRepositoryProvider);
     if (attributeValues.isNotEmpty) {
-      final attrRepo = _ref.read(attributeRepositoryProvider);
+      await attrRepo.deleteSessionValuesBySessionId(sessionId);
       final definitions = _ref.read(attributeDefinitionsProvider).value ?? [];
       final sessionDefs = definitions
           .where((d) =>
@@ -218,8 +219,24 @@ class SessionEditorController {
             optId = entry.value.toString();
             break;
           case AttributeType.multiSelect:
-            textVal = (entry.value as List).join(',');
-            break;
+            final selectedOptionIds = entry.value is Iterable
+                ? (entry.value as Iterable)
+                    .where((v) => v != null)
+                    .map((v) => v.toString())
+                : [entry.value.toString()];
+            for (final oId in selectedOptionIds) {
+              await attrRepo.setSessionValue(
+                SessionAttributeValue(
+                  id: _uuid.v4(),
+                  sessionId: sessionId,
+                  attributeDefinitionId: def.id,
+                  optionId: oId,
+                  createdAt: now,
+                  updatedAt: now,
+                ),
+              );
+            }
+            continue;
           case AttributeType.date:
             dateVal = entry.value is DateTime
                 ? entry.value as DateTime
