@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 
 abstract class DesktopNotificationService {
@@ -10,11 +11,17 @@ abstract class DesktopNotificationService {
     String? payload,
   });
   Stream<String> get onNotificationClicked;
+  void dispose();
 }
 
 class DesktopNotificationServiceImpl implements DesktopNotificationService {
   final _clickController = StreamController<String>.broadcast();
   bool _isInitialized = false;
+
+  @override
+  void dispose() {
+    _clickController.close();
+  }
 
   @override
   Future<void> initialize() async {
@@ -30,6 +37,32 @@ class DesktopNotificationServiceImpl implements DesktopNotificationService {
     String? payload,
   }) async {
     debugPrint('[WorkPulse Notification] $title: $body');
+
+    try {
+      if (Platform.isMacOS) {
+        // Escape quotes and backslashes for AppleScript
+        final safeTitle = title.replaceAll('\\', '\\\\').replaceAll('"', '\\"');
+        final safeBody = body.replaceAll('\\', '\\\\').replaceAll('"', '\\"');
+        await Process.run('osascript', [
+          '-e',
+          'display notification "$safeBody" with title "WorkPulse" subtitle "$safeTitle"',
+        ]);
+      } else if (Platform.isWindows) {
+        // Fallback or PowerShell notification
+        final safeTitle = title.replaceAll('"', '`"');
+        final safeBody = body.replaceAll('"', '`"');
+        await Process.run('powershell', [
+          '-Command',
+          'Add-Type -AssemblyName System.Windows.Forms; '
+              '\$notify = New-Object System.Windows.Forms.NotifyIcon; '
+              '\$notify.Icon = [System.Drawing.SystemIcons]::Information; '
+              '\$notify.Visible = \$True; '
+              '\$notify.ShowBalloonTip(5000, "$safeTitle", "$safeBody", [System.Windows.Forms.ToolTipIcon]::Info);',
+        ]);
+      }
+    } catch (e) {
+      debugPrint('[WorkPulse Notification] Failed to display native notification: $e');
+    }
   }
 
   @override
@@ -64,4 +97,9 @@ class NoOpDesktopNotificationService implements DesktopNotificationService {
 
   @override
   Stream<String> get onNotificationClicked => _clickController.stream;
+
+  @override
+  void dispose() {
+    _clickController.close();
+  }
 }

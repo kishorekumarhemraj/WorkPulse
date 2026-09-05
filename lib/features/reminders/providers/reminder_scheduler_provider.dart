@@ -87,12 +87,40 @@ class ReminderScheduler {
         );
 
         await repo.recordDelivery(record);
+      }
+
+      if (_isDisposed) return;
+
+      // Grouped notification: 1 candidate speaks for itself, >1 collapsed into count
+      if (candidates.length == 1) {
+        final first = candidates.first;
+        await notificationService.showNotification(
+          id: first.workItemId.hashCode ^ first.rule.hashCode,
+          title: first.title,
+          body: first.body,
+          payload: first.workItemId,
+        );
+      } else if (candidates.length > 1) {
+        final overdueCount = candidates
+            .where((c) => c.rule == ReminderRule.overdueDaily)
+            .length;
+        final dueTodayCount = candidates
+            .where((c) =>
+                c.rule == ReminderRule.dueMorning ||
+                c.rule == ReminderRule.due1h)
+            .length;
+
+        final parts = <String>[];
+        if (overdueCount > 0) parts.add('$overdueCount overdue');
+        if (dueTodayCount > 0) parts.add('$dueTodayCount due today');
+        final remainder = candidates.length - overdueCount - dueTodayCount;
+        if (remainder > 0) parts.add('$remainder upcoming');
 
         await notificationService.showNotification(
-          id: candidate.workItemId.hashCode ^ candidate.rule.hashCode,
-          title: candidate.title,
-          body: candidate.body,
-          payload: candidate.workItemId,
+          id: nowLocal.millisecondsSinceEpoch ~/ 1000,
+          title: '${candidates.length} work items need attention',
+          body: parts.join(' · '),
+          payload: 'planner',
         );
       }
 

@@ -89,6 +89,7 @@ class _MainShellViewState extends ConsumerState<MainShellView>
   late final HotKeyService _hotKeyService;
   late final WindowService _windowService;
   late final ActivityHeartbeatService _heartbeat;
+  StreamSubscription<String>? _notificationClickSub;
 
   /// Owned here so the shell's "focus search" shortcut and the screen's search
   /// field agree on which node that is.
@@ -101,6 +102,16 @@ class _MainShellViewState extends ConsumerState<MainShellView>
     _windowService = ref.read(windowServiceProvider);
     _heartbeat = ref.read(activityHeartbeatServiceProvider);
     ref.read(reminderSchedulerProvider);
+
+    _notificationClickSub = ref
+        .read(desktopNotificationServiceProvider)
+        .onNotificationClicked
+        .listen((_) async {
+      await _windowService.show();
+      await _windowService.focus();
+      ref.read(activeNavTabProvider.notifier).setTab(ShellNavTab.planner);
+    });
+
     WidgetsBinding.instance.addObserver(this);
     Future.microtask(_initializeHotKey);
 
@@ -113,6 +124,7 @@ class _MainShellViewState extends ConsumerState<MainShellView>
 
   @override
   void dispose() {
+    _notificationClickSub?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     // The heartbeat deliberately outlives this widget: it tracks "the app is
     // alive with a session running", and the shell is torn down and rebuilt

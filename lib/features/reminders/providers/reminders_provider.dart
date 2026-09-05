@@ -44,6 +44,15 @@ class RemindersNotifier extends AsyncNotifier<List<WorkItemReminderRecord>> {
           .toList(),
     );
   }
+
+  Future<void> snoozeForWorkItem(String workItemId, Duration duration) async {
+    final records = await _repo.getForWorkItem(workItemId);
+    final until = DateTime.now().toUtc().add(duration);
+    for (final r in records) {
+      await _repo.snooze(r.id, until);
+    }
+    ref.invalidateSelf();
+  }
 }
 
 final unreadRemindersCountProvider = Provider<int>((ref) {

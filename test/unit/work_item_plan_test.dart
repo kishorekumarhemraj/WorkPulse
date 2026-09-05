@@ -77,6 +77,15 @@ void main() {
       expect(plan.statusOn(today), PlanStatus.open);
     });
 
+    test('status precedence: open when started in the past without due date',
+        () {
+      const plan = WorkItemPlan(
+        plannedStart: yesterday,
+      );
+      expect(plan.statusOn(today), PlanStatus.open);
+      expect(plan.due, isNull);
+    });
+
     test('wasLate calculation', () {
       // Completed on time (same day as due)
       final onTime = WorkItemPlan(

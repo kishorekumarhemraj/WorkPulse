@@ -8,13 +8,17 @@ import 'package:workpulse/core/platform/hotkey_service.dart';
 import 'package:workpulse/core/platform/tray_service.dart';
 import 'package:workpulse/core/platform/window_service.dart';
 import 'package:workpulse/data/providers/repository_providers.dart';
+import 'package:workpulse/domain/models/attribute_model.dart';
+import 'package:workpulse/domain/models/calendar_date.dart';
+import 'package:workpulse/domain/models/work_item_model.dart';
 import 'package:workpulse/domain/services/activity_heartbeat_service.dart';
 import 'package:workpulse/domain/services/timer_service.dart';
-import 'package:workpulse/domain/models/attribute_model.dart';
 import 'package:workpulse/features/attributes/providers/attribute_definitions_provider.dart';
 import 'package:workpulse/features/idle/providers/idle_provider.dart';
 import 'package:workpulse/features/quick_capture/views/quick_capture_body.dart';
 import 'package:workpulse/features/settings/providers/app_settings_provider.dart';
+import 'package:workpulse/features/shell/models/shell_nav_tab.dart';
+import 'package:workpulse/features/tasks/providers/work_items_provider.dart';
 import 'package:workpulse/features/timer/models/timer_state.dart';
 import 'package:workpulse/features/timer/providers/timer_provider.dart';
 
@@ -92,9 +96,38 @@ class TrayCoordinator {
         updateTrayState(state);
       }
     });
+
+    // Listen to work items to keep urgent counts fresh
+    _ref.listen<AsyncValue<List<WorkItem>>>(unfilteredWorkItemsProvider, (_, __) {
+      if (_isDisposed) return;
+      final currentTimer = _ref.read(timerProvider).value;
+      if (currentTimer != null && currentTimer.isRunning) {
+        updateTrayState(currentTimer);
+      } else {
+        _setIdleTrayState();
+      }
+    });
   }
 
   static Future<void> _defaultExit(int code) async => exit(code);
+
+  (int, int) _getPlanCounts() {
+    final workItems = _ref.read(unfilteredWorkItemsProvider).value ?? [];
+    final today = CalendarDate.fromLocal(DateTime.now());
+    int overdue = 0;
+    int dueToday = 0;
+    for (final item in workItems) {
+      if (item.isArchived || item.plan.isComplete) continue;
+      if (item.plan.due != null) {
+        if (item.plan.due! < today) {
+          overdue++;
+        } else if (item.plan.due! == today) {
+          dueToday++;
+        }
+      }
+    }
+    return (overdue, dueToday);
+  }
 
   /// The menu entry for Quick Capture, labelled with the shortcut that is
   /// actually registered. It used to hardcode "⌥ + Space", which was wrong
@@ -132,13 +165,24 @@ class TrayCoordinator {
   Future<void> updateTrayState(TimerState state) async {
     if (_isDisposed) return;
 
+    final (overdue, dueToday) = _getPlanCounts();
+    final hasUrgent = overdue > 0 || dueToday > 0;
+    final urgentSummary = hasUrgent
+        ? [
+            if (overdue > 0) '$overdue overdue',
+            if (dueToday > 0) '$dueToday due today',
+          ].join(' · ')
+        : null;
+
     if (state.isRunning && state.activeWorkItem != null) {
       final formattedTime = formatDuration(state.elapsed);
       final taskName = state.activeWorkItem!.name;
       final displayTaskName =
           taskName.length > 25 ? '${taskName.substring(0, 25)}…' : taskName;
       final title = '⏱ $formattedTime  $displayTaskName';
-      final tooltip = 'Tracking: ${state.activeWorkItem!.name}';
+      final tooltip = hasUrgent
+          ? 'Tracking: ${state.activeWorkItem!.name}\n⚠ $urgentSummary'
+          : 'Tracking: ${state.activeWorkItem!.name}';
 
       await _trayService.setTitle(title);
       await _trayService.setToolTip(tooltip);
@@ -146,6 +190,11 @@ class TrayCoordinator {
       await _trayService.setContextMenu([
         TrayMenuItem(label: '● ${state.activeWorkItem!.name}', disabled: true),
         TrayMenuItem(label: '⏱ $formattedTime', disabled: true),
+        if (hasUrgent) ...[
+          const TrayMenuItem.separator(),
+          TrayMenuItem(label: '⚠ $urgentSummary', disabled: true),
+          const TrayMenuItem(key: 'open_planner', label: 'Open Planner'),
+        ],
         const TrayMenuItem.separator(),
         const TrayMenuItem(key: 'stop_timer', label: 'Stop Timer'),
         _quickCaptureItem,
@@ -162,11 +211,29 @@ class TrayCoordinator {
   Future<void> _setIdleTrayState() async {
     if (_isDisposed) return;
 
+    final (overdue, dueToday) = _getPlanCounts();
+    final hasUrgent = overdue > 0 || dueToday > 0;
+    final urgentSummary = hasUrgent
+        ? [
+            if (overdue > 0) '$overdue overdue',
+            if (dueToday > 0) '$dueToday due today',
+          ].join(' · ')
+        : null;
+
+    final tooltip = hasUrgent
+        ? '${AppConstants.appName} - Ready\n⚠ $urgentSummary'
+        : '${AppConstants.appName} - Ready';
+
     await _trayService.setTitle('WorkPulse');
-    await _trayService.setToolTip('${AppConstants.appName} - Ready');
+    await _trayService.setToolTip(tooltip);
 
     await _trayService.setContextMenu([
       const TrayMenuItem(label: '● No Active Timer', disabled: true),
+      if (hasUrgent) ...[
+        const TrayMenuItem.separator(),
+        TrayMenuItem(label: '⚠ $urgentSummary', disabled: true),
+        const TrayMenuItem(key: 'open_planner', label: 'Open Planner'),
+      ],
       const TrayMenuItem.separator(),
       _quickCaptureItem,
       const TrayMenuItem.separator(),
@@ -180,6 +247,10 @@ class TrayCoordinator {
     if (_isDisposed) return;
 
     switch (key) {
+      case 'open_planner':
+        _windowService.openDashboard();
+        _ref.read(activeNavTabProvider.notifier).setTab(ShellNavTab.planner);
+        break;
       case 'show_window':
         _windowService.openDashboard();
         break;

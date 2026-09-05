@@ -88,7 +88,8 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Launch Landing Page'), findsOneWidget);
-      expect(find.text('DUEMORNING'), findsOneWidget);
+      expect(find.text('DUE TODAY'), findsOneWidget);
+      expect(find.text('Complete'), findsOneWidget);
       expect(find.text('Mark read'), findsOneWidget);
     });
   });

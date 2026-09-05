@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workpulse/core/constants/app_constants.dart';
 import 'package:workpulse/core/theme/app_colors.dart';
 import 'package:workpulse/core/theme/design_tokens.dart';
 import 'package:workpulse/core/widgets/keycap.dart';
 import 'package:workpulse/domain/models/workspace_model.dart';
+import 'package:workpulse/features/reminders/providers/reminders_provider.dart';
+import 'package:workpulse/features/reminders/views/notification_center_popover.dart';
 
 /// Brand mark, workspace indicator, and the Quick Capture launcher.
 class SidebarHeader extends StatelessWidget {
@@ -56,6 +59,8 @@ class SidebarHeader extends StatelessWidget {
                 color: colors.accent,
               ),
             ),
+            const SizedBox(height: Spacing.sm),
+            const _NotificationBellButton(),
           ],
         ),
       );
@@ -93,6 +98,8 @@ class SidebarHeader extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
+              const _NotificationBellButton(),
+              const SizedBox(width: Spacing.xs),
               Tooltip(
                 message: 'Collapse sidebar',
                 child: IconButton(
@@ -180,6 +187,56 @@ class SidebarHeader extends StatelessWidget {
               ),
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _NotificationBellButton extends ConsumerWidget {
+  const _NotificationBellButton();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colors = context.colors;
+    final unreadCount = ref.watch(unreadRemindersCountProvider);
+
+    return Tooltip(
+      message: unreadCount > 0
+          ? 'Notifications ($unreadCount unread)'
+          : 'Notifications',
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          IconButton(
+            onPressed: () => NotificationCenterDialog.show(context),
+            icon: Icon(
+              unreadCount > 0
+                  ? Icons.notifications_active_outlined
+                  : Icons.notifications_outlined,
+              size: IconSizes.md,
+              color: unreadCount > 0 ? colors.accent : colors.textSecondary,
+            ),
+            visualDensity: VisualDensity.compact,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(
+              minWidth: 26,
+              minHeight: 26,
+            ),
+          ),
+          if (unreadCount > 0)
+            Positioned(
+              right: 1,
+              top: 1,
+              child: Container(
+                width: 7,
+                height: 7,
+                decoration: BoxDecoration(
+                  color: colors.accent,
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ),
         ],
       ),
     );

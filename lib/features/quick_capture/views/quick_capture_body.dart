@@ -12,11 +12,13 @@ import 'package:workpulse/core/widgets/field_label.dart';
 import 'package:workpulse/core/widgets/keycap.dart';
 import 'package:workpulse/core/widgets/searchable_multi_select.dart';
 import 'package:workpulse/domain/models/attribute_model.dart';
+import 'package:workpulse/domain/models/calendar_date.dart';
 import 'package:workpulse/domain/models/category_model.dart';
 import 'package:workpulse/domain/models/person_model.dart';
 import 'package:workpulse/domain/models/project_model.dart';
 import 'package:workpulse/domain/models/tag_model.dart';
 import 'package:workpulse/domain/models/work_item_model.dart';
+import 'package:workpulse/domain/models/work_item_plan.dart';
 import 'package:workpulse/features/attributes/providers/attribute_definitions_provider.dart';
 import 'package:workpulse/features/attributes/widgets/dynamic_attribute_fields.dart';
 import 'package:workpulse/features/categories/providers/categories_provider.dart';
@@ -675,6 +677,10 @@ class _QuickCaptureBodyState extends ConsumerState<QuickCaptureBody> {
                               style: TextStyle(
                                   fontSize: 12, color: colors.textSecondary),
                             ),
+                          if (task.plan.isPlanned || task.plan.isComplete) ...[
+                            const SizedBox(width: 8),
+                            _buildQuickCapturePlanBadge(task.plan, colors),
+                          ],
                         ],
                       ),
                     ],
@@ -695,6 +701,60 @@ class _QuickCaptureBodyState extends ConsumerState<QuickCaptureBody> {
         ),
       ),
     );
+  }
+
+  Widget _buildQuickCapturePlanBadge(WorkItemPlan plan, WorkPulseColors colors) {
+    final today = CalendarDate.fromLocal(DateTime.now());
+    final status = plan.statusOn(today);
+
+    return switch (status) {
+      PlanStatus.completed => Container(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+          decoration: BoxDecoration(
+            color: colors.successSubtle,
+            borderRadius: BorderRadius.circular(3),
+          ),
+          child: Text(
+            'DONE',
+            style: TextStyle(
+              fontSize: 9,
+              fontWeight: FontWeight.w600,
+              color: colors.success,
+            ),
+          ),
+        ),
+      PlanStatus.overdue => Container(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+          decoration: BoxDecoration(
+            color: colors.dangerSubtle,
+            borderRadius: BorderRadius.circular(3),
+          ),
+          child: Text(
+            'OVERDUE',
+            style: TextStyle(
+              fontSize: 9,
+              fontWeight: FontWeight.w600,
+              color: colors.danger,
+            ),
+          ),
+        ),
+      PlanStatus.dueToday => Container(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+          decoration: BoxDecoration(
+            color: colors.warningSubtle,
+            borderRadius: BorderRadius.circular(3),
+          ),
+          child: Text(
+            'DUE TODAY',
+            style: TextStyle(
+              fontSize: 9,
+              fontWeight: FontWeight.w600,
+              color: colors.warning,
+            ),
+          ),
+        ),
+      _ => const SizedBox.shrink(),
+    };
   }
 
   Widget _buildCreateOption(_QuickCaptureResults results, bool isSelected) {

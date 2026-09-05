@@ -6,6 +6,7 @@ import 'package:workpulse/domain/models/calendar_date.dart';
 import 'package:workpulse/domain/models/financial_classification.dart';
 import 'package:workpulse/domain/models/work_item_model.dart';
 import 'package:workpulse/domain/models/work_item_plan.dart';
+import 'package:workpulse/features/reminders/providers/reminder_scheduler_provider.dart';
 import 'package:workpulse/features/workspace/providers/workspace_provider.dart';
 
 const _uuid = Uuid();
@@ -233,6 +234,18 @@ final workItemsProvider =
   WorkItemsNotifier.new,
 );
 
+/// Returns all unarchived work items for the active workspace without the toolbar
+/// search/filter state. Used by the Planner view.
+final unfilteredWorkItemsProvider = FutureProvider<List<WorkItem>>((ref) async {
+  ref.watch(workItemsProvider);
+  final workspace = await ref.watch(currentWorkspaceProvider.future);
+  final workItemRepo = ref.watch(workItemRepositoryProvider);
+  return workItemRepo.getAll(
+    workspaceId: workspace.id,
+    includeArchived: false,
+  );
+});
+
 class WorkItemsNotifier extends AsyncNotifier<List<WorkItem>> {
   @override
   Future<List<WorkItem>> build() async {
@@ -306,6 +319,9 @@ class WorkItemsNotifier extends AsyncNotifier<List<WorkItem>> {
     await workItemRepo.updatePlan(id, plan);
     ref.invalidateSelf();
     await future;
+    try {
+      await ref.read(reminderSchedulerProvider).checkReminders();
+    } catch (_) {}
   }
 
   Future<void> completeWorkItem(String id, [DateTime? completedAt]) async {
@@ -318,6 +334,9 @@ class WorkItemsNotifier extends AsyncNotifier<List<WorkItem>> {
     await workItemRepo.updatePlan(id, updatedPlan);
     ref.invalidateSelf();
     await future;
+    try {
+      await ref.read(reminderSchedulerProvider).checkReminders();
+    } catch (_) {}
   }
 
   Future<void> reopenWorkItem(String id) async {
@@ -328,6 +347,9 @@ class WorkItemsNotifier extends AsyncNotifier<List<WorkItem>> {
     await workItemRepo.updatePlan(id, updatedPlan);
     ref.invalidateSelf();
     await future;
+    try {
+      await ref.read(reminderSchedulerProvider).checkReminders();
+    } catch (_) {}
   }
 
   Future<void> archiveWorkItem(String id) async {
