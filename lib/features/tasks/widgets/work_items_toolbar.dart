@@ -101,9 +101,66 @@ class WorkItemsToolbar extends ConsumerWidget {
                     ),
                 ],
               ),
+            AppFilterDropdown<PlanFilter>(
+              placeholder: 'Any plan',
+              leadingIcon: Icons.event_note_outlined,
+              value: filter.planFilter == PlanFilter.all
+                  ? null
+                  : filter.planFilter,
+              onChanged: (val) =>
+                  notifier.setPlanFilter(val ?? PlanFilter.all),
+              options: const [
+                FilterOption(
+                  value: PlanFilter.overdue,
+                  label: 'Overdue',
+                ),
+                FilterOption(
+                  value: PlanFilter.dueToday,
+                  label: 'Due today',
+                ),
+                FilterOption(
+                  value: PlanFilter.dueThisWeek,
+                  label: 'Due this week',
+                ),
+                FilterOption(
+                  value: PlanFilter.scheduled,
+                  label: 'Scheduled',
+                ),
+                FilterOption(
+                  value: PlanFilter.unplanned,
+                  label: 'Unplanned',
+                ),
+                FilterOption(
+                  value: PlanFilter.completed,
+                  label: 'Completed',
+                ),
+              ],
+            ),
             _ArchivedToggle(
               isOn: filter.includeArchived,
               onToggle: notifier.toggleIncludeArchived,
+            ),
+            AppSegmentedControl<WorkItemSort>(
+              height: ControlSizes.toolbar,
+              selected: filter.sort,
+              onChanged: (val) => notifier.setSort(val),
+              options: const [
+                SegmentOption(
+                  value: WorkItemSort.recent,
+                  label: 'Recent',
+                  icon: Icons.schedule,
+                ),
+                SegmentOption(
+                  value: WorkItemSort.dueDate,
+                  label: 'Due date',
+                  icon: Icons.event,
+                ),
+                SegmentOption(
+                  value: WorkItemSort.name,
+                  label: 'Name',
+                  icon: Icons.sort_by_alpha,
+                ),
+              ],
             ),
             AppSegmentedControl<ListDensity>(
               height: ControlSizes.toolbar,
@@ -204,6 +261,25 @@ class _ActiveFilterChips extends ConsumerWidget {
     required this.tags,
   });
 
+  String _planFilterLabel(PlanFilter pf) {
+    switch (pf) {
+      case PlanFilter.all:
+        return '';
+      case PlanFilter.overdue:
+        return 'Plan: Overdue';
+      case PlanFilter.dueToday:
+        return 'Plan: Due today';
+      case PlanFilter.dueThisWeek:
+        return 'Plan: Due this week';
+      case PlanFilter.scheduled:
+        return 'Plan: Scheduled';
+      case PlanFilter.unplanned:
+        return 'Plan: Unplanned';
+      case PlanFilter.completed:
+        return 'Plan: Completed';
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = context.colors;
@@ -230,6 +306,11 @@ class _ActiveFilterChips extends ConsumerWidget {
         _Chip(
           label: 'Tag: ${tags[filter.tagId] ?? 'Unknown'}',
           onRemove: () => notifier.setTag(null),
+        ),
+      if (filter.planFilter != PlanFilter.all)
+        _Chip(
+          label: _planFilterLabel(filter.planFilter),
+          onRemove: () => notifier.setPlanFilter(PlanFilter.all),
         ),
       if (filter.includeArchived)
         _Chip(

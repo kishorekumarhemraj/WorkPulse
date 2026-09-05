@@ -10,6 +10,7 @@ import 'package:workpulse/domain/models/session_model.dart';
 import 'package:workpulse/domain/models/tag_model.dart';
 import 'package:workpulse/domain/models/financial_classification.dart';
 import 'package:workpulse/domain/models/work_item_model.dart';
+import 'package:workpulse/domain/models/work_item_plan.dart';
 import 'package:workpulse/domain/models/workspace_model.dart';
 import 'package:workpulse/features/categories/providers/categories_provider.dart';
 import 'package:workpulse/features/people/providers/people_provider.dart';
@@ -68,6 +69,7 @@ class _FakeWorkItemsNotifier extends WorkItemsNotifier {
     required String categoryId,
     required String name,
     FinancialClassification classification = FinancialClassification.none,
+    WorkItemPlan plan = const WorkItemPlan.unplanned(),
     String? notes,
     List<String> tagIds = const [],
     List<String> peopleIds = const [],
@@ -79,6 +81,7 @@ class _FakeWorkItemsNotifier extends WorkItemsNotifier {
       projectId: projectId,
       categoryId: categoryId,
       name: name,
+      plan: plan,
       createdAt: now,
       updatedAt: now,
     );

@@ -11,17 +11,20 @@ import 'package:workpulse/core/widgets/entity_chip.dart';
 import 'package:workpulse/core/widgets/error_state.dart';
 import 'package:workpulse/core/widgets/hoverable.dart';
 import 'package:workpulse/core/widgets/status_badge.dart';
+import 'package:workpulse/domain/models/calendar_date.dart';
 import 'package:workpulse/domain/models/category_model.dart';
 import 'package:workpulse/domain/models/person_model.dart';
 import 'package:workpulse/domain/models/project_model.dart';
 import 'package:workpulse/domain/models/tag_model.dart';
 import 'package:workpulse/domain/models/work_item_model.dart';
+import 'package:workpulse/domain/models/work_item_plan.dart';
 import 'package:workpulse/domain/services/export_service.dart';
 import 'package:workpulse/domain/services/timer_service.dart';
 import 'package:workpulse/domain/services/timesheet_code_resolver.dart';
 import 'package:workpulse/features/reports/views/session_edit_dialog.dart';
 import 'package:workpulse/features/reports/widgets/session_metadata.dart';
 import 'package:workpulse/features/tasks/providers/task_sessions_provider.dart';
+import 'package:workpulse/features/tasks/providers/work_items_provider.dart';
 import 'package:workpulse/features/timesheet/providers/timesheet_provider.dart';
 import 'package:workpulse/features/timer/providers/task_duration_provider.dart';
 import 'package:workpulse/features/timer/providers/timer_provider.dart';
@@ -55,6 +58,125 @@ class WorkItemInspector extends ConsumerWidget {
     this.onClose,
   });
 
+  Widget? _buildPlanBadge(WorkItemPlan plan, CalendarDate today) {
+    final status = plan.statusOn(today);
+    if (status == PlanStatus.unplanned) return null;
+
+    String monthName(int month) {
+      const months = [
+        'JAN',
+        'FEB',
+        'MAR',
+        'APR',
+        'MAY',
+        'JUN',
+        'JUL',
+        'AUG',
+        'SEP',
+        'OCT',
+        'NOV',
+        'DEC'
+      ];
+      return months[month - 1];
+    }
+
+    switch (status) {
+      case PlanStatus.overdue:
+        final days = plan.daysUntilDue(today)?.abs();
+        final label = days != null && days > 1 ? '$days DAYS LATE' : 'OVERDUE';
+        return StatusBadge(
+          label: label,
+          icon: Icons.warning_amber_rounded,
+          tone: BadgeTone.danger,
+          emphasis: true,
+        );
+      case PlanStatus.dueToday:
+        return const StatusBadge(
+          label: 'DUE TODAY',
+          icon: Icons.alarm,
+          tone: BadgeTone.warning,
+          emphasis: true,
+        );
+      case PlanStatus.startsToday:
+        return const StatusBadge(
+          label: 'STARTS TODAY',
+          icon: Icons.play_arrow_outlined,
+          tone: BadgeTone.accent,
+          emphasis: true,
+        );
+      case PlanStatus.scheduled:
+        final d = plan.plannedStart!;
+        return StatusBadge(
+          label: '${d.day} ${monthName(d.month)}',
+          icon: Icons.calendar_today_outlined,
+          tone: BadgeTone.info,
+        );
+      case PlanStatus.open:
+        final d = plan.due!;
+        return StatusBadge(
+          label: 'DUE ${d.day} ${monthName(d.month)}',
+          icon: Icons.event_outlined,
+          tone: BadgeTone.neutral,
+        );
+      case PlanStatus.completed:
+        if (plan.wasLate == true) {
+          return const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              StatusBadge(
+                label: 'DONE',
+                icon: Icons.check_circle_outline,
+                tone: BadgeTone.success,
+              ),
+              SizedBox(width: Spacing.xs),
+              StatusBadge(
+                label: 'LATE',
+                tone: BadgeTone.danger,
+              ),
+            ],
+          );
+        }
+        return const StatusBadge(
+          label: 'DONE',
+          icon: Icons.check_circle_outline,
+          tone: BadgeTone.success,
+        );
+      case PlanStatus.unplanned:
+        return null;
+    }
+  }
+
+  String _planStatusDescription(WorkItemPlan plan, CalendarDate today) {
+    if (plan.isComplete) {
+      if (plan.wasLate == true) {
+        final compDate = CalendarDate.fromLocal(plan.completedAt!);
+        final daysLate = compDate.differenceInDays(plan.due!);
+        return 'Delivered $daysLate ${daysLate == 1 ? 'day' : 'days'} late';
+      } else if (plan.due != null) {
+        return 'Delivered on time';
+      }
+      return 'Completed';
+    }
+
+    if (plan.due != null) {
+      final diff = plan.daysUntilDue(today)!;
+      if (diff == 0) return 'Due today';
+      if (diff == 1) return 'Due tomorrow';
+      if (diff > 1) return 'Due in $diff days';
+      if (diff == -1) return '1 day overdue';
+      return '${diff.abs()} days overdue';
+    }
+
+    if (plan.plannedStart != null) {
+      final diff = plan.plannedStart!.differenceInDays(today);
+      if (diff == 0) return 'Starts today';
+      if (diff > 0) return 'Starts in $diff days';
+      return 'Started ${diff.abs()} days ago';
+    }
+
+    return 'No target dates set';
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = context.colors;
@@ -66,6 +188,8 @@ class WorkItemInspector extends ConsumerWidget {
     final codes = ref.watch(timesheetCodeResolverProvider).value ??
         const TimesheetCodeResolver();
     final totalAsync = ref.watch(taskTotalDurationProvider(item.id));
+    final today = CalendarDate.fromLocal(DateTime.now());
+    final planBadge = _buildPlanBadge(item.plan, today);
 
     return Container(
       decoration: BoxDecoration(
@@ -222,6 +346,181 @@ class WorkItemInspector extends ConsumerWidget {
                   ),
                   const SizedBox(height: Spacing.lg),
                 ],
+
+                // Plan Section
+                _Section(
+                  label: 'Plan',
+                  child: Container(
+                    padding: const EdgeInsets.all(Spacing.md),
+                    decoration: BoxDecoration(
+                      color: colors.surfaceSunken,
+                      borderRadius: Radii.mdAll,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            if (planBadge != null) ...[
+                              planBadge,
+                              const SizedBox(width: Spacing.sm),
+                            ],
+                            Expanded(
+                              child: Text(
+                                _planStatusDescription(item.plan, today),
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
+                                  color: colors.textPrimary,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: Spacing.sm),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Planned Start',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: colors.textSecondary,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    item.plan.plannedStart != null
+                                        ? DateFormat('MMM d, yyyy').format(
+                                            item.plan.plannedStart!
+                                                .toLocalDateTime())
+                                        : 'Not set',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: item.plan.plannedStart != null
+                                          ? colors.textPrimary
+                                          : colors.textTertiary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Due Date',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: colors.textSecondary,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    item.plan.due != null
+                                        ? DateFormat('MMM d, yyyy').format(
+                                            item.plan.due!.toLocalDateTime())
+                                        : 'Not set',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: item.plan.due != null
+                                          ? colors.textPrimary
+                                          : colors.textTertiary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (item.plan.completedAt != null) ...[
+                          const SizedBox(height: Spacing.sm),
+                          Text(
+                            'Completed: ${DateFormat('MMM d, yyyy • HH:mm').format(item.plan.completedAt!.toLocal())}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: colors.textSecondary,
+                            ),
+                          ),
+                        ],
+                        const SizedBox(height: Spacing.md),
+                        Wrap(
+                          spacing: Spacing.sm,
+                          runSpacing: Spacing.xs,
+                          children: [
+                            if (item.plan.isComplete)
+                              OutlinedButton.icon(
+                                icon: const Icon(Icons.replay_outlined,
+                                    size: 14),
+                                label: const Text('Reopen'),
+                                style: OutlinedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 10, vertical: 6),
+                                  visualDensity: VisualDensity.compact,
+                                ),
+                                onPressed: () => ref
+                                    .read(workItemsProvider.notifier)
+                                    .reopenWorkItem(item.id),
+                              )
+                            else
+                              ElevatedButton.icon(
+                                icon: const Icon(Icons.check_circle_outline,
+                                    size: 14),
+                                label: const Text('Complete'),
+                                style: ElevatedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 10, vertical: 6),
+                                  visualDensity: VisualDensity.compact,
+                                ),
+                                onPressed: () => ref
+                                    .read(workItemsProvider.notifier)
+                                    .completeWorkItem(item.id),
+                              ),
+                            OutlinedButton(
+                              style: OutlinedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 10, vertical: 6),
+                                visualDensity: VisualDensity.compact,
+                              ),
+                              onPressed: () {
+                                final base = item.plan.due ?? today;
+                                final newDue = base.addDays(1);
+                                ref
+                                    .read(workItemsProvider.notifier)
+                                    .setPlan(
+                                        item.id,
+                                        item.plan.copyWith(due: newDue));
+                              },
+                              child: const Text('+1 day'),
+                            ),
+                            OutlinedButton(
+                              style: OutlinedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 10, vertical: 6),
+                                visualDensity: VisualDensity.compact,
+                              ),
+                              onPressed: () {
+                                final newDue = today.addDays(7);
+                                ref
+                                    .read(workItemsProvider.notifier)
+                                    .setPlan(
+                                        item.id,
+                                        item.plan.copyWith(due: newDue));
+                              },
+                              child: const Text('Next week'),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: Spacing.xl),
+
                 _Section(
                   label: 'Classification',
                   child: Wrap(

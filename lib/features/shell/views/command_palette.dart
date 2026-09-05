@@ -8,7 +8,9 @@ import 'package:workpulse/core/theme/design_tokens.dart';
 import 'package:workpulse/core/widgets/keycap.dart';
 import 'package:workpulse/domain/models/analytics_model.dart';
 import 'package:workpulse/domain/models/work_item_model.dart';
+import 'package:workpulse/features/reminders/views/notification_center_popover.dart';
 import 'package:workpulse/features/reports/pdf_report_export.dart';
+import 'package:workpulse/features/settings/views/reminder_settings_dialog.dart';
 import 'package:workpulse/features/shell/models/shell_nav_tab.dart';
 import 'package:workpulse/features/tasks/providers/work_items_provider.dart';
 import 'package:workpulse/features/timer/providers/timer_provider.dart';
@@ -191,6 +193,24 @@ class _CommandPaletteState extends ConsumerState<CommandPalette> {
         kind: CommandKind.action,
         keywords: const ['create', 'project', 'add'],
         invoke: () async => widget.onNewProject(),
+      ),
+      PaletteCommand(
+        id: 'action-notifications',
+        label: 'Open Notifications',
+        section: 'Actions',
+        icon: Icons.notifications_outlined,
+        kind: CommandKind.action,
+        keywords: const ['reminders', 'notifications', 'alerts', 'due', 'overdue'],
+        invoke: () async => NotificationCenterDialog.show(context),
+      ),
+      PaletteCommand(
+        id: 'action-reminder-settings',
+        label: 'Reminder Settings',
+        section: 'Actions',
+        icon: Icons.notifications_active_outlined,
+        kind: CommandKind.action,
+        keywords: const ['reminders', 'settings', 'notifications', 'digest', 'quiet'],
+        invoke: () async => ReminderSettingsDialog.show(context),
       ),
       if (isRunning)
         PaletteCommand(
