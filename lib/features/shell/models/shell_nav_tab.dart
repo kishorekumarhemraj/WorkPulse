@@ -10,6 +10,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 enum ShellNavTab {
   dashboard,
   patterns,
+  planner,
   tasks,
   history,
   notes,
@@ -46,6 +47,7 @@ extension ShellNavTabInfo on ShellNavTab {
   String get label => switch (this) {
         ShellNavTab.dashboard => 'Dashboard',
         ShellNavTab.patterns => 'Patterns & Signals',
+        ShellNavTab.planner => 'Planner',
         ShellNavTab.history => 'Time Log',
         ShellNavTab.notes => 'Time Notes',
         ShellNavTab.timesheet => 'Time Sheet',
@@ -60,6 +62,7 @@ extension ShellNavTabInfo on ShellNavTab {
   IconData get icon => switch (this) {
         ShellNavTab.dashboard => Icons.space_dashboard_outlined,
         ShellNavTab.patterns => Icons.insights_outlined,
+        ShellNavTab.planner => Icons.event_note_outlined,
         ShellNavTab.history => Icons.history,
         ShellNavTab.notes => Icons.edit_note_outlined,
         ShellNavTab.timesheet => Icons.table_chart_outlined,
@@ -74,6 +77,7 @@ extension ShellNavTabInfo on ShellNavTab {
   ShellNavGroup get group => switch (this) {
         ShellNavTab.dashboard ||
         ShellNavTab.patterns ||
+        ShellNavTab.planner ||
         ShellNavTab.history ||
         ShellNavTab.notes ||
         ShellNavTab.timesheet ||
@@ -101,6 +105,15 @@ extension ShellNavTabInfo on ShellNavTab {
             'delegate',
             'focus',
             'rhythm',
+          ],
+        ShellNavTab.planner => [
+            'planner',
+            'planning',
+            'due',
+            'deadlines',
+            'schedule',
+            'overdue',
+            'calendar',
           ],
         ShellNavTab.history => ['sessions', 'log', 'history', 'entries'],
         ShellNavTab.notes => [
