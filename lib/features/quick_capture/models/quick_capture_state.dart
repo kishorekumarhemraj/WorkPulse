@@ -5,6 +5,7 @@ class QuickCaptureState extends Equatable {
   final int selectedIndex;
   final String? selectedProjectId;
   final String? selectedCategoryId;
+  final bool hasExplicitCategorySelection;
   final List<String> selectedTagIds;
   final List<String> selectedPeopleIds;
 
@@ -13,6 +14,7 @@ class QuickCaptureState extends Equatable {
     this.selectedIndex = 0,
     this.selectedProjectId,
     this.selectedCategoryId,
+    this.hasExplicitCategorySelection = false,
     this.selectedTagIds = const [],
     this.selectedPeopleIds = const [],
   });
@@ -24,6 +26,7 @@ class QuickCaptureState extends Equatable {
     bool clearProjectId = false,
     String? selectedCategoryId,
     bool clearCategoryId = false,
+    bool? hasExplicitCategorySelection,
     List<String>? selectedTagIds,
     List<String>? selectedPeopleIds,
   }) {
@@ -35,6 +38,8 @@ class QuickCaptureState extends Equatable {
       selectedCategoryId: clearCategoryId
           ? null
           : (selectedCategoryId ?? this.selectedCategoryId),
+      hasExplicitCategorySelection: hasExplicitCategorySelection ??
+          this.hasExplicitCategorySelection,
       selectedTagIds: selectedTagIds ?? this.selectedTagIds,
       selectedPeopleIds: selectedPeopleIds ?? this.selectedPeopleIds,
     );
@@ -46,6 +51,7 @@ class QuickCaptureState extends Equatable {
         selectedIndex,
         selectedProjectId,
         selectedCategoryId,
+        hasExplicitCategorySelection,
         selectedTagIds,
         selectedPeopleIds,
       ];

@@ -186,6 +186,8 @@ void main() {
         peopleProvider.overrideWith(() => _FakePeopleNotifier()),
         workItemsProvider
             .overrideWith(() => _FakeWorkItemsNotifier([testTask1, testTask2])),
+        unfilteredWorkItemsProvider
+            .overrideWith((ref) async => [testTask1, testTask2]),
         timerProvider.overrideWith(() => timerNotifier),
       ],
       child: MaterialApp(

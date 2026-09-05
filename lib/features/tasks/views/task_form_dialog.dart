@@ -108,6 +108,11 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
           final existingValues = await ref.read(
               workItemAttributeValuesFamilyProvider(widget.workItem!.id)
                   .future);
+          final defs = await ref.read(attributeDefinitionsProvider.future);
+          final taskDefs = defs
+              .where((d) =>
+                  d.scope == AttributeScope.task && d.enabled && !d.isArchived)
+              .toList();
           if (mounted) {
             setState(() {
               for (final v in existingValues) {
@@ -124,7 +129,20 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
                   _attributeValues[v.attributeDefinitionId] = v.dateValue;
                 }
                 if (v.optionId != null) {
-                  _attributeValues[v.attributeDefinitionId] = v.optionId;
+                  final def = taskDefs
+                      .where((d) => d.id == v.attributeDefinitionId)
+                      .firstOrNull;
+                  if (def?.type == AttributeType.multiSelect) {
+                    final list = (_attributeValues[v.attributeDefinitionId]
+                            as List<String>?) ??
+                        <String>[];
+                    if (!list.contains(v.optionId!)) {
+                      list.add(v.optionId!);
+                    }
+                    _attributeValues[v.attributeDefinitionId] = list;
+                  } else {
+                    _attributeValues[v.attributeDefinitionId] = v.optionId;
+                  }
                 }
               }
             });
@@ -185,6 +203,27 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
       return;
     }
 
+    final definitions = ref.read(attributeDefinitionsProvider).value ?? [];
+    final taskDefs = definitions
+        .where((d) =>
+            d.scope == AttributeScope.task && d.enabled && !d.isArchived)
+        .toList();
+
+    for (final def in taskDefs) {
+      if (def.required) {
+        final val = _attributeValues[def.id];
+        final isMissing = val == null ||
+            (val is String && val.trim().isEmpty) ||
+            (val is List && val.isEmpty);
+        if (isMissing) {
+          ScaffoldMessenger.of(context).showAppSnackBar(
+            AppSnackBar.failure(message: 'Please provide ${def.name}'),
+          );
+          return;
+        }
+      }
+    }
+
     setState(() => _isSubmitting = true);
     try {
       final plan = WorkItemPlan(
@@ -219,11 +258,6 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
       }
 
       // Save attribute values for the task
-      final definitions = ref.read(attributeDefinitionsProvider).value ?? [];
-      final taskDefs = definitions
-          .where((d) =>
-              d.scope == AttributeScope.task && d.enabled && !d.isArchived)
-          .toList();
       final valuesToSave = <WorkItemAttributeValue>[];
       final now = DateTime.now().toUtc();
 
@@ -253,8 +287,24 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
             optId = entry.value.toString();
             break;
           case AttributeType.multiSelect:
-            textVal = (entry.value as List).join(',');
-            break;
+            final selectedOptionIds = entry.value is Iterable
+                ? (entry.value as Iterable)
+                    .where((v) => v != null)
+                    .map((v) => v.toString())
+                : [entry.value.toString()];
+            for (final oId in selectedOptionIds) {
+              valuesToSave.add(
+                WorkItemAttributeValue(
+                  id: _uuid.v4(),
+                  workItemId: result.id,
+                  attributeDefinitionId: def.id,
+                  optionId: oId,
+                  createdAt: now,
+                  updatedAt: now,
+                ),
+              );
+            }
+            continue;
           case AttributeType.date:
             dateVal = entry.value is DateTime
                 ? entry.value as DateTime

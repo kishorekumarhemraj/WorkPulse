@@ -107,22 +107,33 @@ class AnalyticsService {
 
     for (final s in allSessions) {
       final grossDuration = s.duration;
-      totalTracked += grossDuration;
 
       final idles = sessionIdleMap[s.id] ?? [];
       Duration sessionIdle = Duration.zero;
+      Duration idleInsideSession = Duration.zero;
+      final sessionEnd = s.endTime ?? DateTime.now().toUtc();
+
       for (final idle in idles) {
         if (idle.resolution == IdleResolution.markIdle) {
           sessionIdle += idle.duration;
+
+          // Measure only the idle duration that falls strictly inside the session's bounds.
+          // For sessions cleanly stopped at idleStartTime, this overlap is zero.
+          final overlapStart = idle.startTime.isAfter(s.startTime) ? idle.startTime : s.startTime;
+          final overlapEnd = idle.endTime.isBefore(sessionEnd) ? idle.endTime : sessionEnd;
+          if (overlapEnd.isAfter(overlapStart)) {
+            idleInsideSession += overlapEnd.difference(overlapStart);
+          }
         }
       }
       totalIdle += sessionIdle;
 
-      final netActive = grossDuration > sessionIdle
-          ? grossDuration - sessionIdle
+      final netActive = grossDuration > idleInsideSession
+          ? grossDuration - idleInsideSession
           : Duration.zero;
       sessionActiveDurations[s.id] = netActive;
       totalActive += netActive;
+      totalTracked += (netActive + sessionIdle);
     }
 
     final uniqueWorkItemIds =

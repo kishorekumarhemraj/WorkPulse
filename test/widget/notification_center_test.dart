@@ -78,6 +78,8 @@ void main() {
                 .overrideWith(() => _FakeRemindersNotifier([testReminder])),
             workItemsProvider
                 .overrideWith(() => _FakeWorkItemsNotifier([testItem])),
+            unfilteredWorkItemsProvider
+                .overrideWith((ref) async => [testItem]),
           ],
           child: MaterialApp(
             theme: AppTheme.darkTheme,

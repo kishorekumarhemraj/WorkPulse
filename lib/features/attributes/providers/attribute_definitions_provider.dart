@@ -211,6 +211,7 @@ class WorkItemAttributeValuesController {
 
   Future<void> saveValues(
       String workItemId, List<WorkItemAttributeValue> values) async {
+    await _repo.deleteWorkItemValuesByWorkItemId(workItemId);
     for (final v in values) {
       await _repo.setWorkItemValue(v);
     }

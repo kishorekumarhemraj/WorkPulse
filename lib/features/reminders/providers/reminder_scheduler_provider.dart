@@ -49,7 +49,7 @@ class ReminderScheduler {
     _isChecking = true;
 
     try {
-      final workItems = await _ref.read(workItemsProvider.future);
+      final workItems = await _ref.read(unfilteredWorkItemsProvider.future);
       final settings = await _ref.read(appSettingsProvider.future);
       final repo = _ref.read(reminderRepositoryProvider);
       final notificationService = _ref.read(desktopNotificationServiceProvider);

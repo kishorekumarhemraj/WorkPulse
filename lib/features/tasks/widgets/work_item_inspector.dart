@@ -6,6 +6,7 @@ import 'package:workpulse/core/theme/app_typography.dart';
 import 'package:workpulse/core/theme/color_utils.dart';
 import 'package:workpulse/core/theme/design_tokens.dart';
 import 'package:workpulse/core/theme/icon_utils.dart';
+import 'package:workpulse/core/widgets/app_snack_bar.dart';
 import 'package:workpulse/core/widgets/empty_state.dart';
 import 'package:workpulse/core/widgets/entity_chip.dart';
 import 'package:workpulse/core/widgets/error_state.dart';
@@ -545,11 +546,11 @@ class WorkItemInspector extends ConsumerWidget {
                                       .snoozeForWorkItem(
                                           item.id, const Duration(hours: 1));
                                   if (context.mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                            'Reminders for "${item.name}" snoozed for 1 hour'),
-                                        duration: const Duration(seconds: 2),
+                                    ScaffoldMessenger.of(context)
+                                        .showAppSnackBar(
+                                      AppSnackBar(
+                                        message:
+                                            'Reminders for "${item.name}" snoozed for 1 hour',
                                       ),
                                     );
                                   }

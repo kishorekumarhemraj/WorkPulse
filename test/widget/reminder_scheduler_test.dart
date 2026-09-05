@@ -104,6 +104,7 @@ void main() {
           appSettingsProvider
               .overrideWith(() => _FakeAppSettingsNotifier(AppSettings.defaults())),
           workItemsProvider.overrideWith(() => _FakeWorkItemsNotifier([testItem])),
+          unfilteredWorkItemsProvider.overrideWith((ref) async => [testItem]),
           reminderSchedulerProvider.overrideWith((ref) {
             final scheduler =
                 ReminderScheduler(ref, nowProvider: () => fixedTime);
