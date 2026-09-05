@@ -15,6 +15,7 @@ import 'package:workpulse/domain/models/tag_model.dart';
 import 'package:workpulse/domain/models/work_item_model.dart';
 import 'package:workpulse/domain/models/work_item_plan.dart';
 import 'package:workpulse/domain/services/timer_service.dart';
+import 'package:workpulse/features/reminders/providers/reminders_provider.dart';
 import 'package:workpulse/features/tasks/providers/work_items_provider.dart';
 import 'package:workpulse/features/tasks/widgets/work_items_toolbar.dart';
 import 'package:workpulse/features/timer/providers/task_duration_provider.dart';
@@ -109,9 +110,23 @@ class WorkItemRow extends ConsumerWidget {
           tone: BadgeTone.info,
         );
       case PlanStatus.open:
-        final d = plan.due!;
-        return StatusBadge(
-          label: 'DUE ${d.day} ${monthName(d.month)}',
+        if (plan.due != null) {
+          final d = plan.due!;
+          return StatusBadge(
+            label: 'DUE ${d.day} ${monthName(d.month)}',
+            icon: Icons.event_outlined,
+            tone: BadgeTone.neutral,
+          );
+        } else if (plan.plannedStart != null) {
+          final d = plan.plannedStart!;
+          return StatusBadge(
+            label: 'STARTED ${d.day} ${monthName(d.month)}',
+            icon: Icons.play_arrow_outlined,
+            tone: BadgeTone.neutral,
+          );
+        }
+        return const StatusBadge(
+          label: 'OPEN',
           icon: Icons.event_outlined,
           tone: BadgeTone.neutral,
         );
@@ -311,6 +326,19 @@ class WorkItemRow extends ConsumerWidget {
                         .setPlan(item.id, newPlan);
                   }
                   break;
+                case 'snooze':
+                  await ref
+                      .read(remindersProvider.notifier)
+                      .snoozeForWorkItem(item.id, const Duration(hours: 1));
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Reminders for "${item.name}" snoozed for 1 hour'),
+                        duration: const Duration(seconds: 2),
+                      ),
+                    );
+                  }
+                  break;
                 case 'archive':
                 case 'unarchive':
                   onArchiveToggle();
@@ -333,7 +361,7 @@ class WorkItemRow extends ConsumerWidget {
                     label: 'Reopen',
                   ),
                 )
-              else
+              else ...[
                 const PopupMenuItem(
                   value: 'complete',
                   child: _MenuRow(
@@ -341,6 +369,14 @@ class WorkItemRow extends ConsumerWidget {
                     label: 'Mark complete',
                   ),
                 ),
+                const PopupMenuItem(
+                  value: 'snooze',
+                  child: _MenuRow(
+                    icon: Icons.snooze_outlined,
+                    label: 'Snooze reminders (1h)',
+                  ),
+                ),
+              ],
               const PopupMenuItem(
                 value: 'set_due_date',
                 child: _MenuRow(

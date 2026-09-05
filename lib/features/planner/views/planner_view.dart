@@ -120,8 +120,9 @@ class _PlannerViewState extends ConsumerState<PlannerView> {
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
-    final workItemsAsync = ref.watch(workItemsProvider);
+    final workItemsAsync = ref.watch(unfilteredWorkItemsProvider);
     final density = ref.watch(listDensityProvider);
+    final timerState = ref.watch(timerProvider).value;
 
     final projects = ref.watch(projectsProvider).value ?? const <Project>[];
     final categories =
@@ -155,7 +156,7 @@ class _PlannerViewState extends ConsumerState<PlannerView> {
           error: (error, _) => ErrorState(
             title: 'Could not load planner',
             error: error,
-            onRetry: () => ref.invalidate(workItemsProvider),
+            onRetry: () => ref.invalidate(unfilteredWorkItemsProvider),
           ),
           data: (allWorkItems) {
             final today = CalendarDate.fromLocal(DateTime.now());
@@ -174,14 +175,25 @@ class _PlannerViewState extends ConsumerState<PlannerView> {
             for (final item in allWorkItems) {
               if (item.isArchived) continue;
               final plan = item.plan;
+              final isTrackingThis = timerState?.isRunning == true &&
+                  timerState?.activeWorkItem?.id == item.id;
 
-              // Check needs attention
+              // Check needs attention:
+              // 1. Complete but still accruing time
+              // 2. Overdue > 30 days (likely abandoned)
+              // 3. Inverted dates (due before planned start)
+              final isCompleteWithTimer = plan.isComplete && isTrackingThis;
               final isOldOverdue = !plan.isComplete &&
                   plan.due != null &&
                   today.differenceInDays(plan.due!) > 30;
               final isInverted = plan.isInverted;
-              if (isOldOverdue || isInverted) {
+
+              if (isCompleteWithTimer || isOldOverdue || isInverted) {
                 needsAttention.add(item);
+                if (isOldOverdue) {
+                  // Handled in needs attention; do not repeat in overdue section
+                  continue;
+                }
               }
 
               if (plan.isComplete) {

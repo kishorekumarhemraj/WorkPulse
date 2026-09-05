@@ -6,6 +6,8 @@ import 'package:workpulse/core/theme/design_tokens.dart';
 import 'package:workpulse/core/widgets/app_dialog.dart';
 import 'package:workpulse/core/widgets/empty_state.dart';
 import 'package:workpulse/core/widgets/status_badge.dart';
+import 'package:workpulse/domain/models/reminder_rule.dart';
+import 'package:workpulse/domain/models/work_item_model.dart';
 import 'package:workpulse/domain/models/work_item_reminder_record.dart';
 import 'package:workpulse/features/reminders/providers/reminders_provider.dart';
 import 'package:workpulse/features/settings/views/reminder_settings_dialog.dart';
@@ -31,7 +33,7 @@ class NotificationCenterDialog extends ConsumerWidget {
     final workItemMap = {for (final item in workItems) item.id: item};
 
     return AppDialog(
-      title: 'Notifications',
+      title: 'Notification Center',
       subtitle: 'Delivered reminders and schedule updates',
       icon: Icons.notifications_outlined,
       width: DialogWidth.medium,
@@ -55,8 +57,7 @@ class NotificationCenterDialog extends ConsumerWidget {
           child: const Text('Close'),
         ),
       ],
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxHeight: 400),
+      child: SingleChildScrollView(
         child: remindersAsync.when(
           loading: () => const Center(
             child: Padding(
@@ -65,45 +66,61 @@ class NotificationCenterDialog extends ConsumerWidget {
             ),
           ),
           error: (err, _) => Center(
-            child: Text('Could not load notifications: $err'),
+            child: Padding(
+              padding: const EdgeInsets.all(Spacing.xl),
+              child: Text(
+                'Could not load notifications: $err',
+                style: TextStyle(color: colors.danger),
+              ),
+            ),
           ),
           data: (reminders) {
             if (reminders.isEmpty) {
               return const EmptyState(
-                icon: Icons.notifications_off_outlined,
+                icon: Icons.notifications_none_outlined,
                 title: 'No notifications',
-                message:
-                    'When upcoming or overdue reminders trigger, they will appear here.',
-                compact: true,
+                message: 'You have no delivered reminders yet.',
               );
             }
 
-          return Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              for (var i = 0; i < reminders.length; i++) ...[
-                if (i > 0) Divider(height: 1, color: colors.divider),
-                _ReminderItemTile(
-                  record: reminders[i],
-                  workItem: workItemMap[reminders[i].workItemId],
-                  onMarkRead: () =>
-                      ref.read(remindersProvider.notifier).markRead(reminders[i].id),
-                  onSnooze: () => ref
-                      .read(remindersProvider.notifier)
-                      .snooze(reminders[i].id, const Duration(hours: 1)),
-                  onOpenTask: workItemMap[reminders[i].workItemId] == null
-                      ? null
-                      : () {
-                          Navigator.of(context).pop();
-                          TaskFormDialog.show(
-                            context,
-                            workItem: workItemMap[reminders[i].workItemId]!,
-                          );
-                        },
-                ),
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (var i = 0; i < reminders.length; i++) ...[
+                  if (i > 0) Divider(height: 1, color: colors.divider),
+                  _ReminderItemTile(
+                    record: reminders[i],
+                    workItem: workItemMap[reminders[i].workItemId],
+                    onMarkRead: () =>
+                        ref.read(remindersProvider.notifier).markRead(reminders[i].id),
+                    onSnooze: () => ref
+                        .read(remindersProvider.notifier)
+                        .snooze(reminders[i].id, const Duration(hours: 1)),
+                    onComplete: workItemMap[reminders[i].workItemId] == null ||
+                            workItemMap[reminders[i].workItemId]!.plan.isComplete
+                        ? null
+                        : () async {
+                            final item = workItemMap[reminders[i].workItemId]!;
+                            await ref
+                                .read(workItemsProvider.notifier)
+                                .completeWorkItem(item.id);
+                            await ref
+                                .read(remindersProvider.notifier)
+                                .markRead(reminders[i].id);
+                          },
+                    onOpenTask: workItemMap[reminders[i].workItemId] == null
+                        ? null
+                        : () {
+                            Navigator.of(context).pop();
+                            TaskFormDialog.show(
+                              context,
+                              workItem: workItemMap[reminders[i].workItemId]!,
+                            );
+                          },
+                  ),
+                ],
               ],
-            ],
-          );
+            );
           },
         ),
       ),
@@ -113,9 +130,10 @@ class NotificationCenterDialog extends ConsumerWidget {
 
 class _ReminderItemTile extends StatelessWidget {
   final WorkItemReminderRecord record;
-  final dynamic workItem;
+  final WorkItem? workItem;
   final VoidCallback onMarkRead;
   final VoidCallback onSnooze;
+  final VoidCallback? onComplete;
   final VoidCallback? onOpenTask;
 
   const _ReminderItemTile({
@@ -123,13 +141,24 @@ class _ReminderItemTile extends StatelessWidget {
     required this.workItem,
     required this.onMarkRead,
     required this.onSnooze,
+    required this.onComplete,
     required this.onOpenTask,
   });
+
+  String _formatRuleLabel(ReminderRule rule) => switch (rule) {
+        ReminderRule.dueMorning => 'DUE TODAY',
+        ReminderRule.due1h => 'DUE SOON',
+        ReminderRule.overdueDaily => 'OVERDUE',
+        ReminderRule.startMorning => 'STARTS TODAY',
+      };
 
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
     final timeStr = DateFormat('MMM d, HH:mm').format(record.deliveredAt.toLocal());
+    final isRescheduled = workItem != null &&
+        workItem!.plan.due != null &&
+        workItem!.plan.due != record.anchorDate;
 
     return Padding(
       padding: const EdgeInsets.symmetric(
@@ -155,8 +184,12 @@ class _ReminderItemTile extends StatelessWidget {
                 Row(
                   children: [
                     StatusBadge(
-                      label: record.rule.name.toUpperCase(),
-                      tone: record.isRead ? BadgeTone.neutral : BadgeTone.warning,
+                      label: _formatRuleLabel(record.rule),
+                      tone: record.isRead
+                          ? BadgeTone.neutral
+                          : (record.rule == ReminderRule.overdueDaily
+                              ? BadgeTone.danger
+                              : BadgeTone.warning),
                     ),
                     const SizedBox(width: Spacing.sm),
                     Expanded(
@@ -189,10 +222,29 @@ class _ReminderItemTile extends StatelessWidget {
                     color: colors.textSecondary,
                   ),
                 ),
+                if (isRescheduled) ...[
+                  const SizedBox(height: 3),
+                  Row(
+                    children: [
+                      Icon(Icons.update, size: 12, color: colors.textTertiary),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Rescheduled to ${DateFormat('MMM d').format(workItem!.plan.due!.toLocalDateTime())}',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontStyle: FontStyle.italic,
+                          color: colors.textTertiary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
                 const SizedBox(height: 6),
-                Row(
+                Wrap(
+                  spacing: Spacing.md,
+                  runSpacing: Spacing.xs,
                   children: [
-                    if (onOpenTask != null) ...[
+                    if (onOpenTask != null)
                       InkWell(
                         onTap: onOpenTask,
                         child: Text(
@@ -204,9 +256,19 @@ class _ReminderItemTile extends StatelessWidget {
                           ),
                         ),
                       ),
-                      const SizedBox(width: Spacing.md),
-                    ],
-                    if (!record.isRead) ...[
+                    if (onComplete != null)
+                      InkWell(
+                        onTap: onComplete,
+                        child: Text(
+                          'Complete',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: colors.success,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    if (!record.isRead)
                       InkWell(
                         onTap: onMarkRead,
                         child: Text(
@@ -217,8 +279,6 @@ class _ReminderItemTile extends StatelessWidget {
                           ),
                         ),
                       ),
-                      const SizedBox(width: Spacing.md),
-                    ],
                     InkWell(
                       onTap: onSnooze,
                       child: Text(

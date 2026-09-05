@@ -3,7 +3,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:workpulse/core/platform/desktop_notification_service.dart';
 import 'package:workpulse/data/providers/repository_providers.dart';
 import 'package:workpulse/domain/models/calendar_date.dart';
-import 'package:workpulse/domain/models/reminder_rule.dart';
 import 'package:workpulse/domain/models/work_item_model.dart';
 import 'package:workpulse/domain/models/work_item_plan.dart';
 import 'package:workpulse/domain/models/work_item_reminder_record.dart';
@@ -80,14 +79,14 @@ class _FakeAppSettingsNotifier extends AppSettingsNotifier {
 void main() {
   group('ReminderScheduler Tests', () {
     final fixedTime = DateTime(2026, 9, 3, 10, 0); // Thursday 10:00 AM
-    final today = CalendarDate(2026, 9, 3);
+    const today = CalendarDate(2026, 9, 3);
     final testItem = WorkItem(
       id: 'item-101',
       workspaceId: 'ws-1',
       name: 'Critical Task Due Today',
       projectId: 'proj-1',
       categoryId: 'cat-1',
-      plan: WorkItemPlan(due: today),
+      plan: const WorkItemPlan(due: today),
       createdAt: fixedTime,
       updatedAt: fixedTime,
     );

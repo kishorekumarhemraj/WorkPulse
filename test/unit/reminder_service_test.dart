@@ -8,7 +8,7 @@ import 'package:workpulse/domain/services/reminder_service.dart';
 void main() {
   group('ReminderService Unit Tests', () {
     const service = ReminderService();
-    final today = CalendarDate(2026, 9, 3); // Thursday
+    const today = CalendarDate(2026, 9, 3); // Thursday
     final time0900 = DateTime(2026, 9, 3, 9, 0);
     final time0859 = DateTime(2026, 9, 3, 8, 59);
     final time1630 = DateTime(2026, 9, 3, 16, 30);
@@ -19,7 +19,7 @@ void main() {
       name: 'Due today item',
       projectId: 'p1',
       categoryId: 'c1',
-      plan: WorkItemPlan(due: today),
+      plan: const WorkItemPlan(due: today),
       createdAt: DateTime(2026, 9, 1),
       updatedAt: DateTime(2026, 9, 1),
     );
@@ -30,7 +30,7 @@ void main() {
       name: 'Starts today item',
       projectId: 'p1',
       categoryId: 'c1',
-      plan: WorkItemPlan(plannedStart: today),
+      plan: const WorkItemPlan(plannedStart: today),
       createdAt: DateTime(2026, 9, 1),
       updatedAt: DateTime(2026, 9, 1),
     );
@@ -67,7 +67,7 @@ void main() {
       projectId: 'p1',
       categoryId: 'c1',
       archivedAt: DateTime(2026, 9, 1),
-      plan: WorkItemPlan(due: today),
+      plan: const WorkItemPlan(due: today),
       createdAt: DateTime(2026, 8, 20),
       updatedAt: DateTime(2026, 9, 1),
     );

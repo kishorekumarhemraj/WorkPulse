@@ -23,6 +23,7 @@ import 'package:workpulse/domain/services/timer_service.dart';
 import 'package:workpulse/domain/services/timesheet_code_resolver.dart';
 import 'package:workpulse/features/reports/views/session_edit_dialog.dart';
 import 'package:workpulse/features/reports/widgets/session_metadata.dart';
+import 'package:workpulse/features/reminders/providers/reminders_provider.dart';
 import 'package:workpulse/features/tasks/providers/task_sessions_provider.dart';
 import 'package:workpulse/features/tasks/providers/work_items_provider.dart';
 import 'package:workpulse/features/timesheet/providers/timesheet_provider.dart';
@@ -112,9 +113,23 @@ class WorkItemInspector extends ConsumerWidget {
           tone: BadgeTone.info,
         );
       case PlanStatus.open:
-        final d = plan.due!;
-        return StatusBadge(
-          label: 'DUE ${d.day} ${monthName(d.month)}',
+        if (plan.due != null) {
+          final d = plan.due!;
+          return StatusBadge(
+            label: 'DUE ${d.day} ${monthName(d.month)}',
+            icon: Icons.event_outlined,
+            tone: BadgeTone.neutral,
+          );
+        } else if (plan.plannedStart != null) {
+          final d = plan.plannedStart!;
+          return StatusBadge(
+            label: 'STARTED ${d.day} ${monthName(d.month)}',
+            icon: Icons.play_arrow_outlined,
+            tone: BadgeTone.neutral,
+          );
+        }
+        return const StatusBadge(
+          label: 'OPEN',
           icon: Icons.event_outlined,
           tone: BadgeTone.neutral,
         );
@@ -148,7 +163,7 @@ class WorkItemInspector extends ConsumerWidget {
 
   String _planStatusDescription(WorkItemPlan plan, CalendarDate today) {
     if (plan.isComplete) {
-      if (plan.wasLate == true) {
+      if (plan.wasLate == true && plan.due != null) {
         final compDate = CalendarDate.fromLocal(plan.completedAt!);
         final daysLate = compDate.differenceInDays(plan.due!);
         return 'Delivered $daysLate ${daysLate == 1 ? 'day' : 'days'} late';
@@ -159,12 +174,14 @@ class WorkItemInspector extends ConsumerWidget {
     }
 
     if (plan.due != null) {
-      final diff = plan.daysUntilDue(today)!;
-      if (diff == 0) return 'Due today';
-      if (diff == 1) return 'Due tomorrow';
-      if (diff > 1) return 'Due in $diff days';
-      if (diff == -1) return '1 day overdue';
-      return '${diff.abs()} days overdue';
+      final diff = plan.daysUntilDue(today);
+      if (diff != null) {
+        if (diff == 0) return 'Due today';
+        if (diff == 1) return 'Due tomorrow';
+        if (diff > 1) return 'Due in $diff days';
+        if (diff == -1) return '1 day overdue';
+        return '${diff.abs()} days overdue';
+      }
     }
 
     if (plan.plannedStart != null) {
@@ -513,6 +530,31 @@ class WorkItemInspector extends ConsumerWidget {
                               },
                               child: const Text('Next week'),
                             ),
+                            if (!item.plan.isComplete)
+                              OutlinedButton.icon(
+                                icon: const Icon(Icons.snooze_outlined, size: 14),
+                                label: const Text('Snooze (1h)'),
+                                style: OutlinedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 10, vertical: 6),
+                                  visualDensity: VisualDensity.compact,
+                                ),
+                                onPressed: () async {
+                                  await ref
+                                      .read(remindersProvider.notifier)
+                                      .snoozeForWorkItem(
+                                          item.id, const Duration(hours: 1));
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                            'Reminders for "${item.name}" snoozed for 1 hour'),
+                                        duration: const Duration(seconds: 2),
+                                      ),
+                                    );
+                                  }
+                                },
+                              ),
                           ],
                         ),
                       ],

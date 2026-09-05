@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:workpulse/domain/models/calendar_date.dart';
-import 'package:workpulse/domain/models/financial_classification.dart';
 import 'package:workpulse/domain/models/work_item_model.dart';
 import 'package:workpulse/domain/models/work_item_plan.dart';
 import 'package:workpulse/features/tasks/providers/work_items_provider.dart';
@@ -88,31 +87,31 @@ void main() {
     ];
 
     test('PlanFilter.overdue matches only uncompleted overdue items', () {
-      final filter = const WorkItemFilter(planFilter: PlanFilter.overdue);
+      const filter = WorkItemFilter(planFilter: PlanFilter.overdue);
       final filtered = filter.filter(allItems, today: today);
       expect(filtered.map((i) => i.id), [itemOverdue.id]);
     });
 
     test('PlanFilter.dueToday matches uncompleted tasks due today', () {
-      final filter = const WorkItemFilter(planFilter: PlanFilter.dueToday);
+      const filter = WorkItemFilter(planFilter: PlanFilter.dueToday);
       final filtered = filter.filter(allItems, today: today);
       expect(filtered.map((i) => i.id), [itemDueToday.id]);
     });
 
     test('PlanFilter.unplanned matches items without dates or completion', () {
-      final filter = const WorkItemFilter(planFilter: PlanFilter.unplanned);
+      const filter = WorkItemFilter(planFilter: PlanFilter.unplanned);
       final filtered = filter.filter(allItems, today: today);
       expect(filtered.map((i) => i.id), [itemUnplanned.id]);
     });
 
     test('PlanFilter.completed matches completed items', () {
-      final filter = const WorkItemFilter(planFilter: PlanFilter.completed);
+      const filter = WorkItemFilter(planFilter: PlanFilter.completed);
       final filtered = filter.filter(allItems, today: today);
       expect(filtered.map((i) => i.id), [itemCompleted.id]);
     });
 
     test('WorkItemSort.dueDate sorts items by due date ascending, with nulls last', () {
-      final filter = const WorkItemFilter(sort: WorkItemSort.dueDate);
+      const filter = WorkItemFilter(sort: WorkItemSort.dueDate);
       final filtered = filter.filter(allItems, today: today);
       expect(filtered.map((i) => i.id), [
         itemOverdue.id,
@@ -125,7 +124,7 @@ void main() {
     });
 
     test('WorkItemSort.name sorts alphabetically by name', () {
-      final filter = const WorkItemFilter(sort: WorkItemSort.name);
+      const filter = WorkItemFilter(sort: WorkItemSort.name);
       final filtered = filter.filter(allItems, today: today);
       expect(
         filtered.map((i) => i.name),
