@@ -76,10 +76,10 @@ class SqliteSessionRepository implements SessionRepository {
   Future<List<Session>> getByDateRange(DateTime start, DateTime end) async {
     final results = await _db.query(
       Tables.sessions,
-      where: 'start_time >= ? AND start_time <= ?',
+      where: 'start_time <= ? AND (end_time IS NULL OR end_time >= ?)',
       whereArgs: [
+        end.toUtc().toIso8601String(),
         start.toUtc().toIso8601String(),
-        end.toUtc().toIso8601String()
       ],
       orderBy: 'start_time DESC',
     );
