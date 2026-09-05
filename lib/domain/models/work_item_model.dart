@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:workpulse/domain/models/financial_classification.dart';
+import 'package:workpulse/domain/models/work_item_plan.dart';
 
 class WorkItem extends Equatable {
   final String id;
@@ -16,6 +17,11 @@ class WorkItem extends Equatable {
   /// [Session.financialClassification].
   final FinancialClassification financialClassification;
 
+  /// What the user intends for this item, as opposed to what has happened to
+  /// it. Never inherited by sessions: a session records what happened, and a
+  /// plan is a statement about what has not happened yet (AGENTS.md rule 7).
+  final WorkItemPlan plan;
+
   final String? notes;
   final List<String> tagIds;
   final List<String> peopleIds;
@@ -31,6 +37,7 @@ class WorkItem extends Equatable {
     required this.projectId,
     required this.categoryId,
     this.financialClassification = FinancialClassification.none,
+    this.plan = const WorkItemPlan.unplanned(),
     this.notes,
     this.tagIds = const [],
     this.peopleIds = const [],
@@ -49,6 +56,7 @@ class WorkItem extends Equatable {
     String? projectId,
     String? categoryId,
     FinancialClassification? financialClassification,
+    WorkItemPlan? plan,
     String? notes,
     List<String>? tagIds,
     List<String>? peopleIds,
@@ -65,6 +73,7 @@ class WorkItem extends Equatable {
       categoryId: categoryId ?? this.categoryId,
       financialClassification:
           financialClassification ?? this.financialClassification,
+      plan: plan ?? this.plan,
       notes: notes ?? this.notes,
       tagIds: tagIds ?? this.tagIds,
       peopleIds: peopleIds ?? this.peopleIds,
@@ -83,6 +92,7 @@ class WorkItem extends Equatable {
         projectId,
         categoryId,
         financialClassification,
+        plan,
         notes,
         tagIds,
         peopleIds,
