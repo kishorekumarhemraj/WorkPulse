@@ -78,6 +78,11 @@ class _SessionEditDialogState extends ConsumerState<SessionEditDialog> {
         final existingValues = await ref.read(
             sessionAttributeValuesFamilyProvider(widget.record.session.id)
                 .future);
+        final defs = await ref.read(attributeDefinitionsProvider.future);
+        final sessionDefs = defs
+            .where((d) =>
+                d.scope == AttributeScope.session && d.enabled && !d.isArchived)
+            .toList();
         if (mounted) {
           setState(() {
             for (final v in existingValues) {
@@ -96,7 +101,20 @@ class _SessionEditDialogState extends ConsumerState<SessionEditDialog> {
                 _sessionAttributeValues[v.attributeDefinitionId] = v.dateValue;
               }
               if (v.optionId != null) {
-                _sessionAttributeValues[v.attributeDefinitionId] = v.optionId;
+                final def = sessionDefs
+                    .where((d) => d.id == v.attributeDefinitionId)
+                    .firstOrNull;
+                if (def?.type == AttributeType.multiSelect) {
+                  final list = (_sessionAttributeValues[v.attributeDefinitionId]
+                          as List<String>?) ??
+                      <String>[];
+                  if (!list.contains(v.optionId!)) {
+                    list.add(v.optionId!);
+                  }
+                  _sessionAttributeValues[v.attributeDefinitionId] = list;
+                } else {
+                  _sessionAttributeValues[v.attributeDefinitionId] = v.optionId;
+                }
               }
             }
           });
