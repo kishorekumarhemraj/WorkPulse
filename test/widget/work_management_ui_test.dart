@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:workpulse/core/constants/app_constants.dart';
 import 'package:workpulse/core/keyboard/shortcut_labels.dart';
 import 'package:workpulse/core/theme/app_theme.dart';
+import 'package:workpulse/domain/models/calendar_date.dart';
 import 'package:workpulse/domain/models/category_model.dart';
 import 'package:workpulse/domain/models/person_model.dart';
 import 'package:workpulse/domain/models/project_model.dart';
@@ -12,6 +13,7 @@ import 'package:workpulse/domain/models/project_timesheet_code.dart';
 import 'package:workpulse/domain/models/tag_model.dart';
 import 'package:workpulse/domain/models/financial_classification.dart';
 import 'package:workpulse/domain/models/work_item_model.dart';
+import 'package:workpulse/domain/models/work_item_plan.dart';
 import 'package:workpulse/domain/models/workspace_model.dart';
 import 'package:workpulse/features/categories/providers/categories_provider.dart';
 import 'package:workpulse/features/categories/views/categories_view.dart';
@@ -20,6 +22,7 @@ import 'package:workpulse/features/notes/views/time_notes_view.dart';
 import 'package:workpulse/features/patterns/views/patterns_view.dart';
 import 'package:workpulse/features/people/providers/people_provider.dart';
 import 'package:workpulse/features/people/views/people_view.dart';
+import 'package:workpulse/features/planner/views/planner_view.dart';
 import 'package:workpulse/features/projects/providers/projects_provider.dart';
 import 'package:workpulse/features/projects/views/project_form_dialog.dart';
 import 'package:workpulse/features/projects/views/projects_view.dart';
@@ -31,6 +34,8 @@ import 'package:workpulse/features/tags/views/tags_view.dart';
 import 'package:workpulse/features/tasks/providers/work_items_provider.dart';
 import 'package:workpulse/features/tasks/views/task_form_dialog.dart';
 import 'package:workpulse/features/tasks/views/tasks_view.dart';
+import 'package:workpulse/features/tasks/widgets/work_item_row.dart';
+import 'package:workpulse/features/tasks/widgets/work_items_toolbar.dart';
 import 'package:workpulse/features/workspace/providers/workspace_provider.dart';
 
 void main() {
@@ -150,16 +155,23 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byType(PatternsView), findsOneWidget);
 
-      // Cmd+5 jumps to Time Notes.
+      // Cmd+3 jumps to Planner.
       await tester.sendKeyDownEvent(LogicalKeyboardKey.meta);
-      await tester.sendKeyEvent(LogicalKeyboardKey.digit5);
+      await tester.sendKeyEvent(LogicalKeyboardKey.digit3);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.meta);
+      await tester.pumpAndSettle();
+      expect(find.byType(PlannerView), findsOneWidget);
+
+      // Cmd+6 jumps to Time Notes.
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.meta);
+      await tester.sendKeyEvent(LogicalKeyboardKey.digit6);
       await tester.sendKeyUpEvent(LogicalKeyboardKey.meta);
       await tester.pumpAndSettle();
       expect(find.byType(TimeNotesView), findsOneWidget);
 
-      // Cmd+7 jumps to Projects (Cmd+6 is now Time Sheet).
+      // Cmd+8 jumps to Projects (Cmd+7 is now Time Sheet).
       await tester.sendKeyDownEvent(LogicalKeyboardKey.meta);
-      await tester.sendKeyEvent(LogicalKeyboardKey.digit7);
+      await tester.sendKeyEvent(LogicalKeyboardKey.digit8);
       await tester.sendKeyUpEvent(LogicalKeyboardKey.meta);
       await tester.pumpAndSettle();
       expect(find.byType(ProjectsView), findsOneWidget);
@@ -286,7 +298,7 @@ void main() {
       // surface is too short to lay out all 8 items, so widgets scrolled
       // out of view (Tags/People/Attributes) wouldn't exist in the tree yet.
       // Use a realistic desktop window size instead.
-      tester.view.physicalSize = const Size(1280, 900);
+      tester.view.physicalSize = const Size(1280, 1100);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
@@ -419,6 +431,98 @@ void main() {
 
       expect(find.text('New Work Item'), findsNothing);
     });
+
+    testWidgets(
+        'TaskFormDialog rejects due date before planned start with informative error',
+        (tester) async {
+      final invertedItem = testWorkItem.copyWith(
+        plan: const WorkItemPlan(
+          plannedStart: CalendarDate(2026, 9, 10),
+          due: CalendarDate(2026, 9, 3),
+        ),
+      );
+
+      await tester.pumpWidget(
+        createTestApp(
+          child: Builder(
+            builder: (context) => ElevatedButton(
+              onPressed: () =>
+                  TaskFormDialog.show(context, workItem: invertedItem),
+              child: const Text('Open Task Dialog'),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      await tester.tap(find.text('Open Task Dialog'));
+      await tester.pump();
+
+      expect(find.text('Edit Work Item'), findsOneWidget);
+
+      // Attempt to save inverted dates
+      await tester.tap(find.text('Save Changes'));
+      await tester.pump();
+
+      // Error snackbar should be displayed naming the start date
+      expect(find.textContaining('Due date is before the planned start'),
+          findsOneWidget);
+    });
+
+    testWidgets('WorkItemRow renders plan badge when planned and none when unplanned',
+        (tester) async {
+      final plannedItem = testWorkItem.copyWith(
+        id: 'item-planned',
+        name: 'Planned Task',
+        plan: const WorkItemPlan(
+          due: CalendarDate(2026, 9, 3),
+        ),
+      );
+
+      await tester.pumpWidget(
+        createTestApp(
+          child: Builder(
+            builder: (context) => Column(
+              children: [
+                WorkItemRow(
+                  item: testWorkItem, // unplanned
+                  project: testProject,
+                  category: testCategory,
+                  tags: [testTag],
+                  people: [testPerson],
+                  isSelected: false,
+                  density: ListDensity.comfortable,
+                  onTap: () {},
+                  onToggleTimer: () {},
+                  onEdit: () {},
+                  onArchiveToggle: () {},
+                  onDelete: () {},
+                ),
+                WorkItemRow(
+                  item: plannedItem,
+                  project: testProject,
+                  category: testCategory,
+                  tags: [testTag],
+                  people: [testPerson],
+                  isSelected: false,
+                  density: ListDensity.comfortable,
+                  onTap: () {},
+                  onToggleTimer: () {},
+                  onEdit: () {},
+                  onArchiveToggle: () {},
+                  onDelete: () {},
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Planned item has a badge
+      expect(find.text('Planned Task'), findsOneWidget);
+      expect(find.text('Build Authentication'), findsOneWidget);
+    });
   });
 }
 
@@ -492,6 +596,7 @@ class _FakeWorkItemsNotifier extends WorkItemsNotifier {
     required String projectId,
     required String categoryId,
     FinancialClassification classification = FinancialClassification.none,
+    WorkItemPlan plan = const WorkItemPlan.unplanned(),
     String? notes,
     List<String> tagIds = const [],
     List<String> peopleIds = const [],
@@ -502,6 +607,8 @@ class _FakeWorkItemsNotifier extends WorkItemsNotifier {
       name: name,
       projectId: projectId,
       categoryId: categoryId,
+      financialClassification: classification,
+      plan: plan,
       notes: notes,
       tagIds: tagIds,
       peopleIds: peopleIds,

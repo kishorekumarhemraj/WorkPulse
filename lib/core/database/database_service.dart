@@ -12,6 +12,7 @@ import 'package:workpulse/data/migrations/migration_v5.dart';
 import 'package:workpulse/data/migrations/migration_v6.dart';
 import 'package:workpulse/data/migrations/migration_v8.dart';
 import 'package:workpulse/data/migrations/migration_v9.dart';
+import 'package:workpulse/data/migrations/migration_v10.dart';
 
 class DatabaseService {
   static DatabaseService? _instance;
@@ -98,6 +99,7 @@ class DatabaseService {
     if (version >= 6) await MigrationV6.execute(db);
     if (version >= 8) await MigrationV8.execute(db);
     if (version >= 9) await MigrationV9.execute(db);
+    if (version >= 10) await MigrationV10.execute(db);
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
@@ -115,6 +117,7 @@ class DatabaseService {
     if (oldVersion < 7) await MigrationV5.execute(db);
     if (oldVersion < 8) await MigrationV8.execute(db);
     if (oldVersion < 9) await MigrationV9.execute(db);
+    if (oldVersion < 10) await MigrationV10.execute(db);
   }
 
   Future<String> _getDefaultDatabasePath() async {

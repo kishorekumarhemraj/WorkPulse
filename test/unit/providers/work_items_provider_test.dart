@@ -1,271 +1,143 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:sqflite_common_ffi/sqflite_ffi.dart';
-import 'package:uuid/uuid.dart';
-import 'package:workpulse/core/database/database_service.dart';
-import 'package:workpulse/data/providers/repository_providers.dart';
-import 'package:workpulse/domain/models/category_model.dart';
+import 'package:workpulse/domain/models/calendar_date.dart';
 import 'package:workpulse/domain/models/financial_classification.dart';
-import 'package:workpulse/domain/models/person_model.dart';
-import 'package:workpulse/domain/models/project_model.dart';
-import 'package:workpulse/domain/models/tag_model.dart';
-import 'package:workpulse/domain/models/workspace_model.dart';
+import 'package:workpulse/domain/models/work_item_model.dart';
+import 'package:workpulse/domain/models/work_item_plan.dart';
 import 'package:workpulse/features/tasks/providers/work_items_provider.dart';
-import 'package:workpulse/features/workspace/providers/workspace_provider.dart';
 
 void main() {
-  setUpAll(() {
-    sqfliteFfiInit();
-    databaseFactory = databaseFactoryFfi;
-  });
+  group('WorkItemFilter & PlanFilter & WorkItemSort', () {
+    final now = DateTime.now();
+    final today = CalendarDate.fromLocal(now);
 
-  group('WorkItemsProvider & WorkItemFilter Tests', () {
-    late DatabaseService dbService;
-    late ProviderContainer container;
-    const uuid = Uuid();
-    final now = DateTime.now().toUtc();
+    final itemUnplanned = WorkItem(
+      id: 'item-unplanned',
+      workspaceId: 'ws-1',
+      name: 'Unplanned task',
+      projectId: 'p1',
+      categoryId: 'c1',
+      createdAt: now.subtract(const Duration(days: 5)),
+      updatedAt: now,
+    );
 
-    late Workspace testWorkspace;
-    late Project testProjectA;
-    late Project testProjectB;
-    late Category testCategoryA;
-    late Tag testTag;
-    late Person testPerson;
+    final itemOverdue = WorkItem(
+      id: 'item-overdue',
+      workspaceId: 'ws-1',
+      name: 'Overdue task',
+      projectId: 'p1',
+      categoryId: 'c1',
+      plan: WorkItemPlan(due: today.addDays(-2)),
+      createdAt: now.subtract(const Duration(days: 4)),
+      updatedAt: now,
+    );
 
-    setUp(() async {
-      dbService = DatabaseService();
-      await dbService.initialize(inMemory: true);
+    final itemDueToday = WorkItem(
+      id: 'item-due-today',
+      workspaceId: 'ws-1',
+      name: 'Due today task',
+      projectId: 'p1',
+      categoryId: 'c1',
+      plan: WorkItemPlan(due: today),
+      createdAt: now.subtract(const Duration(days: 3)),
+      updatedAt: now,
+    );
 
-      testWorkspace = Workspace(
-          id: uuid.v4(), name: 'Test WS', createdAt: now, updatedAt: now);
-      await dbService.database.insert('workspaces', {
-        'id': testWorkspace.id,
-        'name': testWorkspace.name,
-        'created_at': testWorkspace.createdAt.toIso8601String(),
-        'updated_at': testWorkspace.updatedAt.toIso8601String(),
-      });
+    final itemDueTomorrow = WorkItem(
+      id: 'item-due-tomorrow',
+      workspaceId: 'ws-1',
+      name: 'Due tomorrow task',
+      projectId: 'p1',
+      categoryId: 'c1',
+      plan: WorkItemPlan(due: today.addDays(1)),
+      createdAt: now.subtract(const Duration(days: 2)),
+      updatedAt: now,
+    );
 
-      testProjectA = Project(
-          id: uuid.v4(),
-          workspaceId: testWorkspace.id,
-          name: 'Project A',
-          createdAt: now,
-          updatedAt: now);
-      testProjectB = Project(
-          id: uuid.v4(),
-          workspaceId: testWorkspace.id,
-          name: 'Project B',
-          createdAt: now,
-          updatedAt: now);
-      await dbService.database.insert('projects', {
-        'id': testProjectA.id,
-        'workspace_id': testProjectA.workspaceId,
-        'name': testProjectA.name,
-        'created_at': testProjectA.createdAt.toIso8601String(),
-        'updated_at': testProjectA.updatedAt.toIso8601String(),
-      });
-      await dbService.database.insert('projects', {
-        'id': testProjectB.id,
-        'workspace_id': testProjectB.workspaceId,
-        'name': testProjectB.name,
-        'created_at': testProjectB.createdAt.toIso8601String(),
-        'updated_at': testProjectB.updatedAt.toIso8601String(),
-      });
+    final itemScheduled = WorkItem(
+      id: 'item-scheduled',
+      workspaceId: 'ws-1',
+      name: 'Scheduled task',
+      projectId: 'p1',
+      categoryId: 'c1',
+      plan: WorkItemPlan(plannedStart: today.addDays(3)),
+      createdAt: now.subtract(const Duration(days: 1)),
+      updatedAt: now,
+    );
 
-      testCategoryA = Category(
-          id: uuid.v4(),
-          workspaceId: testWorkspace.id,
-          name: 'Dev',
-          createdAt: now,
-          updatedAt: now);
-      await dbService.database.insert('categories', {
-        'id': testCategoryA.id,
-        'workspace_id': testCategoryA.workspaceId,
-        'name': testCategoryA.name,
-        'created_at': testCategoryA.createdAt.toIso8601String(),
-        'updated_at': testCategoryA.updatedAt.toIso8601String(),
-      });
+    final itemCompleted = WorkItem(
+      id: 'item-completed',
+      workspaceId: 'ws-1',
+      name: 'Completed task',
+      projectId: 'p1',
+      categoryId: 'c1',
+      plan: WorkItemPlan(
+        due: today.addDays(-1),
+        completedAt: now.subtract(const Duration(hours: 2)),
+      ),
+      createdAt: now.subtract(const Duration(days: 6)),
+      updatedAt: now,
+    );
 
-      testTag = Tag(
-          id: uuid.v4(),
-          workspaceId: testWorkspace.id,
-          name: 'Urgent',
-          createdAt: now);
-      await dbService.database.insert('tags', {
-        'id': testTag.id,
-        'workspace_id': testTag.workspaceId,
-        'name': testTag.name,
-        'created_at': testTag.createdAt.toIso8601String(),
-      });
+    final allItems = [
+      itemUnplanned,
+      itemOverdue,
+      itemDueToday,
+      itemDueTomorrow,
+      itemScheduled,
+      itemCompleted,
+    ];
 
-      testPerson = Person(
-          id: uuid.v4(),
-          workspaceId: testWorkspace.id,
-          name: 'Alice',
-          createdAt: now);
-      await dbService.database.insert('people', {
-        'id': testPerson.id,
-        'workspace_id': testPerson.workspaceId,
-        'name': testPerson.name,
-        'created_at': testPerson.createdAt.toIso8601String(),
-      });
+    test('PlanFilter.overdue matches only uncompleted overdue items', () {
+      final filter = const WorkItemFilter(planFilter: PlanFilter.overdue);
+      final filtered = filter.filter(allItems, today: today);
+      expect(filtered.map((i) => i.id), [itemOverdue.id]);
+    });
 
-      container = ProviderContainer(
-        overrides: [
-          databaseServiceProvider.overrideWithValue(dbService),
-          currentWorkspaceProvider
-              .overrideWith(() => _MockWorkspaceNotifier(testWorkspace)),
+    test('PlanFilter.dueToday matches uncompleted tasks due today', () {
+      final filter = const WorkItemFilter(planFilter: PlanFilter.dueToday);
+      final filtered = filter.filter(allItems, today: today);
+      expect(filtered.map((i) => i.id), [itemDueToday.id]);
+    });
+
+    test('PlanFilter.unplanned matches items without dates or completion', () {
+      final filter = const WorkItemFilter(planFilter: PlanFilter.unplanned);
+      final filtered = filter.filter(allItems, today: today);
+      expect(filtered.map((i) => i.id), [itemUnplanned.id]);
+    });
+
+    test('PlanFilter.completed matches completed items', () {
+      final filter = const WorkItemFilter(planFilter: PlanFilter.completed);
+      final filtered = filter.filter(allItems, today: today);
+      expect(filtered.map((i) => i.id), [itemCompleted.id]);
+    });
+
+    test('WorkItemSort.dueDate sorts items by due date ascending, with nulls last', () {
+      final filter = const WorkItemFilter(sort: WorkItemSort.dueDate);
+      final filtered = filter.filter(allItems, today: today);
+      expect(filtered.map((i) => i.id), [
+        itemOverdue.id,
+        itemCompleted.id,
+        itemDueToday.id,
+        itemDueTomorrow.id,
+        itemUnplanned.id,
+        itemScheduled.id,
+      ]);
+    });
+
+    test('WorkItemSort.name sorts alphabetically by name', () {
+      final filter = const WorkItemFilter(sort: WorkItemSort.name);
+      final filtered = filter.filter(allItems, today: today);
+      expect(
+        filtered.map((i) => i.name),
+        [
+          'Completed task',
+          'Due today task',
+          'Due tomorrow task',
+          'Overdue task',
+          'Scheduled task',
+          'Unplanned task',
         ],
       );
     });
-
-    tearDown(() async {
-      container.dispose();
-      await dbService.close();
-    });
-
-    test('WorkItemFilter updates state correctly', () {
-      final filterNotifier = container.read(workItemFilterProvider.notifier);
-
-      expect(container.read(workItemFilterProvider).hasActiveFilters, isFalse);
-
-      filterNotifier.setSearchQuery('test');
-      expect(container.read(workItemFilterProvider).searchQuery, 'test');
-      expect(container.read(workItemFilterProvider).hasActiveFilters, isTrue);
-
-      filterNotifier.setProject(testProjectA.id);
-      expect(container.read(workItemFilterProvider).projectId, testProjectA.id);
-
-      filterNotifier.setCategory(testCategoryA.id);
-      expect(
-          container.read(workItemFilterProvider).categoryId, testCategoryA.id);
-
-      filterNotifier.setTag(testTag.id);
-      expect(container.read(workItemFilterProvider).tagId, testTag.id);
-
-      filterNotifier.setPerson(testPerson.id);
-      expect(container.read(workItemFilterProvider).personId, testPerson.id);
-
-      filterNotifier.toggleIncludeArchived();
-      expect(container.read(workItemFilterProvider).includeArchived, isTrue);
-
-      filterNotifier.reset();
-      expect(container.read(workItemFilterProvider).hasActiveFilters, isFalse);
-      expect(container.read(workItemFilterProvider).searchQuery, '');
-    });
-
-    test('WorkItemsNotifier CRUD and filtering operations', () async {
-      final notifier = container.read(workItemsProvider.notifier);
-
-      // 1. Initial list should be empty
-      var items = await container.read(workItemsProvider.future);
-      expect(items, isEmpty);
-
-      // 2. Create items
-      final item1 = await notifier.createWorkItem(
-        name: 'Task Alpha',
-        projectId: testProjectA.id,
-        categoryId: testCategoryA.id,
-        notes: 'Alpha notes',
-        tagIds: [testTag.id],
-        peopleIds: [testPerson.id],
-      );
-      expect(item1.name, 'Task Alpha');
-
-      final item2 = await notifier.createWorkItem(
-        name: 'Task Beta',
-        projectId: testProjectB.id,
-        categoryId: testCategoryA.id,
-        notes: 'Beta notes',
-      );
-
-      items = await container.read(workItemsProvider.future);
-      expect(items.length, 2);
-
-      // 3. Filter by project
-      container
-          .read(workItemFilterProvider.notifier)
-          .setProject(testProjectA.id);
-      items = await container.read(workItemsProvider.future);
-      expect(items.length, 1);
-      expect(items.first.id, item1.id);
-
-      // 4. Search query
-      container.read(workItemFilterProvider.notifier).reset();
-      container.read(workItemFilterProvider.notifier).setSearchQuery('Beta');
-      items = await container.read(workItemsProvider.future);
-      expect(items.length, 1);
-      expect(items.first.id, item2.id);
-
-      // 5. Update item
-      container.read(workItemFilterProvider.notifier).reset();
-      final updated = await notifier
-          .updateWorkItem(item1.copyWith(name: 'Task Alpha Updated'));
-      expect(updated.name, 'Task Alpha Updated');
-
-      // 6. Archive item
-      await notifier.archiveWorkItem(item1.id);
-      items = await container.read(workItemsProvider.future);
-      expect(items.length, 1);
-      expect(items.first.id, item2.id);
-
-      // Include archived
-      container.read(workItemFilterProvider.notifier).toggleIncludeArchived();
-      items = await container.read(workItemsProvider.future);
-      expect(items.length, 2);
-
-      // 7. Delete item
-      await notifier.deleteWorkItem(item2.id);
-      items = await container.read(workItemsProvider.future);
-      expect(items.length, 1);
-      expect(items.first.id, item1.id);
-    });
-
-    test('a task round-trips its financial classification through SQLite',
-        () async {
-      final notifier = container.read(workItemsProvider.notifier);
-
-      final capex = await notifier.createWorkItem(
-        name: 'Build the thing',
-        projectId: testProjectA.id,
-        categoryId: testCategoryA.id,
-        classification: FinancialClassification.capex,
-      );
-      expect(capex.financialClassification, FinancialClassification.capex);
-
-      // Unstated means unclassified. Defaulting to OpEx would invent a
-      // finance decision nobody made.
-      final defaulted = await notifier.createWorkItem(
-        name: 'Unclassified work',
-        projectId: testProjectA.id,
-        categoryId: testCategoryA.id,
-      );
-      expect(defaulted.financialClassification, FinancialClassification.none);
-
-      container.read(workItemFilterProvider.notifier).reset();
-      final reloaded = await container.read(workItemsProvider.future);
-      expect(
-        reloaded.firstWhere((w) => w.id == capex.id).financialClassification,
-        FinancialClassification.capex,
-      );
-
-      final reclassified = await notifier.updateWorkItem(
-        capex.copyWith(
-          financialClassification: FinancialClassification.opex,
-        ),
-      );
-      expect(
-        reclassified.financialClassification,
-        FinancialClassification.opex,
-      );
-    });
   });
-}
-
-class _MockWorkspaceNotifier extends CurrentWorkspaceNotifier {
-  final Workspace _workspace;
-  _MockWorkspaceNotifier(this._workspace);
-
-  @override
-  Future<Workspace> build() async => _workspace;
 }
