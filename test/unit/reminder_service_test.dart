@@ -177,5 +177,36 @@ void main() {
 
       expect(candidates, isEmpty);
     });
+
+    test('inverted plan (start after due) still fires dueMorning for today',
+        () {
+      // Documents current behaviour: no isInverted guard in the shipped
+      // engine (design §5.5 described one for a dueAhead rule that was not
+      // built). The due date itself is unambiguous, so it fires.
+      final inverted = WorkItem(
+        id: 'item-inverted',
+        workspaceId: 'ws-1',
+        name: 'Inverted item',
+        projectId: 'p1',
+        categoryId: 'c1',
+        plan: const WorkItemPlan(
+          plannedStart: CalendarDate(2026, 9, 5),
+          due: CalendarDate(2026, 9, 3),
+        ),
+        createdAt: DateTime(2026, 9, 1),
+        updatedAt: DateTime(2026, 9, 1),
+      );
+
+      final candidates = service.evaluate(
+        workItems: [inverted],
+        nowLocal: time0900,
+        deliveredKeys: {},
+      );
+
+      expect(
+        candidates.map((c) => c.rule),
+        contains(ReminderRule.dueMorning),
+      );
+    });
   });
 }
