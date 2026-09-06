@@ -91,7 +91,7 @@ WorkPulse is a privacy-first, offline-first desktop time-tracking and work-aware
 All Git commits created with AI agents should include standard GitHub co-author attribution trailers in the commit message body:
 - **Antigravity / Gemini**:
   ```text
-  Co-Authored-By: Antigravity <antigravity@users.noreply.github.com>
+  Co-Authored-By: Antigravity <antigravity@google.com>
   ```
 - **Claude**:
   ```text
