@@ -313,8 +313,8 @@ class WorkItemRow extends ConsumerWidget {
                 case 'set_due_date':
                   final picked = await showDatePicker(
                     context: context,
-                    initialDate: item.plan.due?.toLocalDateTime() ??
-                        DateTime.now(),
+                    initialDate:
+                        item.plan.due?.toLocalDateTime() ?? DateTime.now(),
                     firstDate: DateTime(2000),
                     lastDate: DateTime(2100),
                   );

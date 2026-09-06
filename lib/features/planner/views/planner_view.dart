@@ -139,8 +139,7 @@ class _PlannerViewState extends ConsumerState<PlannerView> {
       backgroundColor: colors.background,
       body: PageScaffold(
         title: 'Planner',
-        subtitle:
-            'Organise work by schedule, urgency, and upcoming deadlines',
+        subtitle: 'Organise work by schedule, urgency, and upcoming deadlines',
         actions: [
           Tooltip(
             message: 'New work item   ${ShortcutLabels.primary('N')}',
@@ -435,8 +434,7 @@ class _PlannerViewState extends ConsumerState<PlannerView> {
                                 context,
                                 workItem: selected,
                               ),
-                              onClose: () =>
-                                  setState(() => _selectedId = null),
+                              onClose: () => setState(() => _selectedId = null),
                             ),
                     ),
                   ],
@@ -509,8 +507,7 @@ class _PlannerViewState extends ConsumerState<PlannerView> {
                     tags: itemTags,
                     people: itemPeople,
                     peopleMap: peopleMap,
-                    onEdit: () =>
-                        TaskFormDialog.show(context, workItem: item),
+                    onEdit: () => TaskFormDialog.show(context, workItem: item),
                     onClose: () => setState(() => _selectedId = null),
                   ),
                 ),
@@ -519,9 +516,8 @@ class _PlannerViewState extends ConsumerState<PlannerView> {
           },
         ),
         SizedBox(
-          height: density == ListDensity.compact
-              ? Spacing.sm - 2
-              : Spacing.sm + 2,
+          height:
+              density == ListDensity.compact ? Spacing.sm - 2 : Spacing.sm + 2,
         ),
       ],
     ];

@@ -81,4 +81,3 @@ final reminderRepositoryProvider = Provider<ReminderRepository>((ref) {
   final dbService = ref.watch(databaseServiceProvider);
   return SqliteReminderRepository(dbService);
 });
-

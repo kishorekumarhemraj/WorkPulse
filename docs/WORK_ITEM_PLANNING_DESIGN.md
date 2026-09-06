@@ -1,9 +1,6 @@
 # Work Item Planning & Reminders — Design & Delegation Brief
 
-Status: design only, not implemented.
-Target branch: `claude/work-items-planning-notifications-yrhaz3`.
-Database version at time of writing: **9** (`AppConstants.dbVersion`). This work
-introduces **v10**.
+Status: implemented (v10 — `CalendarDate`, `WorkItemPlan`, `ReminderService`, Planner view, notification centre, tray fallback).
 
 ---
 

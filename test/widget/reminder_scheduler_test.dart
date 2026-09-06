@@ -101,9 +101,10 @@ void main() {
           reminderRepositoryProvider.overrideWithValue(fakeRepo),
           desktopNotificationServiceProvider
               .overrideWithValue(fakeNotificationService),
-          appSettingsProvider
-              .overrideWith(() => _FakeAppSettingsNotifier(AppSettings.defaults())),
-          workItemsProvider.overrideWith(() => _FakeWorkItemsNotifier([testItem])),
+          appSettingsProvider.overrideWith(
+              () => _FakeAppSettingsNotifier(AppSettings.defaults())),
+          workItemsProvider
+              .overrideWith(() => _FakeWorkItemsNotifier([testItem])),
           unfilteredWorkItemsProvider.overrideWith((ref) async => [testItem]),
           reminderSchedulerProvider.overrideWith((ref) {
             final scheduler =

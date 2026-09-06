@@ -200,7 +200,13 @@ class _CommandPaletteState extends ConsumerState<CommandPalette> {
         section: 'Actions',
         icon: Icons.notifications_outlined,
         kind: CommandKind.action,
-        keywords: const ['reminders', 'notifications', 'alerts', 'due', 'overdue'],
+        keywords: const [
+          'reminders',
+          'notifications',
+          'alerts',
+          'due',
+          'overdue'
+        ],
         invoke: () async => NotificationCenterDialog.show(context),
       ),
       PaletteCommand(
@@ -209,7 +215,13 @@ class _CommandPaletteState extends ConsumerState<CommandPalette> {
         section: 'Actions',
         icon: Icons.notifications_active_outlined,
         kind: CommandKind.action,
-        keywords: const ['reminders', 'settings', 'notifications', 'digest', 'quiet'],
+        keywords: const [
+          'reminders',
+          'settings',
+          'notifications',
+          'digest',
+          'quiet'
+        ],
         invoke: () async => ReminderSettingsDialog.show(context),
       ),
       if (isRunning)

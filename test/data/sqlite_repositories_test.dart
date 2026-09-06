@@ -546,13 +546,10 @@ void main() {
         createdAt: now,
         updatedAt: now,
       ));
-      await tagRepo.create(
-          Tag(id: 't-plan', workspaceId: wsId, name: 'PlanTag', createdAt: now));
+      await tagRepo.create(Tag(
+          id: 't-plan', workspaceId: wsId, name: 'PlanTag', createdAt: now));
       await personRepo.create(Person(
-          id: 'per-plan',
-          workspaceId: wsId,
-          name: 'Planner',
-          createdAt: now));
+          id: 'per-plan', workspaceId: wsId, name: 'Planner', createdAt: now));
 
       // 1. Create with plan
       final item1 = WorkItem(
@@ -574,8 +571,8 @@ void main() {
 
       final fetched1 = await workItemRepo.getById('wi-p1');
       expect(fetched1, isNotNull);
-      expect(fetched1!.plan.plannedStart,
-          equals(const CalendarDate(2026, 9, 1)));
+      expect(
+          fetched1!.plan.plannedStart, equals(const CalendarDate(2026, 9, 1)));
       expect(fetched1.plan.due, equals(const CalendarDate(2026, 9, 5)));
       expect(fetched1.plan.completedAt, isNull);
 
@@ -589,8 +586,8 @@ void main() {
       await workItemRepo.updatePlan('wi-p1', newPlan);
 
       final fetchedAfterUpdate = await workItemRepo.getById('wi-p1');
-      expect(fetchedAfterUpdate!.plan.due,
-          equals(const CalendarDate(2026, 9, 6)));
+      expect(
+          fetchedAfterUpdate!.plan.due, equals(const CalendarDate(2026, 9, 6)));
       expect(fetchedAfterUpdate.plan.completedAt, equals(completionTime));
       // Join tables must remain intact!
       expect(fetchedAfterUpdate.tagIds, contains('t-plan'));

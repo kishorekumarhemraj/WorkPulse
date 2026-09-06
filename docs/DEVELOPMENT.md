@@ -64,7 +64,7 @@ flutter analyze
 flutter test
 
 # Focused runs
-flutter test test/data/database_migration_test.dart        # schema & migrations v1 -> v4
+flutter test test/data/database_migration_test.dart        # schema & migrations v1 -> v10 (no v7 file — v7 is a version stamp only)
 flutter test test/data/sqlite_repositories_test.dart       # repository CRUD
 flutter test test/unit/services/                           # domain services
 flutter test test/unit/providers/                          # Riverpod notifiers

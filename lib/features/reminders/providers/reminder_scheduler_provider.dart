@@ -101,9 +101,8 @@ class ReminderScheduler {
           payload: first.workItemId,
         );
       } else if (candidates.length > 1) {
-        final overdueCount = candidates
-            .where((c) => c.rule == ReminderRule.overdueDaily)
-            .length;
+        final overdueCount =
+            candidates.where((c) => c.rule == ReminderRule.overdueDaily).length;
         final dueTodayCount = candidates
             .where((c) =>
                 c.rule == ReminderRule.dueMorning ||

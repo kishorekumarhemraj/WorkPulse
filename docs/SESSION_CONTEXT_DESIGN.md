@@ -1,5 +1,7 @@
 # Session Context — Design & Delegation Brief
 
+Status: implemented (category inheritance from previous session, `SessionMetadataChips` / `SessionNoteBlock`, Time Notes grouping via `TimeNotesService`, Time Sheet Sunday default + title case, work-item session records).
+
 Five requested changes across four screens plus the timer. They look unrelated
 in the request but share one spine: **a session is shown almost everywhere in
 WorkPulse without the metadata that makes it meaningful**, and in one case is

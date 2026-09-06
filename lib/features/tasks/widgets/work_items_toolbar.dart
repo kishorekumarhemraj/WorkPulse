@@ -107,8 +107,7 @@ class WorkItemsToolbar extends ConsumerWidget {
               value: filter.planFilter == PlanFilter.all
                   ? null
                   : filter.planFilter,
-              onChanged: (val) =>
-                  notifier.setPlanFilter(val ?? PlanFilter.all),
+              onChanged: (val) => notifier.setPlanFilter(val ?? PlanFilter.all),
               options: const [
                 FilterOption(
                   value: PlanFilter.overdue,

@@ -98,7 +98,8 @@ class TrayCoordinator {
     });
 
     // Listen to work items to keep urgent counts fresh
-    _ref.listen<AsyncValue<List<WorkItem>>>(unfilteredWorkItemsProvider, (_, __) {
+    _ref.listen<AsyncValue<List<WorkItem>>>(unfilteredWorkItemsProvider,
+        (_, __) {
       if (_isDisposed) return;
       final currentTimer = _ref.read(timerProvider).value;
       if (currentTimer != null && currentTimer.isRunning) {

@@ -705,7 +705,8 @@ class _QuickCaptureBodyState extends ConsumerState<QuickCaptureBody> {
     );
   }
 
-  Widget _buildQuickCapturePlanBadge(WorkItemPlan plan, WorkPulseColors colors) {
+  Widget _buildQuickCapturePlanBadge(
+      WorkItemPlan plan, WorkPulseColors colors) {
     final today = CalendarDate.fromLocal(DateTime.now());
     final status = plan.statusOn(today);
 

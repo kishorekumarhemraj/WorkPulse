@@ -205,15 +205,13 @@ class AppSettingsNotifier extends AsyncNotifier<AppSettings> {
     final weekStartDayStr = await _repo.getSetting(_timesheetWeekStartDayKey);
     final roundingIncrementStr =
         await _repo.getSetting(_timesheetRoundingIncrementKey);
-    final reminderRulesJson =
-        await _repo.getSetting(_enabledReminderRulesKey);
+    final reminderRulesJson = await _repo.getSetting(_enabledReminderRulesKey);
     final dailyDigestStr = await _repo.getSetting(_dailyDigestTimeKey);
     final leadTimeMinutesStr =
         await _repo.getSetting(_dueReminderLeadTimeMinutesKey);
     final quietStartStr = await _repo.getSetting(_quietHoursStartKey);
     final quietEndStr = await _repo.getSetting(_quietHoursEndKey);
-    final weekendRemindersStr =
-        await _repo.getSetting(_weekendRemindersKey);
+    final weekendRemindersStr = await _repo.getSetting(_weekendRemindersKey);
     final snoozeDefaultMinutesStr =
         await _repo.getSetting(_snoozeDefaultMinutesKey);
 
@@ -491,4 +489,3 @@ String hotKeyLabel(HotKey hotKey) {
 
   return ShortcutLabels.usesCommandKey ? parts.join(' ') : parts.join('+');
 }
-

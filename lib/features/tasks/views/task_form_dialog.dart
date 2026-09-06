@@ -205,8 +205,8 @@ class _TaskFormDialogState extends ConsumerState<TaskFormDialog> {
 
     final definitions = ref.read(attributeDefinitionsProvider).value ?? [];
     final taskDefs = definitions
-        .where((d) =>
-            d.scope == AttributeScope.task && d.enabled && !d.isArchived)
+        .where(
+            (d) => d.scope == AttributeScope.task && d.enabled && !d.isArchived)
         .toList();
 
     for (final def in taskDefs) {
@@ -1283,4 +1283,3 @@ class _DateField extends StatelessWidget {
     );
   }
 }
-

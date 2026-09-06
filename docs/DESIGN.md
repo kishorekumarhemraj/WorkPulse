@@ -38,7 +38,7 @@ WorkPulse strictly adheres to a 4-layer clean architecture:
                               │
 ┌─────────────────────────────▼─────────────────────────────┐
 │                         Data Layer                        │
-│   (SQLite Tables, Migrations V1-V4, Concrete Repositories)│
+│   (SQLite Tables, Migrations V1-V10 (no V7 — see §3), Concrete Repositories)│
 └─────────────────────────────┬─────────────────────────────┘
                               │
 ┌─────────────────────────────▼─────────────────────────────┐
@@ -50,14 +50,14 @@ WorkPulse strictly adheres to a 4-layer clean architecture:
 ### Layer Details:
 - **`lib/core/`**: Platform adapters (`HotKeyService`, `TrayService`, `IdleDetectorService`, `SystemIdleSource`, `WindowService`), database initialization, error types (`AppException`), the design system (`WorkPulseColors`, `design_tokens.dart`, `core/widgets/`), and the keyboard layer (`core/keyboard/`: platform shortcut labels and the search-focus registry).
 - **`lib/domain/`**: Pure Dart models (`WorkItem`, `Session`, `Project`, `Category`, `Tag`, `Person`, `AttributeDefinition`, `AttributeOption`, `IdlePeriod`), repository contracts, and business logic services (`TimerService`, `TaskSwitchService`, `IdleService`, `AnalyticsService`, `WorkPatternService`).
-- **`lib/data/`**: SQLite table schemas (`Tables`), versioned migrations (`MigrationV1`–`MigrationV6`), DAOs, and repository implementations (`SqliteWorkItemRepository`, `SqliteSessionRepository`, etc.).
+- **`lib/data/`**: SQLite table schemas (`Tables`), versioned migrations (`MigrationV1`–`MigrationV10`, with no `MigrationV7` — v7 is a version stamp only; `MigrationV5` was rewritten in place and is replayed for old v5/v6 databases, see `DatabaseService._onUpgrade`), DAOs, and repository implementations (`SqliteWorkItemRepository`, `SqliteSessionRepository`, etc.).
 - **`lib/features/`**: Feature-specific UI, view models, and Riverpod providers (`quick_capture/`, `tasks/`, `timer/`, `idle/`, `attributes/`, `projects/`, `categories/`, `tags/`, `people/`, `dashboard/`, `reports/`, `settings/`, `shell/`).
 
 ---
 
 ## 3. SQLite Database Schema & Entity Relationships
 
-The schema consists of 16 normalized tables configured with `PRAGMA foreign_keys = ON;`:
+The schema consists of 18 normalized tables configured with `PRAGMA foreign_keys = ON;` (the original 16 plus `project_timesheet_codes` (v8) and `work_item_reminders` (v10)):
 
 ```text
                ┌─────────────┐
@@ -93,9 +93,15 @@ The schema consists of 16 normalized tables configured with `PRAGMA foreign_keys
                                   └───────────────────────────┘
 ```
 
-### Migration History:
+### Migration History (current: v10):
 - **`MigrationV1`**: Schema creation (16 tables), indices, and default workspace seeding.
 - **`MigrationV2`**: Adds `notes` column to `sessions` table, enabling granular session-level work notes and task switch handover descriptions.
+- **`MigrationV3` / `MigrationV4`**: Incremental schema hardening (see `lib/data/migrations/`).
+- **`MigrationV5`**: Financial classification on `WorkItem` (rewritten in place; replayed for databases stamped at v5/v6 — there is no `MigrationV7` file, v7 is a version stamp only).
+- **`MigrationV6`**: `Project.timesheetCode` (nullable; no backfill — missing codes report as **No code**).
+- **`MigrationV8`**: Per-(project, release) timesheet codes (`project_timesheet_codes` + discriminator column).
+- **`MigrationV9`**: Session-context / Time Sheet refinements (see `migration_v9.dart`).
+- **`MigrationV10`**: Work-item planning dates (`planned_start_date`, `due_date`, `completed_at`) and the `work_item_reminders` ledger.
 
 ### Key Performance Indices:
 - `idx_work_items_name` on `work_items(name)`

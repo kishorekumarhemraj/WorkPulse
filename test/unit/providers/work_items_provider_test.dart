@@ -110,7 +110,9 @@ void main() {
       expect(filtered.map((i) => i.id), [itemCompleted.id]);
     });
 
-    test('WorkItemSort.dueDate sorts items by due date ascending, with nulls last', () {
+    test(
+        'WorkItemSort.dueDate sorts items by due date ascending, with nulls last',
+        () {
       const filter = WorkItemFilter(sort: WorkItemSort.dueDate);
       final filtered = filter.filter(allItems, today: today);
       expect(filtered.map((i) => i.id), [

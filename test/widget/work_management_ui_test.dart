@@ -469,7 +469,8 @@ void main() {
           findsOneWidget);
     });
 
-    testWidgets('WorkItemRow renders plan badge when planned and none when unplanned',
+    testWidgets(
+        'WorkItemRow renders plan badge when planned and none when unplanned',
         (tester) async {
       final plannedItem = testWorkItem.copyWith(
         id: 'item-planned',
