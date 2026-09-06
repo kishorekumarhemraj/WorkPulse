@@ -348,6 +348,8 @@ class ExportService {
     final buffer = StringBuffer();
 
     // 1. Build Header
+    // Plan columns trail the custom attributes so existing spreadsheets
+    // keep their column positions: appending at the end never shifts them.
     final headers = [
       'Date',
       'Start Time (UTC)',
@@ -368,6 +370,10 @@ class ExportService {
       'Gross Seconds',
       'Net Seconds',
       ...definitions.map((d) => d.name),
+      'Planned Start',
+      'Due Date',
+      'Completed At (UTC)',
+      'Was Late',
     ];
 
     buffer.writeln(headers.map(_escapeCsv).join(','));
@@ -415,6 +421,16 @@ class ExportService {
       final customFields =
           definitions.map((def) => r.attributeValues[def.id] ?? '').toList();
 
+      // Plan dates belong to the work item, not the session (rule 7: sessions
+      // never inherit the plan). Empty when unplanned; Was Late is empty when
+      // not complete or when there is no due date to be late against.
+      final plan = r.workItem.plan;
+      final plannedStartStr = plan.plannedStart?.toStorageString() ?? '';
+      final dueStr = plan.due?.toStorageString() ?? '';
+      final completedAtStr = plan.completedAt?.toUtc().toIso8601String() ?? '';
+      final wasLate = plan.wasLate;
+      final wasLateStr = wasLate == null ? '' : (wasLate ? 'yes' : 'no');
+
       final row = [
         dateStr,
         startStr,
@@ -435,6 +451,10 @@ class ExportService {
         grossSec,
         netSec,
         ...customFields,
+        plannedStartStr,
+        dueStr,
+        completedAtStr,
+        wasLateStr,
       ];
 
       buffer.writeln(row.map(_escapeCsv).join(','));
@@ -514,6 +534,13 @@ class ExportService {
             'name': r.workItem.name,
             'financialClassification': r.workItem.financialClassification.value,
             'legacyNotes': r.workItem.notes,
+            'plan': {
+              'plannedStart': r.workItem.plan.plannedStart?.toStorageString(),
+              'due': r.workItem.plan.due?.toStorageString(),
+              'completedAt':
+                  r.workItem.plan.completedAt?.toUtc().toIso8601String(),
+              'wasLate': r.workItem.plan.wasLate,
+            },
           },
           'project': r.project != null
               ? {
