@@ -46,6 +46,7 @@ class WorkItemInspector extends ConsumerWidget {
   final List<Person> people;
   final Map<String, Person> peopleMap;
   final VoidCallback onEdit;
+  final VoidCallback? onMerge;
   final VoidCallback? onClose;
 
   const WorkItemInspector({
@@ -57,6 +58,7 @@ class WorkItemInspector extends ConsumerWidget {
     required this.people,
     required this.peopleMap,
     required this.onEdit,
+    this.onMerge,
     this.onClose,
   });
 
@@ -340,6 +342,12 @@ class WorkItemInspector extends ConsumerWidget {
                   tooltip: 'Edit work item',
                   onPressed: onEdit,
                 ),
+                if (onMerge != null)
+                  IconButton(
+                    icon: const Icon(Icons.merge_type_outlined, size: IconSizes.md),
+                    tooltip: 'Merge work item',
+                    onPressed: onMerge,
+                  ),
                 if (onClose != null)
                   IconButton(
                     icon: const Icon(Icons.close, size: IconSizes.md),
