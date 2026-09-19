@@ -6,6 +6,7 @@ import 'package:workpulse/domain/models/calendar_date.dart';
 import 'package:workpulse/domain/models/financial_classification.dart';
 import 'package:workpulse/domain/models/work_item_model.dart';
 import 'package:workpulse/domain/models/work_item_plan.dart';
+import 'package:workpulse/domain/services/work_item_merge_service.dart';
 import 'package:workpulse/features/reminders/providers/reminder_scheduler_provider.dart';
 import 'package:workpulse/features/timer/providers/timer_provider.dart';
 import 'package:workpulse/features/workspace/providers/workspace_provider.dart';
@@ -235,6 +236,14 @@ final workItemsProvider =
   WorkItemsNotifier.new,
 );
 
+final workItemMergeServiceProvider = Provider<WorkItemMergeService>((ref) {
+  return WorkItemMergeService(
+    workItemRepository: ref.watch(workItemRepositoryProvider),
+    sessionRepository: ref.watch(sessionRepositoryProvider),
+    attributeRepository: ref.watch(attributeRepositoryProvider),
+  );
+});
+
 /// Returns all unarchived work items for the active workspace without the toolbar
 /// search/filter state. Used by the Planner view.
 final unfilteredWorkItemsProvider = FutureProvider<List<WorkItem>>((ref) async {
@@ -379,5 +388,26 @@ class WorkItemsNotifier extends AsyncNotifier<List<WorkItem>> {
     await workItemRepo.delete(id);
     ref.invalidateSelf();
     await future;
+  }
+
+  /// Merges [request.sourceWorkItemId] into [request.targetWorkItemId].
+  ///
+  /// Reassigns all sessions, copies notes/tags/people/attributes as specified,
+  /// seamlessly updates the running timer if active, and refreshes work items.
+  Future<WorkItemMergeResult> mergeWorkItems(
+    WorkItemMergeRequest request,
+  ) async {
+    final mergeService = ref.read(workItemMergeServiceProvider);
+    final result = await mergeService.mergeWorkItems(request);
+
+    // If the active timer was running on the source item, rebind to target
+    ref.read(timerProvider.notifier).handleWorkItemMerged(
+          targetWorkItem: result.targetWorkItem,
+          sourceWorkItemId: request.sourceWorkItemId,
+        );
+
+    ref.invalidateSelf();
+    await future;
+    return result;
   }
 }
