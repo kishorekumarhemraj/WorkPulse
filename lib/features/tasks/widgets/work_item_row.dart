@@ -37,6 +37,7 @@ class WorkItemRow extends ConsumerWidget {
   final VoidCallback onTap;
   final VoidCallback onToggleTimer;
   final VoidCallback onEdit;
+  final VoidCallback? onMerge;
   final VoidCallback onArchiveToggle;
   final VoidCallback onDelete;
 
@@ -52,6 +53,7 @@ class WorkItemRow extends ConsumerWidget {
     required this.onTap,
     required this.onToggleTimer,
     required this.onEdit,
+    this.onMerge,
     required this.onArchiveToggle,
     required this.onDelete,
   });
@@ -300,6 +302,9 @@ class WorkItemRow extends ConsumerWidget {
                 case 'edit':
                   onEdit();
                   break;
+                case 'merge':
+                  onMerge?.call();
+                  break;
                 case 'complete':
                   await ref
                       .read(workItemsProvider.notifier)
@@ -353,6 +358,13 @@ class WorkItemRow extends ConsumerWidget {
               const PopupMenuItem(
                 value: 'edit',
                 child: _MenuRow(icon: Icons.edit_outlined, label: 'Edit'),
+              ),
+              const PopupMenuItem(
+                value: 'merge',
+                child: _MenuRow(
+                  icon: Icons.merge_type_outlined,
+                  label: 'Merge into…',
+                ),
               ),
               if (item.plan.isComplete)
                 const PopupMenuItem(
@@ -428,10 +440,17 @@ class _MenuRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final effective = color ?? context.colors.textPrimary;
     return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
         Icon(icon, size: IconSizes.md, color: effective),
         const SizedBox(width: Spacing.sm),
-        Text(label, style: TextStyle(color: effective)),
+        Flexible(
+          child: Text(
+            label,
+            style: TextStyle(color: effective),
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
       ],
     );
   }

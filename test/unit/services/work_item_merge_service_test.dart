@@ -198,7 +198,7 @@ void main() {
         createdAt: now,
       ));
 
-      final source = await workItemRepo.create(
+      await workItemRepo.create(
         WorkItem(
           id: 'wi-source-meta',
           workspaceId: wsId,
@@ -214,7 +214,7 @@ void main() {
         ),
       );
 
-      final target = await workItemRepo.create(
+      await workItemRepo.create(
         WorkItem(
           id: 'wi-target-meta',
           workspaceId: wsId,
@@ -388,7 +388,7 @@ void main() {
           updatedAt: now,
         ),
       );
-      final target = await workItemRepo.create(
+      await workItemRepo.create(
         WorkItem(
           id: 'wi-archive-tgt',
           workspaceId: wsId,
