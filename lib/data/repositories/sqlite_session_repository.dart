@@ -197,6 +197,23 @@ class SqliteSessionRepository implements SessionRepository {
     }
   }
 
+  @override
+  Future<int> reassignWorkItem({
+    required String fromWorkItemId,
+    required String toWorkItemId,
+  }) async {
+    try {
+      return await _db.update(
+        Tables.sessions,
+        {'work_item_id': toWorkItemId},
+        where: 'work_item_id = ?',
+        whereArgs: [fromWorkItemId],
+      );
+    } catch (e) {
+      throw AppDatabaseException('Failed to reassign sessions: $e');
+    }
+  }
+
   Future<List<String>> _getPeopleIds(String sessionId) async {
     final results = await _db.query(
       Tables.sessionPeople,

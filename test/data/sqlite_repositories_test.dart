@@ -464,8 +464,7 @@ void main() {
       // Verify all sessions for work item
       final itemSessions = await sessionRepo.getByWorkItemId('wi-1');
       expect(itemSessions.length, equals(2));
-      final totalMinutes =
-          itemSessions.fold<int>(0, (sum, s) => sum + s.duration.inMinutes);
+      final totalMinutes = itemSessions.fold<int>(0, (sum, s) => sum + s.duration.inMinutes);
       expect(totalMinutes, equals(75 + 60)); // 135 mins = 2h 15m
 
       // Verify getLatestByWorkItemId
@@ -662,6 +661,114 @@ void main() {
       );
       expect(wideRangeWithCompleted.map((i) => i.id),
           containsAll(['wi-overdue', 'wi-today', 'wi-p1']));
+    });
+
+    test('Session reassignment between work items reassigns all rows atomically',
+        () async {
+      final now = DateTime.utc(2026, 8, 23, 10, 0);
+
+      await projectRepo.create(Project(
+        id: 'p-merge',
+        workspaceId: wsId,
+        name: 'Merge Project',
+        createdAt: now,
+        updatedAt: now,
+      ));
+      await categoryRepo.create(Category(
+        id: 'c-merge',
+        workspaceId: wsId,
+        name: 'Merge Category',
+        createdAt: now,
+        updatedAt: now,
+      ));
+      await tagRepo.create(Tag(
+        id: 't-merge',
+        workspaceId: wsId,
+        name: 'MergeTag',
+        createdAt: now,
+      ));
+      await personRepo.create(Person(
+        id: 'per-merge',
+        workspaceId: wsId,
+        name: 'Merge Person',
+        createdAt: now,
+      ));
+
+      await workItemRepo.create(WorkItem(
+        id: 'wi-merge-src',
+        workspaceId: wsId,
+        name: 'Source Duplicate Work Item',
+        projectId: 'p-merge',
+        categoryId: 'c-merge',
+        createdAt: now,
+        updatedAt: now,
+      ));
+      await workItemRepo.create(WorkItem(
+        id: 'wi-merge-dst',
+        workspaceId: wsId,
+        name: 'Destination Work Item',
+        projectId: 'p-merge',
+        categoryId: 'c-merge',
+        createdAt: now,
+        updatedAt: now,
+      ));
+
+      // Create sessions for source
+      await sessionRepo.create(Session(
+        id: 's-merge-1',
+        workItemId: 'wi-merge-src',
+        startTime: now,
+        endTime: now.add(const Duration(minutes: 45)),
+        tagIds: const ['t-merge'],
+        peopleIds: const ['per-merge'],
+        notes: 'Session 1 on source',
+        createdAt: now,
+      ));
+      await sessionRepo.create(Session(
+        id: 's-merge-2',
+        workItemId: 'wi-merge-src',
+        startTime: now.add(const Duration(hours: 1)),
+        endTime: now.add(const Duration(hours: 2)),
+        notes: 'Session 2 on source',
+        createdAt: now,
+      ));
+
+      // Create session for destination
+      await sessionRepo.create(Session(
+        id: 's-merge-3',
+        workItemId: 'wi-merge-dst',
+        startTime: now.add(const Duration(hours: 3)),
+        endTime: now.add(const Duration(hours: 4)),
+        notes: 'Session 3 on destination',
+        createdAt: now,
+      ));
+
+      expect(await sessionRepo.countByWorkItemId('wi-merge-src'), equals(2));
+      expect(await sessionRepo.countByWorkItemId('wi-merge-dst'), equals(1));
+
+      // Reassign all sessions from source to destination
+      final moved = await sessionRepo.reassignWorkItem(
+        fromWorkItemId: 'wi-merge-src',
+        toWorkItemId: 'wi-merge-dst',
+      );
+
+      expect(moved, equals(2));
+      expect(await sessionRepo.countByWorkItemId('wi-merge-src'), equals(0));
+      expect(await sessionRepo.countByWorkItemId('wi-merge-dst'), equals(3));
+
+      // Verify sessions on destination and their tags/people were preserved
+      final dstSessions = await sessionRepo.getByWorkItemId('wi-merge-dst');
+      expect(dstSessions.map((s) => s.id),
+          containsAll(['s-merge-1', 's-merge-2', 's-merge-3']));
+
+      final movedS1 = dstSessions.firstWhere((s) => s.id == 's-merge-1');
+      expect(movedS1.tagIds, contains('t-merge'));
+      expect(movedS1.peopleIds, contains('per-merge'));
+      expect(movedS1.notes, equals('Session 1 on source'));
+
+      // Deleting source work item now will NOT delete any sessions because none reference it
+      await workItemRepo.delete('wi-merge-src');
+      expect(await sessionRepo.countByWorkItemId('wi-merge-dst'), equals(3));
     });
   });
 }

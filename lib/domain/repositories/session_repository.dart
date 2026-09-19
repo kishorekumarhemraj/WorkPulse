@@ -24,4 +24,12 @@ abstract class SessionRepository {
   Future<Session> create(Session session);
   Future<Session> update(Session session);
   Future<void> delete(String id);
+
+  /// Reassigns all sessions belonging to [fromWorkItemId] to [toWorkItemId].
+  ///
+  /// Returns the number of sessions reassigned.
+  Future<int> reassignWorkItem({
+    required String fromWorkItemId,
+    required String toWorkItemId,
+  });
 }
