@@ -46,6 +46,7 @@ class WorkItemInspector extends ConsumerWidget {
   final List<Person> people;
   final Map<String, Person> peopleMap;
   final VoidCallback onEdit;
+  final VoidCallback? onMerge;
   final VoidCallback? onClose;
 
   const WorkItemInspector({
@@ -57,6 +58,7 @@ class WorkItemInspector extends ConsumerWidget {
     required this.people,
     required this.peopleMap,
     required this.onEdit,
+    this.onMerge,
     this.onClose,
   });
 
@@ -340,6 +342,12 @@ class WorkItemInspector extends ConsumerWidget {
                   tooltip: 'Edit work item',
                   onPressed: onEdit,
                 ),
+                if (onMerge != null)
+                  IconButton(
+                    icon: const Icon(Icons.merge_type_outlined, size: IconSizes.md),
+                    tooltip: 'Merge work item',
+                    onPressed: onMerge,
+                  ),
                 if (onClose != null)
                   IconButton(
                     icon: const Icon(Icons.close, size: IconSizes.md),
@@ -412,9 +420,9 @@ class WorkItemInspector extends ConsumerWidget {
                                   const SizedBox(height: 2),
                                   Text(
                                     item.plan.plannedStart != null
-                                        ? DateFormat('MMM d, yyyy').format(
-                                            item.plan.plannedStart!
-                                                .toLocalDateTime())
+                                        ? DateFormat('MMM d, yyyy').format(item
+                                            .plan.plannedStart!
+                                            .toLocalDateTime())
                                         : 'Not set',
                                     style: TextStyle(
                                       fontSize: 13,
@@ -472,8 +480,8 @@ class WorkItemInspector extends ConsumerWidget {
                           children: [
                             if (item.plan.isComplete)
                               OutlinedButton.icon(
-                                icon: const Icon(Icons.replay_outlined,
-                                    size: 14),
+                                icon:
+                                    const Icon(Icons.replay_outlined, size: 14),
                                 label: const Text('Reopen'),
                                 style: OutlinedButton.styleFrom(
                                   padding: const EdgeInsets.symmetric(
@@ -507,11 +515,8 @@ class WorkItemInspector extends ConsumerWidget {
                               onPressed: () {
                                 final base = item.plan.due ?? today;
                                 final newDue = base.addDays(1);
-                                ref
-                                    .read(workItemsProvider.notifier)
-                                    .setPlan(
-                                        item.id,
-                                        item.plan.copyWith(due: newDue));
+                                ref.read(workItemsProvider.notifier).setPlan(
+                                    item.id, item.plan.copyWith(due: newDue));
                               },
                               child: const Text('+1 day'),
                             ),
@@ -523,17 +528,15 @@ class WorkItemInspector extends ConsumerWidget {
                               ),
                               onPressed: () {
                                 final newDue = today.addDays(7);
-                                ref
-                                    .read(workItemsProvider.notifier)
-                                    .setPlan(
-                                        item.id,
-                                        item.plan.copyWith(due: newDue));
+                                ref.read(workItemsProvider.notifier).setPlan(
+                                    item.id, item.plan.copyWith(due: newDue));
                               },
                               child: const Text('Next week'),
                             ),
                             if (!item.plan.isComplete)
                               OutlinedButton.icon(
-                                icon: const Icon(Icons.snooze_outlined, size: 14),
+                                icon:
+                                    const Icon(Icons.snooze_outlined, size: 14),
                                 label: const Text('Snooze (1h)'),
                                 style: OutlinedButton.styleFrom(
                                   padding: const EdgeInsets.symmetric(

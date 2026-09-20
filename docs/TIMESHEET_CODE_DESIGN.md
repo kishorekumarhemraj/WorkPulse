@@ -1,9 +1,6 @@
 # Timesheet Code Resolution — Design & Delegation Brief
 
-Status: design only, not implemented.
-Target branch: a fresh branch off `develop`.
-Database version at time of writing: **7** (`AppConstants.dbVersion`). This work
-introduces **v8**.
+Status: implemented (v8 — `MigrationV8`, `TimesheetCodeResolver`, per-(project, release) codes on the Time Sheet).
 
 ---
 

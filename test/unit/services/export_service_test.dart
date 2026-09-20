@@ -19,9 +19,11 @@ import 'package:workpulse/domain/models/idle_period_model.dart';
 import 'package:workpulse/domain/models/person_model.dart';
 import 'package:workpulse/domain/models/project_model.dart';
 import 'package:workpulse/domain/models/project_timesheet_code.dart';
+import 'package:workpulse/domain/models/calendar_date.dart';
 import 'package:workpulse/domain/models/session_model.dart';
 import 'package:workpulse/domain/models/tag_model.dart';
 import 'package:workpulse/domain/models/work_item_model.dart';
+import 'package:workpulse/domain/models/work_item_plan.dart';
 import 'package:workpulse/domain/services/export_service.dart';
 
 void main() {
@@ -401,6 +403,113 @@ void main() {
           rangeSession1.tags.map((t) => t.id));
       expect(itemSession1.people.map((p) => p.id),
           rangeSession1.people.map((p) => p.id));
+    });
+
+    test('generateCsv appends plan columns without shifting existing ones',
+        () async {
+      final now = DateTime.utc(2026, 8, 23, 11, 0, 0);
+
+      final planned = await workItemRepo.create(
+        WorkItem(
+          id: 'wi-planned',
+          workspaceId: wsId,
+          projectId: 'proj-1',
+          categoryId: 'cat-1',
+          name: 'Planned Export Task',
+          plan: const WorkItemPlan(
+            plannedStart: CalendarDate(2026, 8, 20),
+            due: CalendarDate(2026, 8, 23),
+          ),
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+      await sessionRepo.create(
+        Session(
+          id: 'sess-planned',
+          workItemId: planned.id,
+          startTime: now,
+          endTime: now.add(const Duration(hours: 1)),
+          createdAt: now,
+        ),
+      );
+
+      final range = DateRange(
+        start: DateTime.utc(2026, 8, 23, 0, 0, 0),
+        end: DateTime.utc(2026, 8, 23, 23, 59, 59),
+      );
+      final csv =
+          await exportService.generateCsv(workspaceId: wsId, range: range);
+      final lines = csv.trim().split('\n');
+
+      final header = lines[0];
+      // Existing columns keep their order; plan columns trail everything.
+      expect(header, contains('Net Seconds'));
+      expect(
+        header.indexOf('Net Seconds') < header.indexOf('Planned Start'),
+        isTrue,
+      );
+      expect(header, contains('Planned Start,Due Date,Completed At (UTC)'));
+      expect(header, contains('Was Late'));
+
+      final plannedLine =
+          lines.firstWhere((l) => l.contains('Planned Export Task'));
+      expect(plannedLine, contains('2026-08-20'));
+      expect(plannedLine, contains('2026-08-23'));
+    });
+
+    test('generateJson includes workItem plan with wasLate', () async {
+      final now = DateTime.utc(2026, 8, 23, 11, 0, 0);
+      final planned = await workItemRepo.create(
+        WorkItem(
+          id: 'wi-planned-json',
+          workspaceId: wsId,
+          projectId: 'proj-1',
+          categoryId: 'cat-1',
+          name: 'Planned Export Task',
+          plan: const WorkItemPlan(
+            plannedStart: CalendarDate(2026, 8, 20),
+            due: CalendarDate(2026, 8, 23),
+          ),
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+      await sessionRepo.create(
+        Session(
+          id: 'sess-planned-json',
+          workItemId: planned.id,
+          startTime: now,
+          endTime: now.add(const Duration(hours: 1)),
+          createdAt: now,
+        ),
+      );
+
+      final range = DateRange(
+        start: DateTime.utc(2026, 8, 23, 0, 0, 0),
+        end: DateTime.utc(2026, 8, 23, 23, 59, 59),
+      );
+      final jsonStr =
+          await exportService.generateJson(workspaceId: wsId, range: range);
+      final decoded = json.decode(jsonStr) as Map<String, dynamic>;
+      final sessions = decoded['sessions'] as List;
+
+      final plannedSession = sessions
+              .firstWhere((s) => s['workItem']['name'] == 'Planned Export Task')
+          as Map<String, dynamic>;
+      final plan = plannedSession['workItem']!['plan'] as Map<String, dynamic>;
+      expect(plan['plannedStart'], '2026-08-20');
+      expect(plan['due'], '2026-08-23');
+      expect(plan['completedAt'], isNull);
+      expect(plan['wasLate'], isNull);
+
+      final unplanned = sessions.firstWhere(
+              (s) => s['workItem']['name'] == 'Build Export Feature')
+          as Map<String, dynamic>;
+      final unplannedPlan =
+          unplanned['workItem']['plan'] as Map<String, dynamic>;
+      expect(unplannedPlan['plannedStart'], isNull);
+      expect(unplannedPlan['due'], isNull);
     });
   });
 }

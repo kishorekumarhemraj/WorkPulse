@@ -243,6 +243,27 @@ class TimerNotifier extends AsyncNotifier<TimerState> {
     return stoppedSession;
   }
 
+  /// Seamlessly rebinds the running timer to [targetWorkItem] when [sourceWorkItemId]
+  /// has been merged into it.
+  void handleWorkItemMerged({
+    required WorkItem targetWorkItem,
+    required String sourceWorkItemId,
+  }) {
+    final current = state.value;
+    if (current != null &&
+        current.isRunning &&
+        current.activeWorkItem?.id == sourceWorkItemId) {
+      state = AsyncData(
+        current.copyWith(
+          activeWorkItem: targetWorkItem,
+          activeSession: current.activeSession?.copyWith(
+            workItemId: targetWorkItem.id,
+          ),
+        ),
+      );
+    }
+  }
+
   /// Initiates a task switch request.
   void requestSwitch(WorkItem targetWorkItem) {
     final current = state.value;

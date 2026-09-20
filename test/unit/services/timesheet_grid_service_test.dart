@@ -153,6 +153,24 @@ void main() {
         expect(start, DateTime(2026, 8, 23));
         expect(start.weekday, DateTime.sunday);
       });
+
+      test('Saturday start crosses month boundary: Sep Wed yields Aug Sat', () {
+        // 2026-09-03 is a Thursday; Saturday-start week began Aug 29.
+        final thu = DateTime(2026, 9, 3, 10, 0);
+        final start = weekStartFor(thu, DateTime.saturday);
+
+        expect(start, DateTime(2026, 8, 29));
+        expect(start.weekday, DateTime.saturday);
+      });
+
+      test('Monday start crosses year boundary: Jan 1 yields Dec Monday', () {
+        // 2026-01-01 is a Thursday; Monday-start week began Dec 29, 2025.
+        final jan1 = DateTime(2026, 1, 1, 10, 0);
+        final start = weekStartFor(jan1, DateTime.monday);
+
+        expect(start, DateTime(2025, 12, 29));
+        expect(start.weekday, DateTime.monday);
+      });
     });
 
     group('roundCell & sumCells', () {

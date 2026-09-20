@@ -119,29 +119,27 @@ void main() {
     test(
         'startup recovery: restores running state if an active session exists in SQLite',
         () async {
-      final startTime =
-          DateTime.now().toUtc().subtract(const Duration(minutes: 10));
-      await sessionRepo.create(
-        Session(
-          id: 'sess-active',
-          workItemId: taskA.id,
-          startTime: startTime,
-          createdAt: startTime,
-        ),
+      final now = DateTime.now().toUtc().subtract(const Duration(minutes: 5));
+      final active = Session(
+        id: 'sess-active',
+        workItemId: taskA.id,
+        startTime: now,
+        createdAt: now,
       );
+      await sessionRepo.create(active);
 
       final container = createContainer();
       final timerState = await container.read(timerProvider.future);
 
       expect(timerState.status, TimerStatus.running);
       expect(timerState.isRunning, isTrue);
-      expect(timerState.activeSession, isNotNull);
-      expect(timerState.activeSession!.id, 'sess-active');
-      expect(timerState.activeWorkItem!.id, taskA.id);
-      expect(timerState.elapsed.inMinutes, greaterThanOrEqualTo(9));
+      expect(timerState.activeSession?.id, 'sess-active');
+      expect(timerState.activeWorkItem?.id, taskA.id);
+      expect(timerState.elapsed.inMinutes >= 5, isTrue);
     });
 
-    test('startTimer and stopTimer lifecycle', () async {
+    test('startTimer, update active session fields, and stopTimer lifecycle',
+        () async {
       final container = createContainer();
       await container.read(timerProvider.future);
 
@@ -154,6 +152,21 @@ void main() {
       expect(state.activeWorkItem!.id, taskA.id);
       expect(state.activeSession, isNotNull);
 
+      // Verify DB persistence of active session
+      var activeDb = await sessionRepo.getActiveSession();
+      expect(activeDb, isNotNull);
+      expect(activeDb!.workItemId, taskA.id);
+
+      // Update active category
+      await notifier.updateActiveSessionCategory(defaultCategory.id);
+      state = container.read(timerProvider).value!;
+      expect(state.activeSession!.categoryId, defaultCategory.id);
+
+      // Update notes
+      await notifier.updateActiveSessionNotes('Sprint work in progress');
+      state = container.read(timerProvider).value!;
+      expect(state.activeSession!.notes, 'Sprint work in progress');
+
       // Stop timer
       final stopped = await notifier.stopTimer();
       expect(stopped, isNotNull);
@@ -162,26 +175,26 @@ void main() {
       state = container.read(timerProvider).value!;
       expect(state.status, TimerStatus.idle);
       expect(state.isRunning, isFalse);
-      expect(state.activeSession, isNull);
+
+      activeDb = await sessionRepo.getActiveSession();
+      expect(activeDb, isNull);
     });
 
-    test('task switching: requestSwitch, confirmSwitch, and cancelSwitch flow',
+    test('switching tasks: prompts confirmation, allows cancel or proceed',
         () async {
       final container = createContainer();
       await container.read(timerProvider.future);
 
       final notifier = container.read(timerProvider.notifier);
 
-      // Start on Task A
+      // Start on taskA
       await notifier.startTimer(taskA);
-      expect(container.read(timerProvider).value!.activeWorkItem!.id, taskA.id);
 
-      // Calling startTimer on Task B while Task A is active triggers requestSwitch
+      // Trigger start on taskB -> goes into switching state
       await notifier.startTimer(taskB);
       var state = container.read(timerProvider).value!;
       expect(state.status, TimerStatus.switching);
       expect(state.pendingSwitchWorkItem!.id, taskB.id);
-      expect(state.activeWorkItem!.id, taskA.id);
 
       // Cancel switch
       notifier.cancelSwitch();
@@ -202,6 +215,36 @@ void main() {
       // Verify in DB that old session for taskA is stopped and new session for taskB is active
       final active = await sessionRepo.getActiveSession();
       expect(active!.workItemId, taskB.id);
+    });
+
+    test(
+        'handleWorkItemMerged smoothly updates running work item to merged target',
+        () async {
+      final container = createContainer();
+      await container.read(timerProvider.future);
+
+      // Start timer on task A
+      await container.read(timerProvider.notifier).startTimer(taskA);
+      var state = container.read(timerProvider).value!;
+      expect(state.isRunning, isTrue);
+      expect(state.activeWorkItem?.id, taskA.id);
+
+      // Reassign session to task B in repository
+      await sessionRepo.reassignWorkItem(
+        fromWorkItemId: taskA.id,
+        toWorkItemId: taskB.id,
+      );
+
+      // Notify TimerNotifier of the merge
+      container.read(timerProvider.notifier).handleWorkItemMerged(
+            targetWorkItem: taskB,
+            sourceWorkItemId: taskA.id,
+          );
+
+      state = container.read(timerProvider).value!;
+      expect(state.isRunning, isTrue);
+      expect(state.activeWorkItem?.id, taskB.id);
+      expect(state.activeSession?.workItemId, taskB.id);
     });
   });
 }

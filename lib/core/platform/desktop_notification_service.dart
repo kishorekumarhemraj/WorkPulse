@@ -72,8 +72,7 @@ class DesktopNotificationServiceImpl implements DesktopNotificationService {
         // Normalize newlines in title and body to single line for ReadLine
         final singleLineTitle =
             title.replaceAll('\r', ' ').replaceAll('\n', ' ');
-        final singleLineBody =
-            body.replaceAll('\r', ' ').replaceAll('\n', ' ');
+        final singleLineBody = body.replaceAll('\r', ' ').replaceAll('\n', ' ');
         process.stdin.writeln(singleLineTitle);
         process.stdin.writeln(singleLineBody);
         await process.stdin.flush();
@@ -81,7 +80,8 @@ class DesktopNotificationServiceImpl implements DesktopNotificationService {
         await process.exitCode;
       }
     } catch (e) {
-      debugPrint('[WorkPulse Notification] Failed to display native notification: $e');
+      debugPrint(
+          '[WorkPulse Notification] Failed to display native notification: $e');
     }
   }
 

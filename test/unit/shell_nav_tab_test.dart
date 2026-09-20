@@ -3,7 +3,9 @@ import 'package:workpulse/features/shell/models/shell_nav_tab.dart';
 
 void main() {
   group('Sidebar navigation order', () {
-    test('Track runs Dashboard, Patterns, Planner, Work Items, Log, Notes, Sheet', () {
+    test(
+        'Track runs Dashboard, Patterns, Planner, Work Items, Log, Notes, Sheet',
+        () {
       // Pinned because the order is what a user's muscle memory and the
       // digit shortcuts both key off — it must not drift when a tab is added.
       expect(

@@ -1,9 +1,15 @@
 # Work Item Planning & Reminders — Design & Delegation Brief
 
-Status: design only, not implemented.
-Target branch: `claude/work-items-planning-notifications-yrhaz3`.
-Database version at time of writing: **9** (`AppConstants.dbVersion`). This work
-introduces **v10**.
+Status: implemented (v10 — `CalendarDate`, `WorkItemPlan`, `ReminderService`, Planner view, notification centre, tray fallback).
+
+> **As built (v5.0.0).** The shipped reminder engine differs from §5.1/§5.2/§9
+> in three places: rules are `startMorning` / `dueMorning` / `due1h` (1h before
+> 17:00) / `overdueDaily` — there is no `dueAhead` lead-days rule and no
+> `overdueRepeat` mode; the schedule is `dailyDigestTime` (default 09:00) with
+> `weekendReminders` (default off) and optional quiet hours instead of
+> configurable reminder days; settings keys are `daily_digest_time`,
+> `quiet_hours_start/end`, `weekend_reminders`. The `dueAhead` Friday-warning
+> remains the largest functional gap and is tracked as follow-up work.
 
 ---
 

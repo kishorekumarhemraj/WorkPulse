@@ -33,9 +33,8 @@ class _ReminderSettingsDialogState
     final colors = context.colors;
     final settings = ref.watch(appSettingsProvider).value;
 
-    final rules = _rules ??
-        settings?.enabledReminderRules ??
-        ReminderRule.values.toSet();
+    final rules =
+        _rules ?? settings?.enabledReminderRules ?? ReminderRule.values.toSet();
     final digestTime = _digestTime ??
         settings?.dailyDigestTime ??
         AppSettings.defaultDailyDigestTime;

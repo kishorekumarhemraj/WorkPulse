@@ -95,8 +95,7 @@ void main() {
           peopleProvider.overrideWith(() => _FakePeopleNotifier([])),
           workItemsProvider
               .overrideWith(() => _FakeWorkItemsNotifier(workItems)),
-          unfilteredWorkItemsProvider
-              .overrideWith((ref) async => workItems),
+          unfilteredWorkItemsProvider.overrideWith((ref) async => workItems),
         ],
         child: MaterialApp(
           theme: AppTheme.darkTheme,

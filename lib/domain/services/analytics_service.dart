@@ -119,8 +119,11 @@ class AnalyticsService {
 
           // Measure only the idle duration that falls strictly inside the session's bounds.
           // For sessions cleanly stopped at idleStartTime, this overlap is zero.
-          final overlapStart = idle.startTime.isAfter(s.startTime) ? idle.startTime : s.startTime;
-          final overlapEnd = idle.endTime.isBefore(sessionEnd) ? idle.endTime : sessionEnd;
+          final overlapStart = idle.startTime.isAfter(s.startTime)
+              ? idle.startTime
+              : s.startTime;
+          final overlapEnd =
+              idle.endTime.isBefore(sessionEnd) ? idle.endTime : sessionEnd;
           if (overlapEnd.isAfter(overlapStart)) {
             idleInsideSession += overlapEnd.difference(overlapStart);
           }

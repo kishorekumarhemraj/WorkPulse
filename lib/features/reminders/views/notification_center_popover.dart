@@ -91,13 +91,16 @@ class NotificationCenterDialog extends ConsumerWidget {
                   _ReminderItemTile(
                     record: reminders[i],
                     workItem: workItemMap[reminders[i].workItemId],
-                    onMarkRead: () =>
-                        ref.read(remindersProvider.notifier).markRead(reminders[i].id),
+                    onMarkRead: () => ref
+                        .read(remindersProvider.notifier)
+                        .markRead(reminders[i].id),
                     onSnooze: () => ref
                         .read(remindersProvider.notifier)
                         .snooze(reminders[i].id, const Duration(hours: 1)),
                     onComplete: workItemMap[reminders[i].workItemId] == null ||
-                            workItemMap[reminders[i].workItemId]!.plan.isComplete
+                            workItemMap[reminders[i].workItemId]!
+                                .plan
+                                .isComplete
                         ? null
                         : () async {
                             final item = workItemMap[reminders[i].workItemId]!;
@@ -155,7 +158,8 @@ class _ReminderItemTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
-    final timeStr = DateFormat('MMM d, HH:mm').format(record.deliveredAt.toLocal());
+    final timeStr =
+        DateFormat('MMM d, HH:mm').format(record.deliveredAt.toLocal());
     final isRescheduled = workItem != null &&
         workItem!.plan.due != null &&
         workItem!.plan.due != record.anchorDate;
@@ -197,8 +201,9 @@ class _ReminderItemTile extends StatelessWidget {
                         workItem?.name ?? 'Work Item',
                         style: TextStyle(
                           fontSize: 13,
-                          fontWeight:
-                              record.isRead ? FontWeight.normal : FontWeight.w600,
+                          fontWeight: record.isRead
+                              ? FontWeight.normal
+                              : FontWeight.w600,
                           color: colors.textPrimary,
                         ),
                         maxLines: 1,

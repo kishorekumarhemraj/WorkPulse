@@ -155,8 +155,7 @@ class ReminderService {
               occurrenceKey: key,
               scheduledFor: nowLocal,
               title: 'Overdue: ${item.name}',
-              body:
-                  'Overdue by $daysLate ${daysLate == 1 ? 'day' : 'days'}.',
+              body: 'Overdue by $daysLate ${daysLate == 1 ? 'day' : 'days'}.',
             ),
           );
         }

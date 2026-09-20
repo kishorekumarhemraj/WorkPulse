@@ -38,8 +38,8 @@ class QuickCaptureState extends Equatable {
       selectedCategoryId: clearCategoryId
           ? null
           : (selectedCategoryId ?? this.selectedCategoryId),
-      hasExplicitCategorySelection: hasExplicitCategorySelection ??
-          this.hasExplicitCategorySelection,
+      hasExplicitCategorySelection:
+          hasExplicitCategorySelection ?? this.hasExplicitCategorySelection,
       selectedTagIds: selectedTagIds ?? this.selectedTagIds,
       selectedPeopleIds: selectedPeopleIds ?? this.selectedPeopleIds,
     );

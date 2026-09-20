@@ -19,6 +19,7 @@ import 'package:workpulse/features/projects/providers/projects_provider.dart';
 import 'package:workpulse/features/tags/providers/tags_provider.dart';
 import 'package:workpulse/features/tasks/providers/work_items_provider.dart';
 import 'package:workpulse/features/tasks/views/task_form_dialog.dart';
+import 'package:workpulse/features/tasks/views/work_item_merge_dialog.dart';
 import 'package:workpulse/features/tasks/widgets/work_item_inspector.dart';
 import 'package:workpulse/features/tasks/widgets/work_item_row.dart';
 import 'package:workpulse/features/tasks/widgets/work_items_toolbar.dart';
@@ -116,6 +117,15 @@ class _TasksViewState extends ConsumerState<TasksView> {
       await ref.read(timerProvider.notifier).stopTimer();
     }
     await ref.read(workItemsProvider.notifier).archiveWorkItem(item.id);
+  }
+
+  Future<void> _mergeWorkItem(WorkItem item) async {
+    final result = await WorkItemMergeDialog.show(context, sourceItem: item);
+    if (result != null && mounted) {
+      if (_selectedId == item.id) {
+        setState(() => _selectedId = result.targetWorkItem.id);
+      }
+    }
   }
 
   @override
@@ -234,6 +244,7 @@ class _TasksViewState extends ConsumerState<TasksView> {
                       onToggleTimer: () => _toggleTimer(item, isActive),
                       onEdit: () =>
                           TaskFormDialog.show(context, workItem: item),
+                      onMerge: () => _mergeWorkItem(item),
                       onArchiveToggle: () => _toggleArchive(item, isActive),
                       onDelete: () => _confirmDelete(item, isActive),
                     );
@@ -258,6 +269,7 @@ class _TasksViewState extends ConsumerState<TasksView> {
                             peopleMap: peopleMap,
                             onEdit: () =>
                                 TaskFormDialog.show(context, workItem: item),
+                            onMerge: () => _mergeWorkItem(item),
                             onClose: () => setState(() => _selectedId = null),
                           ),
                         ),
@@ -294,6 +306,7 @@ class _TasksViewState extends ConsumerState<TasksView> {
                                 context,
                                 workItem: selected,
                               ),
+                              onMerge: () => _mergeWorkItem(selected),
                               onClose: () => setState(() => _selectedId = null),
                             ),
                     ),

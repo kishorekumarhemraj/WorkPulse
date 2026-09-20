@@ -1,7 +1,6 @@
 # Timesheet Entry Grid — Design & Delegation Brief
 
-Status: design only, not implemented.
-Target branch: a fresh branch off `develop`.
+Status: implemented (`TimesheetWeek` / `TimesheetGridRow`, `timesheet_grid_math.dart`, `TimesheetEntryGrid` with week blocks and two-column breakdown layout).
 Companion: `docs/TIMESHEET_CODE_DESIGN.md` (code resolution). See §12 for how
 the two interlock.
 
